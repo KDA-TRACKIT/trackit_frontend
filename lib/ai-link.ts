@@ -3,7 +3,7 @@
 //   지금은 시각만 보는 규칙으로 대신한다.
 //   - 사전: 메모 뒤에 처음 나온 체결 → 판정이 분명해서 "확실"
 //   - 사후: 체결 뒤에 쓴 메모 → 어느 매매를 돌아본 건지 시각만으로는 애매해서 "확인 필요"
-export type Execution = { id: string; time: string; side: string; quantity: number };
+export type Execution = { id: string; time: string; side: string; quantity: number; price?: number };
 export type LinkSuggestion = { execution: Execution; kind: "pre" | "post"; confidence: "high" | "low"; reason: string };
 
 const minutes = (t: string) => {

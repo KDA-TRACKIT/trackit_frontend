@@ -1,6 +1,8 @@
 // 작업실 더미 데이터. 시세 API(키움+KRX 수정주가)가 붙으면 이 파일 대신 API 응답을 쓴다.
 
-export type Interval = "1s" | "1m" | "5m" | "1h" | "1d";
+import { groupBars, parseInterval, type Interval } from "../interval";
+
+export type { Interval } from "../interval";
 
 /** time = 실제 시각(UTC 초). 백엔드는 숫자를 문자열로 주므로 연결할 때 변환한다 */
 export type Bar = { time: number; open: number; high: number; low: number; close: number; volume: number };
@@ -11,14 +13,6 @@ export const STOCK = {
   fullName: "삼성전자보통주",
   market: "KRX",
   sector: "전자 기술 · 반도체",
-};
-
-export const INTERVAL_LABEL: Record<Interval, { button: string; legend: string; footer: string }> = {
-  "1s": { button: "1초", legend: "1초", footer: "초봉 (실시간)" },
-  "1m": { button: "1분", legend: "1분", footer: "1분봉" },
-  "5m": { button: "5분", legend: "5분", footer: "5분봉" },
-  "1h": { button: "1시간", legend: "1시간", footer: "1시간봉" },
-  "1d": { button: "일봉", legend: "1일", footer: "일봉" },
 };
 
 const KST = 9 * 60 * 60;
@@ -119,11 +113,10 @@ function intradayBars(stepMinutes: number, days: number) {
 }
 
 export function makeBars(interval: Interval): Bar[] {
-  if (interval === "1s") return [];
-  if (interval === "1m") return intradayBars(1, 1);
-  if (interval === "5m") return intradayBars(5, 3);
-  if (interval === "1h") return intradayBars(60, 15);
-  return dailyBars();
+  const { unit } = parseInterval(interval);
+  if (unit === "s") return [];
+  const base = unit === "m" ? intradayBars(1, 1) : unit === "h" ? intradayBars(60, 15) : dailyBars();
+  return ["1m", "1h", "1d"].includes(interval) ? base : groupBars(base, interval);
 }
 
 /** 노트 검증 패널 더미 */

@@ -1,32 +1,42 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { openBookStream, type OrderBook } from "../../lib/market-data";
+import { fetchCosts, openBookStream, type OrderBook } from "../../lib/market-data";
+import { maxBuyQuantity, orderCosts, pctText, type CostRates } from "../../lib/trade-costs";
+import { PHASE_LABEL, isRegularPhase, useMarketPhase } from "../../lib/market-session";
 import { BUYING_POWER, makeOrderBook } from "../../lib/mock/workshop";
+import AlgoPanel from "./AlgoPanel";
 
 const won = (value: number) => value.toLocaleString("ko-KR");
 
-export type MockOrder = { side: "매수" | "매도"; price: number; quantity: number };
+export type MockOrder = {
+  side: "매수" | "매도";
+  price: number;
+  quantity: number;
+};
 
 type Props = {
   /** 종목코드 (실제 호가 조회) */
   code: string;
+  symbolName: string;
   /** 현재가 */
   price: number;
   /** 전일 종가 (등락률 계산용) */
   prevClose: number;
   onOrder: (order: MockOrder) => void;
+  /** 보유 수량 (매도 가능 수량). 모르면 0 */
+  holding?: number;
   onClose: () => void;
-  /** 호가창을 그릴 자리 (페이지 아래쪽). 주문창과 상태를 같이 쓰려고 portal로 넣는다 */
-  bookTarget: HTMLElement | null;
 };
 
 /**
- * 매매하기 화면: 오른쪽에 매매 창, 호가창은 아래쪽(bookTarget)에.
+ * 매매하기 화면: 매매 창 위쪽에 3열 호가(매도잔량 | 가격 | 매수잔량), 아래에 주문 입력.
+ * 호가를 누르면 바로 아래 주문 가격에 들어간다.
  * 아직 증권사 주문 API가 없으므로 모의 주문만 받는다.
  */
-export default function TradePanel({ code, price, prevClose, onOrder, onClose, bookTarget }: Props) {
+export default function TradePanel({ code, symbolName, price, prevClose, onOrder, onClose, holding = 0 }: Props) {
+  /** 직접 주문 / 알고리즘 규칙 */
+  const [tab, setTab] = useState<"order" | "algo">("order");
   // 실제 호가: 키움 실시간(0D)을 백엔드가 SSE로 넘겨준다. 못 받으면 예시 호가로 대신하고 표시한다
   const [live, setLive] = useState<OrderBook | null>(null);
   const [liveFailed, setLiveFailed] = useState(false);
@@ -45,21 +55,59 @@ export default function TradePanel({ code, price, prevClose, onOrder, onClose, b
   const mock = useMemo(() => makeOrderBook(price), [price]);
   const book = live && live.asks.length + live.bids.length > 0 && !liveFailed ? live : mock;
   const isLive = book === live;
+  const phase = useMarketPhase();
   // 호가 단위(KRX 가격대별 규칙)는 예시 호가 계산과 같다
-  const maxQuantity = Math.max(...book.asks.map((l) => l.quantity), ...book.bids.map((l) => l.quantity));
+
+  /** 보이는 단계: 기본 위아래 5단계, 펼치면 10단계 */
+  const [depth, setDepth] = useState<5 | 10>(5);
+  const asks = book.asks.slice(-depth); // 매도는 높은 가격 → 낮은 가격이라 현재가에 가까운 건 뒤쪽
+  const bids = book.bids.slice(0, depth);
+  const maxQuantity = Math.max(1, ...asks.map((l) => l.quantity), ...bids.map((l) => l.quantity));
+  const sum = (list: { quantity: number }[]) => list.reduce((acc, l) => acc + l.quantity, 0);
+  const totalAsk = isLive && live ? live.totalAsk : sum(book.asks);
+  const totalBid = isLive && live ? live.totalBid : sum(book.bids);
+  const bidShare = totalAsk + totalBid > 0 ? (totalBid / (totalAsk + totalBid)) * 100 : 50;
 
   const [side, setSide] = useState<"매수" | "매도">("매수");
   const [orderType, setOrderType] = useState<"지정가" | "시장가">("지정가");
   const [orderPrice, setOrderPrice] = useState(price);
-  const [quantity, setQuantity] = useState(1);
+  const [typedQty, setTypedQty] = useState(1);
+  /** 슬라이더·비율 버튼으로 정한 비율. 있으면 수량은 (가능 수량 × 비율)로 따라간다. 직접 수량을 바꾸면 비움 */
+  const [pct, setPct] = useState<number | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  const effectivePrice = orderType === "시장가" ? price : orderPrice;
-  const total = effectivePrice * quantity;
-  const overBudget = side === "매수" && total > BUYING_POWER;
+  // 거래비용 요율 (백엔드). 이 창은 모의 주문이라 모의투자 수수료율을 쓴다. 못 받으면 비용 0 으로 보고 표시
+  const [costs, setCosts] = useState<{ code: string; rates: CostRates | null } | null>(null);
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchCosts(code, ac.signal)
+      .then((c) => setCosts({ code, rates: { fee: Number(c.feeRate.mock), sellTax: Number(c.sellTaxRate) } }))
+      .catch(() => !ac.signal.aborted && setCosts({ code, rates: null }));
+    return () => ac.abort();
+  }, [code]);
+  const rates: CostRates = (costs?.code === code ? costs.rates : null) ?? { fee: 0, sellTax: 0 };
+  const ratesKnown = costs?.code === code && costs.rates !== null;
 
-  function fillRatio(ratio: number) {
-    setQuantity(Math.max(1, Math.floor((BUYING_POWER * ratio) / effectivePrice)));
+  const effectivePrice = orderType === "시장가" ? price : orderPrice;
+  /** 주문 가능 수량: 매수 = 수수료까지 낼 수 있는 수량, 매도 = 보유 수량 */
+  const maxQty = side === "매수" ? maxBuyQuantity(BUYING_POWER, effectivePrice, rates) : holding;
+  const quantity = pct !== null ? Math.floor((maxQty * pct) / 100) : typedQty;
+  const cost = orderCosts(side, effectivePrice, quantity, rates);
+  const total = cost.amount;
+  const overBudget = quantity > maxQty;
+  // 슬라이더 손잡이는 고른 비율 그대로 둔다 (수량에서 거꾸로 계산하면 반올림 때문에 튀어서 끌기가 끊긴다)
+  const percent = pct ?? (maxQty > 0 ? Math.min(100, (quantity / maxQty) * 100) : 0);
+
+  /** 가능 수량의 몇 % 로 수량 정하기 (OKX 슬라이더처럼). 눈금 3% 안이면 눈금에 붙인다 */
+  function setPercent(p: number) {
+    const mark = [0, 25, 50, 75, 100].find((m) => Math.abs(m - p) <= 3);
+    setPct(mark ?? p);
+    setDone(null);
+  }
+  /** 수량을 직접 바꿈 (비율 모드 끝) */
+  function setQuantity(next: number | ((q: number) => number)) {
+    setPct(null);
+    setTypedQty(typeof next === "function" ? next(quantity) : next);
   }
 
   function submit() {
@@ -70,58 +118,8 @@ export default function TradePanel({ code, price, prevClose, onOrder, onClose, b
 
   const rate = (p: number) => ((p - prevClose) / prevClose) * 100;
 
-  const bookSection = (
-      <section className="ws-panel ws-book" aria-label="호가창">
-        <div className="ws-book-title">
-          <h2>호가</h2>
-          <small className={isLive ? "live" : "mock"}>{isLive ? `실시간 · ${live?.time ?? ""}` : "예시 호가 · 연결 안 됨"}</small>
-        </div>
-        <div className="ws-book-head">
-          <span>잔량</span>
-          <span>호가</span>
-          <span>등락률</span>
-        </div>
-        <ol className="ws-book-list">
-          {[...book.asks.map((l) => ({ ...l, kind: "ask" })), ...book.bids.map((l) => ({ ...l, kind: "bid" }))].map((level) => (
-            <li key={`${level.kind}-${level.price}`} className={`${level.kind}${level.price === price ? " current" : ""}`}>
-              <button
-                onClick={() => {
-                  setOrderType("지정가");
-                  setOrderPrice(level.price);
-                  setDone(null);
-                }}
-                title="이 가격으로 주문 가격 입력"
-              >
-                <span className="qty">
-                  <i style={{ width: `${(level.quantity / maxQuantity) * 100}%` }} />
-                  <em>{won(level.quantity)}</em>
-                </span>
-                <span className={`price ${level.price >= prevClose ? "up" : "down"}`}>{won(level.price)}</span>
-                <span className={`rate ${level.price >= prevClose ? "up" : "down"}`}>
-                  {rate(level.price) >= 0 ? "+" : ""}
-                  {rate(level.price).toFixed(2)}%
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
-        {isLive && live && (
-          <div className="ws-book-total">
-            <span>
-              매도 잔량 <b className="down">{won(live.totalAsk)}</b>
-            </span>
-            <span>
-              매수 잔량 <b className="up">{won(live.totalBid)}</b>
-            </span>
-          </div>
-        )}
-        <small className="ws-muted">호가를 누르면 주문 가격에 들어가요.</small>
-      </section>
-  );
-
   return (
     <>
-      {bookTarget && createPortal(bookSection, bookTarget)}
       <section className="ws-panel ws-order" aria-label="매매 창">
         <div className="ws-order-title">
           <h2>매매</h2>
@@ -130,74 +128,194 @@ export default function TradePanel({ code, price, prevClose, onOrder, onClose, b
           </button>
         </div>
 
-        <div className="ws-seg ws-side-tabs" role="tablist">
-          {(["매수", "매도"] as const).map((s) => (
-            <button key={s} role="tab" aria-selected={side === s} className={side === s ? `active ${s === "매수" ? "buy" : "sell"}` : ""} onClick={() => { setSide(s); setDone(null); }}>
-              {s}
-            </button>
-          ))}
+        <div className="ws-seg ws-trade-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === "order"} className={tab === "order" ? "active" : ""} onClick={() => setTab("order")}>
+            직접 주문
+          </button>
+          <button role="tab" aria-selected={tab === "algo"} className={tab === "algo" ? "active" : ""} onClick={() => setTab("algo")}>
+            알고리즘
+          </button>
         </div>
 
-        <div className="ws-seg ws-type-tabs">
-          {(["지정가", "시장가"] as const).map((t) => (
-            <button key={t} className={orderType === t ? "active" : ""} onClick={() => setOrderType(t)}>
-              {t}
-            </button>
-          ))}
-        </div>
+        {tab === "algo" ? (
+          <AlgoPanel symbol={{ code, name: symbolName }} />
+        ) : (
+          <>
+            <div className="ws-hoga" aria-label="호가">
+              <div className="ws-hoga-head">
+                <small className={!isLive ? "mock" : isRegularPhase(phase) ? "live" : "closed"} title={isLive && !isRegularPhase(phase) ? "정규장이 아니라 호가가 바뀌지 않아요. 마지막 정규장 호가예요." : undefined}>
+                  {!isLive ? "예시 호가 · 연결 안 됨" : isRegularPhase(phase) ? `실시간 호가 · ${live?.time ?? ""}` : `${PHASE_LABEL[phase]} · 마지막 호가 ${live?.time ?? ""}`}
+                </small>
+                <button onClick={() => setDepth(depth === 5 ? 10 : 5)} aria-expanded={depth === 10}>
+                  {depth === 5 ? "10단계 ▾" : "5단계 ▴"}
+                </button>
+              </div>
+              <div className="ws-hoga-ratio" title="총잔량 비율">
+                <span className="down">매도 {(100 - bidShare).toFixed(0)}%</span>
+                <div>
+                  <i style={{ width: `${100 - bidShare}%` }} />
+                </div>
+                <span className="up">매수 {bidShare.toFixed(0)}%</span>
+              </div>
+              <ol className="ws-hoga-list">
+                {[...asks.map((l) => ({ ...l, kind: "ask" as const })), ...bids.map((l) => ({ ...l, kind: "bid" as const }))].map((level) => {
+                  const r = rate(level.price);
+                  const bar = (
+                    <span className={`q ${level.kind}`}>
+                      <i
+                        style={{
+                          width: `${(level.quantity / maxQuantity) * 100}%`,
+                        }}
+                      />
+                      <em>{won(level.quantity)}</em>
+                    </span>
+                  );
+                  return (
+                    <li
+                      key={`${level.kind}-${level.price}`}
+                      className={`${level.kind}${level.price === price ? " current" : ""}${orderType === "지정가" && level.price === orderPrice ? " picked" : ""}`}
+                    >
+                      <button
+                        onClick={() => {
+                          setOrderType("지정가");
+                          setOrderPrice(level.price);
+                          setDone(null);
+                        }}
+                        title="이 가격을 주문 가격으로"
+                      >
+                        {level.kind === "ask" ? bar : <span className="q" />}
+                        <span className={`p ${r > 0 ? "up" : r < 0 ? "down" : ""}`}>
+                          <b>{won(level.price)}</b>
+                          <small>
+                            {r > 0 ? "+" : ""}
+                            {r.toFixed(2)}%
+                          </small>
+                        </span>
+                        {level.kind === "bid" ? bar : <span className="q" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+              <div className="ws-hoga-total">
+                <span>
+                  <b className="down">{won(totalAsk)}</b> 매도 총잔량
+                </span>
+                <span>
+                  매수 총잔량 <b className="up">{won(totalBid)}</b>
+                </span>
+              </div>
+            </div>
 
-        <label className="ws-field">
-          <span>가격</span>
-          <div className="ws-stepper">
-            <button disabled={orderType === "시장가"} onClick={() => setOrderPrice((p) => Math.max(mock.step, p - mock.step))} aria-label="한 호가 내리기">
-              −
-            </button>
-            <input
-              inputMode="numeric"
-              disabled={orderType === "시장가"}
-              value={orderType === "시장가" ? "시장가" : won(orderPrice)}
-              onChange={(e) => setOrderPrice(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
-            />
-            <button disabled={orderType === "시장가"} onClick={() => setOrderPrice((p) => p + mock.step)} aria-label="한 호가 올리기">
-              +
-            </button>
-          </div>
-        </label>
+            <div className="ws-seg ws-side-tabs" role="tablist">
+              {(["매수", "매도"] as const).map((s) => (
+                <button
+                  key={s}
+                  role="tab"
+                  aria-selected={side === s}
+                  className={side === s ? `active ${s === "매수" ? "buy" : "sell"}` : ""}
+                  onClick={() => {
+                    setSide(s);
+                    setPct(null);
+                    setDone(null);
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
 
-        <label className="ws-field">
-          <span>수량</span>
-          <div className="ws-stepper">
-            <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="1주 빼기">
-              −
-            </button>
-            <input inputMode="numeric" value={won(quantity)} onChange={(e) => setQuantity(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)} />
-            <button onClick={() => setQuantity((q) => q + 1)} aria-label="1주 더하기">
-              +
-            </button>
-          </div>
-        </label>
+            <div className="ws-seg ws-type-tabs">
+              {(["지정가", "시장가"] as const).map((t) => (
+                <button key={t} className={orderType === t ? "active" : ""} onClick={() => setOrderType(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
 
-        {side === "매수" && (
-          <div className="ws-ratio">
-            {[0.1, 0.25, 0.5, 1].map((r) => (
-              <button key={r} onClick={() => fillRatio(r)}>
-                {r === 1 ? "최대" : `${r * 100}%`}
-              </button>
-            ))}
-          </div>
+            <label className="ws-field">
+              <span>가격</span>
+              <div className="ws-stepper">
+                <button disabled={orderType === "시장가"} onClick={() => setOrderPrice((p) => Math.max(mock.step, p - mock.step))} aria-label="한 호가 내리기">
+                  −
+                </button>
+                <input
+                  inputMode="numeric"
+                  disabled={orderType === "시장가"}
+                  value={orderType === "시장가" ? "시장가" : won(orderPrice)}
+                  onChange={(e) => setOrderPrice(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
+                />
+                <button disabled={orderType === "시장가"} onClick={() => setOrderPrice((p) => p + mock.step)} aria-label="한 호가 올리기">
+                  +
+                </button>
+              </div>
+            </label>
+
+            <label className="ws-field">
+              <span>수량</span>
+              <div className="ws-stepper">
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="1주 빼기">
+                  −
+                </button>
+                <input inputMode="numeric" value={won(quantity)} onChange={(e) => setQuantity(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)} />
+                <button onClick={() => setQuantity((q) => q + 1)} aria-label="1주 더하기">
+                  +
+                </button>
+              </div>
+            </label>
+
+            {/* 수량 비율: 가능 수량의 0~100% */}
+            <div className="ws-pct">
+              <div className="ws-pct-track">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={percent}
+                  onChange={(e) => setPercent(Number(e.target.value))}
+                  disabled={maxQty === 0}
+                  aria-label="가능 수량 대비 비율"
+                  style={{ ["--pct" as string]: `${percent}%` }}
+                  className={side === "매수" ? "buy" : "sell"}
+                />
+              </div>
+              <div className="ws-pct-marks">
+                {[0, 25, 50, 75, 100].map((p) => (
+                  <button key={p} className={Math.round(percent) >= p && maxQty > 0 ? "on" : ""} onClick={() => setPercent(p)} disabled={maxQty === 0}>
+                    {p}%
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <dl className="ws-order-sum">
+              <dt>{side === "매수" ? "매수 가능" : "매도 가능"}</dt>
+              <dd>
+                {won(maxQty)}주{side === "매수" ? <small> · {won(BUYING_POWER)}원</small> : <small> · 보유</small>}
+              </dd>
+              <dt>주문 금액</dt>
+              <dd>{won(total)}원</dd>
+              <dt title={ratesKnown ? `모의투자 수수료율 ${pctText(rates.fee)}` : undefined}>수수료{ratesKnown && <small> {pctText(rates.fee)}</small>}</dt>
+              <dd>{ratesKnown ? `${won(cost.fee)}원` : "—"}</dd>
+              {side === "매도" && (
+                <>
+                  <dt title="증권거래세 + 농어촌특별세">세금{ratesKnown && <small> {pctText(rates.sellTax)}</small>}</dt>
+                  <dd>{ratesKnown ? `${won(cost.tax)}원` : "—"}</dd>
+                </>
+              )}
+              <dt className="ws-order-settle">{side === "매수" ? "총 결제 금액" : "받을 금액"}</dt>
+              <dd className={`ws-order-settle${overBudget ? " down" : ""}`}>{won(cost.settle)}원</dd>
+            </dl>
+            {!ratesKnown && costs?.code === code && <small className="ws-order-warn">수수료·세금 요율을 못 받아 비용 없이 계산했어요</small>}
+            {overBudget && <small className="ws-order-warn">{side === "매수" ? "주문 가능 금액을 넘었어요" : "보유 수량보다 많아요"}</small>}
+
+            <button className={`ws-order-submit ${side === "매수" ? "buy" : "sell"}`} disabled={quantity < 1 || overBudget || effectivePrice <= 0} onClick={submit}>
+              {side} 주문
+            </button>
+            {done ? <p className="ws-order-done">{done}</p> : <small className="ws-muted">모의 주문이에요. 체결되면 노트와 연결할 수 있어요.</small>}
+          </>
         )}
-
-        <dl className="ws-order-sum">
-          <dt>주문 가능</dt>
-          <dd>{won(BUYING_POWER)}원</dd>
-          <dt>주문 금액</dt>
-          <dd className={overBudget ? "down" : ""}>{won(total)}원</dd>
-        </dl>
-
-        <button className={`ws-order-submit ${side === "매수" ? "buy" : "sell"}`} disabled={quantity < 1 || overBudget || effectivePrice <= 0} onClick={submit}>
-          {side} 주문
-        </button>
-        {done ? <p className="ws-order-done">{done}</p> : <small className="ws-muted">모의 주문이에요. 체결되면 노트와 연결할 수 있어요.</small>}
       </section>
     </>
   );

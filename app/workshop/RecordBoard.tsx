@@ -1,12 +1,26 @@
 "use client";
-// 기록: 종목·기간을 골라 조회하고, 결과는 날짜별로 쌓인다. + 로 메모를 바로 남긴다
-// 사전/사후/검증 대기는 메모·체결 시각으로 자동 분류
-import { useState } from "react";
+// 기록: 종목·기간을 골라 조회하고, 결과는 날짜별로 쌓인다.
+// + 로 바로 남기기: 종목을 검색해서 그 종목에 관한 메모, 또는 종목 없이 뉴스·거시경제·시장에 관한 내 생각
+// 종목 메모의 사전/사후/검증 대기는 메모·체결 시각으로 자동 분류
+import { useEffect, useState } from "react";
 import type { Execution } from "../../lib/ai-link";
-import type { SymbolInfo } from "../../lib/market-data";
-import { addRecord, classify, dateLabel, daysAgo, groupByDate, kstNow, queryRecords, useRecords, type RecordKind, type RecordQuery, type TradeRecord } from "../../lib/records";
+import { searchSymbols, type SymbolInfo } from "../../lib/market-data";
+import {
+  RECORD_TOPICS,
+  addRecord,
+  classify,
+  dateLabel,
+  daysAgo,
+  groupByDate,
+  kstNow,
+  queryRecords,
+  useRecords,
+  type RecordKind,
+  type RecordQuery,
+  type TradeRecord,
+} from "../../lib/records";
 
-const KIND_LABEL: Record<RecordKind, string> = { pre: "사전 기록", post: "사후 기록", pending: "검증 대기" };
+const KIND_LABEL: Record<RecordKind, string> = { pre: "사전 기록", post: "사후 기록", pending: "검증 대기", thought: "생각" };
 const hhmm = (time: string) => time.slice(0, 5);
 
 type Period = "today" | "week" | "month" | "custom";
@@ -19,6 +33,7 @@ const PERIODS: { key: Period; label: string; days?: number }[] = [
 
 function flow(r: TradeRecord) {
   const kind = classify(r);
+  if (kind === "thought") return `${r.topic ?? "메모"} · ${hhmm(r.noteTime)}`;
   const trade = r.side ? ` · ${r.side} ${(r.quantity ?? 0).toLocaleString("ko-KR")}주` : "";
   if (kind === "pending") return `메모 ${hhmm(r.noteTime)} · 연결된 체결 없음`;
   return kind === "pre" ? `메모 ${hhmm(r.noteTime)} → 체결 ${hhmm(r.executionTime ?? "")}${trade}` : `체결 ${hhmm(r.executionTime ?? "")}${trade} → 메모 ${hhmm(r.noteTime)}`;
@@ -34,8 +49,6 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
   const [query, setQuery] = useState<RecordQuery & { label: string }>(() => ({ symbol: null, from: daysAgo(6), to: kstNow().date, label: "전체" }));
 
   const [composing, setComposing] = useState(false);
-  const [text, setText] = useState("");
-  const [link, setLink] = useState(true);
 
   function pickPeriod(next: Period) {
     setPeriod(next);
@@ -53,24 +66,6 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
   const shown = queryRecords(records, query);
   const groups = groupByDate(shown);
 
-  function save() {
-    if (!text.trim()) return;
-    const now = kstNow();
-    const linked = link && lastExecution ? lastExecution : null;
-    addRecord({
-      date: now.date,
-      noteTime: now.time,
-      executionTime: linked?.time ?? null,
-      side: linked?.side,
-      quantity: linked?.quantity,
-      symbol: symbol.code,
-      symbolName: symbol.name,
-      text: text.trim(),
-    });
-    setText("");
-    setComposing(false);
-  }
-
   return (
     <section className="ws-records" aria-label="기록">
       <header className="ws-records-head">
@@ -78,7 +73,7 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
         <button className={`ws-rec-add${composing ? " open" : ""}`} onClick={() => setComposing(!composing)} aria-expanded={composing} aria-label="기록 추가" title="기록 추가">
           +
         </button>
-        <small>체결 전 메모는 사전, 체결 후 메모는 사후로 자동 분류돼요.</small>
+        <small>종목 메모는 체결 전이면 사전, 체결 후면 사후로 자동 분류돼요. 뉴스·거시경제 같은 생각도 남길 수 있어요.</small>
       </header>
 
       <form
@@ -88,7 +83,7 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
           search();
         }}
       >
-        <span className="ws-rec-scope">전체 종목</span>
+        <span className="ws-rec-scope">전체</span>
         <div className="ws-seg-group" role="group" aria-label="기간">
           {PERIODS.map((p) => (
             <button type="button" key={p.key} className={period === p.key ? "active" : ""} onClick={() => pickPeriod(p.key)}>
@@ -106,26 +101,7 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
         </button>
       </form>
 
-      {composing && (
-        <div className="ws-rec-compose">
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} autoFocus placeholder={`${symbol.name} 매매 메모`} aria-label="새 기록 메모" />
-          <div>
-            {lastExecution ? (
-              <label>
-                <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} />
-                체결 연결 · {hhmm(lastExecution.time)} {lastExecution.side} {lastExecution.quantity.toLocaleString("ko-KR")}주
-              </label>
-            ) : (
-              <small>체결이 없어 검증 대기로 저장돼요. 오늘 이 종목을 체결하면 자동으로 연결돼요.</small>
-            )}
-            <small>저장한 기록은 고치거나 지울 수 없어요.</small>
-            <button onClick={() => setComposing(false)}>취소</button>
-            <button className="primary" onClick={save} disabled={!text.trim()}>
-              저장
-            </button>
-          </div>
-        </div>
-      )}
+      {composing && <Composer current={symbol} lastExecution={lastExecution} onDone={() => setComposing(false)} />}
 
       <p className="ws-rec-summary">
         {query.label} · {dateLabel(query.from)} ~ {dateLabel(query.to)} · <strong>{shown.length}건</strong>
@@ -143,13 +119,15 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
               {g.items.map((r) => {
                 const kind = classify(r);
                 return (
-                  <article key={r.id} className="ws-rec-card">
-                    <span className={`ws-badge ${kind}`}>{KIND_LABEL[kind]}</span>
+                  <article key={r.id} className={`ws-rec-card${kind === "thought" ? " thought" : ""}`}>
+                    <span className={`ws-badge ${kind}`}>{kind === "thought" ? `생각 · ${r.topic ?? "기타"}` : KIND_LABEL[kind]}</span>
                     <p>{r.text}</p>
                     <small>{flow(r)}</small>
-                    <small>
-                      {r.symbolName} · {r.symbol}
-                    </small>
+                    {r.symbol && (
+                      <small>
+                        {r.symbolName} · {r.symbol}
+                      </small>
+                    )}
                   </article>
                 );
               })}
@@ -158,5 +136,154 @@ export default function RecordBoard({ symbol, lastExecution }: { symbol: SymbolI
         ))
       )}
     </section>
+  );
+}
+
+/** + 입력창: 무엇에 관한 기록인지(종목 / 시장·뉴스·거시) 고르고 쓴다 */
+function Composer({ current, lastExecution, onDone }: { current: SymbolInfo; lastExecution: Execution | null; onDone: () => void }) {
+  const [about, setAbout] = useState<"stock" | "market">("stock");
+  const [picked, setPicked] = useState<SymbolInfo>(current);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<SymbolInfo[]>([]);
+  const [open, setOpen] = useState(false);
+  const [topic, setTopic] = useState<string>(RECORD_TOPICS[0]);
+  const [text, setText] = useState("");
+  const [link, setLink] = useState(true);
+
+  // 종목 검색 (0.2초 디바운스)
+  useEffect(() => {
+    if (!open || !q.trim()) return;
+    const ac = new AbortController();
+    const timer = setTimeout(() => {
+      searchSymbols(q.trim(), ac.signal)
+        .then(setResults)
+        .catch(() => {
+          if (!ac.signal.aborted) setResults([]);
+        });
+    }, 200);
+    return () => {
+      clearTimeout(timer);
+      ac.abort();
+    };
+  }, [q, open]);
+
+  // 체결 연결은 지금 차트에 띄운 종목의 체결만 (다른 종목은 오늘 체결되면 자동 연결)
+  const canLink = about === "stock" && !!lastExecution && picked.code === current.code;
+
+  function save() {
+    if (!text.trim()) return;
+    const now = kstNow();
+    if (about === "market") {
+      addRecord({ date: now.date, noteTime: now.time, executionTime: null, symbol: null, symbolName: null, topic, text: text.trim() });
+    } else {
+      const linked = canLink && link ? lastExecution : null;
+      addRecord({
+        date: now.date,
+        noteTime: now.time,
+        executionTime: linked?.time ?? null,
+        side: linked?.side,
+        quantity: linked?.quantity,
+        symbol: picked.code,
+        symbolName: picked.name,
+        text: text.trim(),
+      });
+    }
+    onDone();
+  }
+
+  return (
+    <div className="ws-rec-compose">
+      <div className="ws-rec-about">
+        <div className="ws-seg-group" role="group" aria-label="무엇에 관한 기록">
+          <button type="button" className={about === "stock" ? "active" : ""} onClick={() => setAbout("stock")}>
+            종목
+          </button>
+          <button type="button" className={about === "market" ? "active" : ""} onClick={() => setAbout("market")}>
+            시장·뉴스·거시
+          </button>
+        </div>
+
+        {about === "stock" ? (
+          <div className="ws-rec-symbol">
+            <input
+              value={open ? q : `${picked.name} · ${picked.code}`}
+              onFocus={() => {
+                setQ("");
+                setResults([]);
+                setOpen(true);
+              }}
+              onChange={(e) => setQ(e.target.value)}
+              onBlur={() => setTimeout(() => setOpen(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && results[0]) {
+                  e.preventDefault();
+                  setPicked(results[0]);
+                  setOpen(false);
+                }
+                if (e.key === "Escape") setOpen(false);
+              }}
+              placeholder="종목명 또는 코드 검색"
+              aria-label="종목 검색"
+            />
+            {open && results.length > 0 && (
+              <ul className="ws-search-list" role="listbox">
+                {results.map((s) => (
+                  <li key={s.code}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setPicked(s);
+                        setOpen(false);
+                      }}
+                      role="option"
+                      aria-selected={s.code === picked.code}
+                    >
+                      <span>{s.code}</span>
+                      <strong>{s.name}</strong>
+                      <small>{s.market}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <div className="ws-seg-group ws-rec-topics" role="group" aria-label="주제">
+            {RECORD_TOPICS.map((t) => (
+              <button type="button" key={t} className={topic === t ? "active" : ""} onClick={() => setTopic(t)}>
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        autoFocus
+        placeholder={about === "stock" ? `${picked.name}에 관한 매매 메모` : `${topic}에 관한 내 생각 (예: 금리 인하 기대로 성장주 강세 예상)`}
+        aria-label="새 기록 메모"
+      />
+      <div>
+        {about === "market" ? (
+          <small>종목과 상관없는 생각으로 저장돼요.</small>
+        ) : canLink && lastExecution ? (
+          <label>
+            <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} />
+            체결 연결 · {hhmm(lastExecution.time)} {lastExecution.side} {lastExecution.quantity.toLocaleString("ko-KR")}주
+          </label>
+        ) : (
+          <small>체결이 없어 검증 대기로 저장돼요. 오늘 이 종목을 체결하면 자동으로 연결돼요.</small>
+        )}
+        <small>저장한 기록은 고치거나 지울 수 없어요.</small>
+        <button onClick={onDone}>취소</button>
+        <button className="primary" onClick={save} disabled={!text.trim()}>
+          저장
+        </button>
+      </div>
+    </div>
   );
 }

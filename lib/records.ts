@@ -12,15 +12,22 @@ export type TradeRecord = {
   executionTime: string | null;
   side?: string;
   quantity?: number;
-  symbol: string;
-  symbolName: string;
+  /** 종목 기록이면 종목코드·이름. 시장·뉴스·거시경제 같은 생각 메모는 null */
+  symbol: string | null;
+  symbolName: string | null;
+  /** 종목 없는 메모의 주제 (뉴스, 거시경제, 시장 흐름, 기타) */
+  topic?: string;
   text: string;
 };
 
-export type RecordKind = "pre" | "post" | "pending";
+/** 종목 없는 메모의 주제 */
+export const RECORD_TOPICS = ["뉴스", "거시경제", "시장 흐름", "업종·테마", "기타"] as const;
 
-/** 체결 전에 확정된 메모 = 사전, 체결 뒤 = 사후, 연결된 체결 없음 = 검증 대기 */
-export function classify(r: Pick<TradeRecord, "noteTime" | "executionTime">): RecordKind {
+export type RecordKind = "pre" | "post" | "pending" | "thought";
+
+/** 체결 전에 확정된 메모 = 사전, 체결 뒤 = 사후, 연결된 체결 없음 = 검증 대기, 종목 없는 메모 = 생각 */
+export function classify(r: Pick<TradeRecord, "noteTime" | "executionTime" | "symbol">): RecordKind {
+  if (!r.symbol) return "thought";
   if (r.executionTime === null) return "pending";
   return r.noteTime < r.executionTime ? "pre" : "post";
 }

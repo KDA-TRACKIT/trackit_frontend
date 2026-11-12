@@ -21,7 +21,7 @@
 
 /* 본문 그리드: 차트 | 오른쪽 패널 */
 /* 차트와 노트는 같은 높이(한 줄). 노트 내용이 길면 노트 안에서 스크롤 */
-.ws-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; grid-template-rows:640px; gap:16px; margin-top:16px; }
+.ws-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; grid-template-rows:minmax(640px,auto); gap:16px; margin-top:16px; }
 .ws-side { display:grid; grid-template-columns:minmax(0,1fr); min-height:0; gap:2px; }
 .ws-side > .ws-panel { min-height:0; overflow-y:auto; }
 .ws-tag { margin-left:6px; padding:2px 7px; border-radius:2px; background:var(--ws-soft); color:#8a6d3b; font-size:11px; font-weight:700; vertical-align:2px; }
@@ -66,8 +66,7 @@
 
 /* 차트 */
 .ws-chart { display:grid; height:100%; min-height:0; grid-template-rows:38px 1fr 45px; border:1px solid var(--ws-line); background:#fff; }
-.ws-chart:fullscreen { width:100vw; height:100vh; border:0; }
-.ws-chart:fullscreen::backdrop { background:#fff; }
+.ws-chart.expanded { position:fixed; z-index:200; inset:0; width:100vw; height:100vh; border:0; }
 .ws-chart-toolbar { display:flex; align-items:center; gap:4px; padding-left:10px; border-bottom:1px solid var(--ws-line); }
 .ws-intervals { display:flex; gap:4px; }
 .ws-intervals button { width:50px; height:34px; font-size:13px; }
@@ -84,7 +83,9 @@
 .ws-more { position:absolute; top:6px; right:2px; color:#666; font-size:10px; line-height:1; }
 .ws-draw-group { position:relative; }
 .ws-draw-divider { width:32px; height:1px; margin:4px 0; background:var(--ws-line); }
-.ws-flyout { position:absolute; z-index:5; top:0; left:44px; min-width:150px; padding:6px; border:1px solid var(--ws-line); background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.ws-flyout { position:absolute; z-index:5; top:0; left:44px; min-width:190px; max-height:min(520px,calc(100vh - 160px)); overflow-y:auto; padding:6px; border:1px solid var(--ws-line); background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.ws-flyout h5 { margin:6px 8px 2px; padding-top:6px; border-top:1px solid #f0f0f0; color:#999; font-size:10.5px; font-weight:700; }
+.ws-flyout > div:first-of-type h5 { border-top:0; padding-top:0; }
 .ws-flyout p { padding:4px 8px 6px; color:var(--ws-muted); font-size:11px; }
 .ws-flyout button { display:block; width:100%; height:30px; padding:0 8px; text-align:left; font-size:13px; }
 .ws-flyout button.active,.ws-flyout button:hover { background:var(--ws-active); }
@@ -157,23 +158,6 @@
 
 /* 매매하기: 호가창 | 매매 창 */
 .ws-topbar-right .ws-trade.open { background:#191919; }
-.ws-book { display:flex; flex-direction:column; padding-bottom:12px; }
-.ws-book h2, .ws-order h2 { border-bottom:0; padding-bottom:12px; }
-.ws-book-head { display:grid; grid-template-columns:1fr 1fr 64px; padding:0 6px 6px; border-bottom:1px solid var(--ws-line); color:var(--ws-muted); font-size:11.5px; }
-.ws-book-head span:nth-child(2) { text-align:center; } .ws-book-head span:last-child { text-align:right; }
-.ws-book-list { margin:0; padding:0; list-style:none; }
-.ws-book-list button { display:grid; width:100%; height:24px; grid-template-columns:1fr 1fr 64px; align-items:center; padding:0 6px; font-size:12.5px; font-variant-numeric:tabular-nums; }
-.ws-book-list li.ask button { background:#f3f7fe; }
-.ws-book-list li.bid button { background:#fef4f5; }
-.ws-book-list li.current button { outline:1.5px solid #191919; outline-offset:-1.5px; font-weight:700; }
-.ws-book-list button:hover { filter:brightness(.96); }
-.ws-book-list .qty { position:relative; display:block; height:18px; }
-.ws-book-list .qty i { position:absolute; right:0; top:2px; bottom:2px; background:rgba(22,102,240,.14); }
-.ws-book-list li.bid .qty i { background:rgba(240,41,79,.14); }
-.ws-book-list .qty em { position:relative; display:block; padding-right:4px; line-height:18px; text-align:right; color:#444; font-size:11.5px; }
-.ws-book-list .price { text-align:center; font-weight:700; }
-.ws-book-list .rate { text-align:right; font-size:11.5px; }
-.ws-book > .ws-muted { margin-top:8px; }
 .ws-order { display:flex; flex-direction:column; gap:12px; }
 .ws-order-title { display:flex; align-items:center; justify-content:space-between; }
 .ws-order-title h2 { padding-bottom:0; }
@@ -196,7 +180,8 @@
 .ws-order-sum { display:grid; grid-template-columns:auto 1fr; gap:6px 8px; margin:0; padding-top:10px; border-top:1px solid var(--ws-line); font-size:12.5px; }
 .ws-order-sum dt { color:#666; }
 .ws-order-sum dd { margin:0; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.ws-order-submit { height:42px; color:#fff; font-size:14px; font-weight:700; }
+/* 매수·매도 주문 버튼: 매매 창 안에서 줄어들지 않게 고정 높이 */
+.ws-order-submit { flex:none; height:50px; min-height:50px; border-radius:4px; color:#fff; font-size:15px; font-weight:700; }
 .ws-order-submit.buy { background:var(--ws-up); }
 .ws-order-submit.sell { background:var(--ws-down); }
 .ws-order-done { padding:8px 10px; background:var(--ws-soft); font-size:12px; line-height:1.5; word-break:keep-all; }
@@ -218,13 +203,6 @@
 
 /* AI 분석 → 위험 검증 → 승인 → 주문 (components/ai, components/trading) */
 .ws-save-msg { max-width:220px; overflow:hidden; color:#1f8a4c; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
-.ws-indicator { position:relative; }
-.ws-indicator .ws-tool-text.open { background:var(--ws-active); }
-.ws-indicator-menu { position:absolute; z-index:8; top:36px; left:0; min-width:150px; padding:6px; border:1px solid var(--ws-line); background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08); }
-.ws-indicator-menu p { padding:4px 6px 6px; color:var(--ws-muted); font-size:11px; }
-.ws-indicator-menu label { display:flex; align-items:center; gap:8px; padding:6px; font-size:13px; cursor:pointer; }
-.ws-indicator-menu label:hover { background:var(--ws-active); }
-.ws-indicator-menu i { width:14px; height:3px; border-radius:2px; }
 
 .ai-panel { grid-column:1 / -1; display:flex; flex-direction:column; gap:12px; }
 .ai-panel-head { display:flex; align-items:center; justify-content:space-between; }
@@ -394,23 +372,304 @@
   .ws-company-grid dl + dl { border-left:0; padding-left:0; }
 }
 
-/* 호가 출처 · 총잔량 */
-.ws-book-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:12px; }
-.ws-book-title h2 { padding-bottom:0 !important; }
-.ws-book-title small { font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.ws-book-title small.live { color:#1f8a4c; }
-.ws-book-title small.mock { color:#b26a00; }
-.ws-book-total { display:flex; justify-content:space-between; margin-top:8px; padding:6px; border-top:1px solid var(--ws-line); font-size:12px; color:#666; font-variant-numeric:tabular-nums; }
-.ws-book-total b { margin-left:4px; }
 
-/* 매매 중 아래쪽: 호가 | 기업 정보 */
-.ws-trade-bottom { display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; align-items:start; margin-top:16px; }
-.ws-trade-bottom .ws-company { margin-top:0; }
-.ws-book-slot > .ws-book { border:1px solid var(--ws-line); }
-.ws-trade-bottom .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-.ws-trade-bottom .ws-company-grid dl:nth-child(3), .ws-trade-bottom .ws-company-range { border-left:0; padding-left:0; border-top:1px solid var(--ws-line); }
-.ws-trade-bottom .ws-company-grid dl:nth-child(4) { border-top:1px solid var(--ws-line); }
 .ws-rec-scope { padding:0 4px; color:#555; font-size:12.5px; font-weight:700; }
-@media (max-width:900px) {
-  .ws-trade-bottom { grid-template-columns:minmax(0,1fr); }
+
+/* 매매 창: 오른쪽 열을 조금 넓혀 호가 3열을 담는다 */
+/* 매매 창도 AI 노트와 같은 폭 */
+.ws-grid.trade { grid-template-columns:minmax(0,1fr) 320px; }
+.ws-hoga-list button { grid-template-columns:1fr 92px 1fr; }
+.ws-order { gap:10px; }
+.ws-hoga { display:flex; flex-direction:column; gap:6px; }
+.ws-hoga-head { display:flex; align-items:center; justify-content:space-between; }
+.ws-hoga-head small { font-size:11px; font-variant-numeric:tabular-nums; }
+.ws-hoga-head small.live { color:#1f8a4c; } .ws-hoga-head small.mock { color:#b26a00; }
+.ws-hoga-head button { height:22px; padding:0 8px; border:1px solid var(--ws-line); color:#555; font-size:11px; }
+.ws-hoga-ratio { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:6px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; }
+.ws-hoga-ratio div { height:6px; border-radius:3px; background:var(--ws-up); overflow:hidden; }
+.ws-hoga-ratio i { display:block; height:100%; background:var(--ws-down); }
+.ws-hoga-list { margin:0; padding:0; list-style:none; border-top:1px solid var(--ws-line); border-bottom:1px solid var(--ws-line); }
+.ws-hoga-list button { display:grid; width:100%; height:26px; grid-template-columns:1fr 104px 1fr; align-items:center; font-variant-numeric:tabular-nums; }
+.ws-hoga-list li.ask button { background:#f5f8fe; }
+.ws-hoga-list li.bid button { background:#fef6f7; }
+.ws-hoga-list button:hover { filter:brightness(.95); }
+.ws-hoga-list .q { position:relative; height:100%; }
+.ws-hoga-list .q i { position:absolute; top:4px; bottom:4px; }
+.ws-hoga-list .q.ask i { right:0; background:rgba(22,102,240,.22); }
+.ws-hoga-list .q.bid i { left:0; background:rgba(240,41,79,.22); }
+.ws-hoga-list .q em { position:relative; display:block; padding:0 6px; color:#333; font-size:12px; font-style:normal; line-height:26px; }
+.ws-hoga-list .q.ask em { text-align:right; }
+.ws-hoga-list .p { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; border-left:1px solid #fff; border-right:1px solid #fff; background:#fff; line-height:1.05; }
+.ws-hoga-list .p b { font-size:13px; font-weight:700; }
+.ws-hoga-list .p small { font-size:9.5px; opacity:.8; }
+.ws-hoga-list li.current .p { outline:2px solid #191919; outline-offset:-2px; }
+.ws-hoga-list li.picked .p { background:#fff6d6; }
+.ws-hoga-list li.bid:first-of-type, .ws-hoga-list li.ask + li.bid { border-top:2px solid #191919; }
+.ws-hoga-total { display:flex; justify-content:space-between; font-size:11px; color:#666; font-variant-numeric:tabular-nums; }
+.ws-hoga-total b { font-size:12px; }
+.ws-order h2 { border-bottom:0; padding-bottom:0; }
+/* 좁아지면 시세 옆 거래량 문구가 먼저 줄어든다 (버튼 글자는 줄바꿈 금지) */
+.ws-topbar-right button { white-space:nowrap; }
+.ws-quote { min-width:0; }
+.ws-quote small { flex:0 1 230px; width:auto; min-width:0; }
+
+/* 지표: 켜진 차트 위 지표 이름 · 메뉴 */
+.ws-legend-ind { position:absolute; z-index:2; top:56px; left:17px; display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; font-weight:700; pointer-events:none; }
+
+/* 지표 창 */
+.ind-modal { display:flex; flex-direction:column; width:min(860px,100%); height:min(560px,calc(100vh - 32px)); background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.ind-modal header { display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid var(--ws-line); }
+.ind-modal header h2 { font-size:17px; font-weight:700; white-space:nowrap; }
+.ind-modal header input { flex:1; height:36px; padding:0 12px; border:1px solid var(--ws-line); background:#f7f7f7; font:14px Pretendard,sans-serif; outline:0; }
+.ind-modal header input:focus { border-color:#344d7d; background:#fff; }
+.ind-close { width:32px; height:32px; color:#666; font-size:14px; }
+.ind-body { display:grid; flex:1; min-height:0; grid-template-columns:120px minmax(0,1fr) 300px; }
+.ind-body nav { display:flex; flex-direction:column; padding:8px 0; border-right:1px solid var(--ws-line); }
+.ind-body nav button { display:flex; justify-content:space-between; padding:10px 14px; color:#555; font-size:13px; text-align:left; }
+.ind-body nav button small { color:#aaa; font-size:11px; }
+.ind-body nav button.active { background:var(--ws-active); color:var(--ws-text); font-weight:700; }
+.ind-body nav button.fav { color:#b26a00; }
+.ind-list { margin:0; padding:4px 0; overflow-y:auto; list-style:none; }
+.ind-list li { display:flex; align-items:stretch; }
+.ind-list li:hover { background:#f5f7fb; }
+.ind-star { flex:none; width:36px; padding-left:6px; color:#bbb; font-size:17px; }
+.ind-star:hover { color:#f59f00; }
+.ind-star.on { color:#f59f00; }
+.ind-add { display:grid; flex:1; min-width:0; grid-template-columns:minmax(0,1fr) 24px; gap:2px 8px; padding:9px 16px 9px 2px; text-align:left; }
+.ind-add > span { display:flex; align-items:baseline; gap:8px; }
+.ind-list strong { font-size:14px; }
+.ind-list em { color:#888; font-size:11px; font-style:normal; }
+.ind-list b { padding:1px 6px; border-radius:2px; background:#e7ecf5; color:#344d7d; font-size:10.5px; }
+.ind-list small { grid-column:1; color:#777; font-size:12px; line-height:1.4; word-break:keep-all; }
+.ind-list i { grid-column:2; grid-row:1 / span 2; align-self:center; color:#344d7d; font-size:18px; font-style:normal; }
+.ind-empty { padding:16px; color:var(--ws-muted); font-size:13px; }
+.ind-active { padding:12px 14px; overflow-y:auto; border-left:1px solid var(--ws-line); background:#fafafa; }
+.ind-active h3 { margin-bottom:8px; font-size:13px; font-weight:700; }
+.ind-item { margin-bottom:8px; padding:8px 10px; border:1px solid var(--ws-line); background:#fff; }
+.ind-item.hidden { opacity:.55; }
+.ind-item-head { display:flex; align-items:center; gap:6px; }
+.ind-item-head i { width:10px; height:10px; border-radius:50%; flex:none; }
+.ind-item-head strong { flex:1; overflow:hidden; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.ind-item-head button { height:22px; padding:0 7px; border:1px solid var(--ws-line); color:#555; font-size:11px; }
+.ind-params { display:flex; flex-wrap:wrap; gap:6px 10px; margin-top:8px; }
+.ind-params label { display:flex; align-items:center; gap:4px; color:#666; font-size:11.5px; }
+.ind-params input[type="number"] { width:58px; height:24px; padding:0 4px; border:1px solid var(--ws-line); font:12px Pretendard,sans-serif; font-variant-numeric:tabular-nums; }
+.ind-params input[type="color"] { width:28px; height:22px; padding:0; border:1px solid var(--ws-line); background:none; }
+.ws-legend-ind button { pointer-events:auto; padding:0; font-size:11.5px; font-weight:700; }
+.ws-legend-ind button:hover { text-decoration:underline; }
+@media (max-width:760px) {
+  .ind-body { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; }
+  .ind-body nav { flex-direction:row; overflow-x:auto; border-right:0; border-bottom:1px solid var(--ws-line); }
+  .ind-active { max-height:200px; border-left:0; border-top:1px solid var(--ws-line); }
 }
+
+/* 색 견본 */
+.ws-swatches { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+.ws-swatches > button, .ws-swatch-custom { position:relative; width:18px; height:18px; padding:0; border:1px solid rgba(0,0,0,.12); border-radius:50%; cursor:pointer; }
+.ws-swatches > button.on, .ws-swatch-custom.on { outline:2px solid #191919; outline-offset:1px; }
+.ws-swatch-custom { display:grid; place-items:center; overflow:hidden; background:#fff; color:#888; font-size:12px; line-height:1; }
+.ws-swatch-custom input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.ind-colors { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.ind-colors > div { display:grid; grid-template-columns:44px 1fr; align-items:center; gap:6px; }
+.ind-colors span { color:#666; font-size:11px; }
+
+/* 선택한 드로잉 편집 막대 */
+.ws-draw-edit { position:absolute; z-index:6; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; max-width:calc(100% - 16px); padding:6px 10px; border:1px solid var(--ws-line); border-radius:6px; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.12); font-size:12px; white-space:nowrap; }
+.ws-draw-edit strong { font-size:12px; }
+.ws-draw-edit > button { height:26px; padding:0 9px; border:1px solid var(--ws-line); border-radius:3px; color:#444; font-size:12px; }
+.ws-draw-edit > button.danger { border-color:#f2c9cf; color:#c92a2a; }
+.ws-width { display:flex; border:1px solid var(--ws-line); border-radius:3px; }
+.ws-width button { display:grid; width:26px; height:24px; place-items:center; }
+.ws-width button + button { border-left:1px solid var(--ws-line); }
+.ws-width button.on { background:var(--ws-active); }
+.ws-width i { width:14px; background:#191919; border-radius:2px; }
+.ws-flyout button:disabled { color:#bbb; background:none; cursor:default; }
+.ws-flyout button.danger:not(:disabled) { color:#c92a2a; }
+.ws-note-hint b { font-weight:700; }
+@media (max-width:760px) {
+  .ws-draw-edit { flex-wrap:wrap; white-space:normal; }
+}
+.ws-draw-edit .ws-swatches { flex-wrap:nowrap; flex:none; }
+.ws-draw-edit .ws-swatches > button, .ws-draw-edit .ws-swatch-custom { width:16px; height:16px; }
+
+/* 매매 창 탭 */
+.ws-trade-tabs { flex:none; }
+
+/* 알고리즘 탭 */
+.algo-panel { display:flex; flex-direction:column; gap:8px; }
+.algo-head { display:flex; align-items:center; justify-content:space-between; }
+.algo-head strong { font-size:14px; }
+.algo-head .ai-btn { height:28px; padding:0 10px; font-size:12px; }
+.algo-note { color:var(--ws-muted); font-size:11.5px; line-height:1.5; word-break:keep-all; }
+.algo-note a { color:#344d7d; font-weight:700; text-decoration:underline; }
+.algo-warn { padding:6px 8px; background:#fff7e8; color:#8a5a00; font-size:11.5px; line-height:1.45; }
+.algo-error { padding:6px 8px; background:#fff5f5; color:#c92a2a; font-size:12px; line-height:1.45; word-break:keep-all; }
+.algo-empty { padding:16px 0; color:var(--ws-muted); font-size:12.5px; text-align:center; }
+.algo-card { padding:10px; border:1px solid var(--ws-line); background:#fff; }
+.algo-card.on { border-color:#b2f2bb; background:#f8fff9; }
+.algo-card header { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.algo-card header strong { font-size:13px; }
+.algo-card header small { color:var(--ws-muted); font-size:11px; }
+.algo-status { padding:1px 6px; border-radius:2px; background:#f1f3f5; color:#666; font-size:10.5px; font-weight:700; }
+.algo-status.on { background:#d3f9d8; color:#2b8a3e; }
+.algo-card dl { display:grid; grid-template-columns:30px 1fr; gap:3px 6px; margin:8px 0 4px; font-size:12px; line-height:1.45; }
+.algo-card dt { font-weight:700; }
+.algo-card dd { margin:0; word-break:keep-all; }
+.algo-base { color:var(--ws-muted); font-size:11px; }
+.algo-actions { display:flex; gap:4px; margin-top:8px; }
+.algo-actions .ai-btn { flex:1; height:28px; padding:0 6px; font-size:12px; }
+.algo-signals { margin:8px 0 0; padding:6px 0 0; border-top:1px solid var(--ws-line); list-style:none; max-height:180px; overflow-y:auto; }
+.algo-signals li { display:grid; grid-template-columns:30px 80px 1fr auto; gap:6px; padding:3px 0; font-size:11.5px; font-variant-numeric:tabular-nums; }
+.algo-signals em { font-style:normal; color:#555; }
+
+/* 규칙 편집 창 */
+.algo-modal { display:flex; flex-direction:column; width:min(820px,100%); max-height:calc(100vh - 32px); background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.algo-modal > header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--ws-line); }
+.algo-modal > header h2 { font-size:17px; font-weight:700; }
+.algo-modal > footer { display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--ws-line); }
+.algo-modal > footer .ai-btn { height:36px; }
+.algo-body { display:flex; flex-direction:column; gap:14px; padding:16px 18px; overflow-y:auto; }
+.algo-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.algo-row label { display:flex; flex-direction:column; gap:4px; color:#555; font-size:12px; font-weight:700; }
+.algo-row input, .algo-row select { height:32px; padding:0 8px; border:1px solid var(--ws-line); background:#fff; font:13px Pretendard,sans-serif; font-variant-numeric:tabular-nums; }
+.algo-row input:disabled, .algo-row select:disabled { background:#f5f5f5; color:#777; }
+.algo-strategy { display:flex; border:1px solid var(--ws-line); }
+.algo-strategy button { flex:1; height:34px; color:#555; font-size:13px; }
+.algo-strategy button + button { border-left:1px solid var(--ws-line); }
+.algo-strategy button.active { background:#344d7d; color:#fff; font-weight:700; }
+.algo-strategy button:disabled { color:#bbb; }
+.algo-json p { margin-bottom:6px; color:var(--ws-muted); font-size:12px; }
+.algo-json textarea { width:100%; padding:10px; border:1px solid var(--ws-line); font:12px/1.5 ui-monospace,monospace; box-sizing:border-box; resize:vertical; }
+.algo-conds { padding:10px 12px; border:1px solid var(--ws-line); background:#fafafa; }
+.algo-conds header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.algo-conds h3 { font-size:13px; font-weight:700; }
+.algo-cond { display:grid; grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr) 24px; align-items:center; gap:6px; margin-bottom:6px; }
+.algo-cond > select { height:30px; border:1px solid var(--ws-line); background:#fff; font:12.5px Pretendard,sans-serif; }
+.algo-operand { display:flex; flex-wrap:wrap; gap:4px; }
+.algo-operand select, .algo-operand input { height:30px; padding:0 6px; border:1px solid var(--ws-line); background:#fff; font:12.5px Pretendard,sans-serif; font-variant-numeric:tabular-nums; }
+.algo-operand select { min-width:0; flex:1 1 110px; }
+.algo-operand input { width:58px; }
+.algo-mult { display:inline-flex; align-items:center; gap:2px; color:#888; font-size:12px; }
+.algo-operand .algo-mult input { width:48px; color:#555; }
+.algo-del { width:24px; height:24px; color:#999; }
+.algo-add { height:28px; padding:0 10px; border:1px dashed #adb5bd; color:#555; font-size:12px; }
+.algo-summary { padding:10px 12px; background:#eef2f9; font-size:13px; line-height:1.6; }
+.algo-summary b { margin-right:6px; }
+.algo-summary small { color:#666; font-size:11.5px; }
+@media (max-width:640px) {
+  .algo-row { grid-template-columns:minmax(0,1fr); }
+  .algo-cond { grid-template-columns:minmax(0,1fr); }
+}
+
+/* 기록 + : 무엇에 관한 기록 (종목 검색 / 시장·뉴스·거시 주제) */
+.ws-rec-about { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; }
+.ws-rec-symbol { position:relative; flex:0 1 280px; }
+.ws-rec-symbol input { width:100%; height:30px; padding:0 10px; border:1px solid var(--ws-line); background:#fff; font:13px Pretendard,sans-serif; box-sizing:border-box; }
+.ws-rec-symbol .ws-search-list { top:34px; width:100%; }
+.ws-rec-topics button { padding:0 10px; }
+.ws-badge.thought { background:#f3f0ff; color:#5f3dc4; }
+.ws-rec-card.thought { border-color:#e5dbff; }
+/* 오른쪽 열은 높이를 정하지 않고 차트 높이를 따른다 (넘치면 안에서 스크롤) */
+.ws-grid > .ws-side { contain:size; }
+@media (max-width:1100px) { .ws-grid > .ws-side { contain:none; } }
+
+/* 지표 창: 위치(차트 위/아래)·분류 소제목 */
+.ind-body nav h6 { margin:8px 14px 2px; color:#aaa; font-size:10.5px; font-weight:700; }
+.ind-body nav h6:first-child { margin-top:2px; }
+.ind-pos-head { position:sticky; top:0; z-index:1; padding:7px 16px; border-bottom:1px solid var(--ws-line); background:#f7f8fa; color:#555; font-size:11.5px; font-weight:700; }
+
+/* 보조 창 범례: 창 왼쪽 위 한 줄 (지표 이름 + 선 색 값) */
+.ws-pane-legend { position:absolute; z-index:2; left:10px; display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; max-width:calc(100% - 100px); padding:1px 6px; border-radius:3px; background:rgba(255,255,255,0.82); font-size:11px; font-variant-numeric:tabular-nums; pointer-events:none; }
+.ws-pane-legend button { pointer-events:auto; padding:0; color:#495057; font-size:11px; font-weight:700; }
+.ws-pane-legend button:hover { text-decoration:underline; }
+.ws-pane-legend span { font-weight:600; }
+.ws-pane-legend small { margin-right:3px; color:#868e96; font-size:10.5px; font-weight:500; }
+
+/* 평소 숨긴 보조 지표 안내 (전체화면에서 모두 보임) */
+.ws-more-panes { position:absolute; z-index:3; right:90px; bottom:36px; height:22px; padding:0 10px; border:1px solid var(--ws-line); border-radius:11px; background:rgba(255,255,255,0.92); color:#344d7d; font-size:11px; font-weight:700; }
+.ws-more-panes:hover { background:#344d7d; color:#fff; }
+
+/* AI 노트: 차트 높이만큼 채우고, 메모 칸이 남는 높이를 차지, "확인하고 저장"은 맨 아래(차트 아래 끝과 맞춤) */
+.ws-note-panel { display:flex; flex-direction:column; }
+.ws-note-panel .ws-memo { display:flex; flex:1 1 auto; flex-direction:column; min-height:140px; }
+.ws-note-panel .ws-memo p { flex:1; overflow-y:auto; }
+.ws-note-panel .ws-memo textarea { flex:1; min-height:120px; resize:none; }
+.ws-note-panel .ws-save { flex:none; }
+@media (max-width:1100px) {
+  .ws-note-panel .ws-memo { flex:none; }
+}
+/* 매매 창 내용은 줄어들지 않고, 넘치면 창 안에서 스크롤 */
+.ws-order > * { flex-shrink:0; }
+/* 주문 버튼은 매매 창 맨 아래에 붙어 항상 보이게 (호가·입력은 그 위에서 스크롤) */
+.ws-order .ws-order-submit { position:static; box-shadow:none; }
+.ws-legend-ind button.multi { display:inline-flex; gap:5px; }
+.ws-legend-ind button.multi b { color:#495057; }
+
+/* 드로잉 편집 툴바 (트레이딩뷰 느낌: 작게 떠 있는 아이콘 줄) */
+.ws-draw-edit { gap:2px; padding:3px; border-radius:8px; }
+.ws-draw-edit-name { padding:0 8px; color:#495057; font-size:12px; font-weight:700; }
+.ws-draw-edit-sep { width:1px; height:20px; margin:0 3px; background:var(--ws-line); }
+.ws-draw-edit > button, .ws-draw-edit-item > button { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:30px; height:30px; padding:0 6px; border:0; border-radius:5px; color:#333; font-size:14px; }
+.ws-draw-edit > button:hover, .ws-draw-edit-item > button:hover, .ws-draw-edit-item > button.on { background:#f1f3f5; }
+.ws-draw-edit > button.danger:hover { background:#fff0f1; }
+.ws-draw-edit-item { position:relative; }
+.ws-color-dot { width:16px; height:16px; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 1px #ced4da; }
+.ws-width-line { width:18px; background:#191919; border-radius:2px; }
+.ws-draw-edit small { color:#666; font-size:11px; }
+.ws-draw-edit-text { font-weight:800; font-family:serif; }
+.ws-draw-pop { position:absolute; top:calc(100% + 6px); left:0; z-index:7; padding:8px; border:1px solid var(--ws-line); border-radius:6px; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.14); }
+.ws-draw-pop .ws-swatches { flex-wrap:wrap; width:168px; }
+.ws-draw-edit .ws-draw-pop .ws-swatches > button, .ws-draw-edit .ws-draw-pop .ws-swatch-custom { width:20px; height:20px; }
+.ws-width-pop { display:flex; flex-direction:column; padding:4px; }
+.ws-width-pop button { display:flex; align-items:center; gap:10px; width:100px; height:28px; padding:0 8px; border-radius:4px; }
+.ws-width-pop button:hover, .ws-width-pop button.on { background:#f1f3f5; }
+.ws-width-pop i { width:40px; background:#191919; border-radius:2px; }
+
+/* 장 단계 표시: 프리·애프터마켓 = 주황, 장 마감·휴장 = 회색 */
+.ws-feed { width:auto; min-width:76px; }
+.ws-feed.extra { color:#b26a00; font-weight:700; } .ws-feed.extra::before { background:#e39b1d; }
+.ws-hoga-head small.closed { color:#868e96; }
+
+/* 봉 설정 (지표 옆) */
+.ws-intervals { align-items:center; gap:2px; }
+.ws-intervals button { width:auto; min-width:40px; padding:0 8px; }
+
+/* 봉 간격 직접 설정 */
+.ws-interval-custom { position:relative; }
+.ws-interval-custom > button { min-width:0; padding:0 8px; color:#555; font-size:12.5px; }
+.ws-interval-custom > button.open { background:#e2e6ec; }
+.ws-interval-pop { position:absolute; top:calc(100% + 6px); left:0; z-index:20; display:flex; flex-direction:column; gap:6px; width:220px; padding:10px; border:1px solid var(--ws-line); border-radius:6px; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.14); }
+.ws-interval-row { display:flex; gap:6px; }
+.ws-interval-row input { width:64px; height:30px; padding:0 8px; border:1px solid var(--ws-line); border-radius:4px; font-size:13px; }
+.ws-interval-row select { flex:1; height:30px; padding:0 6px; border:1px solid var(--ws-line); border-radius:4px; font-size:13px; background:#fff; }
+.ws-intervals .ws-interval-row button.ws-interval-apply { width:auto; min-width:0; height:30px; padding:0 10px; border-radius:4px; background:#344d7d; color:#fff; font-size:12.5px; font-weight:700; }
+.ws-interval-row button.ws-interval-apply:disabled { background:#adb5bd; }
+.ws-interval-pop small { color:#868e96; font-size:11.5px; }
+.ws-interval-pop small.bad { color:#c92a2a; }
+
+/* 수량 비율 슬라이더 (OKX 참고): 가능 수량의 0~100% */
+.ws-pct { display:flex; flex-direction:column; gap:4px; margin-top:-2px; }
+.ws-pct-track { padding:0 6px; }
+.ws-pct input[type=range] { width:100%; height:18px; margin:0; appearance:none; background:transparent; cursor:pointer; }
+.ws-pct input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:2px; background:linear-gradient(to right, var(--fill) var(--pct), #e5e8eb var(--pct)); }
+.ws-pct input[type=range].buy { --fill:var(--ws-up); } .ws-pct input[type=range].sell { --fill:var(--ws-down); }
+.ws-pct input[type=range]::-webkit-slider-thumb { width:14px; height:14px; margin-top:-5px; appearance:none; border:2px solid var(--fill); border-radius:50%; background:#fff; }
+.ws-pct input[type=range]::-moz-range-track { height:4px; border-radius:2px; background:#e5e8eb; }
+.ws-pct input[type=range]::-moz-range-progress { height:4px; border-radius:2px; background:var(--fill); }
+.ws-pct input[type=range]:disabled { cursor:default; opacity:.5; }
+.ws-pct-marks { display:flex; justify-content:space-between; }
+.ws-pct-marks button { min-width:0; padding:1px 2px; color:#adb5bd; font-size:11px; font-variant-numeric:tabular-nums; }
+.ws-pct-marks button.on { color:#333; font-weight:700; }
+.ws-order-sum dd small { color:#868e96; font-weight:400; }
+.ws-order-warn { margin-top:-6px; color:#c92a2a; font-size:11.5px; }
+/* 비율 눈금: 누르기 쉽게 크게, 끌다가 손을 떼도 다른 것이 눌리지 않게 사이 간격 */
+.ws-pct { gap:2px; user-select:none; }
+.ws-pct input[type=range] { height:24px; touch-action:none; }
+.ws-pct-marks { margin:0 -2px; }
+.ws-pct-marks button { min-width:36px; height:22px; padding:0 4px; border-radius:3px; }
+.ws-pct-marks button:hover:not(:disabled) { background:#f1f3f5; color:#333; }
+/* 주문 요약: 수수료·세금·총액 */
+.ws-order-sum dt small { color:#adb5bd; font-size:10.5px; font-weight:400; }
+.ws-order-sum .ws-order-settle { padding-top:6px; border-top:1px solid var(--ws-line); font-weight:700; color:#191919; }
+.ws-order-sum dd.ws-order-settle { font-size:14px; }
+.ws-order-sum dd.ws-order-settle.down { color:#c92a2a; }

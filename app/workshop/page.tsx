@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { isSeconds } from "../../lib/interval";
+import { PHASE_LABEL, isRegularPhase, useMarketPhase } from "../../lib/market-session";
 import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations";
 import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
@@ -14,6 +16,7 @@ import RecordBoard from "./RecordBoard";
 import CompanyPanel from "./CompanyPanel";
 import { addRecord, kstNow, linkPending } from "../../lib/records";
 import { suggestLink, type Execution } from "../../lib/ai-link";
+import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
 import "./workshop.css";
 
@@ -42,6 +45,8 @@ export default function WorkshopPage() {
   /** live = 백엔드 시세, mock = 백엔드에 못 붙어서 예시 데이터 */
   const [source, setSource] = useState<"loading" | "live" | "mock">("loading");
   const [marketOpen, setMarketOpen] = useState<boolean | null>(null);
+  /** 장 단계 (프리마켓 · 장 열림 · 애프터마켓 · 장 마감 …) */
+  const phase = useMarketPhase();
 
   // 종목 검색
   const [query, setQuery] = useState(symbolLabel(DEFAULT_SYMBOL));
@@ -119,7 +124,14 @@ export default function WorkshopPage() {
     setChartInterval(next);
   }
 
+  /** 검색칸을 벗어날 때 되돌릴 지금 종목 이름 (고른 직후엔 새 종목) */
+  const symbolLabelRef = useRef(symbolLabel(symbol));
+  useEffect(() => {
+    symbolLabelRef.current = symbolLabel(symbol);
+  }, [symbol]);
+
   function pickSymbol(next: SymbolInfo) {
+    symbolLabelRef.current = symbolLabel(next);
     setSource("loading");
     setSaveMessage(null);
     setExecutions([]);
@@ -169,31 +181,50 @@ export default function WorkshopPage() {
   /** AI 노트 체결 연결: auto = AI 추천 그대로, none = 연결 안 함, 그 밖엔 체결 id */
   const [linkChoice, setLinkChoice] = useState<string>("auto");
   const linkSuggestion = suggestLink(noteTime, executions);
+  /** 차트의 평균 단가 선 (계좌 보유 → 없으면 모의 체결) */
+  const avgPrice = useAvgPrice(symbol.code, executions);
   const linkedExecution = linkChoice === "auto" ? (linkSuggestion?.execution ?? null) : (executions.find((e) => e.id === linkChoice) ?? null);
   const [autoLinked, setAutoLinked] = useState<string | null>(null);
-  /** 매매 중 아래쪽 호가창 자리 (TradePanel이 portal로 그린다) */
-  const [bookSlot, setBookSlot] = useState<HTMLDivElement | null>(null);
   /** 오른쪽 영역: 노트(기본) · 매매 */
   const [side, setSide] = useState<"notes" | "trade">("notes");
   const tradeOpen = side === "trade";
   const setTradeOpen = (open: boolean) => setSide(open ? "trade" : "notes");
 
   async function saveChart() {
+    if (journal.loading) return;
     setSaveMessage("저장 중…");
     try {
       const target = await journal.ensure();
       const result = await annotations.sync(target.id, [...drawings.map(drawingToAnnotation), ...notes.map(noteToAnnotation)]);
       if (!result) return setSaveMessage("저장 실패");
-      setSaveMessage(`${journal.mode === "server" ? "서버" : "브라우저"}에 저장됨 (+${result.added}${result.removed ? ` / -${result.removed}` : ""})`);
+      setSaveMessage(result.added || result.removed ? "자동 저장됨" : null);
     } catch {
       setSaveMessage("저장 실패");
     }
+  }
+
+  // 드로잉·노트를 바꾸면 잠깐 뒤 자동 저장 (저장 버튼 없음)
+  const [editVersion, setEditVersion] = useState(0);
+  const saveRef = useRef(saveChart);
+  useEffect(() => {
+    saveRef.current = saveChart;
+  });
+  useEffect(() => {
+    if (!editVersion) return;
+    const timer = setTimeout(() => void saveRef.current(), 800);
+    return () => clearTimeout(timer);
+  }, [editVersion]);
+  /** 차트가 알려 준 드로잉. 저장본을 처음 넣은 것은 저장하지 않는다 */
+  function changeDrawings(list: Drawing[]) {
+    setDrawings(list);
+    if (list !== loadedDrawings?.drawings) setEditVersion((v) => v + 1);
   }
 
   /** 새 차트 노트가 생기면 검증 창의 메모를 그 노트로 바꾼다 (AI가 불러온 메모 자리) */
   function addNote(note: { time: number; price: number; text: string }) {
     const createdAt = nowKst();
     setNotes((list) => [...list, { ...note, id: crypto.randomUUID(), createdAt }]);
+    setEditVersion((v) => v + 1);
     setNoteText(note.text);
     setNoteTime(createdAt);
     setSuggestion(`${won(note.price)}원 부근 판단 근거.\n체결되면 손절 기준도 함께 남김.`);
@@ -207,7 +238,7 @@ export default function WorkshopPage() {
   /** 모의 주문이 접수되면 체결로 보고 지금 노트와 연결 후보로 둔다 */
   function placeOrder(order: MockOrder) {
     const now = kstNow();
-    const execution: Execution = { id: crypto.randomUUID(), time: now.time, side: order.side, quantity: order.quantity };
+    const execution: Execution = { id: crypto.randomUUID(), time: now.time, side: order.side, quantity: order.quantity, price: order.price };
     setExecutions((list) => [...list, execution]);
     setConfirmed(false);
     // 오늘 이 종목의 검증 대기 메모(체결 전에 쓴 것)는 이 체결로 자동 연결 = 사전 기록
@@ -243,7 +274,7 @@ export default function WorkshopPage() {
   const emptyMessage =
     source === "loading"
       ? "차트를 불러오는 중…"
-      : interval === "1s"
+      : isSeconds(interval)
         ? marketOpen === false
           ? "초봉은 장 운영 시간(09:00~15:30)에 실시간 체결로만 만들어져요."
           : "실시간 체결이 들어오면 1초봉이 쌓여요."
@@ -264,16 +295,21 @@ export default function WorkshopPage() {
                   setQuery(e.target.value);
                   setSearchOpen(true);
                 }}
-                onFocus={(e) => {
-                  e.target.select();
+                // 누르면 칸을 비우고 검색, 고르지 않고 밖을 누르면 지금 종목으로 되돌린다
+                onFocus={() => {
+                  setQuery("");
                   setSearchOpen(true);
                 }}
-                onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+                onBlur={() =>
+                  setTimeout(() => {
+                    setSearchOpen(false);
+                    setQuery(symbolLabelRef.current);
+                  }, 150)
+                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && results[0]) pickSymbol(results[0]);
                   if (e.key === "Escape") {
-                    setQuery(symbolLabel(symbol));
-                    setSearchOpen(false);
+                    e.currentTarget.blur();
                   }
                 }}
                 aria-label="종목 검색"
@@ -295,8 +331,11 @@ export default function WorkshopPage() {
               </ul>
             )}
           </div>
-          <span className={`ws-feed ${source === "mock" ? "mock" : marketOpen ? "open" : "closed"}`}>
-            {source === "mock" ? "예시 데이터 · 백엔드 연결 안 됨" : source === "loading" ? "불러오는 중" : marketOpen ? "실시간" : "장 마감"}
+          <span
+            className={`ws-feed ${source === "mock" ? "mock" : isRegularPhase(phase) ? "open" : phase === "pre" || phase === "after" ? "extra" : "closed"}`}
+            title={phase === "pre" || phase === "after" ? "넥스트레이드 거래 시간이에요. 차트·시세는 정규장(09:00~15:30) 기준이라 지금은 바뀌지 않아요." : undefined}
+          >
+            {source === "mock" ? "예시 데이터 · 백엔드 연결 안 됨" : source === "loading" ? "불러오는 중" : PHASE_LABEL[phase]}
           </span>
           <div className="ws-quote" aria-label="종목 시세 (일봉 기준)">
             <strong>{today ? `${won(today.close)}원` : "—"}</strong>
@@ -309,10 +348,6 @@ export default function WorkshopPage() {
           </div>
           <div className="ws-topbar-right">
             {(saveMessage || annotations.error) && <span className="ws-save-msg">{annotations.error ?? saveMessage}</span>}
-            <button className="ws-save-btn" title="드로잉·차트 노트를 일지에 저장" onClick={saveChart} disabled={annotations.saving || journal.loading}>
-              {annotations.saving ? "저장 중…" : "저장"}
-            </button>
-            <span className="ws-divider" />
             <button className={`ws-trade${tradeOpen ? " open" : ""}`} onClick={() => setTradeOpen(!tradeOpen)} aria-expanded={tradeOpen}>
               {tradeOpen ? "매매 닫기" : "매매하기"}
             </button>
@@ -324,9 +359,10 @@ export default function WorkshopPage() {
             bars={bars}
             interval={interval}
             onIntervalChange={changeInterval}
+            avgPrice={avgPrice}
             notes={notes}
             onAddNote={addNote}
-            onDrawingsChange={setDrawings}
+            onDrawingsChange={changeDrawings}
             loadedDrawings={loadedDrawings}
             dataKey={`${symbol.code}:${interval}:${source}`}
             symbolCode={symbol.code}
@@ -337,10 +373,10 @@ export default function WorkshopPage() {
 
           <div className="ws-side">
             {tradeOpen && today && yesterday ? (
-              <TradePanel key={symbol.code} code={symbol.code} bookTarget={bookSlot} price={today.close} prevClose={yesterday.close} onOrder={placeOrder} onClose={() => setTradeOpen(false)} />
+              <TradePanel key={symbol.code} code={symbol.code} symbolName={symbol.name} price={today.close} prevClose={yesterday.close} onOrder={placeOrder} holding={avgPrice?.quantity ?? 0} onClose={() => setTradeOpen(false)} />
             ) : (
             <>
-            <section className="ws-panel">
+            <section className="ws-panel ws-note-panel">
               <h2>
                 AI 노트 <span className="ws-tag">저장 전 검증</span>
               </h2>
@@ -446,12 +482,9 @@ export default function WorkshopPage() {
           </div>
         </div>
 
-        {/* 매매 중에는 기록 대신 호가 + 기업 정보 */}
+        {/* 매매 중에는 기록 대신 기업 정보 (호가는 오른쪽 매매 창 안) */}
         {tradeOpen ? (
-          <div className="ws-trade-bottom">
-            <div ref={setBookSlot} className="ws-book-slot" />
-            <CompanyPanel key={symbol.code} code={symbol.code} price={today?.close ?? null} />
-          </div>
+          <CompanyPanel key={symbol.code} code={symbol.code} price={today?.close ?? null} />
         ) : (
           <RecordBoard symbol={symbol} lastExecution={executions[executions.length - 1] ?? null} />
         )}

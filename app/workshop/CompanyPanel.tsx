@@ -48,7 +48,7 @@ export default function CompanyPanel({ code, price }: { code: string; price: num
         <h2>기업 정보</h2>
         <small>
           {info.name} · {info.code}
-          {info.settlementMonth && ` · ${Number(info.settlementMonth)}월 결산`} · 키움 기준
+          {info.settlementMonth && ` · ${Number(info.settlementMonth)}월 결산`} · 키움 {info.asOf ? `${info.asOf.slice(4, 6)}.${info.asOf.slice(6, 8)} 기준 (하루 한 번 갱신)` : "기준"}
         </small>
       </header>
 

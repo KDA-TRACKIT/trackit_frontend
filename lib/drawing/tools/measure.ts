@@ -15,12 +15,12 @@ export const priceRange: DrawingTool = {
     const diff = to - from;
     const rate = from ? (diff / from) * 100 : 0;
     const up = diff >= 0;
-    const color = up ? "#f0294f" : "#1666f0";
+    const color = up ? "#089981" : "#f23645";
     const x = Math.min(a.x, b.x);
     const y = Math.min(a.y, b.y);
     const w = Math.abs(b.x - a.x);
     const h = Math.abs(b.y - a.y);
-    ctx.fillStyle = up ? "rgba(240,41,79,0.08)" : "rgba(22,102,240,0.08)";
+    ctx.fillStyle = up ? "rgba(8,153,129,0.08)" : "rgba(242,54,69,0.08)";
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
