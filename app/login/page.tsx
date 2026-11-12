@@ -1,5 +1,6 @@
 "use client";
 
+import SiteHeader from "../SiteHeader";
 import { FormEvent, useState } from "react";
 import { getSupabaseBrowser } from "../../lib/supabase-browser";
 
@@ -30,7 +31,6 @@ export default function LoginPage() {
     catch (e) { setError(e instanceof Error ? e.message : "Google 로그인에 실패했습니다."); setLoading(false); }
   }
 
-  return <main className="login-page"><AuthHeader /><section className="login-panel"><div className="login-wordmark">TRACKIT</div><form onSubmit={handleLogin}><label><span>ID</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label><label><span>PASSWORD</span><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label><button className="login-submit" disabled={loading}>{loading ? "처리 중..." : "로그인"}</button></form><div className="or-divider"><span />또는<span /></div><button className="google-login" onClick={handleGoogleLogin} disabled={loading}><span className="google-icon">G</span><strong>Google 계정으로 로그인</strong><span className="login-arrow">›</span></button><div className="login-links"><a href="#">아이디 찾기</a><a href="#">비밀번호 찾기</a><a href="#">회원가입</a></div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  return <main className="login-page"><SiteHeader /><section className="login-panel"><div className="login-wordmark">TRACKIT</div><form onSubmit={handleLogin}><label><span>ID</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label><label><span>PASSWORD</span><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label><button className="login-submit" disabled={loading}>{loading ? "처리 중..." : "로그인"}</button></form><div className="or-divider"><span />또는<span /></div><button className="google-login" onClick={handleGoogleLogin} disabled={loading}><span className="google-icon">G</span><strong>Google 계정으로 로그인</strong><span className="login-arrow">›</span></button><div className="login-links"><a href="#">아이디 찾기</a><a href="#">비밀번호 찾기</a><a href="#">회원가입</a></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function AuthHeader() { return <header className="auth-header"><a className="auth-brand" href="/">TRACKIT</a><nav><a href="/">홈</a><a href="#">트레이딩로그</a></nav><div><a href="#">마이페이지</a><a href="#">내 계정</a></div></header>; }

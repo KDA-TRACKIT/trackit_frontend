@@ -1,0 +1,416 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+/* 작업실 (피그마 노드 38:184). 1440 기준 콘텐츠 폭 1312px */
+.workshop { --ws-line:#e0e0e0; --ws-text:#191919; --ws-muted:#888; --ws-soft:#f5f2ec; --ws-active:#e7e9ef; --ws-up:#f0294f; --ws-down:#1666f0; min-height:100vh; background:#f6f6f6; color:var(--ws-text); font-family:Pretendard,"Noto Sans KR",sans-serif; line-height:1.2; }
+/* :where()로 우선순위를 0으로 둬서 아래 개별 스타일이 이기게 한다 */
+:where(.workshop) button { border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+:where(.workshop) button:disabled { cursor:default; opacity:.4; }
+:where(.workshop) :is(h2,h3,h4,p) { margin:0; }
+.ws-layout { width:min(1312px,calc(100% - 48px)); margin:40px auto 60px; }
+.ws-divider { width:1px; height:22px; margin:0 4px; background:var(--ws-line); flex:none; }
+.up { color:var(--ws-up); } .down { color:var(--ws-down); }
+.workshop em { font-style:normal; }
+
+/* 상단 도구 바 */
+.ws-topbar { display:flex; height:56px; align-items:center; justify-content:space-between; padding-left:12px; border:1px solid var(--ws-line); background:#fff; }
+.ws-search { display:flex; width:244px; height:42px; align-items:center; justify-content:space-between; padding:0 14px; background:#f6f6f6; }
+.ws-search input { width:100%; min-width:0; border:0; outline:0; background:none; color:var(--ws-text); font:700 18px Pretendard,sans-serif; white-space:pre; }
+.ws-topbar-right { display:flex; height:100%; align-items:center; gap:10px; }
+.ws-topbar-right button { height:34px; padding:0 8px; font-size:14px; }
+.ws-topbar-right .ws-trade { width:148px; height:56px; margin:-1px -1px -1px 0; background:#344d7d; color:#fff; font-weight:700; }
+
+/* 본문 그리드: 차트 | 오른쪽 패널 */
+/* 차트와 노트는 같은 높이(한 줄). 노트 내용이 길면 노트 안에서 스크롤 */
+.ws-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; grid-template-rows:640px; gap:16px; margin-top:16px; }
+.ws-side { display:grid; grid-template-columns:minmax(0,1fr); min-height:0; gap:2px; }
+.ws-side > .ws-panel { min-height:0; overflow-y:auto; }
+.ws-tag { margin-left:6px; padding:2px 7px; border-radius:2px; background:var(--ws-soft); color:#8a6d3b; font-size:11px; font-weight:700; vertical-align:2px; }
+
+/* 상단 시세 */
+/* 숫자 자릿수가 바뀌어도 옆 요소가 밀리지 않게 칸 폭을 고정 */
+.ws-quote { display:flex; align-items:baseline; gap:8px; margin-right:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.ws-quote strong { width:112px; font-size:17px; font-weight:800; text-align:right; }
+.ws-quote em { width:128px; font-size:13px; font-weight:700; font-style:normal; }
+.ws-quote small { width:230px; overflow:hidden; color:var(--ws-muted); font-size:11.5px; text-overflow:ellipsis; }
+.ws-feed { width:76px; }
+
+/* 기록: 날짜별 카드 */
+.ws-records { margin-top:16px; padding:20px 24px 24px; border:1px solid var(--ws-line); background:#fff; }
+.ws-records-head { display:flex; align-items:center; gap:10px; }
+.ws-records-head h2 { font-size:18px; font-weight:700; }
+.ws-records-head small { color:var(--ws-muted); font-size:12px; }
+.ws-rec-add { display:grid; width:30px; height:30px; place-items:center; border:1px solid var(--ws-line); background:#f3f3f3; color:#444; font-size:20px; line-height:1; }
+.ws-rec-add:hover, .ws-rec-add.open { border-color:#344d7d; background:#344d7d; color:#fff; }
+.ws-rec-filter { display:flex; margin-left:auto; border:1px solid var(--ws-line); }
+.ws-rec-filter button { height:28px; padding:0 12px; font-size:12px; color:#666; }
+.ws-rec-filter button.active { background:var(--ws-active); color:var(--ws-text); font-weight:700; }
+.ws-rec-compose { margin-top:14px; padding:12px; border:1px solid #344d7d; background:#fafbfd; }
+.ws-rec-compose textarea { width:100%; padding:8px 10px; border:1px solid var(--ws-line); resize:vertical; font:14px/1.5 Pretendard,sans-serif; outline:0; box-sizing:border-box; }
+.ws-rec-compose > div { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:8px; font-size:12.5px; }
+.ws-rec-compose label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+.ws-rec-compose small { color:var(--ws-muted); font-size:11.5px; }
+.ws-rec-compose small:last-of-type { margin-right:auto; }
+.ws-rec-compose button { height:30px; padding:0 16px; border:1px solid var(--ws-line); background:#fff; font-size:12.5px; }
+.ws-rec-compose button.primary { border-color:var(--ws-text); background:var(--ws-text); color:#fff; font-weight:700; }
+.ws-rec-compose button:disabled { opacity:.4; }
+.ws-rec-empty { margin-top:18px; padding:28px 0; color:var(--ws-muted); font-size:13px; text-align:center; word-break:keep-all; }
+.ws-rec-day { margin-top:20px; }
+.ws-rec-day h3 { display:flex; align-items:baseline; gap:8px; padding-bottom:10px; border-bottom:1px solid var(--ws-line); font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.ws-rec-day h3 span { color:var(--ws-muted); font-size:12px; font-weight:500; }
+.ws-rec-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:12px; }
+.ws-rec-card { display:flex; flex-direction:column; gap:6px; min-width:0; padding:12px 14px; border:1px solid #d6d6d6; background:#fff; }
+.ws-rec-card .ws-badge { align-self:flex-start; }
+.ws-rec-card p { display:-webkit-box; overflow:hidden; font-size:13.5px; line-height:1.5; word-break:keep-all; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+.ws-rec-card small { color:var(--ws-muted); font-size:11.5px; }
+.ws-badge.pending { background:var(--ws-soft); color:#8a6d3b; }
+
+/* 차트 */
+.ws-chart { display:grid; height:100%; min-height:0; grid-template-rows:38px 1fr 45px; border:1px solid var(--ws-line); background:#fff; }
+.ws-chart:fullscreen { width:100vw; height:100vh; border:0; }
+.ws-chart:fullscreen::backdrop { background:#fff; }
+.ws-chart-toolbar { display:flex; align-items:center; gap:4px; padding-left:10px; border-bottom:1px solid var(--ws-line); }
+.ws-intervals { display:flex; gap:4px; }
+.ws-intervals button { width:50px; height:34px; font-size:13px; }
+.ws-intervals button.active { background:#e2e6ec; font-weight:700; }
+.ws-intervals .ws-caret { width:20px; font-size:10px; }
+.ws-tool-text { display:flex; height:34px; align-items:center; gap:5px; padding:0 8px; font-size:13px; }
+.ws-icon-button { width:34px; height:34px; font-size:17px; }
+.ws-chart-body { display:grid; min-height:0; grid-template-columns:47px 1fr; }
+.ws-draw-tools { display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:6px; border-right:1px solid var(--ws-line); }
+.ws-draw-tools button { position:relative; display:grid; width:38px; height:30px; place-items:center; border-radius:2px; color:#222; }
+.ws-draw-tools button.active { border-radius:4px; background:#f0f0f0; }
+.ws-draw-tools button:disabled { opacity:1; cursor:not-allowed; } /* 피그마대로 모두 검정. 준비 중 툴은 툴팁으로 안내 */
+.ws-draw-tools button:not(:disabled):hover { background:#f0f1f4; }
+.ws-more { position:absolute; top:6px; right:2px; color:#666; font-size:10px; line-height:1; }
+.ws-draw-group { position:relative; }
+.ws-draw-divider { width:32px; height:1px; margin:4px 0; background:var(--ws-line); }
+.ws-flyout { position:absolute; z-index:5; top:0; left:44px; min-width:150px; padding:6px; border:1px solid var(--ws-line); background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.ws-flyout p { padding:4px 8px 6px; color:var(--ws-muted); font-size:11px; }
+.ws-flyout button { display:block; width:100%; height:30px; padding:0 8px; text-align:left; font-size:13px; }
+.ws-flyout button.active,.ws-flyout button:hover { background:var(--ws-active); }
+.ws-chart-area { position:relative; min-width:0; overflow:hidden; }
+/* right: 가격 축(약 70px) 위로 글자가 올라가지 않게 비워두고, 좁으면 줄바꿈 */
+.ws-legend { position:absolute; z-index:2; top:10px; left:17px; right:76px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 20px; pointer-events:none; }
+.ws-legend > * { white-space:nowrap; }
+.ws-legend strong { font-size:18px; font-weight:700; }
+.ws-legend span { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+.ws-canvas { position:absolute; inset:0; }
+.ws-canvas.drawing { cursor:crosshair; }
+.ws-chart-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px 0 52px; border-top:1px solid var(--ws-line); color:#555; }
+.ws-ranges { display:flex; flex-wrap:wrap; gap:2px 6px; }
+.ws-ranges button { padding:4px 4px; font-size:13px; white-space:nowrap; }
+.ws-ranges button:hover { color:#000; text-decoration:underline; }
+.ws-chart-footer > span { font-size:12px; white-space:nowrap; }
+
+/* 오른쪽 패널 */
+.ws-panel { min-width:0; padding:20px 16px 18px; border:1px solid var(--ws-line); background:#fff; overflow:hidden; }
+.ws-panel h2 { padding-bottom:16px; border-bottom:1px solid var(--ws-line); font-size:17px; font-weight:700; word-break:keep-all; }
+.ws-panel h3 { margin-top:18px; font-size:13px; font-weight:700; }
+.ws-panel h3.ws-gap { margin-top:24px; }
+.ws-panel h4 { font-size:12px; font-weight:700; }
+.ws-panel small { display:block; color:var(--ws-muted); font-size:11.5px; line-height:1.45; }
+.ws-panel .ws-muted { margin-top:6px; font-size:12px; }
+.ws-memo { margin-top:12px; padding:12px 12px 14px; border:1px solid var(--ws-line); border-radius:4px; }
+.ws-memo p { margin-top:8px; font-size:14px; line-height:22px; word-break:keep-all; }
+.ws-suggest { margin-top:16px; padding:12px; background:var(--ws-soft); }
+.ws-suggest p { margin:8px 0 10px; font-size:13px; line-height:21px; white-space:pre-line; word-break:keep-all; }
+.ws-suggest button { height:28px; padding:0 16px; border:1px solid #d0d0d0; background:#fff; font-size:12px; }
+.ws-save { width:100%; height:42px; margin-top:18px; border:1px solid var(--ws-text); background:#fff; font-size:13px; font-weight:700; }
+.ws-confirm { margin-top:14px; padding:10px 12px; border:1px solid var(--ws-up); background:#fff7f8; }
+.ws-confirm p { font-size:12px; line-height:18px; word-break:keep-all; }
+.ws-confirm div { display:flex; gap:6px; margin-top:8px; }
+.ws-confirm button { flex:1; height:30px; border:1px solid var(--ws-line); background:#fff; font-size:12px; }
+.ws-confirm button.primary { border-color:var(--ws-text); background:var(--ws-text); color:#fff; font-weight:700; }
+.ws-badge { display:inline-block; padding:4px 10px; border-radius:2px; font-size:11.5px; font-weight:700; }
+.ws-badge.pre { background:#e6f6ec; color:#1f8a4c; }
+.ws-badge.post { background:#f0f1f3; color:#333; }
+
+/* 종목 정보 */
+
+/* 차트 노트 · AI 뉴스 (노션 명세: 차트 내 기록, 커서를 대면 AI 뉴스) */
+.ws-note-toggle.active { background:#344d7d; color:#fff; border-radius:3px; }
+.ws-note-hint { position:absolute; z-index:3; left:50%; bottom:14px; transform:translateX(-50%); padding:6px 12px; border-radius:14px; background:rgba(25,25,25,.82); color:#fff; font-size:12px; pointer-events:none; white-space:nowrap; }
+.ws-note-pop { position:absolute; z-index:6; width:240px; padding:10px; border:1px solid #344d7d; border-radius:4px; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.ws-note-pop small { display:block; color:var(--ws-muted); font-size:11px; }
+.ws-note-pop textarea { width:100%; margin-top:6px; padding:6px 8px; border:1px solid var(--ws-line); border-radius:3px; resize:none; font:13px/1.45 Pretendard,sans-serif; outline:0; box-sizing:border-box; }
+.ws-note-pop textarea:focus { border-color:#344d7d; }
+.ws-note-pop > div { display:flex; justify-content:flex-end; gap:6px; margin-top:6px; }
+.ws-note-pop button { height:28px; padding:0 12px; border:1px solid var(--ws-line); background:#fff; font-size:12px; }
+.ws-note-pop button.primary { border-color:#344d7d; background:#344d7d; color:#fff; font-weight:700; }
+.ws-news { position:absolute; z-index:6; width:300px; max-height:60%; overflow-y:auto; padding:12px 14px; border:1px solid var(--ws-line); border-radius:6px; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.ws-news header { display:flex; align-items:center; justify-content:space-between; }
+.ws-news header button { width:22px; height:22px; color:#888; font-size:12px; }
+.ws-news article + article { margin-top:10px; padding-top:10px; border-top:1px solid var(--ws-line); }
+.ws-news .ws-muted { margin-top:10px; color:var(--ws-muted); font-size:12.5px; }
+.ws-news-btn { position:absolute; z-index:5; transform:translateX(-50%); height:24px; padding:0 10px; border:1px solid #344d7d; border-radius:12px; background:#fff; color:#344d7d; font-size:11.5px; font-weight:700; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+.ws-news-btn:hover { background:#344d7d; color:#fff; }
+.ws-news-tag { display:inline-block; padding:2px 7px; border-radius:2px; background:#e7ecf5; color:#344d7d; font-size:11px; font-weight:700; }
+.ws-news strong { display:block; margin-top:8px; font-size:14px; line-height:1.4; word-break:keep-all; }
+.ws-news p { margin-top:6px; color:#444; font-size:12.5px; line-height:1.5; word-break:keep-all; }
+.ws-news small { display:block; margin-top:8px; color:var(--ws-muted); font-size:11px; }
+
+/* 메모 수정 */
+.ws-memo-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ws-memo-head button { flex:none; height:24px; padding:0 10px; border:1px solid var(--ws-line); background:#fff; font-size:11.5px; }
+.ws-memo textarea { width:100%; margin-top:8px; padding:6px 8px; border:1px solid #344d7d; border-radius:3px; resize:vertical; font:14px/22px Pretendard,sans-serif; outline:0; box-sizing:border-box; }
+.ws-link { padding:0; color:#344d7d; font-size:inherit; font-weight:700; text-decoration:underline; }
+
+/* 매매하기: 호가창 | 매매 창 */
+.ws-topbar-right .ws-trade.open { background:#191919; }
+.ws-book { display:flex; flex-direction:column; padding-bottom:12px; }
+.ws-book h2, .ws-order h2 { border-bottom:0; padding-bottom:12px; }
+.ws-book-head { display:grid; grid-template-columns:1fr 1fr 64px; padding:0 6px 6px; border-bottom:1px solid var(--ws-line); color:var(--ws-muted); font-size:11.5px; }
+.ws-book-head span:nth-child(2) { text-align:center; } .ws-book-head span:last-child { text-align:right; }
+.ws-book-list { margin:0; padding:0; list-style:none; }
+.ws-book-list button { display:grid; width:100%; height:24px; grid-template-columns:1fr 1fr 64px; align-items:center; padding:0 6px; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.ws-book-list li.ask button { background:#f3f7fe; }
+.ws-book-list li.bid button { background:#fef4f5; }
+.ws-book-list li.current button { outline:1.5px solid #191919; outline-offset:-1.5px; font-weight:700; }
+.ws-book-list button:hover { filter:brightness(.96); }
+.ws-book-list .qty { position:relative; display:block; height:18px; }
+.ws-book-list .qty i { position:absolute; right:0; top:2px; bottom:2px; background:rgba(22,102,240,.14); }
+.ws-book-list li.bid .qty i { background:rgba(240,41,79,.14); }
+.ws-book-list .qty em { position:relative; display:block; padding-right:4px; line-height:18px; text-align:right; color:#444; font-size:11.5px; }
+.ws-book-list .price { text-align:center; font-weight:700; }
+.ws-book-list .rate { text-align:right; font-size:11.5px; }
+.ws-book > .ws-muted { margin-top:8px; }
+.ws-order { display:flex; flex-direction:column; gap:12px; }
+.ws-order-title { display:flex; align-items:center; justify-content:space-between; }
+.ws-order-title h2 { padding-bottom:0; }
+.ws-order-title button { width:28px; height:28px; color:#666; font-size:14px; }
+.ws-seg { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--ws-line); }
+.ws-seg button { height:34px; font-size:13px; color:#666; }
+.ws-seg button.active { background:#191919; color:#fff; font-weight:700; }
+.ws-seg button.active.buy { background:var(--ws-up); }
+.ws-seg button.active.sell { background:var(--ws-down); }
+.ws-type-tabs button { height:28px; font-size:12px; }
+.ws-type-tabs button.active { background:var(--ws-active); color:var(--ws-text); }
+.ws-field { display:block; }
+.ws-field > span { display:block; margin-bottom:4px; color:#555; font-size:12px; font-weight:700; }
+.ws-stepper { display:grid; grid-template-columns:30px minmax(0,1fr) 30px; height:34px; border:1px solid var(--ws-line); }
+.ws-stepper button { font-size:15px; color:#444; }
+.ws-stepper input { min-width:0; border:0; border-left:1px solid var(--ws-line); border-right:1px solid var(--ws-line); outline:0; text-align:center; font:700 14px Pretendard,sans-serif; font-variant-numeric:tabular-nums; background:#fff; color:var(--ws-text); }
+.ws-stepper input:disabled { background:#f6f6f6; color:var(--ws-muted); }
+.ws-ratio { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:-4px; }
+.ws-ratio button { height:26px; border:1px solid var(--ws-line); font-size:11.5px; }
+.ws-order-sum { display:grid; grid-template-columns:auto 1fr; gap:6px 8px; margin:0; padding-top:10px; border-top:1px solid var(--ws-line); font-size:12.5px; }
+.ws-order-sum dt { color:#666; }
+.ws-order-sum dd { margin:0; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ws-order-submit { height:42px; color:#fff; font-size:14px; font-weight:700; }
+.ws-order-submit.buy { background:var(--ws-up); }
+.ws-order-submit.sell { background:var(--ws-down); }
+.ws-order-done { padding:8px 10px; background:var(--ws-soft); font-size:12px; line-height:1.5; word-break:keep-all; }
+.ws-order .ws-muted { margin-top:-4px; word-break:keep-all; }
+
+/* 종목 검색 · 시세 상태 */
+.ws-search-wrap { position:relative; }
+.ws-search-list { position:absolute; z-index:20; top:46px; left:0; width:320px; max-height:360px; margin:0; padding:4px 0; overflow-y:auto; list-style:none; border:1px solid var(--ws-line); background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.1); }
+.ws-search-list button { display:grid; width:100%; grid-template-columns:64px 1fr auto; align-items:center; gap:8px; padding:8px 14px; text-align:left; font-size:13px; }
+.ws-search-list button:hover,.ws-search-list button[aria-selected="true"] { background:var(--ws-active); }
+.ws-search-list span { color:var(--ws-muted); font-variant-numeric:tabular-nums; }
+.ws-search-list small { color:var(--ws-muted); font-size:11px; }
+.ws-feed { display:inline-flex; align-items:center; gap:6px; margin-left:14px; margin-right:16px; color:#666; font-size:12px; white-space:nowrap; }
+.ws-feed::before { content:""; width:7px; height:7px; border-radius:50%; background:#aaa; }
+.ws-feed.open { color:#1f8a4c; font-weight:700; } .ws-feed.open::before { background:#1f8a4c; animation:ws-pulse 1.4s infinite; }
+.ws-feed.mock { color:#b26a00; } .ws-feed.mock::before { background:#e39b1d; }
+@keyframes ws-pulse { 50% { opacity:.3; } }
+.ws-empty { position:absolute; z-index:3; inset:0; display:grid; place-items:center; padding:24px; color:var(--ws-muted); font-size:14px; text-align:center; pointer-events:none; }
+
+/* AI 분석 → 위험 검증 → 승인 → 주문 (components/ai, components/trading) */
+.ws-save-msg { max-width:220px; overflow:hidden; color:#1f8a4c; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.ws-indicator { position:relative; }
+.ws-indicator .ws-tool-text.open { background:var(--ws-active); }
+.ws-indicator-menu { position:absolute; z-index:8; top:36px; left:0; min-width:150px; padding:6px; border:1px solid var(--ws-line); background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.ws-indicator-menu p { padding:4px 6px 6px; color:var(--ws-muted); font-size:11px; }
+.ws-indicator-menu label { display:flex; align-items:center; gap:8px; padding:6px; font-size:13px; cursor:pointer; }
+.ws-indicator-menu label:hover { background:var(--ws-active); }
+.ws-indicator-menu i { width:14px; height:3px; border-radius:2px; }
+
+.ai-panel { grid-column:1 / -1; display:flex; flex-direction:column; gap:12px; }
+.ai-panel-head { display:flex; align-items:center; justify-content:space-between; }
+.ai-panel-head h2 { display:flex; align-items:center; gap:8px; padding-bottom:0 !important; border-bottom:0 !important; }
+.ai-mock { padding:2px 7px; border-radius:2px; background:#fff3dd; color:#b26a00; font-size:11px; font-weight:700; }
+.ai-close { width:28px; height:28px; color:#666; font-size:14px; }
+.ai-btn { height:34px; padding:0 14px; border:1px solid #344d7d !important; background:#fff; color:#344d7d; font-size:13px; font-weight:700; }
+.ai-btn.primary { background:#344d7d; color:#fff; }
+.ai-btn.wide { width:100%; height:40px; }
+.ai-btn.ghost { border-color:var(--ws-line) !important; color:var(--ws-text); font-weight:600; }
+.ai-btn.buy { border-color:var(--ws-up) !important; background:var(--ws-up); color:#fff; }
+.ai-btn.sell { border-color:var(--ws-down) !important; background:var(--ws-down); color:#fff; }
+.ai-note { color:#555; font-size:12px; line-height:1.5; word-break:keep-all; }
+.ai-note.error, .ai-journal .error { color:#b4233c; }
+.ai-footnote { color:var(--ws-muted); font-size:11px; }
+.ai-field { display:grid; grid-template-columns:40px 1fr; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#555; }
+.ai-field select { height:32px; padding:0 8px; border:1px solid var(--ws-line); background:#fff; font:13px Pretendard,sans-serif; }
+.ai-request { display:flex; flex-direction:column; gap:8px; }
+.ai-dev-flag { display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px dashed #e3c27a; background:#fffaf0; color:#8a5a00; font-size:11.5px; cursor:pointer; }
+
+.ai-journal { display:flex; flex-direction:column; gap:6px; }
+.ai-journal-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; }
+.ai-storage { color:var(--ws-muted); font-size:11px; text-align:right; }
+.ai-storage.server { color:#1f8a4c; }
+.ai-journal textarea { width:100%; padding:8px 10px; border:1px solid var(--ws-line); resize:vertical; font:13px/1.55 Pretendard,sans-serif; outline:0; box-sizing:border-box; }
+.ai-journal textarea:focus { border-color:#344d7d; }
+.ai-journal-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ai-journal-foot small { color:var(--ws-muted); font-size:11.5px; }
+.ai-journal-foot .ai-btn { height:28px; font-size:12px; }
+
+.ai-status { padding:10px 12px; background:#f6f7fa; }
+.ai-steps { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin:0 0 8px; padding:0; list-style:none; }
+.ai-steps li { display:flex; flex-direction:column; gap:4px; color:#999; font-size:10.5px; text-align:center; }
+.ai-steps li i { height:3px; border-radius:2px; background:#dde1e8; }
+.ai-steps li.done { color:#1f8a4c; } .ai-steps li.done i { background:#1f8a4c; }
+.ai-steps li.now { color:#344d7d; font-weight:700; } .ai-steps li.now i { background:#344d7d; }
+.ai-status-text { display:flex; align-items:center; gap:8px; color:#344d7d; font-size:12.5px; }
+.ai-status.failed .ai-status-text, .ai-status.canceled .ai-status-text { color:#b4233c; }
+.ai-status.succeeded .ai-status-text { color:#1f8a4c; }
+.ai-spinner { width:12px; height:12px; border:2px solid #c9d1e3; border-top-color:#344d7d; border-radius:50%; animation:ai-spin .8s linear infinite; }
+@keyframes ai-spin { to { transform:rotate(360deg); } }
+.ai-fail { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; }
+.ai-fail p { color:#b4233c; font-size:12px; }
+
+.ai-grid { display:grid; grid-template-columns:auto 1fr; gap:5px 12px; margin:0; font-size:12.5px; }
+.ai-grid dt { color:#666; }
+.ai-grid dd { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin:0; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+.ai-grid dd.mono { font-family:ui-monospace,monospace; font-size:11px; font-weight:500; }
+.ai-result { padding:12px 14px; border:1px solid var(--ws-line); border-left:4px solid #888; }
+.ai-result.buy { border-left-color:var(--ws-up); } .ai-result.sell { border-left-color:var(--ws-down); }
+.ai-result header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+.ai-result header strong { font-size:18px; }
+.ai-result.buy header strong { color:var(--ws-up); } .ai-result.sell header strong { color:var(--ws-down); }
+.ai-result header span { color:#555; font-size:12px; }
+.ai-meter { display:inline-block; width:70px; height:5px; border-radius:3px; background:#e7e9ef; overflow:hidden; }
+.ai-meter i { display:block; height:100%; background:#344d7d; }
+.ai-rationale { margin-top:10px !important; font-size:13px; line-height:1.6; word-break:keep-all; }
+.ai-result footer { margin-top:8px; color:var(--ws-muted); font-size:11px; }
+.ai-risk { padding:12px 14px; border:1px solid var(--ws-line); }
+.ai-risk header { margin-bottom:8px; font-size:13.5px; }
+.ai-risk.pass header { color:#1f8a4c; } .ai-risk.warn header { color:#b26a00; } .ai-risk.blocked header { color:#b4233c; }
+.ai-risk.blocked { border-color:#f2c9cf; background:#fffafa; }
+.ai-risk-errors, .ai-risk-warnings { margin:0 0 10px; padding-left:18px; font-size:12.5px; line-height:1.55; word-break:keep-all; }
+.ai-risk-errors { color:#b4233c; } .ai-risk-warnings { color:#8a5a00; }
+.ai-approval { display:flex; flex-direction:column; gap:8px; }
+.ai-order { padding:12px 14px; border:1px solid var(--ws-line); }
+.ai-order header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+.ai-order header strong { font-size:14px; } .ai-order header span { color:var(--ws-muted); font-size:11px; }
+.ai-order.filled { border-color:#bfe3cc; background:#f6fcf8; } .ai-order.filled header strong { color:#1f8a4c; }
+.ai-order.failed, .ai-order.canceled { border-color:#f2c9cf; background:#fffafa; }
+.ai-order.failed header strong, .ai-order.canceled header strong { color:#b4233c; }
+.ai-order .ai-note { margin-top:8px; }
+.ai-order .ai-btn { margin-top:8px; }
+
+.modal-backdrop { position:fixed; z-index:100; inset:0; display:grid; place-items:center; padding:16px; background:rgba(15,20,30,.45); }
+.modal { width:min(440px,100%); max-height:calc(100vh - 32px); overflow-y:auto; padding:22px 22px 18px; background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.25); outline:0; font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.modal h2 { margin:0 0 14px; font-size:18px; }
+.modal-grid { padding:12px 0; border-top:1px solid var(--ws-line); border-bottom:1px solid var(--ws-line); font-size:13px; }
+.modal .ai-risk-warnings { margin-top:12px; }
+.modal-rationale { margin-top:12px; padding:10px 12px; background:var(--ws-soft); font-size:12.5px; line-height:1.55; }
+.modal-rationale p { margin-top:4px; word-break:keep-all; }
+.modal-consent { display:flex; align-items:flex-start; gap:8px; margin-top:14px; padding:10px 12px; border:1px solid #344d7d; font-size:13px; font-weight:700; line-height:1.45; cursor:pointer; word-break:keep-all; }
+.modal-consent input { margin-top:2px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+.modal-actions .ai-btn { height:38px; }
+
+@media (max-width:640px) {
+  .ws-layout { width:calc(100% - 16px); margin-top:12px; }
+  .ws-topbar { height:auto; flex-wrap:wrap; gap:6px; padding:6px; }
+  .ws-search { width:100%; }
+  .ws-search-wrap { flex:1 1 100%; }
+  .ws-topbar-right { width:100%; justify-content:flex-end; }
+  .ws-topbar-right .ws-trade { height:40px; margin:0; }
+  .ws-side { grid-template-columns:1fr; }
+  .ws-chart-toolbar { overflow-x:auto; }
+  .ai-steps li span { font-size:9.5px; }
+}
+
+@media (max-width:1100px) {
+  .ws-grid { grid-template-columns:minmax(0,1fr); }
+  .ws-grid { grid-template-rows:auto; }
+  .ws-chart { height:591px; }
+  .ws-rec-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ws-topbar-right > button:not(.ws-trade):not(.ws-ai-toggle):not(.ws-save-btn) { display:none; }
+}
+
+/* 좁은 화면: 1100px 규칙 뒤에 둬야 덮어쓴다 */
+@media (max-width:640px) {
+  .ws-rec-grid { grid-template-columns:minmax(0,1fr); }
+  .ws-records { padding:16px; }
+  .ws-records-head { flex-wrap:wrap; }
+  .ws-quote small { display:none; }
+}
+
+/* AI 노트 체결 연결 */
+.ws-link-box { margin-top:8px; }
+.ws-link-ai { padding:8px 10px; background:#eef2f9; font-size:12.5px; line-height:1.5; }
+.ws-link-ai b { margin-right:4px; color:#344d7d; }
+.ws-link-ai.low { background:#fff7e8; }
+.ws-link-ai small { display:block; margin-top:2px; }
+.ws-link-box select { width:100%; height:32px; margin-top:6px; padding:0 8px; border:1px solid var(--ws-line); background:#fff; font:13px Pretendard,sans-serif; }
+.ws-auto-linked { margin-top:8px; color:#1f8a4c !important; }
+
+/* 기록 조회 */
+.ws-rec-query { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; padding:10px 12px; background:#f7f7f7; }
+.ws-seg-group { display:flex; border:1px solid var(--ws-line); background:#fff; }
+.ws-seg-group button { height:30px; padding:0 12px; color:#666; font-size:12.5px; white-space:nowrap; }
+.ws-seg-group button + button { border-left:1px solid var(--ws-line); }
+.ws-seg-group button.active { background:#344d7d; color:#fff; font-weight:700; }
+.ws-rec-dates { display:flex; align-items:center; gap:6px; color:#888; }
+.ws-rec-dates input { height:30px; padding:0 8px; border:1px solid var(--ws-line); background:#fff; font:12.5px Pretendard,sans-serif; font-variant-numeric:tabular-nums; }
+.ws-rec-dates input:disabled { background:#f3f3f3; color:#888; }
+.ws-rec-search { height:30px; margin-left:auto; padding:0 20px; background:#191919; color:#fff; font-size:12.5px; font-weight:700; }
+.ws-rec-summary { margin-top:12px; color:#666; font-size:12.5px; font-variant-numeric:tabular-nums; }
+
+@media (max-width:900px) {
+  .ws-rec-search { margin-left:0; }
+}
+
+/* 매매 중 기업 정보 */
+.ws-company { margin-top:16px; padding:20px 24px 24px; border:1px solid var(--ws-line); background:#fff; }
+.ws-company header { display:flex; align-items:baseline; gap:12px; }
+.ws-company h2 { font-size:18px; font-weight:700; }
+.ws-company header small { color:var(--ws-muted); font-size:12px; }
+.ws-company-msg { margin-top:16px; color:var(--ws-muted); font-size:13px; }
+.ws-company-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.3fr); gap:0; margin-top:16px; border-top:1px solid var(--ws-line); }
+.ws-company-grid dl { display:grid; grid-template-columns:auto 1fr; align-content:start; gap:10px 12px; margin:0; padding:16px 20px 4px 0; font-size:13px; font-variant-numeric:tabular-nums; }
+.ws-company-grid dl + dl, .ws-company-range { padding-left:20px; border-left:1px solid var(--ws-line); }
+.ws-company-grid dt { color:#666; }
+.ws-company-grid dd { margin:0; font-weight:700; text-align:right; white-space:nowrap; }
+.ws-company-range { padding-top:16px; font-variant-numeric:tabular-nums; }
+.ws-company-range h3 { color:#666; font-size:13px; font-weight:500; }
+.ws-range-bar { position:relative; height:6px; margin:14px 0 8px; border-radius:3px; background:linear-gradient(90deg,#c9dafc,#fbc9d3); }
+.ws-range-bar i { position:absolute; top:-5px; width:3px; height:16px; margin-left:-1.5px; background:#191919; }
+.ws-range-ends { display:flex; justify-content:space-between; }
+.ws-range-ends span { display:flex; flex-direction:column; gap:2px; font-size:13px; }
+.ws-range-ends span:last-child { align-items:flex-end; }
+.ws-range-ends small { color:var(--ws-muted); font-size:11px; }
+.ws-company-range p { margin-top:14px; color:#666; font-size:12.5px; }
+@media (max-width:1100px) {
+  .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ws-company-grid dl:nth-child(3), .ws-company-range { border-left:0; padding-left:0; }
+}
+@media (max-width:640px) {
+  .ws-company { padding:16px; }
+  .ws-company-grid { grid-template-columns:minmax(0,1fr); }
+  .ws-company-grid dl + dl { border-left:0; padding-left:0; }
+}
+
+/* 호가 출처 · 총잔량 */
+.ws-book-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:12px; }
+.ws-book-title h2 { padding-bottom:0 !important; }
+.ws-book-title small { font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ws-book-title small.live { color:#1f8a4c; }
+.ws-book-title small.mock { color:#b26a00; }
+.ws-book-total { display:flex; justify-content:space-between; margin-top:8px; padding:6px; border-top:1px solid var(--ws-line); font-size:12px; color:#666; font-variant-numeric:tabular-nums; }
+.ws-book-total b { margin-left:4px; }
+
+/* 매매 중 아래쪽: 호가 | 기업 정보 */
+.ws-trade-bottom { display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; align-items:start; margin-top:16px; }
+.ws-trade-bottom .ws-company { margin-top:0; }
+.ws-book-slot > .ws-book { border:1px solid var(--ws-line); }
+.ws-trade-bottom .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.ws-trade-bottom .ws-company-grid dl:nth-child(3), .ws-trade-bottom .ws-company-range { border-left:0; padding-left:0; border-top:1px solid var(--ws-line); }
+.ws-trade-bottom .ws-company-grid dl:nth-child(4) { border-top:1px solid var(--ws-line); }
+.ws-rec-scope { padding:0 4px; color:#555; font-size:12.5px; font-weight:700; }
+@media (max-width:900px) {
+  .ws-trade-bottom { grid-template-columns:minmax(0,1fr); }
+}
