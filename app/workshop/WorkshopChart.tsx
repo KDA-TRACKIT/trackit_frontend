@@ -23,9 +23,12 @@ import IndicatorPicker from "./IndicatorPicker";
 import type { AvgPrice } from "../../hooks/useAvgPrice";
 import ColorSwatches from "./ColorSwatches";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
 import { DrawingLayer, fromChartTime, toChartTime } from "../../lib/drawing/render/lwc-adapter";
+import { toolHelp } from "../../lib/drawing/help";
+import ToolGlyph from "./ToolGlyph";
+import { buildScenariosFor, businessDaysBetween, lineValueAt, type Scenario, type ScenarioBase, type ScenarioName, type UserDrawing } from "../../lib/workspace/scenarios";
 import { type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import { PRESET_INTERVALS, UNIT_LABEL, UNIT_MAX, intervalLabel, isDailyLike, isSeconds, makeInterval, parseInterval, type IntervalUnit } from "../../lib/interval";
 import { fetchDailyNews, type NewsArticle } from "../../lib/api/news";
@@ -37,6 +40,114 @@ const DOWN = "#f23645";
 const UP_BAR = "rgba(8,153,129,0.45)";
 const DOWN_BAR = "rgba(242,54,69,0.45)";
 const DRAW_STYLE = { color: "#2962ff", width: 1.5 };
+
+// ---------- 시나리오 (반투명 미래 캔들) ----------
+const SCENARIO_ALPHA = { idle: 0.22, hover: 0.7, picked: 1 };
+const scenarioColors = (alpha: number) => {
+  const up = `rgba(8,153,129,${alpha})`;
+  const down = `rgba(242,54,69,${alpha})`;
+  return { upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down };
+};
+const KST_SEC = 9 * 3600;
+/** 일봉 시각(KST 자정 epoch 초) ↔ "YYYY-MM-DD" */
+const ymdOf = (t: number) => new Date((t + KST_SEC) * 1000).toISOString().slice(0, 10);
+const epochOf = (ymd: string) => Date.parse(`${ymd}T00:00:00Z`) / 1000 - KST_SEC;
+/** 시나리오 기준이 되는 드로잉 → 기준 종류 */
+const BASE_KIND: Record<string, "hline" | "line" | "channel" | "regression" | "flat" | "box" | "long" | "short" | "fib"> = {
+  "horizontal-line": "hline",
+  "horizontal-ray": "hline",
+  trendline: "line",
+  ray: "line",
+  "extended-line": "line",
+  "parallel-channel": "channel",
+  "regression-trend": "regression",
+  "flat-top-bottom": "flat",
+  rectangle: "box",
+  "long-position": "long",
+  "short-position": "short",
+  "fib-retracement": "fib",
+};
+const FIB_RATIOS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+
+/** 드로잉 하나 → 시나리오 기준 (점이 모자라면 null) */
+function scenarioBaseOf(d: Drawing, bars: Bar[]): ScenarioBase | null {
+  const kind = d.toolId ? BASE_KIND[d.toolId] : undefined;
+  if (!kind) return null;
+  const pts = d.points.map((p) => ({ time: ymdOf(p.time), price: Number(p.price) }));
+  const key = `${d.toolId}:${pts.map((p) => `${p.time}:${p.price}`).join(",")}`;
+  const lineOf = (a: (typeof pts)[number], b: (typeof pts)[number]): UserDrawing => ({ type: "LINE", payload: { v: 1, source: "USER", points: [a, b] } });
+  const need = (n: number) => pts.length >= n;
+  switch (kind) {
+    case "hline":
+      return need(1) ? { kind: "line", key, at: () => pts[0].price } : null;
+    case "line": {
+      if (!need(2)) return null;
+      const line = lineOf(pts[0], pts[1]);
+      return { kind: "line", key, at: (t) => lineValueAt(line, t) };
+    }
+    case "channel": {
+      // 두 점 = 한쪽 선, 세 번째 점 = 평행선까지의 가격 간격
+      if (!need(3)) return null;
+      const line = lineOf(pts[0], pts[1]);
+      const off = pts[2].price - lineValueAt(line, pts[2].time);
+      return { kind: "band", key, label: "채널", upper: (t) => lineValueAt(line, t) + Math.max(0, off), lower: (t) => lineValueAt(line, t) + Math.min(0, off) };
+    }
+    case "flat": {
+      // 기울어진 선(점 2개) + 수평선(세 번째 점 가격)
+      if (!need(3)) return null;
+      const line = lineOf(pts[0], pts[1]);
+      const flat = pts[2].price;
+      return { kind: "band", key, label: "채널", upper: (t) => Math.max(lineValueAt(line, t), flat), lower: (t) => Math.min(lineValueAt(line, t), flat) };
+    }
+    case "regression": {
+      // 도구와 같은 계산: 구간 종가를 봉 순서로 선형 회귀, ±표준편차 2배. 미래는 영업일 수만큼 봉 순서를 늘린다
+      if (!need(2)) return null;
+      const [t1, t2] = [d.points[0].time, d.points[1].time].sort((x, y) => x - y);
+      const inRange = bars.filter((b) => b.time >= t1 && b.time <= t2);
+      if (inRange.length < 2) return null;
+      const n = inRange.length;
+      const mx = (n - 1) / 2;
+      const my = inRange.reduce((sum, b) => sum + b.close, 0) / n;
+      let sxy = 0;
+      let sxx = 0;
+      inRange.forEach((b, i) => {
+        sxy += (i - mx) * (b.close - my);
+        sxx += (i - mx) ** 2;
+      });
+      const slope = sxx ? sxy / sxx : 0;
+      const at = (i: number) => my + slope * (i - mx);
+      const sd = Math.sqrt(inRange.reduce((sum, b, i) => sum + (b.close - at(i)) ** 2, 0) / n);
+      const firstIdx = bars.indexOf(inRange[0]);
+      const lastBar = bars[bars.length - 1];
+      const idxOf = (t: string) => bars.length - 1 - firstIdx + businessDaysBetween(ymdOf(lastBar.time), t);
+      return { kind: "band", key, label: "회귀 채널", upper: (t) => at(idxOf(t)) + 2 * sd, lower: (t) => at(idxOf(t)) - 2 * sd };
+    }
+    case "box": {
+      if (!need(2)) return null;
+      const hi = Math.max(pts[0].price, pts[1].price);
+      const lo = Math.min(pts[0].price, pts[1].price);
+      return { kind: "band", key, label: "박스", upper: () => hi, lower: () => lo };
+    }
+    case "long":
+    case "short":
+      // 진입 → 목표 → 손절
+      return need(3) ? { kind: "position", key, side: kind === "long" ? "LONG" : "SHORT", entry: pts[0].price, target: pts[1].price, stop: pts[2].price } : null;
+    case "fib": {
+      if (!need(2)) return null;
+      const [a, b] = pts;
+      return { kind: "fib", key, levels: FIB_RATIOS.map((ratio) => ({ ratio, price: b.price + (a.price - b.price) * ratio })) };
+    }
+  }
+}
+
+/** 가장 최근에 그린, 시나리오 기준이 될 수 있는 드로잉 */
+function latestScenarioBase(list: Drawing[], bars: Bar[]): { base: ScenarioBase; label: string } | null {
+  for (let i = list.length - 1; i >= 0; i--) {
+    const base = scenarioBaseOf(list[i], bars);
+    if (base) return { base, label: getTool(list[i].toolId)?.label ?? "드로잉" };
+  }
+  return null;
+}
 
 // 아이콘은 피그마 작업실 프레임(38:184)에서 잘라낸 SVG (public/icons)
 const TOOL_GROUPS: { key: ToolGroup; label: string; icon: string }[] = [
@@ -81,6 +192,9 @@ type Props = {
   /** 봉이 없을 때 차트 가운데 안내 */
   emptyMessage?: string;
   onAddNote: (note: { time: number; price: number; text: string }) => void;
+  /** 기록으로 저장: 드로잉·메모를 저장하고 AI 가 차트 메모로 정리 */
+  onSave?: () => void;
+  saving?: boolean;
 };
 
 /** 노트 입력창을 띄울 위치(차트 영역 기준 px)와 데이터 좌표 */
@@ -171,7 +285,7 @@ function mainPaneRatio(subs: number, total?: number) {
 const fmtIndicator = (v: number) => (Math.abs(v) >= 1000 ? won(Math.round(v)) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, dataKey, symbolCode, symbolName, market, emptyMessage }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, emptyMessage }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -214,6 +328,72 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     else avgLineRef.current = candle.createPriceLine(options);
   }, [avgPrice, lastClose]);
 
+  /** 시나리오: 만든 시점의 종목·간격(dataKey) 에서만 보인다 */
+  const [scenarioState, setScenarioState] = useState<{ key: string; base: string; list: Scenario[] } | null>(null);
+  const scenarios = useMemo(() => (scenarioState?.key === dataKey ? scenarioState.list : []), [scenarioState, dataKey]);
+  const [scenarioPick, setScenarioPick] = useState<ScenarioName | null>(null);
+  const [scenarioHover, setScenarioHover] = useState<{ name: ScenarioName; x: number; y: number } | null>(null);
+  const [scenarioMsg, setScenarioMsg] = useState<string | null>(null);
+  const scenarioRef = useRef<{ list: Scenario[]; pick: ScenarioName | null }>({ list: [], pick: null });
+  useEffect(() => {
+    scenarioRef.current = { list: scenarios, pick: scenarioPick };
+  });
+  const scenarioSeriesRef = useRef(new Map<ScenarioName, ISeriesApi<"Candlestick">>());
+
+  /** 시나리오 보기: 버튼을 눌렀을 때만, 가장 최근 수평선·추세선 기준으로 미래 5영업일 3묶음 */
+  function showScenarios() {
+    selectTool(null);
+    if (interval !== "1d") return setScenarioMsg("시나리오는 1일봉에서 볼 수 있어요.");
+    const found = latestScenarioBase(drawingsRef.current, bars);
+    if (!found) return setScenarioMsg("먼저 수평선·추세선·채널·사각형(박스)·롱/숏 포지션·피보나치 되돌림 중 하나를 그려 주세요. 가장 최근 것이 기준이 됩니다.");
+    const dayBars = bars.map((b) => ({ time: ymdOf(b.time), open: b.open, high: b.high, low: b.low, close: b.close }));
+    const list = buildScenariosFor(dayBars, found.base);
+    if (!list.length) return setScenarioMsg("봉이 부족해 시나리오를 만들 수 없어요.");
+    setScenarioState({ key: dataKey, base: found.label, list });
+    setScenarioPick(null);
+    setScenarioMsg(null);
+  }
+  function closeScenarios() {
+    setScenarioState(null);
+    setScenarioPick(null);
+    setScenarioHover(null);
+  }
+
+  // 시나리오 캔들: 시나리오마다 시리즈 하나. 고르면 고른 것만 남긴다
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const map = scenarioSeriesRef.current;
+    for (const sc of scenarios) {
+      if (scenarioPick && sc.name !== scenarioPick) continue;
+      const series = chart.addSeries(CandlestickSeries, {
+        ...scenarioColors(scenarioPick ? SCENARIO_ALPHA.picked : SCENARIO_ALPHA.idle),
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      series.setData(sc.candles.map((c) => ({ time: epochOf(c.time) as Time, open: c.open, high: c.high, low: c.low, close: c.close })));
+      map.set(sc.name, series);
+    }
+    return () => {
+      map.forEach((series) => {
+        try {
+          chart.removeSeries(series);
+        } catch {
+          // 차트가 먼저 정리된 경우
+        }
+      });
+      map.clear();
+    };
+  }, [scenarios, scenarioPick]);
+  // 마우스가 올라간 시나리오만 진하게
+  const hoverName = scenarioHover?.name ?? null;
+  useEffect(() => {
+    if (scenarioPick) return;
+    scenarioSeriesRef.current.forEach((series, name) => series.applyOptions(scenarioColors(name === hoverName ? SCENARIO_ALPHA.hover : SCENARIO_ALPHA.idle)));
+  }, [hoverName, scenarioPick, scenarios]);
+
+  /** 드로잉 도구 설명 말풍선 (목록 밖으로 보이게 화면 기준 위치) */
+  const [toolTip, setToolTip] = useState<{ text: string; x: number; y: number } | null>(null);
   /** 봉 간격 직접 설정 창 */
   const [customOpen, setCustomOpen] = useState(false);
   /** 수급 지표용 일별 데이터 (종목별, 필요할 때만 받음) */
@@ -233,6 +413,19 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [past, setPast] = useState<Drawing[][]>([]);
   const [future, setFuture] = useState<Drawing[][]>([]);
   const [openGroup, setOpenGroup] = useState<ToolGroup | "trash" | null>(null);
+  // 드로잉 도구 펼침 메뉴는 도구 줄 밖을 누르면 닫는다
+  const drawToolsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!openGroup) return;
+    const onDown = (e: PointerEvent) => {
+      if (drawToolsRef.current?.contains(e.target as Node)) return;
+      setOpenGroup(null);
+      setToolTip(null);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [openGroup]);
+
   /** 눌러서 고른 드로잉 (색·굵기·삭제·이동) */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** 지금 툴로 찍은 점 수 (안내 문구용) */
@@ -417,6 +610,36 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     // 캡처 단계에서 먼저 받아, 드로잉을 누른 경우엔 차트가 끌기(이동)를 시작하지 않게 막는다
     /** 그리기 도구를 골라 둔 상태라도, 아직 점을 찍기 전이면 기존 드로잉을 눌러 고를 수 있다 (트레이딩뷰처럼) */
+    /** 이 위치의 시나리오: 그 봉의 (고가+저가)/2 가 마우스 가격과 가장 가까운 것 */
+    const scenarioAt = (x: number, y: number): ScenarioName | null => {
+      const { list, pick } = scenarioRef.current;
+      if (pick || !list.length || activeToolRef.current || noteModeRef.current) return null;
+      const t = chart.timeScale().coordinateToTime(x);
+      const price = candleRef.current?.coordinateToPrice(y) ?? null;
+      if (t === null || price === null) return null;
+      const ymd = ymdOf(t as number);
+      let best: { name: ScenarioName; dist: number } | null = null;
+      for (const sc of list) {
+        const c = sc.candles.find((k) => k.time === ymd);
+        if (!c) continue;
+        const dist = Math.abs((c.high + c.low) / 2 - price);
+        if (!best || dist < best.dist) best = { name: sc.name, dist };
+      }
+      return best?.name ?? null;
+    };
+    let lastScenarioHover: ScenarioName | null = null;
+    const hoverScenario = (x: number, y: number) => {
+      const name = scenarioAt(x, y);
+      if (name === lastScenarioHover) return name;
+      lastScenarioHover = name;
+      const sc = name ? scenarioRef.current.list.find((k) => k.name === name) : null;
+      const end = sc?.candles[sc.candles.length - 1];
+      const ex = end ? chart.timeScale().timeToCoordinate(epochOf(end.time) as Time) : null;
+      const ey = end ? (candleRef.current?.priceToCoordinate(end.close) ?? null) : null;
+      setScenarioHover(name && ex !== null && ey !== null ? { name, x: ex, y: ey } : null);
+      return name;
+    };
+
     const canPick = () => !noteModeRef.current && (!activeToolRef.current || pendingRef.current.length === 0);
     const handleCaptureDown = (event: PointerEvent) => {
       if (!canPick() || event.button !== 0) return;
@@ -455,6 +678,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const onHandle = sel ? layer.handleAt(sel, x, y) !== null : false;
       const id = onHandle ? sel : layer.drawingAt(x, y);
       layer.setHovered(id);
+      if (!id && hoverScenario(x, y)) {
+        container.style.cursor = "pointer";
+        return;
+      }
       // 도구를 고른 상태에선 빈 곳은 십자 커서(CSS) 그대로
       container.style.cursor = onHandle ? "move" : id ? "pointer" : "";
     };
@@ -545,6 +772,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       const tool = currentTool();
+      // 반투명 시나리오 캔들을 누르면 그것 하나만 남긴다
+      if (!tool && !skipClick) {
+        const name = scenarioAt(x, y);
+        if (name) {
+          setScenarioPick(name);
+          setScenarioHover(null);
+          lastScenarioHover = null;
+          return;
+        }
+      }
       if (!tool) {
         // 툴 없이 빈 곳을 누르면 선택 해제
         if (skipClick) skipClick = false;
@@ -969,9 +1206,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     pendingRef.current = [];
     layerRef.current?.setPreview(null);
     setOpenGroup(null);
+    setToolTip(null);
   }
 
   function onGroupClick(group: ToolGroup) {
+    setToolTip(null);
     const tools = toolsByGroup(group);
     if (tools.length === 1) selectTool(tools[0].id);
     else if (tools.length > 1) setOpenGroup(openGroup === group ? null : group);
@@ -1092,10 +1331,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         <button className="ws-icon-button ws-fullscreen" onClick={toggleFullscreen} title={fullscreen ? "전체 화면 끝내기 (Esc)" : "차트 전체 화면"} aria-pressed={fullscreen}>
           {fullscreen ? "⤡" : "⛶"}
         </button>
+        {/* 차트 박스 오른쪽 끝: 기록으로 저장 + AI 차트 메모 정리 */}
+        {onSave && (
+          <button className="ws-tool-text ws-chart-save" onClick={onSave} disabled={saving} title="드로잉·메모를 기록으로 저장하고, AI 가 오른쪽 차트 메모로 정리해요">
+            {saving ? "정리 중…" : "저장"}
+          </button>
+        )}
       </div>
 
       <div className="ws-chart-body">
-        <nav className="ws-draw-tools" aria-label="드로잉 도구">
+        <nav ref={drawToolsRef} className="ws-draw-tools" aria-label="드로잉 도구">
           <button className={activeToolId === null ? "active" : ""} onClick={() => selectTool(null)} title="커서 선택">
             <Image src="/icons/cursor.svg" width={20} height={20} alt="" unoptimized />
           </button>
@@ -1117,8 +1362,21 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                     {tools.map((tool, i) => (
                       <div key={tool.id}>
                         {tool.section && tool.section !== tools[i - 1]?.section && <h5>{tool.section}</h5>}
-                        <button className={activeToolId === tool.id ? "active" : ""} onClick={() => selectTool(tool.id)} role="menuitem">
-                          {tool.label}
+                        <button className={`ws-tool-item${activeToolId === tool.id ? " active" : ""}`} onClick={() => selectTool(tool.id)} role="menuitem">
+                          <ToolGlyph id={tool.id} />
+                          <span>{tool.label}</span>
+                          {/* 도구 설명: 오른쪽 끝 ⓘ 에 마우스를 올리면 */}
+                          <i
+                            className="ws-tool-help"
+                            aria-label={`${tool.label} 설명`}
+                            onMouseEnter={(e) => {
+                              const r = e.currentTarget.getBoundingClientRect();
+                              setToolTip({ text: toolHelp(tool), x: r.right + 8, y: r.top + r.height / 2 });
+                            }}
+                            onMouseLeave={() => setToolTip(null)}
+                          >
+                            ?
+                          </i>
                         </button>
                       </div>
                     ))}
@@ -1127,6 +1385,13 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               </div>
             );
           })}
+          <button
+            className={scenarios.length ? "active" : ""}
+            onClick={() => (scenarios.length ? closeScenarios() : showScenarios())}
+            title="시나리오 보기 (가장 최근 선·채널·박스·포지션·피보나치 기준, 미래 5영업일 반투명 캔들)"
+          >
+            <Image src="/icons/candle.svg" width={20} height={20} alt="" unoptimized />
+          </button>
           <span className="ws-draw-divider" />
           <div className="ws-draw-group">
             <button className={openGroup === "trash" ? "active" : ""} onClick={() => setOpenGroup(openGroup === "trash" ? null : "trash")} title="삭제">
@@ -1300,6 +1565,44 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             </div>
           )}
 
+          {(scenarios.length > 0 || scenarioMsg) && (
+            <div className="ws-scenario-bar" onClick={(e) => e.stopPropagation()}>
+              {scenarios.length > 0 ? (
+                <>
+                  <strong>시나리오</strong>
+                  <span>
+                    {scenarioPick
+                      ? `${scenarioPick} — ${scenarios.find((k) => k.name === scenarioPick)?.summary ?? ""}`
+                      : `기준: ${scenarioState?.base ?? ""} · 미래 캔들에 마우스를 올리고 클릭해 고르세요`}
+                  </span>
+                  <em>예시 경로이며 예측이 아닙니다</em>
+                  {scenarioPick && <button onClick={() => setScenarioPick(null)}>다시 고르기</button>}
+                  <button onClick={closeScenarios} aria-label="시나리오 닫기">
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span>{scenarioMsg}</span>
+                  <button onClick={() => setScenarioMsg(null)} aria-label="닫기">
+                    ✕
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          {scenarioHover && !scenarioPick && (
+            <span className="ws-scenario-label" style={{ left: scenarioHover.x + 10, top: scenarioHover.y }}>
+              {scenarioHover.name}
+            </span>
+          )}
+
+          {toolTip && openGroup && (
+            <div className="ws-tool-tip" style={{ left: toolTip.x, top: toolTip.y }} role="tooltip">
+              {toolTip.text}
+            </div>
+          )}
+
           {textDraft && (
             <div className="ws-note-pop" style={{ left: Math.max(8, textDraft.x - 120), top: textDraft.y + 14 }} onClick={(e) => e.stopPropagation()}>
               <small>{getTool(textDraft.drawing.toolId)?.label} 내용</small>
@@ -1452,7 +1755,7 @@ function CustomInterval({ current, onApply, onClose }: { current: Interval; onAp
         </button>
       </div>
       <small className={valid ? "" : "bad"}>
-        {valid ? (unit === "s" ? "초봉은 장중 실시간 체결로만 쌓여요" : unit === "d" || unit === "w" ? "수급 지표는 1일봉에서만 보여요" : "장 시작(09:00) 기준으로 묶어요") : `1~${UNIT_MAX[unit]} 사이로 넣어 주세요`}
+        {valid ? (unit === "s" ? "초봉은 장중 실시간 체결로만 쌓여요" : unit === "d" || unit === "w" || unit === "y" ? "수급 지표는 1일봉에서만 보여요" : "장 시작(09:00) 기준으로 묶어요") : `1~${UNIT_MAX[unit]} 사이로 넣어 주세요`}
       </small>
     </div>
   );

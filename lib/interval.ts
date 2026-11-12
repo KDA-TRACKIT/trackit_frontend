@@ -2,37 +2,37 @@
 //   초: 실시간 체결로만 만든다 (과거 없음)
 //   분·시간: 1분봉·1시간봉을 받아 묶는다. 장 시작(09:00) 기준으로 자른다
 //   일: 일봉을 받아 N일씩 묶는다 · 주: 월요일 시작 주를 N주씩 묶는다
-export type IntervalUnit = "s" | "m" | "h" | "d" | "w";
+export type IntervalUnit = "s" | "m" | "h" | "d" | "w" | "y";
 export type Interval = `${number}${IntervalUnit}`;
 
 export type Bar = { time: number; open: number; high: number; low: number; close: number; volume: number };
 
-export const PRESET_INTERVALS: Interval[] = ["1s", "1m", "1h", "1d", "1w"];
+export const PRESET_INTERVALS: Interval[] = ["1s", "1m", "1h", "1d", "1w", "1y"];
 
-export const UNIT_LABEL: Record<IntervalUnit, string> = { s: "초", m: "분", h: "시간", d: "일", w: "주" };
-const UNIT_SEC: Record<IntervalUnit, number> = { s: 1, m: 60, h: 3600, d: 86400, w: 7 * 86400 };
+export const UNIT_LABEL: Record<IntervalUnit, string> = { s: "초", m: "분", h: "시간", d: "일", w: "주", y: "년" };
+const UNIT_SEC: Record<IntervalUnit, number> = { s: 1, m: 60, h: 3600, d: 86400, w: 7 * 86400, y: 365 * 86400 };
 /** 직접 설정할 때 단위별 최대 개수 */
-export const UNIT_MAX: Record<IntervalUnit, number> = { s: 60, m: 120, h: 6, d: 30, w: 52 };
+export const UNIT_MAX: Record<IntervalUnit, number> = { s: 60, m: 120, h: 6, d: 30, w: 52, y: 10 };
 
 const KST = 9 * 3600;
 const OPEN = 9 * 3600; // 장 시작 09:00 KST
 const MON = 4 * 86400; // 1970-01-05 (월) 까지
 
 export function parseInterval(i: Interval): { n: number; unit: IntervalUnit } {
-  const m = /^(\d+)([smhdw])$/.exec(i);
+  const m = /^(\d+)([smhdwy])$/.exec(i);
   return m ? { n: Math.max(1, Number(m[1])), unit: m[2] as IntervalUnit } : { n: 1, unit: "d" };
 }
 
 export const makeInterval = (n: number, unit: IntervalUnit): Interval => `${Math.max(1, Math.min(UNIT_MAX[unit], Math.round(n)))}${unit}`;
 
 /** 일봉 이상 (축에 날짜만, 연·월 표시) */
-export const isDailyLike = (i: Interval) => ["d", "w"].includes(parseInterval(i).unit);
+export const isDailyLike = (i: Interval) => ["d", "w", "y"].includes(parseInterval(i).unit);
 export const isSeconds = (i: Interval) => parseInterval(i).unit === "s";
 
 export function intervalLabel(i: Interval) {
   const { n, unit } = parseInterval(i);
   const text = `${n}${UNIT_LABEL[unit]}`;
-  const footer = unit === "s" ? `${text}봉 (실시간)` : i === "1d" ? "일봉" : i === "1w" ? "주봉" : `${text}봉`;
+  const footer = unit === "s" ? `${text}봉 (실시간)` : i === "1d" ? "일봉" : i === "1w" ? "주봉" : i === "1y" ? "연봉" : `${text}봉`;
   return { button: text, legend: text, footer };
 }
 
@@ -46,6 +46,11 @@ export function sourceOf(i: Interval): "1m" | "60m" | "1d" | null {
 export function bucketStart(time: number, i: Interval) {
   const { n, unit } = parseInterval(i);
   const size = n * UNIT_SEC[unit];
+  if (unit === "y") {
+    // N년봉: KST 기준 1월 1일 시작 (해는 N년 단위로 묶음)
+    const year = new Date((time + KST) * 1000).getUTCFullYear();
+    return Date.UTC(Math.floor(year / n) * n, 0, 1) / 1000 - KST;
+  }
   if (unit === "w") return Math.floor((time + KST - MON) / size) * size + MON - KST;
   if (unit === "d") {
     if (n === 1) return Math.floor((time + KST) / size) * size - KST;

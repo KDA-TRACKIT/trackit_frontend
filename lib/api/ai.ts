@@ -15,3 +15,17 @@ export function getAiTask(taskId: string): Promise<AiTask> {
   if (USE_MOCK_TRADING) return mock.getTask(taskId);
   return apiRequest(`/ai/tasks/${encodeURIComponent(taskId)}`);
 }
+
+/** 작업실 "저장": 드로잉·차트 노트 → 백엔드가 판단 메모 초안으로 정리 (저장·주문 없음) */
+export type ChartMemoRequest = {
+  symbol: { code: string; name: string };
+  interval: string;
+  price: number;
+  drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
+  notes: { time: number; price: number; text: string }[];
+};
+export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
+
+export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
+  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), auth: false });
+}

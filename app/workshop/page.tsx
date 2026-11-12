@@ -8,7 +8,9 @@ import { PHASE_LABEL, isRegularPhase, useMarketPhase } from "../../lib/market-se
 import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations";
 import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
-import type { Drawing } from "../../lib/drawing";
+import { getTool, type Drawing } from "../../lib/drawing";
+import { requestChartMemo } from "../../lib/api/ai";
+import { errorMessage } from "../../lib/api/client";
 import { applyTick, fetchBars, openStream, searchSymbols, type SymbolInfo, type Tick } from "../../lib/market-data";
 import { DRAFT_NOTE, STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
@@ -220,6 +222,42 @@ export default function WorkshopPage() {
     if (list !== loadedDrawings?.drawings) setEditVersion((v) => v + 1);
   }
 
+  /** 기록으로 저장: 드로잉·노트를 일지에 저장하고, AI 정리 결과를 AI 노트 메모 칸에 넣는다 (확정은 사용자가 따로) */
+  const [memoBusy, setMemoBusy] = useState(false);
+  async function saveToRecord() {
+    if (memoBusy) return;
+    setMemoBusy(true);
+    setSaveMessage("저장 중…");
+    try {
+      await saveChart();
+      const result = await requestChartMemo({
+        symbol: { code: symbol.code, name: symbol.name },
+        interval,
+        price: daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close ?? 1,
+        drawings: drawings.map((d) => ({
+          toolId: d.toolId,
+          label: getTool(d.toolId)?.label ?? d.toolId,
+          points: d.points.map((p) => ({ time: p.time, price: Number(p.price) })).filter((p) => p.price > 0),
+          ...(d.text ? { text: d.text } : {}),
+        })),
+        notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+      });
+      setNoteText(result.memo);
+      setSuggestion(result.suggestion);
+      setNoteTime(nowKst());
+      setEditing(false);
+      setSuggestionApplied(false);
+      setConfirming(false);
+      setConfirmed(false);
+      setLinkChoice("auto");
+      setSaveMessage("저장됨 · AI가 차트 메모를 정리했어요");
+    } catch (error) {
+      setSaveMessage(`AI 정리 실패: ${errorMessage(error)}`);
+    } finally {
+      setMemoBusy(false);
+    }
+  }
+
   /** 새 차트 노트가 생기면 검증 창의 메모를 그 노트로 바꾼다 (AI가 불러온 메모 자리) */
   function addNote(note: { time: number; price: number; text: string }) {
     const createdAt = nowKst();
@@ -359,6 +397,8 @@ export default function WorkshopPage() {
             bars={bars}
             interval={interval}
             onIntervalChange={changeInterval}
+            onSave={saveToRecord}
+            saving={memoBusy}
             avgPrice={avgPrice}
             notes={notes}
             onAddNote={addNote}

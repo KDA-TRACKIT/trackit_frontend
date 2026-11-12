@@ -402,9 +402,9 @@
 .ws-hoga-list .p { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; border-left:1px solid #fff; border-right:1px solid #fff; background:#fff; line-height:1.05; }
 .ws-hoga-list .p b { font-size:13px; font-weight:700; }
 .ws-hoga-list .p small { font-size:9.5px; opacity:.8; }
-.ws-hoga-list li.current .p { outline:2px solid #191919; outline-offset:-2px; }
+.ws-hoga-list li.current .p { outline:1.5px solid #343a40; outline-offset:-1.5px; }
 .ws-hoga-list li.picked .p { background:#fff6d6; }
-.ws-hoga-list li.bid:first-of-type, .ws-hoga-list li.ask + li.bid { border-top:2px solid #191919; }
+.ws-hoga-list li.bid:first-of-type, .ws-hoga-list li.ask + li.bid { border-top:1px solid var(--ws-line); } /* 매도·매수 경계는 얇은 선. 굵은 테두리는 현재가(li.current) 하나만 */
 .ws-hoga-total { display:flex; justify-content:space-between; font-size:11px; color:#666; font-variant-numeric:tabular-nums; }
 .ws-hoga-total b { font-size:12px; }
 .ws-order h2 { border-bottom:0; padding-bottom:0; }
@@ -665,7 +665,7 @@
 /* 비율 눈금: 누르기 쉽게 크게, 끌다가 손을 떼도 다른 것이 눌리지 않게 사이 간격 */
 .ws-pct { gap:2px; user-select:none; }
 .ws-pct input[type=range] { height:24px; touch-action:none; }
-.ws-pct-marks { margin:0 -2px; }
+.ws-pct-marks { margin:0; }
 .ws-pct-marks button { min-width:36px; height:22px; padding:0 4px; border-radius:3px; }
 .ws-pct-marks button:hover:not(:disabled) { background:#f1f3f5; color:#333; }
 /* 주문 요약: 수수료·세금·총액 */
@@ -673,3 +673,66 @@
 .ws-order-sum .ws-order-settle { padding-top:6px; border-top:1px solid var(--ws-line); font-weight:700; color:#191919; }
 .ws-order-sum dd.ws-order-settle { font-size:14px; }
 .ws-order-sum dd.ws-order-settle.down { color:#c92a2a; }
+
+/* 매매 창 제목을 AI 노트 제목과 같게: 같은 높이·위치, 아래 구분선, 다음 내용까지 간격 같음 */
+.ws-order .ws-order-title { flex:none; box-sizing:content-box; height:21px; padding-bottom:16px; margin-bottom:8px; border-bottom:1px solid var(--ws-line); }
+.ws-order .ws-order-title h2 { padding-bottom:0; border-bottom:0; line-height:21px; }
+.ws-order .ws-order-title button { margin:-4px 0; }
+.ws-note-panel h2 { line-height:21px; }
+
+/* 직접 주문 ↔ 알고리즘 탭을 바꿔도 폭이 그대로: 스크롤바 자리를 늘 비워 둔다 (내용 길이에 따라 스크롤바가 생겼다 사라지며 폭이 바뀌던 문제) */
+.ws-side > .ws-panel { scrollbar-gutter:stable; }
+/* 매매 창 안 글은 위 탭 박스 폭 안에서 줄바꿈 */
+.ws-order > *, .algo-panel > * { max-width:100%; min-width:0; box-sizing:border-box; }
+.ws-order p, .ws-order small, .algo-panel p, .algo-panel small, .algo-note { overflow-wrap:anywhere; word-break:keep-all; }
+
+/* 드로잉 도구 목록: 이름은 왼쪽, 설명 ⓘ 는 오른쪽 끝 */
+.ws-flyout button.ws-tool-item { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.ws-tool-item > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ws-tool-help { display:inline-grid; flex:none; place-items:center; width:16px; height:16px; border:1px solid #adb5bd; border-radius:50%; color:#868e96; font-size:10.5px; font-style:normal; font-weight:700; line-height:1; cursor:help; }
+.ws-tool-help:hover { border-color:#344d7d; background:#344d7d; color:#fff; }
+.ws-tool-tip { position:fixed; z-index:50; max-width:240px; padding:7px 10px; transform:translateY(-50%); border-radius:5px; background:#212529; color:#fff; font-size:12px; line-height:1.5; word-break:keep-all; pointer-events:none; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+
+/* 시나리오 (반투명 미래 캔들) */
+.ws-scenario-bar { position:absolute; z-index:6; bottom:34px; left:50%; display:flex; align-items:center; gap:10px; max-width:calc(100% - 90px); padding:6px 8px 6px 12px; transform:translateX(-50%); border:1px solid var(--ws-line); border-radius:8px; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.12); font-size:12px; white-space:nowrap; }
+.ws-scenario-bar strong { font-size:12px; }
+.ws-scenario-bar span { overflow:hidden; text-overflow:ellipsis; color:#495057; }
+.ws-scenario-bar em { flex:none; color:#b26a00; font-style:normal; font-weight:700; }
+.ws-scenario-bar button { flex:none; height:26px; padding:0 9px; border:1px solid var(--ws-line); border-radius:4px; color:#333; font-size:12px; }
+.ws-scenario-bar button:hover { background:#f1f3f5; }
+.ws-scenario-label { position:absolute; z-index:6; transform:translateY(-50%); padding:2px 8px; border-radius:4px; background:rgba(33,37,41,.88); color:#fff; font-size:12px; font-weight:700; pointer-events:none; }
+
+/* 기업 정보: 현재가로 다시 계산한 값 표시 */
+.ws-live-tag { margin-left:4px; padding:0 4px; border-radius:2px; background:#e6f6ef; color:#1f8a4c; font-size:10px; font-style:normal; font-weight:700; vertical-align:1px; }
+
+/* 기업 정보 묶음: 실시간 · 주식 정보 | 최근 실적 | 52주 범위 */
+.ws-company-grid { grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1.2fr); }
+.ws-company-col { padding:16px 20px 4px 0; }
+.ws-company-col + .ws-company-col, .ws-company-grid .ws-company-range { padding-left:20px; border-left:1px solid var(--ws-line); }
+.ws-company-grid .ws-company-group dl { padding:0; border:0; }
+.ws-company-group + .ws-company-group { margin-top:16px; padding-top:14px; border-top:1px dashed var(--ws-line); }
+.ws-company-group h3 { margin-bottom:10px; color:#191919; font-size:13px; font-weight:700; }
+.ws-company-group h3 small { margin-left:4px; color:var(--ws-muted); font-size:11px; font-weight:400; }
+.ws-company-group dl.ws-company-two { grid-template-columns:auto 1fr auto 1fr; column-gap:14px; }
+@media (max-width:1100px) {
+  .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ws-company-grid .ws-company-range { border-left:0; padding-left:0; }
+}
+@media (max-width:700px) {
+  .ws-company-grid { grid-template-columns:minmax(0,1fr); }
+  .ws-company-col + .ws-company-col { border-left:0; padding-left:0; }
+  .ws-company-group dl.ws-company-two { grid-template-columns:auto 1fr; }
+}
+
+/* 차트 저장 (기록으로 저장 + AI 메모 정리) */
+.ws-chart-save { padding:0 12px; border-radius:4px; background:#344d7d; color:#fff !important; font-weight:700; }
+.ws-chart-save:hover:not(:disabled) { background:#2a3f68; }
+.ws-chart-save:disabled { opacity:.6; }
+.ws-chart-toolbar .ws-chart-save { flex:none; height:30px; margin-left:auto; margin-right:8px; }
+
+/* 도구 목록: [모양 아이콘] 이름 ………… ⓘ */
+.ws-flyout button.ws-tool-item { justify-content:flex-start; gap:8px; }
+.ws-tool-item > span { flex:1; min-width:0; }
+.ws-tool-glyph { flex:none; color:#495057; }
+.ws-tool-item.active .ws-tool-glyph, .ws-tool-item:hover .ws-tool-glyph { color:#2962ff; }
+.ws-flyout { min-width:220px; }
