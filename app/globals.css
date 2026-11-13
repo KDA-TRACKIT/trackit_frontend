@@ -18,3 +18,24 @@
 .gnb-main a.active::after { content:""; position:absolute; left:-12px; right:-12px; bottom:-1px; height:2px; background:#000; }
 .gnb-account { display:flex; height:57px; align-items:flex-end; justify-content:flex-end; gap:25px; padding-bottom:10px; border-bottom:1px solid #333; font-size:12px; white-space:nowrap; }
 @media (max-width:800px) { .gnb { height:auto; grid-template-columns:1fr; gap:16px; padding:20px 24px 0; }.gnb-brand { width:145px; text-align:left; }.gnb-main,.gnb-account { height:auto; justify-content:flex-start; padding-bottom:8px; border-bottom:0; } }
+
+/* 상단 바 (시안): 밑줄 없이 한 줄, 아래 경계선 하나 · 오른쪽은 둥근 프로필 칩 */
+.gnb { height:104px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
+.gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; }
+.gnb-main { height:auto; align-items:center; justify-content:center; gap:56px; border-bottom:0; }
+.gnb-main a { padding:8px 4px; color:#7a7a7a; font-size:17px; }
+.gnb-main a:hover { color:#141414; }
+.gnb-main a.active { color:#141414; font-weight:700; }
+.gnb-main a.active::after { display:none; }
+.gnb-account { height:auto; align-items:center; padding-bottom:0; border-bottom:0; }
+.gnb-chip { display:inline-flex; height:38px; max-width:220px; align-items:center; gap:8px; padding:0 16px 0 5px; border-radius:19px; background:#344d7d; color:#fff; font-size:14px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.gnb-chip:hover { background:#2a3f68; }
+.gnb-chip:not(:has(.gnb-avatar)) { padding:0 20px; }
+.gnb-chip-loading { width:110px; background:#e9edf3; }
+.gnb-avatar { flex:none; width:28px; height:28px; border-radius:50%; object-fit:cover; background:#fff; }
+.gnb-avatar-empty { display:grid; place-items:center; color:#344d7d; font-size:13px; font-weight:800; }
+.gnb-name { overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:800px) {
+  .gnb { height:auto; padding:16px 20px; }
+  .gnb-main { justify-content:flex-start; gap:28px; }
+}

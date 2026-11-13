@@ -148,8 +148,6 @@ export default function WorkshopPage() {
 
   const [noteText, setNoteText] = useState(DRAFT_NOTE.text);
   const [noteTime, setNoteTime] = useState(DRAFT_NOTE.time);
-  const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState("");
   const [suggestion, setSuggestion] = useState(DRAFT_NOTE.suggestion);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -164,10 +162,12 @@ export default function WorkshopPage() {
   const annotations = useChartAnnotations(journalId, journal.mode);
   const restored = useMemo(() => fromAnnotations(annotations.annotations, clientIdOf), [annotations.annotations]);
   // 저장본 노트 + 이번에 새로 단 노트
+  /** 지운 차트 노트 (저장본에 있던 것도 다음 저장 때 일지에서 빠진다) */
+  const [removedNoteIds, setRemovedNoteIds] = useState<ReadonlySet<string>>(new Set());
   const notes = useMemo(() => {
     const ids = new Set(restored.notes.map((n) => n.id));
-    return [...restored.notes, ...sessionNotes.filter((n) => !ids.has(n.id))];
-  }, [restored.notes, sessionNotes]);
+    return [...restored.notes, ...sessionNotes.filter((n) => !ids.has(n.id))].filter((n) => !removedNoteIds.has(n.id));
+  }, [restored.notes, sessionNotes, removedNoteIds]);
   // 차트에 넣을 저장본 드로잉. key는 일지가 바뀌거나 처음 불러왔을 때만 바뀐다
   // 열 때 찾은 일지 기준. 저장하면서 일지를 새로 만들어도 지금 그린 드로잉을 덮어쓰지 않는다
   const initialId = journal.initialJournalId;
@@ -245,7 +245,6 @@ export default function WorkshopPage() {
       setNoteText(result.memo);
       setSuggestion(result.suggestion);
       setNoteTime(nowKst());
-      setEditing(false);
       setSuggestionApplied(false);
       setConfirming(false);
       setConfirmed(false);
@@ -258,6 +257,13 @@ export default function WorkshopPage() {
     }
   }
 
+  /** 차트 노트 지우기 → 차트 표시에서 빠지고 자동 저장으로 일지에서도 지워짐 */
+  function removeNote(id: string) {
+    setNotes((list) => list.filter((n) => n.id !== id));
+    setRemovedNoteIds((prev) => new Set(prev).add(id));
+    setEditVersion((v) => v + 1);
+  }
+
   /** 새 차트 노트가 생기면 검증 창의 메모를 그 노트로 바꾼다 (AI가 불러온 메모 자리) */
   function addNote(note: { time: number; price: number; text: string }) {
     const createdAt = nowKst();
@@ -266,7 +272,6 @@ export default function WorkshopPage() {
     setNoteText(note.text);
     setNoteTime(createdAt);
     setSuggestion(`${won(note.price)}원 부근 판단 근거.\n체결되면 손절 기준도 함께 남김.`);
-    setEditing(false);
     setSuggestionApplied(false);
     setConfirming(false);
     setConfirmed(false);
@@ -298,7 +303,6 @@ export default function WorkshopPage() {
     });
     setConfirming(false);
     setConfirmed(true);
-    setEditing(false);
   }
 
   // 종목 정보는 일봉 기준
@@ -385,7 +389,10 @@ export default function WorkshopPage() {
             <small title="30일 평균 거래량">거래량 {today ? `${won(Math.round(today.volume / 10000))}만` : "—"} · 30일 평균 {won(Math.round(avgVolume / 10000))}만</small>
           </div>
           <div className="ws-topbar-right">
-            {(saveMessage || annotations.error) && <span className="ws-save-msg">{annotations.error ?? saveMessage}</span>}
+            {/* 저장 메시지 자리는 늘 같은 폭 — 글이 바뀌어도 옆 가격·글자가 움직이지 않게 */}
+            <span className="ws-save-msg" title={annotations.error ?? saveMessage ?? undefined} aria-live="polite">
+              {annotations.error ?? saveMessage ?? ""}
+            </span>
             <button className={`ws-trade${tradeOpen ? " open" : ""}`} onClick={() => setTradeOpen(!tradeOpen)} aria-expanded={tradeOpen}>
               {tradeOpen ? "매매 닫기" : "매매하기"}
             </button>
@@ -427,77 +434,36 @@ export default function WorkshopPage() {
                     {symbol.name} · {hhmm(noteTime)}
                     {notes.length > 0 && " · 차트 노트"}
                   </small>
-                  {!confirmed &&
-                    (editing ? (
-                      <button
-                        onClick={() => {
-                          if (editText.trim()) setNoteText(editText.trim());
-                          setEditing(false);
-                        }}
-                      >
-                        완료
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditText(noteText);
-                          setEditing(true);
-                        }}
-                      >
-                        수정
-                      </button>
-                    ))}
                 </div>
-                {editing ? (
-                  <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={3} autoFocus aria-label="메모 수정" />
-                ) : (
-                  <p>{noteText}</p>
-                )}
+                {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
+                <textarea
+                  className="ws-memo-text"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  readOnly={confirmed}
+                  placeholder="판단 근거를 적어 두세요. 저장을 누르면 AI가 드로잉을 보고 정리해 넣어요."
+                  aria-label="차트 메모"
+                />
               </div>
 
-              <div className="ws-suggest">
-                <h4>AI 자동완성 제안</h4>
-                <p>{suggestion}</p>
-                <button
-                  disabled={suggestionApplied || confirmed || editing}
-                  onClick={() => {
-                    setNoteText(`${noteText} ${suggestion.replace("\n", " ")}`);
-                    setSuggestionApplied(true);
-                  }}
-                >
-                  {suggestionApplied ? "적용됨" : "제안 적용"}
-                </button>
-              </div>
-
-              <h3 className="ws-gap">체결 연결</h3>
-              {executions.length === 0 ? (
-                <small className="ws-muted">
-                  아직 체결이 없어요. 저장하면 검증 대기로 남고, 오늘 이 종목을 체결하면 AI가 자동으로 연결해요.{" "}
-                  <button className="ws-link" onClick={() => setTradeOpen(true)}>
-                    매매하기
-                  </button>
-                </small>
-              ) : (
-                <div className="ws-link-box">
-                  {linkSuggestion && (
-                    <p className={`ws-link-ai ${linkSuggestion.confidence}`}>
-                      <b>AI 추천</b> {hhmm(linkSuggestion.execution.time)} {linkSuggestion.execution.side} {won(linkSuggestion.execution.quantity)}주 ·{" "}
-                      {linkSuggestion.kind === "pre" ? "사전" : "사후"} {linkSuggestion.confidence === "high" ? "(확실)" : "(확인 필요)"}
-                      <small>{linkSuggestion.reason}</small>
-                    </p>
-                  )}
-                  <select value={linkChoice} onChange={(e) => setLinkChoice(e.target.value)} disabled={confirmed} aria-label="연결할 체결">
-                    <option value="auto">AI 추천대로</option>
-                    {executions.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {hhmm(e.time)} {e.side} {won(e.quantity)}주
-                      </option>
+              {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
+              {notes.length > 0 && (
+                <div className="ws-note-list">
+                  <h4>차트 노트 {notes.length}개</h4>
+                  <ul>
+                    {notes.map((n) => (
+                      <li key={n.id}>
+                        <span title={n.text}>
+                          <b>{won(n.price)}원</b> {n.text}
+                        </span>
+                        <button onClick={() => removeNote(n.id)} aria-label={`${won(n.price)}원 노트 지우기`} title="노트 지우기">
+                          ✕
+                        </button>
+                      </li>
                     ))}
-                    <option value="none">연결 안 함 (검증 대기)</option>
-                  </select>
+                  </ul>
                 </div>
               )}
-              {autoLinked && <small className="ws-auto-linked">{autoLinked}</small>}
 
               {confirming ? (
                 <div className="ws-confirm">
@@ -510,7 +476,7 @@ export default function WorkshopPage() {
                   </div>
                 </div>
               ) : (
-                <button className="ws-save" disabled={confirmed || editing} onClick={() => setConfirming(true)}>
+                <button className="ws-save" disabled={confirmed || !noteText.trim()} onClick={() => setConfirming(true)}>
                   {confirmed ? "확정 완료" : "확인하고 저장"}
                 </button>
               )}

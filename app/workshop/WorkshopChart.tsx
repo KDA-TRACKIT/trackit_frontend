@@ -150,16 +150,26 @@ function latestScenarioBase(list: Drawing[], bars: Bar[]): { base: ScenarioBase;
 }
 
 // 아이콘은 피그마 작업실 프레임(38:184)에서 잘라낸 SVG (public/icons)
-const TOOL_GROUPS: { key: ToolGroup; label: string; icon: string }[] = [
-  { key: "line", label: "라인·채널·피치포크", icon: "/icons/line.svg" },
-  { key: "fib", label: "피보나치·갠", icon: "/icons/fib.svg" },
-  { key: "pattern", label: "패턴·엘리엇·사이클", icon: "/icons/pattern.svg" },
-  { key: "measure", label: "예측·측정·거래량", icon: "/icons/measure.svg" },
-  { key: "brush", label: "브러시", icon: "/icons/brush.svg" },
-  { key: "arrow", label: "화살표", icon: "/icons/arrow.svg" },
-  { key: "shape", label: "도형", icon: "/icons/shape.svg" },
-  { key: "text", label: "글·주석", icon: "/icons/text.svg" },
+// 왼쪽 도구 줄. 도형·화살표는 한 묶음, 글·주석(T)은 위쪽 "차트 노트" 메뉴로 옮김
+const TOOL_GROUPS: { key: ToolGroup; label: string; icon: string; members: ToolGroup[] }[] = [
+  { key: "line", label: "라인·채널·피치포크", icon: "/icons/line.svg", members: ["line"] },
+  { key: "fib", label: "피보나치·갠", icon: "/icons/fib.svg", members: ["fib"] },
+  { key: "pattern", label: "패턴·엘리엇·사이클", icon: "/icons/pattern.svg", members: ["pattern"] },
+  { key: "measure", label: "예측·측정·거래량", icon: "/icons/measure.svg", members: ["measure"] },
+  { key: "brush", label: "브러시", icon: "/icons/brush.svg", members: ["brush"] },
+  { key: "shape", label: "도형·화살표", icon: "/icons/shape.svg", members: ["shape", "arrow"] },
 ];
+/** 묶음 안에서 소제목이 없는 도구에 붙일 소제목 */
+const MEMBER_SECTION: Partial<Record<ToolGroup, string>> = { shape: "도형", arrow: "화살표" };
+/** 한 도구 줄 버튼에 들어가는 도구들 (묶음이면 소제목을 붙여 이어 붙임) */
+function groupTools(key: ToolGroup): DrawingTool[] {
+  const g = TOOL_GROUPS.find((x) => x.key === key);
+  if (!g) return toolsByGroup(key);
+  if (g.members.length === 1) return toolsByGroup(key);
+  return g.members.flatMap((m) => toolsByGroup(m).map((t) => (t.section ? t : { ...t, section: MEMBER_SECTION[m] })));
+}
+/** 도구가 속한 도구 줄 버튼 (글·주석은 차트 노트 메뉴라 없음) */
+const groupKeyOf = (group: ToolGroup | undefined) => TOOL_GROUPS.find((g) => group && g.members.includes(group))?.key ?? null;
 
 const RANGES: { label: string; days: number | "ytd" | "all" }[] = [
   { label: "1일", days: 1 },
@@ -173,6 +183,10 @@ const RANGES: { label: string; days: number | "ytd" | "all" }[] = [
 ];
 
 const won = (value: number) => value.toLocaleString("ko-KR");
+/** 봉을 바꿨을 때 마지막 봉이 놓일 가로 위치 (0 = 왼쪽 끝, 1 = 오른쪽 끝) */
+const LAST_BAR_AT = 0.65;
+/** 실시간으로 봉을 쌓는 동안(초봉 등) 고정해 둘 화면 칸 수 */
+const GROW_SLOTS = 150;
 
 type Props = {
   bars: Bar[];
@@ -413,6 +427,20 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [past, setPast] = useState<Drawing[][]>([]);
   const [future, setFuture] = useState<Drawing[][]>([]);
   const [openGroup, setOpenGroup] = useState<ToolGroup | "trash" | null>(null);
+  // 차트 노트 메뉴 (차트 노트 + 글·주석 도구). 메뉴 밖을 누르면 닫는다
+  const [noteMenuOpen, setNoteMenuOpen] = useState(false);
+  const noteMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!noteMenuOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (noteMenuRef.current?.contains(e.target as Node)) return;
+      setNoteMenuOpen(false);
+      setToolTip(null);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [noteMenuOpen]);
+
   // 드로잉 도구 펼침 메뉴는 도구 줄 밖을 누르면 닫는다
   const drawToolsRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -546,10 +574,15 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const prev = shownRef.current;
     const live = loadedKeyRef.current === dataKey && prev.length > 0 && bars.length >= prev.length && bars.length - prev.length <= 2;
     shownRef.current = bars;
+    // 봉이 아직 적을 때(초봉처럼 실시간으로 쌓는 중)는 칸 수를 고정해 오른쪽부터 채운다.
+    // fitContent 로 두면 첫 봉 몇 개가 화면 폭을 다 차지해, 새 봉마다 옆으로 밀리며 앞 봉이 안 보였다
+    const growing = (n: number) => n > 0 && n < GROW_SLOTS;
+    const showGrowing = () => chart.timeScale().setVisibleLogicalRange({ from: bars.length - GROW_SLOTS, to: bars.length + 4 });
     if (live) {
       for (let i = Math.max(0, prev.length - 1); i < bars.length; i++) {
         candle.update(toCandle(bars[i]));
       }
+      if (bars.length > prev.length && growing(bars.length)) showGrowing();
       return;
     }
     candle.setData(bars.map(toCandle));
@@ -573,9 +606,29 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       },
     });
     // 봉이 많으면 최근 것만 보이게 (나머지는 스크롤·축소로). 다 넣으면 캔들이 실처럼 가늘어진다
+    // 간격을 바꾼 직후엔 지표 시리즈에 이전 간격 데이터가 남아 있어 봉 번호(logical)로 맞추면 엉뚱한 곳을 보여 준다.
+    // → 지표까지 바뀐 다음 프레임에, 번호가 아니라 시각으로 최근 구간을 맞춘다
     const shown = isDailyLike(interval) ? 120 : 150;
-    if (bars.length > shown + 30) chart.timeScale().setVisibleLogicalRange({ from: bars.length - shown, to: bars.length + 4 });
-    else chart.timeScale().fitContent();
+    if (!bars.length) return;
+    const from = toChartTime(bars[Math.max(0, bars.length - shown)].time);
+    const to = toChartTime(bars[bars.length - 1].time);
+    const frame = requestAnimationFrame(() => {
+      const ts = chartRef.current?.timeScale();
+      if (!ts) return;
+      try {
+        candleRef.current?.priceScale().applyOptions({ autoScale: true });
+        if (bars.length > shown + 30) {
+          // 마지막 봉의 번호를 시각으로 찾아(지표 시리즈가 섞여 있어도 정확), 그 봉이 가운데 살짝 오른쪽에 오게
+          const last = ts.timeToIndex(to, true);
+          if (last !== null) ts.setVisibleLogicalRange({ from: last - shown * LAST_BAR_AT, to: last + shown * (1 - LAST_BAR_AT) });
+          else ts.setVisibleRange({ from, to });
+        } else if (isSeconds(interval) && growing(bars.length)) showGrowing();
+        else ts.fitContent();
+      } catch {
+        // 차트가 정리된 경우
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [bars, interval, dataKey]);
 
   // 클릭으로 점 찍기, 마우스 이동으로 미리보기·범례
@@ -930,13 +983,15 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       map.delete(uid);
     }
 
-    const make = (o: OutputDef, color: string, pane: number, scaleId: string | undefined) => {
+    const make = (o: OutputDef, color: string, pane: number, scaleId: string | undefined, overlay = false) => {
       const format = { type: "custom" as const, minMove: 0.01, formatter: scaleId ? fmtVolume : fmtIndicator };
       const base = {
         priceLineVisible: false,
         lastValueVisible: false,
         priceFormat: format,
         ...(scaleId ? { priceScaleId: scaleId } : {}),
+        // 캔들 위에 겹치는 지표는 가격 범위 계산에서 빼서, 먼 이동평균 때문에 캔들이 납작해지지 않게
+        ...(overlay ? { autoscaleInfoProvider: () => null } : {}),
       };
       if (o.kind === "histogram") return chart.addSeries(HistogramSeries, { ...base, color }, pane) as ISeriesApi<SeriesType>;
       if (o.kind === "dots")
@@ -954,7 +1009,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const fresh = !series;
       if (!series) {
         const pane = def.placement === "separate" ? chart.panes().length : 0;
-        series = def.outputs.map((o, k) => make(o, colors[k], pane, scaleId));
+        series = def.outputs.map((o, k) => make(o, colors[k], pane, scaleId, def.placement === "overlay"));
         if (scaleId) chart.priceScale(scaleId, 0).applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
         for (const level of def.levels ?? []) series[series.length - 1].createPriceLine({ price: level, color: "#ced4da", lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: false, title: "" });
         map.set(inst.uid, series);
@@ -1211,7 +1266,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
   function onGroupClick(group: ToolGroup) {
     setToolTip(null);
-    const tools = toolsByGroup(group);
+    const tools = groupTools(group);
     if (tools.length === 1) selectTool(tools[0].id);
     else if (tools.length > 1) setOpenGroup(openGroup === group ? null : group);
   }
@@ -1277,7 +1332,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const subPaneCount = drawnIndicators.filter((i) => getIndicator(i.id)?.placement === "separate").length;
   /** 평소엔 보조 창을 2개까지만 → 나머지는 전체화면에서 */
   const hiddenSubCount = visibleIndicators(instances, interval, true).filter((i) => getIndicator(i.id)?.placement === "separate").length - subPaneCount;
-  const activeGroup = activeTool?.group ?? null;
+  const activeGroup = groupKeyOf(activeTool?.group);
+  const textTools = toolsByGroup("text");
   const selectedDrawing = selectedId ? drawings.find((d) => d.id === selectedId) : undefined;
   const dayLabel = (bar: Bar) => kstDay(bar.time).slice(5).replace("-", ".");
   const change = legendBar && legendPrev ? legendBar.close - legendPrev.close : 0;
@@ -1314,17 +1370,73 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           지표{instances.length ? ` ${instances.length}` : ""} ＋
         </button>
         <span className="ws-divider" />
-        <button
-          className={`ws-tool-text ws-note-toggle${noteMode ? " active" : ""}`}
-          onClick={() => {
-            selectTool(null);
-            toggleNoteMode(!noteMode);
-          }}
-          title="차트를 클릭한 지점에 메모를 남깁니다"
-          aria-pressed={noteMode}
-        >
-          ✎ 차트 노트
-        </button>
+        <div className="ws-note-menu" ref={noteMenuRef}>
+          <button
+            className={`ws-tool-text ws-note-toggle${noteMode || activeTool?.group === "text" ? " active" : ""}`}
+            onClick={() => {
+              setOpenGroup(null);
+              setNoteMenuOpen(!noteMenuOpen);
+            }}
+            title="차트 노트 · 텍스트 · 말풍선 · 핀 등 글 도구"
+            aria-expanded={noteMenuOpen}
+          >
+            ✎ {activeTool?.group === "text" ? activeTool.label : "차트 노트"} ▾
+          </button>
+          {noteMenuOpen && (
+            <div className="ws-flyout ws-note-flyout" role="menu">
+              <p>차트 노트 · 글</p>
+              <button
+                className={`ws-tool-item${noteMode ? " active" : ""}`}
+                role="menuitem"
+                onClick={() => {
+                  selectTool(null);
+                  toggleNoteMode(!noteMode);
+                  setNoteMenuOpen(false);
+                }}
+              >
+                <ToolGlyph id="note" />
+                <span>차트 노트</span>
+                <i
+                  className="ws-tool-help"
+                  aria-label="차트 노트 설명"
+                  onMouseEnter={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setToolTip({ text: "차트를 클릭한 지점에 메모를 남깁니다. 저장을 누르면 이 메모와 그린 드로잉 전체가 AI 차트 메모로 정리돼요.", x: r.right + 8, y: r.top + r.height / 2 });
+                  }}
+                  onMouseLeave={() => setToolTip(null)}
+                >
+                  ?
+                </i>
+              </button>
+              <h5>글 · 주석</h5>
+              {textTools.map((tool) => (
+                <button
+                  key={tool.id}
+                  className={`ws-tool-item${activeToolId === tool.id ? " active" : ""}`}
+                  role="menuitem"
+                  onClick={() => {
+                    selectTool(tool.id);
+                    setNoteMenuOpen(false);
+                  }}
+                >
+                  <ToolGlyph id={tool.id} />
+                  <span>{tool.label}</span>
+                  <i
+                    className="ws-tool-help"
+                    aria-label={`${tool.label} 설명`}
+                    onMouseEnter={(e) => {
+                      const r = e.currentTarget.getBoundingClientRect();
+                      setToolTip({ text: toolHelp(tool), x: r.right + 8, y: r.top + r.height / 2 });
+                    }}
+                    onMouseLeave={() => setToolTip(null)}
+                  >
+                    ?
+                  </i>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <span className="ws-divider" />
         <button className="ws-icon-button" onClick={undo} disabled={past.length === 0} title="실행 취소">↶</button>
         <button className="ws-icon-button" onClick={redo} disabled={future.length === 0} title="다시 실행">↷</button>
@@ -1333,7 +1445,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         </button>
         {/* 차트 박스 오른쪽 끝: 기록으로 저장 + AI 차트 메모 정리 */}
         {onSave && (
-          <button className="ws-tool-text ws-chart-save" onClick={onSave} disabled={saving} title="드로잉·메모를 기록으로 저장하고, AI 가 오른쪽 차트 메모로 정리해요">
+          <button className="ws-tool-text ws-chart-save" onClick={onSave} disabled={saving} title="모든 드로잉(선·채널·박스·포지션·피보나치·글 등)과 차트 노트를 기록으로 저장하고, AI 가 오른쪽 차트 메모로 정리해요">
             {saving ? "정리 중…" : "저장"}
           </button>
         )}
@@ -1345,7 +1457,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             <Image src="/icons/cursor.svg" width={20} height={20} alt="" unoptimized />
           </button>
           {TOOL_GROUPS.map(({ key, label, icon }) => {
-            const tools = toolsByGroup(key);
+            const tools = groupTools(key);
             return (
               <div key={key} className="ws-draw-group">
                 <button
@@ -1597,7 +1709,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             </span>
           )}
 
-          {toolTip && openGroup && (
+          {toolTip && (openGroup || noteMenuOpen) && (
             <div className="ws-tool-tip" style={{ left: toolTip.x, top: toolTip.y }} role="tooltip">
               {toolTip.text}
             </div>
