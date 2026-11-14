@@ -2,7 +2,7 @@
 @import "tailwindcss";
 :root { --ink:#151515; --blue:#344d7d; --accent:#c9320b; --line:#e6ddd3; }
 * { box-sizing:border-box; } html { scroll-behavior:smooth; scrollbar-gutter:stable; } body { margin:0; background:#fdfdfd; color:var(--ink); font-family:Arial,"Noto Sans KR",sans-serif; } button,a { font:inherit; } a { color:inherit; text-decoration:none; }
-.home { min-height:100vh; overflow:hidden; }.site-header { height:78px; display:grid; grid-template-columns:200px 1fr 200px; align-items:center; padding:0 28px; background:#fff; }.brand { display:block; width:143px; padding:0 16px 8px; color:var(--blue); font-size:25px; font-weight:800; letter-spacing:-1px; border-bottom:1px solid #333; }.main-nav { display:flex; align-self:stretch; align-items:end; gap:68px; padding-left:48px; border-bottom:1px solid #333; }.main-nav a { position:relative; padding:0 10px 10px; font-size:15px; }.main-nav .active { font-weight:700; }.main-nav .active::after { content:""; position:absolute; bottom:-1px; left:0; width:47px; height:2px; background:#000; }.account-nav { display:flex; align-self:stretch; align-items:end; justify-content:flex-end; gap:25px; padding:0 16px 10px; border-bottom:1px solid #333; font-size:12px; }.hero { height:331px; background:#334f70; }.section-wrap { padding-left:max(24px,calc((100% - 1060px)/2)); padding-right:max(24px,calc((100% - 1060px)/2)); }.report { padding-top:40px; padding-bottom:14px; background:linear-gradient(#fff 0%,#fff 78%,#ebeff5 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }.section-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:38px; }.section-heading h2 { margin:0; font-size:20px; font-weight:700; letter-spacing:-1px; }.section-heading button,.section-heading .heading-link { display:inline-flex; align-items:center; justify-content:center; width:164px; height:42px; border:0; border-radius:6px; background:#151515; color:#fff; font-size:12px; cursor:pointer; }.section-heading button span,.section-heading .heading-link span { margin-left:7px; font-size:16px; }.report-grid { display:grid; grid-template-columns:644px 1fr; gap:14px; align-items:center; }.chart-card,.metric { border:1px solid #e0e0e0; border-radius:24px; background:#fff; }.chart-card { height:298px; padding:18px 20px; }.chart-card p,.metric p { margin:0; color:#666; font-size:13px; }.chart-card strong { display:block; margin-top:4px; color:var(--accent); font-size:26px; }.chart { display:flex; height:142px; margin-top:5px; font-size:10px; color:#5d5d5d; }.y-labels { display:flex; width:19px; flex-direction:column; justify-content:space-between; padding:5px 0 20px; }.chart-body { position:relative; flex:1; padding-top:3px; }.grid-lines { position:absolute; inset:4px 0 20px; background:repeating-linear-gradient(to bottom,transparent 0,transparent 24px,#e6ddd3 25px); }.chart-body svg { position:absolute; inset:4px 0 20px; width:100%; height:calc(100% - 24px); }.x-labels { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between; }.metric-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 12px; }.metric { height:109px; padding:18px 20px; }.metric strong { display:block; margin-top:10px; color:var(--blue); font-size:22px; }.trades { padding-top:27px; padding-bottom:74px; background:#fff; }.trades .section-heading { margin-bottom:13px; }.trade-table { font-size:12px; }.trade-head,.trade-row { display:grid; grid-template-columns:1.2fr 1fr 1.2fr 1.25fr 3.1fr .9fr; align-items:center; min-height:54px; border-bottom:1px solid var(--line); }.trade-head { min-height:34px; color:#4f4f4f; }.trade-row { color:#151515; }.trade-row a { color:var(--accent); text-align:right; }.trade-row a span { margin-left:5px; font-size:15px; }
+.home { min-height:100vh; background:#fafafa; }.site-header { height:78px; display:grid; grid-template-columns:200px 1fr 200px; align-items:center; padding:0 28px; background:#fff; }.brand { display:block; width:143px; padding:0 16px 8px; color:var(--blue); font-size:25px; font-weight:800; letter-spacing:-1px; border-bottom:1px solid #333; }.main-nav { display:flex; align-self:stretch; align-items:end; gap:68px; padding-left:48px; border-bottom:1px solid #333; }.main-nav a { position:relative; padding:0 10px 10px; font-size:15px; }.main-nav .active { font-weight:700; }.main-nav .active::after { content:""; position:absolute; bottom:-1px; left:0; width:47px; height:2px; background:#000; }.account-nav { display:flex; align-self:stretch; align-items:end; justify-content:flex-end; gap:25px; padding:0 16px 10px; border-bottom:1px solid #333; font-size:12px; }.hero { height:331px; background:#334f70; }.section-wrap { padding-left:max(24px,calc((100% - 1060px)/2)); padding-right:max(24px,calc((100% - 1060px)/2)); }.report { padding-top:40px; padding-bottom:14px; background:linear-gradient(#fff 0%,#fff 78%,#ebeff5 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }.section-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:38px; }.section-heading h2 { margin:0; font-size:20px; font-weight:700; letter-spacing:-1px; }.section-heading button,.section-heading .heading-link { display:inline-flex; align-items:center; justify-content:center; width:164px; height:42px; border:0; border-radius:6px; background:#151515; color:#fff; font-size:12px; cursor:pointer; }.section-heading button span,.section-heading .heading-link span { margin-left:7px; font-size:16px; }.report-grid { display:grid; grid-template-columns:644px 1fr; gap:14px; align-items:center; }.chart-card,.metric { border:1px solid #e0e0e0; border-radius:24px; background:#fff; }.chart-card { height:298px; padding:18px 20px; }.chart-card p,.metric p { margin:0; color:#666; font-size:13px; }.chart-card strong { display:block; margin-top:4px; color:var(--accent); font-size:26px; }.chart { display:flex; height:142px; margin-top:5px; font-size:10px; color:#5d5d5d; }.y-labels { display:flex; width:19px; flex-direction:column; justify-content:space-between; padding:5px 0 20px; }.chart-body { position:relative; flex:1; padding-top:3px; }.grid-lines { position:absolute; inset:4px 0 20px; background:repeating-linear-gradient(to bottom,transparent 0,transparent 24px,#e6ddd3 25px); }.chart-body svg { position:absolute; inset:4px 0 20px; width:100%; height:calc(100% - 24px); }.x-labels { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between; }.metric-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 12px; }.metric { height:109px; padding:18px 20px; }.metric strong { display:block; margin-top:10px; color:var(--blue); font-size:22px; }.trades { padding-top:27px; padding-bottom:74px; background:#fff; }.trades .section-heading { margin-bottom:13px; }.trade-table { font-size:12px; }.trade-head,.trade-row { display:grid; grid-template-columns:1.2fr 1fr 1.2fr 1.25fr 3.1fr .9fr; align-items:center; min-height:54px; border-bottom:1px solid var(--line); }.trade-head { min-height:34px; color:#4f4f4f; }.trade-row { color:#151515; }.trade-row a { color:var(--accent); text-align:right; }.trade-row a span { margin-left:5px; font-size:15px; }
 @media (max-width:800px) { .site-header { grid-template-columns:1fr; height:auto; gap:15px; padding:20px 24px 0; }.main-nav,.account-nav { border-bottom:0; padding:0 0 15px; justify-content:flex-start; }.hero { height:180px; }.report-grid { grid-template-columns:1fr; }.section-heading h2 { font-size:18px; }.trade-table { overflow-x:auto; }.trade-head,.trade-row { min-width:760px; } }
 .auth-page { min-height:100vh; background:#fff; }.auth-header { height:104px; display:grid; grid-template-columns:240px 1fr 240px; align-items:end; padding:0 40px 23px; }.auth-brand { display:block; width:200px; padding-bottom:8px; border-bottom:1px solid #333; color:#344d7d; font-size:28px; font-weight:800; text-align:center; }.auth-header nav { display:flex; align-items:flex-end; gap:48px; height:57px; padding-left:0; border-bottom:1px solid #333; }.auth-header nav a { padding-bottom:9px; font-size:16px; }.auth-header > div { display:flex; justify-content:flex-end; gap:25px; height:57px; padding:0 0 10px; border-bottom:1px solid #333; font-size:12px; }.auth-panel { width:360px; margin:96px auto 0; text-align:center; }.auth-panel h1 { margin:0; color:#344d7d; font-size:31px; font-weight:800; }.auth-panel > p { margin:14px 0 43px; color:#777d88; font-size:11px; }.auth-button { position:relative; display:flex; width:360px; height:56px; align-items:center; justify-content:center; border-radius:6px; cursor:pointer; font-size:11px; }.auth-button strong { font-weight:800; }.auth-button .arrow { position:absolute; right:20px; font-size:25px; line-height:1; }.auth-button.primary { margin-bottom:18px; border:0; background:#344d7d; color:#fff; }.auth-button.google { border:1px solid #d3d7df; background:#fff; color:#242a34; }.person-icon,.google-icon { position:absolute; left:21px; font-size:23px; }.google-icon { color:#4285f4; font-family:Arial,sans-serif; font-size:24px; font-weight:800; }.auth-button:disabled { cursor:wait; opacity:.7; }.existing-account { display:flex; align-items:center; gap:11px; margin-top:33px; color:#7e8590; font-size:10px; white-space:nowrap; }.existing-account span:first-child,.existing-account span:last-child { height:1px; flex:1; background:#e7e9ed; }.existing-account a { color:#344d7d; font-weight:800; }.auth-error { margin-top:18px !important; color:#c9320b !important; font-size:11px !important; }.auth-callback { display:grid; min-height:100vh; place-items:center; color:#344d7d; font-size:14px; }
 @media (max-width:800px) { .auth-header { grid-template-columns:1fr; height:auto; gap:16px; padding:20px 24px 0; }.auth-brand { width:145px; text-align:left; }.auth-header nav,.auth-header > div { height:auto; border-bottom:0; padding:0 0 8px; justify-content:flex-start; }.auth-panel { width:min(360px,calc(100% - 48px)); margin-top:70px; }.auth-button { width:100%; } }
@@ -10,7 +10,7 @@
 @media (max-width:800px) { .login-panel { width:min(360px,calc(100% - 48px)); margin-top:65px; }.login-wordmark { margin-bottom:48px; } }
 
 /* 공통 상단 바 (SiteHeader). 어느 화면이든 같은 높이·폭·글꼴로 로고와 메뉴 위치를 고정 */
-.gnb { position:relative; z-index:10; display:grid; height:104px; grid-template-columns:240px minmax(0,1fr) 240px; align-items:end; padding:0 40px 23px; background:#fff; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:1.2; }
+.gnb { position:sticky; top:0; z-index:10; display:grid; height:104px; grid-template-columns:minmax(155px,1fr) auto minmax(155px,1fr); align-items:end; padding:0 40px 23px; background:transparent; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:1.2; }
 .gnb-brand { display:block; width:200px; padding-bottom:8px; border-bottom:1px solid #333; color:#344d7d; font-size:28px; font-weight:800; letter-spacing:-1px; text-align:center; }
 .gnb-main { display:flex; height:57px; align-items:flex-end; gap:48px; border-bottom:1px solid #333; }
 .gnb-main a { position:relative; padding-bottom:9px; font-size:16px; white-space:nowrap; }
@@ -20,10 +20,11 @@
 @media (max-width:800px) { .gnb { height:auto; grid-template-columns:1fr; gap:16px; padding:20px 24px 0; }.gnb-brand { width:145px; text-align:left; }.gnb-main,.gnb-account { height:auto; justify-content:flex-start; padding-bottom:8px; border-bottom:0; } }
 
 /* 상단 바 (시안): 밑줄 없이 한 줄, 아래 경계선 하나 · 오른쪽은 둥근 프로필 칩 */
-.gnb { height:104px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
-.gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; }
-.gnb-main { height:auto; align-items:center; justify-content:center; gap:56px; border-bottom:0; }
-.gnb-main a { padding:8px 4px; color:#7a7a7a; font-size:17px; }
+.gnb { height:83px; align-items:center; padding:0 clamp(24px,4.375vw,63px); border-bottom:1px solid transparent; transition:background-color 160ms, border-color 160ms; }
+.gnb[data-scrolled="true"] { background:#fff; border-bottom-color:#d2d8e1; }
+.gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; font-size:34px; }
+.gnb-main { height:auto; align-items:center; justify-content:center; gap:clamp(16px,calc((100vw - 800px) / 6),76px); border-bottom:0; }
+.gnb-main a { padding:8px 4px; color:#7a7a7a; font-size:20px; }
 .gnb-main a:hover { color:#141414; }
 .gnb-main a.active { color:#141414; font-weight:700; }
 .gnb-main a.active::after { display:none; }
@@ -37,5 +38,94 @@
 .gnb-name { overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:800px) {
   .gnb { height:auto; padding:16px 20px; }
-  .gnb-main { justify-content:flex-start; gap:28px; }
+  .gnb-main { justify-content:flex-start; gap:12px 24px; flex-wrap:wrap; }
+}
+
+/* Desktop home */
+.home .hero { height:325px; }
+.trader-board { scroll-margin-top:150px; padding-top:60px; padding-bottom:61px; }
+.home .section-heading { gap:12px; margin-bottom:24px; }
+.home .section-heading h2 { font-size:27px; font-weight:800; }
+.home .section-heading :is(button,.heading-link) { flex:none; background:#344d7d; border-radius:8px; font-size:16px; }
+.trader-carousel { position:relative; }
+.trader-grid {
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:max(175px,calc((100% - 48px) / 5));
+  gap:12px;
+  margin:0;
+  padding:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+  scroll-snap-type:x mandatory;
+  list-style:none;
+}
+.trader-grid::-webkit-scrollbar { display:none; }
+.trader-grid > li { scroll-snap-align:start; }
+.trader-edge {
+  position:absolute;
+  inset-block:0;
+  width:76px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.trader-edge[hidden] { display:none; }
+.trader-edge-prev { left:0; --trader-fade-direction:to left; }
+.trader-edge-next { right:0; --trader-fade-direction:to right; }
+.trader-edge::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:8px;
+  background:linear-gradient(var(--trader-fade-direction),transparent,rgba(250,250,250,.96));
+  pointer-events:none;
+}
+.trader-edge button {
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border:0;
+  border-radius:50%;
+  background:#fff;
+  color:#0f2367;
+  box-shadow:0 2px 8px #0f236729;
+  cursor:pointer;
+}
+.trader-edge::before,.trader-edge button { transition:opacity 150ms; }
+@media (hover:hover) {
+  .trader-edge:not(:hover):not(:focus-within)::before,
+  .trader-edge:not(:hover):not(:focus-within) button { opacity:0; }
+}
+.trader-card { min-height:140px; padding:9px 11px; border:1px solid #e3e8f0; border-radius:8px; background:#fff; color:#3b4052; font-size:20px; }
+.trader-card h3 { display:flex; align-items:center; gap:8px; margin:0 0 9px; color:#141a2b; font-size:23px; }
+.trader-card p { margin:0; line-height:1.4; }
+.trader-avatar { display:grid; place-items:center; flex:none; width:28px; height:28px; border-radius:50%; background:#e3e8f0; color:#344d7d; font-size:13px; }
+.trader-return { color:#0f2466; }
+.trader-heart { color:#c9320b; }
+.home .report { padding-top:52px; padding-bottom:77px; background:linear-gradient(#fff 55%,#ebeff5); border:0; }
+.home .report-grid { grid-template-columns:minmax(0,644fr) minmax(0,402fr); align-items:end; }
+.home :is(.chart-card,.metric) { border-radius:12px; }
+.home .chart-card p { color:#151515; font-size:17px; }
+.home .chart-card strong { font-size:32px; }
+.home .chart { height:163px; margin-top:17px; font-size:13px; }
+.home .grid-lines { background:repeating-linear-gradient(to bottom,#e6ddd3 0 1px,transparent 1px 25%); }
+.home .metric-grid { row-gap:23px; }
+.home .metric p { font-size:16px; }
+.home .metric strong { font-size:28px; }
+.home .trades { padding-top:62px; padding-bottom:224px; background:inherit; }
+.home .trade-table { font-size:15px; }
+.home .trade-head,.home .trade-row { grid-template-columns:130fr 148fr 130fr 164fr 383fr 105fr; min-height:64px; }
+.home .trade-head { min-height:45px; font-size:14px; }
+.home .trade-row:last-child { border-bottom:0; }
+@media (max-width:800px) {
+  .home .hero { height:180px; }
+  .home .report-grid { grid-template-columns:1fr; }
+  .home .section-heading h2 { font-size:20px; }
+  .home .section-heading :is(button,.heading-link) { width:auto; padding:0 12px; font-size:13px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .gnb { transition:none; }
 }

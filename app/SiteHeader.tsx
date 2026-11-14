@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import AccountChip from "./AccountChip";
 
@@ -8,8 +11,17 @@ type Active = "home" | "workshop" | "marketplace" | null;
  * 스타일은 globals.css 의 .gnb
  */
 export default function SiteHeader({ active = null }: { active?: Active }) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateScroll = () => setScrolled(window.scrollY > 0);
+    updateScroll();
+    window.addEventListener("scroll", updateScroll, { passive: true });
+    return () => window.removeEventListener("scroll", updateScroll);
+  }, []);
+
   return (
-    <header className="gnb">
+    <header className="gnb" data-scrolled={scrolled}>
       <Link className="gnb-brand" href="/" aria-label="TRACKIT 홈">
         TRACKIT
       </Link>
@@ -18,10 +30,11 @@ export default function SiteHeader({ active = null }: { active?: Active }) {
           홈
         </Link>
         <Link className={active === "workshop" ? "active" : ""} href="/workshop" aria-current={active === "workshop" ? "page" : undefined}>
-          트레이딩로그
+          트레이딩 로그
         </Link>
+        <Link href="/#trader-board">전략</Link>
         <Link className={active === "marketplace" ? "active" : ""} href="/marketplace" aria-current={active === "marketplace" ? "page" : undefined}>
-          마켓플레이스
+          전략 쇼핑
         </Link>
       </nav>
       {/* 계정: 로그인하면 프로필 사진 + 닉네임 */}
