@@ -1,0 +1,39 @@
+/* 로그인한 홈 (HomeDashboard). 예전 .report/.trades 틀은 globals.css 그대로, 실제 데이터용 조각만 여기 */
+
+/* 수익률·지표 색 (오르면 빨강, 내리면 파랑) */
+.chart-card strong.up, .metric strong.up, .trade-row em.up { color:var(--c-up); }
+.chart-card strong.down, .metric strong.down, .trade-row em.down { color:var(--c-down); }
+.chart-card strong:not(.up):not(.down):not(.skel-line) { color:var(--c-ink); }
+.chart-body svg .line { stroke:var(--c-ink-2); }
+.chart-body svg .line.up { stroke:var(--c-up); }
+.chart-body svg .line.down { stroke:var(--c-down); }
+.chart-body svg .zero-line { stroke:var(--c-line-strong); stroke-dasharray:4 4; vector-effect:non-scaling-stroke; }
+.chart-empty { align-items:center; justify-content:center; color:var(--c-faint); font-size:13px; }
+.metric strong, .chart-card strong, .num { font-variant-numeric:tabular-nums; }
+
+/* 불러오는 중 */
+.skel-line { display:block; width:55%; height:22px; margin-top:12px; border-radius:6px; background:linear-gradient(90deg,var(--c-subtle) 0%,var(--c-hover) 50%,var(--c-subtle) 100%); background-size:200% 100%; animation:home-shimmer 1.2s infinite linear; }
+.trade-row.skel-row { display:block; padding:16px 0; }
+.trade-row.skel-row .skel-line { width:100%; height:16px; margin:0; }
+@keyframes home-shimmer { to { background-position:-200% 0; } }
+
+/* 표 */
+.trade-row em { font-style:normal; font-weight:700; }
+.trade-row .memo { overflow:hidden; padding-right:12px; text-overflow:ellipsis; white-space:nowrap; }
+.trade-row .memo.empty { color:var(--c-faint); }
+
+/* 빈 화면 · 오류 */
+.home-state { display:flex; min-height:160px; flex-direction:column; align-items:center; justify-content:center; gap:14px; border:1px dashed var(--c-line-strong); border-radius:16px; color:var(--c-sub); font-size:14px; }
+.home-state p { margin:0; }
+.home-state a, .home-state button { height:36px; padding:0 16px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:600; line-height:34px; cursor:pointer; }
+
+
+
+/* 증권사 체결 반영 상태 · 지금 불러오기 */
+.home-sync { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 14px; color:var(--c-sub); font-size:13px; }
+.home-sync small { flex-basis:100%; color:var(--c-sub); font-size:12px; text-align:center; }
+.home-sync.compact { justify-content:flex-end; padding:14px 0 0; font-size:12px; }
+.home-sync.compact small { text-align:right; }
+.home-sync button { height:32px; padding:0 14px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.home-sync button:disabled { color:var(--c-faint); cursor:wait; }
+.home-state .home-sync button { height:36px; }

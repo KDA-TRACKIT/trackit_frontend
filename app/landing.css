@@ -1,0 +1,57 @@
+/* 시작 화면 (시안: 시작 화면 · TRAKIT 랜딩) */
+.landing { min-height:100vh; background:#fff; color:#1b2a44; font-family:Pretendard,"Noto Sans KR",sans-serif; }
+/* 상단 바: 다른 화면과 같은 .gnb (위치·크기 동일), 검은 바탕에 맞춰 색만 바꿈 */
+:root .gnb.gnb-dark { background:#0a0c11; border-bottom-color:#1d222c; }
+:root .gnb-dark .gnb-brand { color:#fff; }
+:root .gnb-dark .gnb-main a { color:#8b93a1; }
+:root .gnb-dark .gnb-main a:hover, :root .gnb-dark .gnb-main a.active { color:#fff; }
+:root .gnb-dark .gnb-chip { gap:6px; background:#344d7d; color:#fff; }
+:root .gnb-dark .gnb-chip:hover, .landing-cta:hover { background:#2a3f68; }
+
+/* 글 왼쪽 끝 = 로고 왼쪽 끝, 그림 오른쪽 끝 = 상단 바 오른쪽 끝 (좌우 40px) */
+.landing-hero { position:relative; display:flex; min-height:804px; justify-content:space-between; gap:24px; padding:118px 40px 54px; background:#0a0c11; color:#fff; overflow:hidden; }
+.landing-copy { position:relative; z-index:1; display:flex; flex-direction:column; }
+.landing-copy .eyebrow { margin:0; color:#8ea6cf; font-size:15px; font-weight:700; letter-spacing:.3px; }
+.landing-copy .bar { width:48px; height:4px; margin:28px 0 48px; border-radius:2px; background:#5f7fb6; }
+.landing-copy h1 { margin:0; font-size:clamp(36px,4.6vw,66px); font-weight:800; letter-spacing:-1.5px; line-height:1.15; white-space:nowrap; }
+.landing-copy h2 { margin:30px 0 0; font-size:clamp(24px,3vw,42px); font-weight:800; letter-spacing:-1px; }
+.landing-copy .lead { margin:76px 0 0; color:#c9d0db; font-size:15px; }
+.landing-copy .scroll { margin-top:auto; color:#8ea6cf; font-size:12px; font-weight:700; }
+.landing-copy .scroll span { margin-left:10px; }
+
+.landing-art { position:relative; flex:none; width:520px; height:590px; margin-top:20px; background:#131a29; overflow:hidden; }
+.landing-art .ring { position:absolute; border:1.5px solid rgba(120,155,215,.55); border-radius:50%; }
+.landing-art .r1 { left:110px; top:78px; width:490px; height:490px; }
+.landing-art .r2 { left:174px; top:143px; width:366px; height:366px; border-color:rgba(160,190,240,.7); }
+.landing-art .bars { position:absolute; left:54px; top:160px; display:flex; align-items:flex-start; gap:24px; }
+.landing-art .bars span { display:block; width:18px; border-radius:9px; background:rgba(120,140,175,.55); }
+.landing-art .card { position:absolute; left:50px; top:304px; display:flex; width:332px; height:154px; flex-direction:column; gap:14px; padding:26px 24px; border-radius:8px; background:rgba(52,77,125,.92); }
+.landing-art .card small { color:#dce4f2; font-size:14px; font-weight:600; }
+.landing-art .card strong { font-size:32px; font-weight:800; letter-spacing:-.3px; }
+
+.landing-steps { display:flex; flex-direction:column; align-items:center; padding:20px 24px 124px; text-align:center; }
+.landing-steps > h2 { margin:0; font-size:36px; font-weight:800; letter-spacing:-1px; }
+.landing-steps > p { margin:14px 0 0; color:#5d6778; font-size:15px; }
+.landing-steps ol { position:relative; display:flex; width:min(868px,100%); flex-direction:column; gap:26px; margin:64px 0 0; padding:0 0 0 86px; list-style:none; text-align:left; }
+.landing-steps ol::before { content:""; position:absolute; left:18px; top:20px; bottom:120px; width:2px; background:#c9d2e2; }
+.landing-steps li { position:relative; display:flex; min-height:140px; align-items:center; padding:0 28px; border:1px solid #e3e8ef; border-left:0; border-radius:10px; background:#f3f5f9; }
+.landing-steps li::before { content:""; position:absolute; left:0; top:22px; bottom:26px; width:4px; background:#344d7d; }
+.landing-steps .check { position:absolute; left:-86px; display:grid; width:38px; height:38px; place-items:center; border:2px solid #344d7d; border-radius:50%; background:#fff; color:#344d7d; font-size:16px; font-weight:800; }
+.landing-steps li small { display:block; color:#344d7d; font-size:12px; font-weight:700; }
+.landing-steps li strong { display:block; margin-top:10px; font-size:22px; font-weight:800; }
+.landing-steps li p { margin:16px 0 0; color:#5d6778; font-size:14px; }
+.landing-steps .tail { margin-top:64px; color:#4a5568; font-size:15px; }
+.landing-cta { display:inline-flex; width:256px; height:60px; align-items:center; justify-content:center; margin-top:104px; border-radius:10px; background:#344d7d; color:#fff; font-size:20px; font-weight:800; }
+.landing-foot { height:104px; background:#0a0c11; }
+
+@media (max-width:1000px) {
+  .landing-hero { flex-direction:column; min-height:0; padding:64px 20px 40px; }
+  .landing-copy h1 { white-space:normal; }
+  .landing-copy .lead { margin-top:36px; }
+  .landing-copy .scroll { margin-top:40px; }
+  .landing-art { width:100%; max-width:520px; height:420px; }
+  .landing-steps > h2 { font-size:26px; }
+  .landing-steps ol { padding-left:56px; }
+  .landing-steps ol::before { left:14px; }
+  .landing-steps .check { left:-56px; width:30px; height:30px; }
+}
