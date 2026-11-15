@@ -1,6 +1,9 @@
 // 매매 기록 (AI 노트에서 확정하거나 기록 + 버튼으로 남긴 메모)
-// 아직 백엔드에 기록 API가 없어서 이 브라우저 localStorage 에 둔다. 확정된 기록은 고치거나 지우지 않는다
+// 로그인했으면 백엔드(→ Supabase DB)의 확정 노트로 저장·조회, 로그인 전이면 이 브라우저 localStorage
+// 확정된 기록은 고치거나 지우지 않는다 (서버에서는 내용 해시로 잠김)
 import { useSyncExternalStore } from "react";
+import { accessToken } from "./api/client";
+import { MARKET_SYMBOL, listNotes, saveNote, hideNote } from "./api/notes";
 
 export type TradeRecord = {
   id: string;
@@ -48,7 +51,69 @@ const listeners = new Set<() => void>();
 let cacheRaw: string | null = null;
 let cache: TradeRecord[] = EMPTY;
 
+/** 어디에 저장하는지: 로그인 전 = 이 브라우저, 로그인 = 서버 */
+let source: "local" | "server" = "local";
+let serverList: TradeRecord[] = EMPTY;
+const notify = () => listeners.forEach((l) => l());
+
 function read(): TradeRecord[] {
+  return source === "server" ? serverList : readLocal();
+}
+
+const KST_MS = 9 * 3600 * 1000;
+/** 서버 확정 노트 → 화면 기록 */
+function fromServer(): Promise<TradeRecord[]> {
+  return listNotes().then((groups) =>
+    groups.flatMap(({ journal, notes }) =>
+      notes.map((n) => {
+        const kst = new Date(new Date(n.confirmedAt).getTime() + KST_MS).toISOString();
+        const s = n.aiSummary ?? {};
+        const market = n.symbol === MARKET_SYMBOL;
+        return {
+          id: n.id,
+          date: kst.slice(0, 10),
+          noteTime: s.noteTime ?? kst.slice(11, 19),
+          executionTime: s.execution?.time ?? null,
+          side: s.execution?.side,
+          quantity: s.execution?.quantity,
+          symbol: market ? null : n.symbol,
+          symbolName: market ? null : (s.symbolName ?? journal.title),
+          topic: market ? (s.topic ?? "시장 전반") : undefined,
+          text: s.summary ?? "",
+        } satisfies TradeRecord;
+      }),
+    ),
+  );
+}
+
+/** 서버에서 기록을 다시 읽는다 */
+export async function refreshServerRecords() {
+  serverList = await fromServer();
+  source = "server";
+  notify();
+}
+
+/** 로그인했으면 서버 기록으로 바꾼다 (기록 화면을 열 때 한 번) */
+export async function initRecordSource() {
+  if (!(await accessToken())) {
+    source = "local";
+    notify();
+    return;
+  }
+  try {
+    await refreshServerRecords();
+  } catch {
+    // 서버가 꺼져 있으면 일단 이 브라우저 기록을 보여 준다
+    source = "local";
+    notify();
+  }
+}
+
+export function recordSource() {
+  return source;
+}
+
+function readLocal(): TradeRecord[] {
   const raw = localStorage.getItem(KEY);
   if (raw !== cacheRaw) {
     cacheRaw = raw;
@@ -71,12 +136,53 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** 새 기록을 맨 앞에. 같은 메모·체결 조합이 이미 있으면 그대로 둔다 */
-export function addRecord(input: Omit<TradeRecord, "id">) {
+/**
+ * 새 기록. 같은 메모·체결 조합이 이미 있으면 그대로 둔다.
+ * 로그인했으면 서버에 확정 노트로 저장 (drawings 는 서버에만 같이 남김). 실패하면 error 를 돌려준다
+ */
+export async function addRecord(input: Omit<TradeRecord, "id"> & { drawings?: unknown }): Promise<{ ok: boolean; error?: string }> {
+  const { drawings, ...record } = input;
   const list = read();
-  if (list.some((r) => r.symbol === input.symbol && r.date === input.date && r.noteTime === input.noteTime && r.executionTime === input.executionTime)) return;
-  localStorage.setItem(KEY, JSON.stringify([{ ...input, id: crypto.randomUUID() }, ...list]));
-  listeners.forEach((l) => l());
+  if (list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
+  if (source === "server") {
+    try {
+      await saveNote({
+        symbol: record.symbol,
+        symbolName: record.symbolName,
+        text: record.text,
+        noteTime: record.noteTime,
+        topic: record.topic,
+        execution: record.executionTime ? { time: record.executionTime, side: record.side ?? "", quantity: record.quantity ?? 0 } : null,
+        drawings,
+      });
+      await refreshServerRecords();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };
+    }
+  }
+  localStorage.setItem(KEY, JSON.stringify([{ ...record, id: crypto.randomUUID() }, ...readLocal()]));
+  notify();
+  return { ok: true };
+}
+
+/**
+ * 기록 지우기. 로그인했으면 서버 기록을 숨김(원본은 DB 에 남음), 아니면 이 브라우저 기록에서 뺀다
+ */
+export async function removeRecord(id: string): Promise<{ ok: boolean; error?: string }> {
+  if (source === "server") {
+    try {
+      await hideNote(id);
+      serverList = serverList.filter((r) => r.id !== id);
+      notify();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : "기록을 지우지 못했어요." };
+    }
+  }
+  localStorage.setItem(KEY, JSON.stringify(readLocal().filter((r) => r.id !== id)));
+  notify();
+  return { ok: true };
 }
 
 /**
@@ -84,8 +190,10 @@ export function addRecord(input: Omit<TradeRecord, "id">) {
  * 메모가 체결보다 앞서므로 판정이 분명한 경우만 자동으로 한다. 이어 붙인 건수를 돌려준다
  */
 export function linkPending(symbol: string, date: string, execution: { time: string; side: string; quantity: number }) {
+  // 서버 확정 노트는 잠겨 있어 나중에 체결을 붙일 수 없다 (확정할 때 연결한 체결만 남음)
+  if (source === "server") return 0;
   let linked = 0;
-  const next = read().map((r) => {
+  const next = readLocal().map((r) => {
     if (r.symbol !== symbol || r.date !== date || r.executionTime !== null || r.noteTime > execution.time) return r;
     linked++;
     return { ...r, executionTime: execution.time, side: execution.side, quantity: execution.quantity };

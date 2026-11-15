@@ -39,3 +39,128 @@
   .gnb { height:auto; padding:16px 20px; }
   .gnb-main { justify-content:flex-start; gap:28px; }
 }
+
+/* 프로필 칩 메뉴 (마이페이지 · 로그아웃) */
+.gnb-account-box { position:relative; }
+button.gnb-chip { border:0; cursor:pointer; font-family:inherit; }
+.gnb-caret { margin-left:-2px; font-size:10px; opacity:.8; }
+.gnb-menu { position:absolute; z-index:50; top:calc(100% + 8px); right:0; display:flex; min-width:200px; flex-direction:column; padding:6px; border:1px solid #e0e0e0; border-radius:12px; background:#fff; box-shadow:0 10px 28px rgba(15,35,103,.14); }
+.gnb-menu-head { display:flex; flex-direction:column; gap:3px; padding:8px 10px 10px; margin-bottom:4px; border-bottom:1px solid #eef0f3; }
+.gnb-menu-head strong { color:#141414; font-size:14px; }
+.gnb-menu-head small { color:#888; font-size:12px; }
+.gnb-menu a, .gnb-menu button { display:block; width:100%; padding:9px 10px; border:0; border-radius:8px; background:none; color:#141414; font:inherit; font-size:14px; text-align:left; text-decoration:none; cursor:pointer; }
+.gnb-menu a:hover, .gnb-menu button:hover { background:#f3f5f8; }
+.gnb-menu button { color:#c92a2a; }
+
+/* 마이페이지 */
+.mypage { min-height:100vh; background:#f6f6f6; font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.mypage-card { width:min(720px,calc(100% - 48px)); margin:40px auto; padding:32px; border:1px solid #e0e0e0; border-radius:16px; background:#fff; }
+.mypage-card h1 { margin:0 0 24px; font-size:22px; font-weight:800; }
+.mypage-muted { color:#7a7a7a; }
+.mypage-profile { display:flex; align-items:center; gap:16px; }
+.mypage-profile div { display:flex; flex-direction:column; gap:4px; }
+.mypage-profile strong { font-size:18px; }
+.mypage-profile small { color:#888; font-size:13px; }
+.mypage-actions { display:flex; gap:10px; margin-top:28px; }
+.mypage-actions a, .mypage-actions button { height:40px; padding:0 18px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; color:#141414; font:inherit; font-size:14px; line-height:40px; text-decoration:none; cursor:pointer; }
+.mypage-actions button { color:#c92a2a; }
+
+/* 마이페이지 · 증권사 연결 */
+.mypage-broker-head { display:flex; align-items:center; justify-content:space-between; }
+.mypage-broker-head h2 { margin:0; font-size:18px; font-weight:800; }
+.mypage-broker-head button, .mypage-conn button, .mypage-conn-form button { height:36px; padding:0 14px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; font:inherit; font-size:13px; cursor:pointer; }
+.mypage-conn-form button.primary { border:0; background:#344d7d; color:#fff; font-weight:700; }
+.mypage-broker > .mypage-muted { margin:8px 0 16px; font-size:13px; }
+.mypage-conn { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0; border-top:1px solid #eef0f3; }
+.mypage-conn div { display:flex; flex-direction:column; gap:4px; }
+.mypage-conn strong { font-size:14px; }
+.mypage-conn em { margin-left:4px; padding:1px 6px; border-radius:4px; font-size:11px; font-style:normal; }
+.mypage-conn em.mock { background:#e8f3ff; color:#1666f0; }
+.mypage-conn em.real { background:#fff0f1; color:#c92a2a; }
+.mypage-conn small { color:#888; font-size:12px; }
+.mypage-conn button { color:#c92a2a; }
+.mypage-conn-form { display:flex; flex-direction:column; gap:10px; margin-top:12px; padding:16px; border:1px solid #e0e0e0; border-radius:12px; background:#fafbfd; }
+.mypage-conn-form label { display:grid; grid-template-columns:110px 1fr; align-items:center; gap:10px; font-size:13px; }
+.mypage-conn-form input, .mypage-conn-form select { height:36px; padding:0 10px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; font:inherit; font-size:13px; }
+.mypage-conn-form > div { display:flex; justify-content:flex-end; gap:8px; }
+.mypage-error { margin-top:12px; color:#c92a2a; font-size:13px; }
+
+/* 회원가입 · 아이디/비밀번호 찾기 (로그인 화면과 같은 틀) */
+.auth-done { margin-top:24px; color:#333; font-size:14px; line-height:1.6; }
+.auth-done p { margin:0 0 8px; }
+.auth-link-button { display:flex; align-items:center; justify-content:center; text-decoration:none; box-sizing:border-box; font-size:15px; }
+.auth-id-list { margin:8px 0 0; padding:12px 16px; border:1px solid #e4e6e9; border-radius:8px; list-style:none; font-size:16px; font-weight:600; color:#344d7d; }
+.auth-id-list li + li { margin-top:6px; }
+
+/* 회원가입 선택 · 일반 회원가입 · Google 가입 마무리 · 최초 프로필 생성 (시안: Trackit (3).zip) */
+.auth-page, .signup-form, .signup-complete { font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.signup-choice { margin-top:200px; }
+.signup-choice h1 { font-size:30px; }
+.signup-choice > p { margin:20px 0 52px; color:#5d6778; font-size:12px; }
+.signup-choice .auth-button { width:360px; font-size:12px; text-decoration:none; }
+.signup-choice .auth-button.primary { margin-bottom:18px; }
+.signup-choice .auth-button.google { border:1px solid #d3d7df; }
+.signup-choice .auth-button strong { font-weight:800; }
+.signup-choice .google-icon { display:grid; place-items:center; left:30px; }
+.signup-choice .person-icon { left:22px; }
+.signup-choice .existing-account { justify-content:center; margin-top:48px; }
+.google-login .google-icon { display:grid; place-items:center; left:30px; }
+
+.signup-form { width:360px; margin:120px auto 80px; }
+.signup-form h1 { margin:0; padding-bottom:12px; border-bottom:1px solid #e4e7ec; color:#1b2a44; font-size:20px; font-weight:800; }
+.signup-form form { display:flex; flex-direction:column; gap:18px; margin-top:22px; }
+.signup-row { display:grid; grid-template-columns:130px 1fr; align-items:center; min-height:38px; }
+.signup-row > span { color:#1b2a44; font-size:12px; font-weight:700; }
+.signup-row i, .signup-complete i { color:#e03131; font-style:normal; }
+.signup-row input:not([type=radio]) { width:100%; height:38px; padding:0 12px; border:1px solid #c9d1de; border-radius:6px; font:inherit; font-size:11px; outline:0; }
+.signup-row input:focus { border-color:#344d7d; }
+.signup-row .with-icon { position:relative; }
+.signup-row .with-icon input { padding-right:40px; }
+.signup-row .with-icon button { position:absolute; right:8px; top:50%; display:grid; padding:0; border:0; background:none; color:#6b7280; transform:translateY(-50%); cursor:pointer; }
+.signup-radios { display:flex; gap:40px; padding-left:4px; }
+.signup-radios label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; cursor:pointer; }
+.signup-radios input { width:16px; height:16px; margin:0; accent-color:#344d7d; }
+.signup-submit { width:100%; height:41px; margin-top:8px; border:0; border-radius:6px; background:#344d7d; color:#fff; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+.signup-submit:disabled { opacity:.65; cursor:wait; }
+.signup-submit.big { height:52px; font-size:15px; }
+
+.signup-complete { width:min(568px,calc(100% - 48px)); margin:100px auto 80px; color:#1b2a44; }
+.google-linked { display:flex; align-items:center; gap:14px; padding:12px 20px; border-radius:10px; background:#eef4f1; }
+.google-linked > span { color:#2f7a52; font-size:18px; font-weight:800; }
+.google-linked strong { display:block; color:#1f3d2d; font-size:15px; }
+.google-linked small { display:block; margin-top:6px; color:#3d5a48; font-size:12px; }
+.signup-complete h1 { margin:32px 0 0; font-size:30px; font-weight:800; letter-spacing:-.5px; }
+.signup-complete > p { margin:14px 0 0; color:#5d6778; font-size:13px; }
+.signup-complete form { display:flex; flex-direction:column; gap:28px; margin-top:28px; }
+.signup-complete .field { display:flex; flex-direction:column; gap:10px; }
+.signup-complete .field > span { font-size:13px; font-weight:700; }
+.signup-complete .field > input, .signup-complete .birth { width:100%; height:48px; padding:0 16px; border:1px solid #c9d1de; border-radius:8px; font:inherit; font-size:14px; outline:0; }
+.signup-complete .birth { display:flex; align-items:center; gap:10px; color:#9aa2af; }
+.signup-complete .birth input { width:52px; border:0; font:inherit; font-size:14px; outline:0; text-align:center; }
+.signup-complete .birth input:first-child { width:52px; text-align:left; }
+.signup-complete .gender { display:grid; grid-template-columns:196px 140px 140px; align-items:center; padding-bottom:28px; border-bottom:1px solid #e4e7ec; font-size:16px; font-weight:700; }
+.signup-complete .gender label { display:flex; align-items:center; gap:10px; cursor:pointer; }
+.signup-complete .gender input { width:22px; height:22px; margin:0; accent-color:#344d7d; }
+.signup-complete .terms { display:flex; flex-direction:column; gap:14px; color:#344d7d; font-size:13px; }
+.signup-complete .terms label { display:flex; align-items:center; gap:8px; cursor:pointer; }
+.signup-complete .terms input { margin:0; accent-color:#344d7d; }
+.signup-complete .terms small { color:#7a8496; font-size:11px; }
+
+.mp.onboarding { background:var(--c-surface); }
+.onboarding-body { display:flex; width:min(968px,calc(100% - 48px)); flex-direction:column; gap:32px; margin:48px auto 80px; }
+.onboarding .mp-card { border-color:var(--c-line); }
+.onboarding-foot { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-top:-8px; }
+.onboarding-foot small { color:var(--c-sub); font-size:12px; }
+.onboarding-foot .mp-btn { height:42px; }
+@media (max-width:800px) { .signup-form { width:calc(100% - 48px); } .signup-choice .auth-button { width:100%; } .signup-complete .gender { grid-template-columns:1fr auto auto; gap:16px; } .onboarding-foot { flex-direction:column; } }
+
+/* 상단 바 오른쪽 (2026-11-14 시안): 알림 종 + 닉네임 + 프로필 사진. 로고·메뉴 위치와 글자 크기는 위 .gnb 그대로 */
+.gnb-account { gap:18px; }
+.gnb-account-box { display:flex; align-items:center; }
+.gnb-bell-box { position:relative; }
+.gnb-bell { display:grid; width:36px; height:36px; place-items:center; padding:0; border:0; border-radius:50%; background:none; color:#141414; cursor:pointer; }
+.gnb-bell:hover { background:#f3f5f8; }
+.gnb-bell-menu { min-width:180px; padding:14px 16px; color:#7a7a7a; font-size:13px; }
+button.gnb-chip.gnb-user { height:40px; gap:16px; padding:0 0 0 6px; background:none; color:#141414; font-size:14px; font-weight:700; }
+button.gnb-chip.gnb-user:hover { background:none; opacity:.85; }
+.gnb-user .gnb-avatar-empty { background:#e6ebf3; color:#344d7d; }

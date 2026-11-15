@@ -1,0 +1,32 @@
+/* 화면 사이 통일 (2026-11-15 점검). globals.css · theme.css 뒤에 불러와 덮어쓴다
+   - 글꼴: 모든 화면 Pretendard (홈·로그인·아이디/비밀번호 찾기가 Arial 이었음). 입력칸도 같은 글꼴
+   - 로그인·회원가입 흐름: 제목 크기 30px, 상단 바 아래 96px 에서 시작 (67·120·200px 로 들쭉날쭉했음)
+     로그인의 TRACKIT 글자는 로고라 크게 그대로
+   - 9~11px 이던 작은 글자를 12~14px 로 */
+
+body { font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; }
+input, textarea, select, button { font-family:inherit; }
+.google-icon, .google-login .google-icon { font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; }
+
+/* 시작 높이 */
+.login-panel, .auth-panel.signup-choice, .signup-form, .signup-complete { margin-top:96px; }
+
+/* 제목 */
+.login-wordmark { margin-bottom:44px; font-size:30px; letter-spacing:-.5px; }
+.login-wordmark.brand { font-size:38px; letter-spacing:-1.5px; }
+.signup-choice h1, .signup-complete h1, .signup-form h1 { font-size:30px; letter-spacing:-.5px; }
+.signup-form h1 { padding-bottom:16px; }
+
+/* 작은 글자 */
+.auth-panel > p, .signup-choice > p { font-size:13px; }
+.auth-button, .signup-choice .auth-button { font-size:14px; }
+.or-divider { font-size:12px; }
+.google-login { font-size:14px; }
+.login-links { gap:10px; }
+.login-links a { min-width:84px; padding:6px 12px; font-size:12px; }
+.existing-account { font-size:12px; }
+.auth-error { font-size:13px !important; }
+.signup-row > span { font-size:13px; }
+.signup-row input:not([type=radio]) { font-size:14px; }
+.signup-radios label { font-size:13px; }
+.signup-submit { font-size:15px; }
