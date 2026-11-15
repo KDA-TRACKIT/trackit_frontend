@@ -443,7 +443,7 @@ export default function WorkshopPage() {
                   }
                 }}
                 aria-label="종목 검색"
-                placeholder="종목명 · 코드 · 미국 티커"
+                placeholder="종목명 · 코드 · 티커"
               />
               <Image src="/icons/search.svg" width={18} height={18} alt="" unoptimized />
             </label>
