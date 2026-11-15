@@ -2,7 +2,7 @@
 // 투자 정보 (아직 메뉴에 안 넣음 — 주소 /insights 로 직접 열기)
 //   시장: 전광판 · 관심 종목 · 섹터맵 · 오늘의 종목(상승·하락·거래대금) · 외국인·기관
 //   뉴스: 경제·증권 뉴스 제목 (종목 태그 · 관심 종목만)
-//   경제: 경제 캘린더(이번 주 지표·FOMC·금통위) · 물가(한국·미국 CPI·PPI)
+//   경제: 경제 캘린더(지난·이번 주·다가오는 지표, 실제·예상·이전) · 기준금리(미국·한국·유로·일본)
 //   공시: DART 최근 공시 (보유 종목만 보기)
 //   내 손익: 청산 손익 캘린더
 import { useState } from "react";
@@ -15,7 +15,7 @@ import UsChart, { type UsChartTarget } from "./UsChart";
 import SectorMap from "./SectorMap";
 import { Flows, Rankings } from "./Movers";
 import { EconCalendar } from "./Calendar";
-import { Inflation } from "./Economy";
+import { PolicyRates } from "./Economy";
 import { DisclosureList, PnlCalendar } from "./Mine";
 import "./insights.css";
 import "./sections.css";
@@ -63,7 +63,7 @@ export default function InsightsPage() {
         {tab === "economy" && (
           <>
             <EconCalendar />
-            <Inflation />
+            <PolicyRates />
           </>
         )}
         {tab === "disclosures" && <DisclosureList />}

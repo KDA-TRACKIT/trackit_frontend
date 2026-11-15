@@ -152,7 +152,15 @@
 
 /* 경제 캘린더 (달력 + 목록) */
 .ins-cal-ctl { display:flex; align-items:center; gap:8px; }
-.ins-cal-wrap { display:grid; grid-template-columns:240px minmax(0,1fr); gap:28px; align-items:start; }
+.ins-cal-wrap { display:grid; grid-template-columns:260px minmax(0,1fr); gap:24px; align-items:stretch; }
+.ins-cal-grid { align-self:start; }
+/* 오른쪽 내용: 달력 옆에 붙어서 따로 스크롤 */
+.ins-cal-side { display:flex; flex-direction:column; min-width:0; max-height:400px; padding-left:24px; border-left:1px solid var(--c-line); }
+.ins-cal-side-head { display:flex; align-items:baseline; gap:8px; padding-bottom:10px; border-bottom:1px solid var(--c-line); }
+.ins-cal-side-head strong { font-size:15px; font-weight:800; }
+.ins-cal-side-head span { color:var(--c-faint); font-size:12px; }
+.ins-cal-side-head button { margin-left:auto; padding:2px 8px; border:1px solid var(--c-line); border-radius:999px; background:none; color:var(--c-sub); font:inherit; font-size:12px; cursor:pointer; }
+.ins-cal-side .ins-cal { flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:4px; }
 .ins-cal-grid .ins-month { justify-content:space-between; margin-bottom:8px; }
 .ins-cal-grid .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
 .ins-cal-grid .wk { padding:4px 0; color:var(--c-faint); font-size:11px; text-align:center; }
@@ -168,16 +176,36 @@
 .ins-cal-grid .legend { display:flex; align-items:center; gap:5px; margin:10px 0 0; color:var(--c-faint); font-size:11px; }
 .ins-cal-grid .legend .dot + .dot, .ins-cal-grid .legend .dot:not(:first-child) { margin-left:8px; }
 .ins-cal li.past { opacity:.55; }
-.ins-cal .ev { display:grid !important; grid-template-columns:42px 38px auto minmax(0,1fr); align-items:center; }
+.ins-cal .ev { display:grid !important; grid-template-columns:42px 38px auto minmax(0,1fr) 64px 64px 64px; align-items:center; }
+/* 실제 · 예상 · 이전 */
+.ins-cal .ev .v { color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.ins-cal .ev .v.act { color:var(--c-ink); font-weight:800; }
+.ins-cal .ev .v.none { color:var(--c-faint); font-weight:400; }
+/* 오른쪽 칸 안에서는 날짜를 위에 한 줄로 (이름이 좁아져 여러 줄로 꺾이지 않게) */
+.ins-cal-side .ins-cal li { grid-template-columns:1fr; gap:6px; }
+.ins-cal-side .ins-cal .when { justify-content:flex-start; }
+.ins-cal-side .ins-cal .when em { margin-left:6px; }
+.ins-cal-side .ins-cal .ev { grid-template-columns:40px 34px 34px minmax(0,220px) 60px 60px 60px minmax(0,1fr); } /* 열 이름 줄과 맞게 나라 칸도 고정 */
+.ins-cal-side .ins-cal .title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* 값은 이름 바로 오른쪽, 왼쪽 정렬 */
+.ins-cal-side .ins-cal .ev .v { text-align:left; }
+.ins-cal-side .ins-cal li.cols-row { position:sticky; top:0; z-index:1; display:block; padding:6px 0; border-top:0; border-bottom:1px solid var(--c-line); background:var(--c-surface); }
+.ins-cal-side .ins-cal li.cols-row .ev > .v { color:var(--c-faint); font-size:11px; font-weight:400; }
+.ins-cal-side .ins-cal li.cols-row .ev > .v:first-child { grid-column:5; }
+.ins-cal-side .ins-cal li.cols-row + li { border-top:0; }
+.ins-cal-side .ins-cal li.cols-row .ev { gap:6px 8px; font-size:13px; }
 .ins-cal .ev .t { color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; }
 .ins-cal .ev .imp { color:var(--c-line-strong); font-size:10px; letter-spacing:-1px; }
 .ins-cal .ev .imp.l3 { color:var(--c-up); }
 .ins-cal .ev .imp.l2 { color:#e8a317; }
-.ins-cal .ev .nums, .ins-cal .ev > small { grid-column:4; color:var(--c-faint); font-size:11px; font-variant-numeric:tabular-nums; }
+.ins-cal .ev .nums, .ins-cal .ev > small { grid-column:4 / -1; color:var(--c-faint); font-size:11px; font-variant-numeric:tabular-nums; }
 
-@media (max-width:1000px) {
+@media (max-width:640px) {
   .ins-cal-wrap { grid-template-columns:1fr; }
   .ins-cal-grid { width:100%; max-width:300px; }
+  .ins-cal-side { max-height:none; padding-left:0; border-left:0; }
+}
+@media (max-width:1000px) {
   .ins-add input { width:160px; }
 }
 
@@ -207,3 +235,6 @@ button.ins-cell { padding:0; font:inherit; cursor:pointer; }
 .ins-rank li button:hover { background:var(--c-hover); }
 .ins-uschart .open-log { padding:6px 12px; border:1px solid var(--c-line); border-radius:8px; color:var(--c-ink); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
 .ins-uschart .open-log:hover { background:var(--c-hover); }
+/* 기준금리 칸 (물가 칸 모양 그대로) */
+.ins-rate .ins-infl-head b { margin-left:4px; color:var(--c-faint); font-size:11px; font-weight:500; }
+.ins-rate strong em { font-size:11.5px; }

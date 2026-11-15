@@ -38,8 +38,23 @@ export type InflationSeries = { key: string; label: string; country: "KR" | "US"
 export type Inflation = { series: InflationSeries[]; missing: string[]; failed: string[] };
 export const getInflation = () => apiRequest<Inflation>("/insights/inflation", { auth: false });
 
+/** 기준금리 주요 4개국. value = 지금 금리(미국은 목표 범위 상단, low = 하단), points = 최근 36개월 */
+export type PolicyRate = {
+  key: "US" | "KR" | "EU" | "JP";
+  label: string;
+  bank: string;
+  value: number;
+  low?: number;
+  asOf: string;
+  lastChange: { month: string; diff: number } | null;
+  points: { month: string; value: number }[];
+  source: string;
+};
+export type PolicyRates = { rates: PolicyRate[]; failed: string[] };
+export const getPolicyRates = () => apiRequest<PolicyRates>("/insights/rates", { auth: false });
+
 // ---------- 경제 캘린더 ----------
-/** date·time 은 한국 시간. impact = 중요도 1~3 (★). forecast·previous 는 이번 주 지표(ForexFactory)만 */
+/** date·time 은 한국 시간. impact = 중요도 1~3 (★). actual = 발표된 값(지난 일정), forecast = 예상(이번 주만), previous = 이전 */
 export type EconEvent = {
   date: string;
   time?: string;
@@ -47,6 +62,7 @@ export type EconEvent = {
   country: "US" | "KR" | "CN" | "JP" | "EU";
   kind: "금리" | "물가" | "고용" | "성장" | "연설" | "기타";
   impact: 1 | 2 | 3;
+  actual?: string;
   forecast?: string;
   previous?: string;
   note?: string;
