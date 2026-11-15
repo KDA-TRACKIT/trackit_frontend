@@ -110,17 +110,21 @@
 .ins-add { position:relative; }
 .ins-add input { width:220px; height:34px; padding:0 12px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; }
 .ins-add input:focus { border-color:var(--c-ink); outline:0; }
-.ins-add ul { position:absolute; z-index:20; top:38px; right:0; width:260px; margin:0; padding:4px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 8px 24px rgba(0,0,0,.14); list-style:none; }
+.ins-add ul { position:absolute; z-index:20; top:38px; right:0; width:320px; margin:0; padding:4px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 8px 24px rgba(0,0,0,.14); list-style:none; }
 .ins-add li button { display:flex; width:100%; align-items:center; gap:8px; height:34px; padding:0 10px; border:0; border-radius:6px; background:none; color:var(--c-ink); font:inherit; font-size:13px; text-align:left; cursor:pointer; }
 .ins-add li button[aria-selected="true"] { background:var(--c-hover); }
 .ins-add li button:disabled { color:var(--c-faint); cursor:default; }
 .ins-add li span { color:var(--c-faint); font-size:12px; font-variant-numeric:tabular-nums; }
 .ins-add li em { margin-left:auto; color:var(--c-faint); font-size:11px; font-style:normal; }
-.ins-watch { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:0 28px; margin:0; padding:0; list-style:none; }
-.ins-watch li { display:grid; grid-template-columns:minmax(0,1fr) 84px 72px 62px 24px; align-items:center; gap:8px; min-height:44px; border-top:1px solid var(--c-line); font-size:13px; font-variant-numeric:tabular-nums; }
+.ins-add li em.mk { flex:none; }
+.ins-add li em.mk.us { color:var(--c-accent); }
+.ins-add li .ticker { flex:none; font-variant-numeric:tabular-nums; letter-spacing:.2px; }
+.ins-add li .nm { min-width:0; overflow:hidden; color:var(--c-sub); text-overflow:ellipsis; white-space:nowrap; }
+.ins-watch { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:0 28px; margin:0; padding:0; list-style:none; }
+.ins-watch li { display:grid; grid-template-columns:minmax(110px,1fr) 88px 70px 62px 24px; align-items:center; gap:8px; min-height:44px; border-top:1px solid var(--c-line); font-size:13px; font-variant-numeric:tabular-nums; }
 .ins-watch .name { display:flex; min-width:0; flex-direction:column; }
 .ins-watch .name strong { overflow:hidden; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
-.ins-watch .name span { color:var(--c-faint); font-size:11px; }
+.ins-watch .name span { overflow:hidden; color:var(--c-faint); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .ins-watch .name:hover strong { text-decoration:underline; }
 .ins-watch .price { font-weight:700; text-align:right; }
 .ins-watch .chg, .ins-watch .rate { text-align:right; }
@@ -176,3 +180,28 @@
   .ins-cal-grid { width:100%; max-width:300px; }
   .ins-add input { width:160px; }
 }
+
+/* 미국 종목 차트 창 */
+.ins-modal { position:fixed; z-index:100; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(10,14,20,.45); }
+.ins-uschart { display:flex; width:min(1080px,100%); height:min(680px,100%); flex-direction:column; overflow:hidden; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); box-shadow:0 24px 64px rgba(0,0,0,.28); }
+.ins-uschart .head { display:flex; align-items:center; gap:20px; padding:16px 20px 12px; border-bottom:1px solid var(--c-line); }
+.ins-uschart .title { display:flex; min-width:0; flex:1; align-items:baseline; gap:10px; }
+.ins-uschart .title strong { font-size:20px; font-weight:800; letter-spacing:.2px; }
+.ins-uschart .title span { overflow:hidden; color:var(--c-sub); font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
+.ins-uschart .title small { color:var(--c-faint); font-size:12px; }
+.ins-uschart .quote { display:flex; align-items:baseline; gap:8px; font-variant-numeric:tabular-nums; }
+.ins-uschart .quote strong { color:var(--c-ink); font-size:20px; font-weight:800; }
+.ins-uschart .quote em { font-size:13px; font-style:normal; font-weight:700; }
+.ins-uschart .close { width:32px; height:32px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:22px; cursor:pointer; }
+.ins-uschart .close:hover { background:var(--c-hover); color:var(--c-ink); }
+.ins-uschart .body { position:relative; flex:1; min-height:0; }
+.ins-uschart .us-canvas { position:absolute; inset:8px 8px 0 12px; }
+.ins-uschart .overlay { position:absolute; inset:0; background:var(--c-surface); }
+.ins-uschart .more { position:absolute; top:10px; left:16px; padding:3px 10px; border-radius:10px; background:var(--c-subtle); color:var(--c-sub); font-size:12px; }
+.ins-uschart .foot { margin:0; padding:8px 20px 12px; color:var(--c-faint); font-size:11px; }
+button.ins-cell { padding:0; font:inherit; cursor:pointer; }
+.ins-watch button.name { padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.ins-watch button.name:hover strong { text-decoration:underline; }
+.ins-rank li button { display:flex; width:100%; align-items:center; gap:8px; min-height:30px; padding:0 6px; border:0; border-radius:6px; background:none; color:inherit; font:inherit; font-size:13px; text-align:left; cursor:pointer; counter-increment:r; }
+.ins-rank li button::before { content:counter(r); width:16px; color:var(--c-faint); font-size:11px; font-variant-numeric:tabular-nums; text-align:right; }
+.ins-rank li button:hover { background:var(--c-hover); }

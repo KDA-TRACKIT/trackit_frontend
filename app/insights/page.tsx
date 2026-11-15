@@ -11,6 +11,7 @@ import type { SectorMap as SectorMapData } from "../../lib/api/insights";
 import Board from "./Board";
 import News from "./News";
 import Watchlist from "./Watchlist";
+import UsChart, { type UsChartTarget } from "./UsChart";
 import SectorMap from "./SectorMap";
 import { Flows, Rankings } from "./Movers";
 import { EconCalendar } from "./Calendar";
@@ -31,6 +32,8 @@ type Tab = (typeof TABS)[number][0];
 export default function InsightsPage() {
   const [tab, setTab] = useState<Tab>("market");
   const [sectors, setSectors] = useState<SectorMapData | null>(null);
+  /** 미국 종목 차트 창 (관심 종목 · 지수 맵 · 순위에서 누르면) */
+  const [usChart, setUsChart] = useState<UsChartTarget | null>(null);
   return (
     <main className="ins">
       <SiteHeader />
@@ -48,10 +51,10 @@ export default function InsightsPage() {
         {tab === "market" && (
           <>
             <Board />
-            <Watchlist />
-            <SectorMap onData={setSectors} />
+            <Watchlist onOpenUs={setUsChart} />
+            <SectorMap onData={setSectors} onOpenUs={setUsChart} />
             <div className="ins-grid-2">
-              <Rankings data={sectors} />
+              <Rankings data={sectors} onOpenUs={setUsChart} />
               <Flows />
             </div>
           </>
@@ -66,6 +69,7 @@ export default function InsightsPage() {
         {tab === "disclosures" && <DisclosureList />}
         {tab === "mine" && <PnlCalendar />}
       </div>
+      {usChart && <UsChart target={usChart} onClose={() => setUsChart(null)} />}
     </main>
   );
 }

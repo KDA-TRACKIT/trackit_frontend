@@ -1,18 +1,22 @@
 "use client";
-// 관심 종목: 종목 검색으로 추가 · 시세 (키움 ka10095, 20초마다) · 차트로 이동
+// 관심 종목: 국내 · 미국 전 종목 검색으로 추가 (한글 · 영문 이름 · 코드/티커) · 시세 20초마다 · 국내는 작업실 차트로
+//   국내 키움 ka10095 / 미국 키움 usa20100 (나스닥 토탈뷰 실시간) — 백엔드가 캐시
+//   미국 종목은 티커를 크게, 한글 이름을 작게
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { getQuotes } from "../../lib/api/insights";
-import { searchSymbols, type SymbolInfo } from "../../lib/market-data";
-import { CardHead, Failed, pct, tone, won } from "./parts";
+import { getQuotes, searchAllSymbols, type Quote, type SymbolHit } from "../../lib/api/insights";
+import { CardHead, Failed, pct, price, tone, won } from "./parts";
 import { useLoad } from "./useLoad";
-import { useWatchlist } from "./useWatchlist";
+import type { UsChartTarget } from "./UsChart";
+import { quoteKey, useWatchlist, type WatchItem } from "./useWatchlist";
 
-const chartHref = (s: { code: string; name: string; market: string }) => `/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${encodeURIComponent(s.market)}`;
+const chartHref = (s: WatchItem) => `/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${encodeURIComponent(s.market)}`;
+/** 미국 전일 대비: 소수 둘째 자리까지 */
+const change = (q: Quote) => (q.currency === "USD" ? Math.abs(q.change).toFixed(2) : won(Math.abs(q.change)));
 
-function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: string) => boolean }) {
+function AddBox({ onPick, has }: { onPick: (s: SymbolHit) => void; has: (code: string) => boolean }) {
   const [q, setQ] = useState("");
-  const [found, setFound] = useState<SymbolInfo[]>([]);
+  const [found, setFound] = useState<SymbolHit[]>([]);
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
   const box = useRef<HTMLDivElement>(null);
@@ -22,9 +26,9 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: 
     if (!query) return;
     const ac = new AbortController();
     const t = setTimeout(() => {
-      searchSymbols(query, ac.signal)
+      searchAllSymbols(query, ac.signal)
         .then((list) => {
-          setFound(list.slice(0, 8));
+          setFound(list);
           setHi(0);
         })
         .catch(() => {});
@@ -42,7 +46,8 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: 
   }, []);
 
   const list = q.trim() ? found : [];
-  const pick = (s: SymbolInfo) => {
+  const pick = (s: SymbolHit) => {
+    if (has(s.code)) return;
     onPick(s);
     setQ("");
     setFound([]);
@@ -52,8 +57,8 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: 
     <div className="ins-add" ref={box}>
       <input
         value={q}
-        placeholder="종목 추가"
-        aria-label="관심 종목 추가 — 종목명이나 코드"
+        placeholder="종목 추가 (국내 · 미국)"
+        aria-label="관심 종목 추가 — 종목명(한글·영문)이나 코드·티커"
         onChange={(e) => {
           setQ(e.target.value);
           setOpen(true);
@@ -72,11 +77,20 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: 
       {open && list.length > 0 && (
         <ul role="listbox">
           {list.map((s, i) => (
-            <li key={s.code}>
+            <li key={`${s.country}:${s.code}`}>
               <button type="button" role="option" aria-selected={i === hi} disabled={has(s.code)} onMouseEnter={() => setHi(i)} onClick={() => pick(s)}>
-                <strong>{s.name}</strong>
-                <span>{s.code}</span>
-                {has(s.code) && <em>추가됨</em>}
+                {s.country === "US" ? (
+                  <>
+                    <strong className="ticker">{s.code}</strong>
+                    <span className="nm">{s.name}</span>
+                  </>
+                ) : (
+                  <>
+                    <strong>{s.name}</strong>
+                    <span>{s.code}</span>
+                  </>
+                )}
+                <em className={`mk ${s.country === "US" ? "us" : ""}`}>{has(s.code) ? "추가됨" : s.etf ? `${s.country === "US" ? "미국 " : ""}ETF` : s.country === "US" ? "미국" : s.market === "KOSDAQ" ? "코스닥" : "코스피"}</em>
               </button>
             </li>
           ))}
@@ -86,38 +100,53 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolInfo) => void; has: (code: 
   );
 }
 
-export default function Watchlist() {
+export default function Watchlist({ onOpenUs }: { onOpenUs?: (t: UsChartTarget) => void }) {
   const wl = useWatchlist();
-  const codes = wl.items.map((i) => i.code);
-  const { data, error, reload } = useLoad(`quotes-${codes.join(",")}`, () => (codes.length ? getQuotes(codes) : Promise.resolve({ quotes: [] })), 20_000);
-  const byCode = new Map((data?.quotes ?? []).map((q) => [q.code, q]));
+  const keys = wl.items.map(quoteKey);
+  const { data, error, reload } = useLoad(`quotes-${keys.join(",")}`, () => (keys.length ? getQuotes(keys) : Promise.resolve({ quotes: [] })), 20_000);
+  const byKey = new Map((data?.quotes ?? []).map((q) => [q.code, q]));
 
   return (
     <section className="ins-card">
       <CardHead title="관심 종목" meta={wl.ready ? `${wl.items.length}/${wl.max} · ${wl.signedIn ? "계정에 저장" : "이 브라우저에 저장"}` : undefined}>
-        <AddBox has={wl.has} onPick={(s) => wl.add({ code: s.code, name: s.name, market: s.market })} />
+        <AddBox has={wl.has} onPick={(s) => wl.add({ code: s.code, name: s.name, market: s.market, ...(s.exchange ? { exchange: s.exchange } : {}) })} />
       </CardHead>
       {wl.error && <p className="ins-missing">{wl.error}</p>}
       {!wl.ready ? null : wl.items.length === 0 ? (
         <div className="ins-state" style={{ height: 96 }}>
-          <p>자주 보는 종목을 추가하면 시세와 뉴스·공시를 모아 볼 수 있어요</p>
+          <p>국내·미국 종목을 추가하면 시세와 뉴스·공시를 모아 볼 수 있어요</p>
         </div>
       ) : error && !data ? (
         <Failed message={error} onRetry={reload} height={96} />
       ) : (
         <ul className="ins-watch">
           {wl.items.map((it) => {
-            const q = byCode.get(it.code);
+            const q = byKey.get(quoteKey(it));
+            const us = !!it.exchange;
+            const label = us ? (
+              <>
+                <strong>{it.code}</strong>
+                <span>{it.name}</span>
+              </>
+            ) : (
+              <>
+                <strong>{it.name}</strong>
+                <span>{it.code}</span>
+              </>
+            );
             return (
               <li key={it.code}>
-                <Link href={chartHref(it)} className="name">
-                  <strong>{it.name}</strong>
-                  <span>{it.code}</span>
-                </Link>
-                <span className="price">{q ? won(q.price) : "—"}</span>
-                <span className={`chg ${q ? tone(q.changeRate) : ""}`}>
-                  {q ? `${q.change > 0 ? "▲" : q.change < 0 ? "▼" : ""} ${won(Math.abs(q.change))}` : ""}
-                </span>
+                {us ? (
+                  <button type="button" className="name" title={`${it.name} · ${it.market} 차트`} onClick={() => onOpenUs?.({ code: it.code, name: it.name, exchange: it.exchange })}>
+                    {label}
+                  </button>
+                ) : (
+                  <Link href={chartHref(it)} className="name">
+                    {label}
+                  </Link>
+                )}
+                <span className="price">{q ? (us ? price(q.price, "USD") : won(q.price)) : "—"}</span>
+                <span className={`chg ${q ? tone(q.changeRate) : ""}`}>{q ? `${q.change > 0 ? "▲" : q.change < 0 ? "▼" : ""} ${change(q)}` : ""}</span>
                 <span className={`rate ${q ? tone(q.changeRate) : ""}`}>{q ? pct(q.changeRate) : ""}</span>
                 <span className="vol">{q ? `${won(q.volume)}주` : ""}</span>
                 <button type="button" className="del" aria-label={`${it.name} 관심 종목에서 빼기`} onClick={() => wl.remove(it.code)}>

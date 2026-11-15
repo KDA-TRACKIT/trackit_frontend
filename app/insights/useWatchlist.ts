@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { updateMeta, useSupabaseUser } from "../mypage/context";
 
-export type WatchItem = { code: string; name: string; market: string };
+/** 미국 종목은 code = 티커, exchange = 키움 거래소 코드 (ND 나스닥 · NY 뉴욕 · NA 아멕스) */
+export type WatchItem = { code: string; name: string; market: string; exchange?: "ND" | "NY" | "NA" };
+/** 시세 요청 키: 국내 "005930", 미국 "ND:AAPL" */
+export const quoteKey = (it: WatchItem) => (it.exchange ? `${it.exchange}:${it.code}` : it.code);
 const STORE = "trackit:watchlist";
 const MAX = 30;
 

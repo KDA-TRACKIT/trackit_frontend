@@ -6,9 +6,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
-import { getSectorMap, isUsMarket, type SectorMap as SectorMapData, type SectorMarket, type SectorStock } from "../../lib/api/insights";
+import { getSectorMap, isUsMarket, kiwoomTicker, type SectorMap as SectorMapData, type SectorMarket, type SectorStock } from "../../lib/api/insights";
 import { squarify, type Rect } from "../../lib/treemap";
 import { MARKET_NAME, money, price } from "./parts";
+import type { UsChartTarget } from "./UsChart";
 
 const HEIGHT = 560;
 const HEADER = 22;
@@ -36,7 +37,7 @@ function stamp(iso: string) {
 type Tip = { x: number; y: number; stock: SectorStock; sector: string } | null;
 
 /** onData: 받은 섹터맵을 부모에게 (같은 데이터로 상승·하락·거래대금 순위를 만든다) */
-export default function SectorMap({ onData }: { onData?: (data: SectorMapData | null) => void }) {
+export default function SectorMap({ onData, onOpenUs }: { onData?: (data: SectorMapData | null) => void; onOpenUs?: (t: UsChartTarget) => void }) {
   const [market, setMarket] = useState<SectorMarket>("kospi");
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{ key: string; error?: string } | null>(null);
@@ -255,9 +256,9 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
                   </>
                 );
                 return us ? (
-                  <div key={s.code} {...cell} role="img">
+                  <button key={s.code} type="button" {...cell} onClick={() => onOpenUs?.({ code: kiwoomTicker(s.code), name: s.name })}>
                     {label}
-                  </div>
+                  </button>
                 ) : (
                   <Link key={s.code} href={`/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${market === "kospi" ? "KOSPI" : "KOSDAQ"}`} {...cell}>
                     {label}

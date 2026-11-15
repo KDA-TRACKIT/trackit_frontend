@@ -67,5 +67,40 @@ export type News = { items: NewsItem[]; failed: string[] };
 export const getNews = () => apiRequest<News>("/insights/news", { auth: false });
 
 // ---------- 관심 종목 시세 ----------
-export type Quote = { code: string; name: string; price: number; change: number; changeRate: number; volume: number };
+/** code: 국내 "005930", 미국 "ND:AAPL" (요청한 그대로) */
+export type Quote = { code: string; name: string; price: number; change: number; changeRate: number; volume: number; currency: "KRW" | "USD" };
 export const getQuotes = (codes: string[]) => apiRequest<{ quotes: Quote[] }>(`/insights/quotes?codes=${codes.join(",")}`, { auth: false });
+
+// ---------- 종목 검색 (국내 + 미국 전 종목) ----------
+export type SymbolHit = {
+  code: string;
+  name: string;
+  ename?: string;
+  market: "KOSPI" | "KOSDAQ" | "NASDAQ" | "NYSE" | "AMEX";
+  exchange?: "ND" | "NY" | "NA";
+  etf: boolean;
+  country: "KR" | "US";
+};
+export const searchAllSymbols = (q: string, signal?: AbortSignal) =>
+  apiRequest<{ items: SymbolHit[] }>(`/insights/symbols?q=${encodeURIComponent(q)}&limit=10`, { auth: false, signal }).then((d) => d.items);
+
+// ---------- 미국 일봉 (눌렀을 때 바로: 저장된 10년치에서 최근 구간만, 예전은 before 로) ----------
+export type UsBar = { time: number; open: number; high: number; low: number; close: number; volume: number };
+export type UsBars = {
+  symbol: { code: string; name: string; ename?: string; market: string; exchange: string };
+  bars: UsBar[];
+  /** 더 예전 봉이 있는지 */
+  hasMore: boolean;
+  /** stored = 미리 받아 둔 것, kiwoom = 방금 키움에서 */
+  source: "stored" | "kiwoom";
+  full: boolean;
+};
+/** code 는 키움 표기 (BRK.B → BRKb). before = epoch 초 (이보다 예전만) */
+export const getUsBars = (code: string, opts: { exchange?: string; limit?: number; before?: number } = {}, signal?: AbortSignal) => {
+  const q = new URLSearchParams({ limit: String(opts.limit ?? 300) });
+  if (opts.exchange) q.set("exchange", opts.exchange);
+  if (opts.before) q.set("before", String(opts.before));
+  return apiRequest<UsBars>(`/charts/us/${encodeURIComponent(code)}/bars?${q}`, { auth: false, signal });
+};
+/** "BRK.B" (위키백과·지수 맵 표기) → "BRKb" (키움 표기) */
+export const kiwoomTicker = (s: string) => s.replace(/\.([A-Z])$/, (_, c: string) => c.toLowerCase());

@@ -20,7 +20,7 @@ export function DisclosureList() {
   const [scope, setScope] = useState<"all" | "mine" | "watch">("all");
   const holdings = useLoad("holdings", holdingCodes);
   const wl = useWatchlist();
-  const codes = scope === "mine" ? (holdings.data ?? []) : scope === "watch" ? wl.items.map((i) => i.code) : [];
+  const codes = scope === "mine" ? (holdings.data ?? []) : scope === "watch" ? wl.items.filter((i) => !i.exchange).map((i) => i.code) : [];
   // 고른 범위에 종목이 하나도 없으면 전체를 부르지 않고 빈 목록
   const empty = scope !== "all" && codes.length === 0;
   const { data, error, loading, reload } = useLoad(`disclosures-${scope}-${codes.join(",")}`, () => (empty ? Promise.resolve({ items: [], missing: [] }) : getDisclosures(codes)), 5 * 60_000);
