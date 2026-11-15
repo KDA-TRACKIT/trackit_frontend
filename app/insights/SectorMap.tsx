@@ -12,18 +12,21 @@ import { MARKET_NAME, money, price } from "./parts";
 import type { UsChartTarget } from "./UsChart";
 
 const HEIGHT = 560;
+/** 종목이 많은 S&P 500 · 코스피 · 코스닥은 더 높게 (칸이 커져야 티커가 보임) */
+const TALL = 760;
 const HEADER = 22;
 /** 이 폭·높이보다 작은 칸은 글자를 안 쓴다 */
-const LABEL_MIN = { w: 46, h: 28 };
+/** 이름을 쓸 최소 칸 · 글자 크기 */
+const LABEL_MIN = { w: 16, h: 10, font: 7 };
 /** 세부 업종 이름표 높이 (이보다 작은 묶음은 이름표 없이) */
 const IND_HEAD = 13;
 const MARKETS: SectorMarket[] = ["kospi", "kosdaq", "sp500", "nasdaq100", "dow"];
 
-/** 등락률 → 칸 색. ±3% 에서 가장 진함 */
+/** 등락률 → 칸 색 (finviz 처럼 상승 초록 · 하락 빨강). ±3% 에서 가장 진함 */
 function heat(rate: number) {
   const t = Math.max(-1, Math.min(1, rate / 3));
-  const base = [88, 94, 107];
-  const to = t >= 0 ? [214, 48, 49] : [37, 99, 235];
+  const base = [65, 69, 84];
+  const to = t >= 0 ? [48, 158, 72] : [214, 48, 49];
   const k = Math.abs(t);
   const c = base.map((b, i) => Math.round(b + (to[i] - b) * k));
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
@@ -120,12 +123,13 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
     return () => ro.disconnect();
   }, []);
 
+  const height = (market === "sp500" || market === "kospi" || market === "kosdaq") && !zoom ? TALL : HEIGHT;
   const sectors = useMemo(() => (data ? (zoom ? data.sectors.filter((s) => s.code === zoom) : data.sectors) : []), [data, zoom]);
   const layout = useMemo(() => {
     if (!width || !sectors.length) return [];
     const outer = squarify(
       sectors.map((s) => s.marketCap),
-      { x: 0, y: 0, w: width, h: HEIGHT },
+      { x: 0, y: 0, w: width, h: height },
     );
     return sectors.map((s, i) => {
       const r = outer[i];
@@ -160,7 +164,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
       }
       return { sector: s, rect: r, cells, groups };
     });
-  }, [sectors, width]);
+  }, [sectors, width, height]);
   const us = isUsMarket(market);
 
   const zoomed = zoom ? data?.sectors.find((s) => s.code === zoom) : null;
@@ -201,7 +205,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
         </div>
       </div>
 
-      <div ref={boxRef} className={`ins-map${loading && data ? " stale" : ""}`} style={{ height: HEIGHT }} onMouseLeave={() => setTip(null)}>
+      <div ref={boxRef} className={`ins-map${loading && data ? " stale" : ""}`} style={{ height }} onMouseLeave={() => setTip(null)}>
         {error ? (
           <div className="ins-state">
             <p>{error}</p>
@@ -239,20 +243,27 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
               ))}
               {cells.map(({ stock: s, c }) => {
                 if (!c || c.w < 1 || c.h < 1) return null;
-                const big = c.w >= LABEL_MIN.w && c.h >= LABEL_MIN.h;
+                // 글자 크기: 칸 넓이에 맞추되 이름이 가로에 들어가게 (영문 티커 0.62em, 한글 1em 정도)
+                const text = us ? s.code : s.name;
+                const charW = us ? 0.8 : 1.05;
+                // 테두리 2px + 글자 좌우 여백 6px 빼고 남는 너비에 다 들어가야 (잘려서 "E…" 로 나오면 안 씀)
+                const fontSize = Math.min(22, Math.max(9, Math.sqrt(c.w * c.h) / 6), (c.w - 9) / (text.length * charW), (c.h - 2) * 0.8);
+                // 작은 칸도 이름은 보이게 (finviz 처럼), 등락률은 두 줄이 들어갈 때만
+                const showName = fontSize >= LABEL_MIN.font && c.w >= LABEL_MIN.w && c.h >= LABEL_MIN.h;
+                const showPct = showName && c.h >= fontSize * 2.3 + 4 && c.w >= fontSize * 3.6;
                 const cell = {
                   className: "ins-cell",
-                  style: { left: c.x - rect.x, top: c.y - rect.y, width: c.w, height: c.h, background: heat(s.changeRate), fontSize: Math.max(10, Math.min(22, Math.sqrt(c.w * c.h) / 6)) },
+                  style: { left: c.x - rect.x, top: c.y - rect.y, width: c.w, height: c.h, background: heat(s.changeRate), fontSize: Math.max(LABEL_MIN.font, fontSize) },
                   onMouseMove: (e: React.MouseEvent) => {
                     const host = boxRef.current?.getBoundingClientRect();
                     if (host) setTip({ x: e.clientX - host.left, y: e.clientY - host.top, stock: s, sector: sector.name });
                   },
                   "aria-label": `${s.name} ${pct(s.changeRate)}`,
                 };
-                const label = big && (
+                const label = showName && (
                   <>
-                    <strong>{us ? s.code : s.name}</strong>
-                    <span>{pct(s.changeRate)}</span>
+                    <strong>{text}</strong>
+                    {showPct && <span>{pct(s.changeRate)}</span>}
                   </>
                 );
                 return us ? (
@@ -269,7 +280,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
           ))
         )}
         {tip && (
-          <div className="ins-tip" style={{ left: Math.min(tip.x + 14, width - 220), top: Math.min(tip.y + 14, HEIGHT - 110) }}>
+          <div className="ins-tip" style={{ left: Math.min(tip.x + 14, width - 220), top: Math.min(tip.y + 14, height - 110) }}>
             <strong>
               {tip.stock.name} <small>{tip.stock.code}</small>
             </strong>

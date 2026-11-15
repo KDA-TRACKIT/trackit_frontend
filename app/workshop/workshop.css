@@ -775,7 +775,8 @@
 .ws-chart-footer { border-radius:0 0 11px 11px; }
 .ws-draw-tools { background:var(--c-subtle); border-right-color:var(--c-line); }
 .ws-draw-tools > button, .ws-draw-group > button { width:40px; height:32px; border-radius:8px; }
-.ws-draw-tools > button.active, .ws-draw-group > button.active { border-radius:8px; background:var(--c-subtle); }
+/* 선택된 도구: 막대 배경(--c-subtle)과 같은 색이면 안 보여서 따로 */
+.ws-draw-tools > button.active, .ws-draw-group > button.active { border-radius:8px; background:var(--c-pill); box-shadow:inset 0 0 0 1.5px var(--c-accent); }
 .ws-intervals button { border-radius:8px; }
 .ws-intervals button.active { border-radius:8px; }
 .ws-tool-text, .ws-icon-button { border-radius:8px; }

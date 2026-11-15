@@ -36,6 +36,11 @@ html[data-theme="dark"] {
 .placeholder-card { width:calc(100% - 80px); margin:40px auto; padding:56px 32px; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); text-align:center; }
 .placeholder-card h1 { margin:0; font-size:22px; font-weight:800; }
 .placeholder-card p { margin:12px 0 0; color:var(--c-sub); font-size:14px; }
+.archive-entry { padding:32px; }
+.archive-entry h2 { margin:0; font-size:18px; font-weight:800; }
+.archive-entry-links { display:flex; justify-content:center; gap:10px; margin-top:18px; }
+.archive-entry a { display:inline-block; padding:10px 20px; border-radius:8px; background:var(--c-accent); color:#fff; font-size:14px; font-weight:700; text-decoration:none; }
+.archive-entry a:hover { opacity:.9; }
 @media (max-width:800px) { .placeholder-card { width:calc(100% - 32px); } }
 
 /* ── 다크: 예전 화면 덮어쓰기 ── */

@@ -20,8 +20,8 @@
 .ins-sector-head { position:absolute; inset:0 0 auto 0; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 6px; overflow:hidden; border:0; background:#1b1f27; color:#e8ebf0; font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:zoom-in; }
 .ins-sector-head span { overflow:hidden; text-overflow:ellipsis; }
 .ins-sector-head em { font-style:normal; font-variant-numeric:tabular-nums; }
-.ins-sector-head em.up { color:#ff8a80; }
-.ins-sector-head em.down { color:#8ab4ff; }
+.ins-sector-head em.up { color:#6fdc8c; }
+.ins-sector-head em.down { color:#ff8a80; }
 .ins-sector-head:hover { background:#252a34; }
 .ins-cell { position:absolute; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; overflow:hidden; border:1px solid rgba(0,0,0,.28); color:#fff; line-height:1.1; text-align:center; text-decoration:none; }
 .ins-cell:hover { z-index:1; outline:2px solid #fff; outline-offset:-2px; }
@@ -34,8 +34,8 @@
 .ins-tip { position:absolute; z-index:5; display:flex; width:206px; flex-direction:column; gap:4px; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); box-shadow:var(--c-shadow); font-size:13px; pointer-events:none; }
 .ins-tip strong small { margin-left:4px; color:var(--c-faint); font-size:11px; font-weight:500; }
 .ins-tip span { font-weight:700; font-variant-numeric:tabular-nums; }
-.ins-tip span.up { color:var(--c-up); }
-.ins-tip span.down { color:var(--c-down); }
+.ins-tip span.up { color:#2fa84f; } /* 섹터맵: 상승 초록 · 하락 빨강 */
+.ins-tip span.down { color:#e5383b; }
 .ins-tip > small { color:var(--c-sub); font-size:11px; }
 
 /* 불러오는 중 · 오류 */
