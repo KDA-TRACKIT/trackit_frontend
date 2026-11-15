@@ -1,0 +1,55 @@
+/* 투자 정보 (/insights). 색은 theme.css 의 --c-* 만 → 다크 모드 자동. 내용 폭은 작업실처럼 상단 바 끝선(40px)까지 */
+.ins { min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.ins-body { display:flex; width:calc(100% - 80px); flex-direction:column; gap:16px; margin:32px auto 80px; }
+.ins-body h1 { margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px; }
+
+.ins-card { padding:20px 22px 18px; border:1px solid var(--c-line); border-radius:14px; background:var(--c-surface); }
+.ins-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.ins-title { display:flex; min-width:0; align-items:baseline; gap:12px; }
+.ins-title h2 { margin:0; font-size:18px; font-weight:800; }
+.ins-meta { color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; }
+.ins-back { padding:0; border:0; background:none; color:var(--c-accent); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.ins-seg { display:inline-flex; padding:3px; border-radius:10px; background:var(--c-subtle); }
+.ins-seg button { height:30px; padding:0 14px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.ins-seg button[aria-checked="true"] { background:var(--c-surface); color:var(--c-ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+
+/* 지도 */
+.ins-map { position:relative; overflow:hidden; border-radius:8px; background:#2a2f3a; transition:opacity .15s; }
+.ins-map.stale { opacity:.55; }
+.ins-sector { position:absolute; box-sizing:border-box; border:1px solid #1b1f27; background:#1b1f27; }
+.ins-sector-head { position:absolute; inset:0 0 auto 0; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 6px; overflow:hidden; border:0; background:#1b1f27; color:#e8ebf0; font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:zoom-in; }
+.ins-sector-head span { overflow:hidden; text-overflow:ellipsis; }
+.ins-sector-head em { font-style:normal; font-variant-numeric:tabular-nums; }
+.ins-sector-head em.up { color:#ff8a80; }
+.ins-sector-head em.down { color:#8ab4ff; }
+.ins-sector-head:hover { background:#252a34; }
+.ins-cell { position:absolute; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; overflow:hidden; border:1px solid rgba(0,0,0,.28); color:#fff; line-height:1.1; text-align:center; text-decoration:none; }
+.ins-cell:hover { z-index:1; outline:2px solid #fff; outline-offset:-2px; }
+.ins-cell strong { max-width:100%; overflow:hidden; padding:0 3px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.ins-cell span { font-size:.82em; font-variant-numeric:tabular-nums; opacity:.92; }
+
+/* 마우스 올린 종목 */
+.ins-tip { position:absolute; z-index:5; display:flex; width:206px; flex-direction:column; gap:4px; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); box-shadow:var(--c-shadow); font-size:13px; pointer-events:none; }
+.ins-tip strong small { margin-left:4px; color:var(--c-faint); font-size:11px; font-weight:500; }
+.ins-tip span { font-weight:700; font-variant-numeric:tabular-nums; }
+.ins-tip span.up { color:var(--c-up); }
+.ins-tip span.down { color:var(--c-down); }
+.ins-tip > small { color:var(--c-sub); font-size:11px; }
+
+/* 불러오는 중 · 오류 */
+.ins-state { display:flex; height:100%; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:var(--c-subtle); color:var(--c-sub); font-size:14px; }
+.ins-state p { margin:0; }
+.ins-state button { height:34px; padding:0 14px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.ins-spinner { width:22px; height:22px; border:2px solid var(--c-line-strong); border-top-color:var(--c-accent); border-radius:50%; animation:ins-spin .8s linear infinite; }
+@keyframes ins-spin { to { transform:rotate(360deg); } }
+
+/* 범례 */
+.ins-legend { display:flex; align-items:center; gap:8px; margin-top:12px; color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; }
+.ins-legend i { display:block; width:140px; height:8px; border-radius:4px; }
+.ins-legend small { margin-left:auto; color:var(--c-faint); font-size:12px; }
+
+@media (max-width:800px) {
+  .ins-body { width:calc(100% - 32px); }
+  .ins-head { flex-wrap:wrap; }
+  .ins-legend small { display:none; }
+}
