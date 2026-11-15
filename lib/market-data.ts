@@ -69,6 +69,8 @@ export type OrderBook = {
   totalAsk: number;
   totalBid: number;
   time: string | null;
+  /** KRX 정규장 · NXT(08:00~08:50, 15:30~20:00) */
+  venue?: "KRX" | "NXT";
 };
 
 /** 실시간 호가 구독. 반환 함수로 해제 (백엔드가 0D 등록도 같이 뺀다) */
@@ -97,15 +99,13 @@ export function fetchFlows(code: string, signal?: AbortSignal) {
 }
 
 /** limit: 최근 N개만 (기본 전체. 일봉은 1980년대부터라 종목 정보처럼 최근만 필요하면 넣는다) */
-export async function fetchBars(code: string, interval: Interval, signal?: AbortSignal, limit?: number): Promise<{ symbol: SymbolInfo; bars: Bar[] }> {
+/**
+ * complete=false: 초봉처럼 서버가 아직 오늘 장 시작 쪽을 채우는 중 → 잠시 뒤 다시 받으면 길어진다
+ */
+export async function fetchBars(code: string, interval: Interval, signal?: AbortSignal, limit?: number): Promise<{ symbol: SymbolInfo; bars: Bar[]; complete: boolean }> {
   const api = sourceOf(interval);
-  if (api === null) {
-    // 초봉은 과거가 없음 → 종목 정보만 일봉 요청으로 받아 둔다
-    const { symbol } = await get<{ symbol: SymbolInfo; bars: Bar[] }>(`/charts/${code}/bars?interval=1d&limit=1`, signal);
-    return { symbol, bars: [] };
-  }
-  const data = await get<{ symbol: SymbolInfo; bars: Bar[] }>(`/charts/${code}/bars?interval=${api}${limit ? `&limit=${limit}` : ""}`, signal);
-  return { symbol: data.symbol, bars: needsGrouping(interval) ? groupBars(data.bars, interval) : data.bars };
+  const data = await get<{ symbol: SymbolInfo; bars: Bar[]; complete?: boolean }>(`/charts/${code}/bars?interval=${api}${limit ? `&limit=${limit}` : ""}`, signal);
+  return { symbol: data.symbol, bars: needsGrouping(interval) ? groupBars(data.bars, interval) : data.bars, complete: data.complete !== false };
 }
 
 /** 체결 하나를 봉 배열에 반영한 새 배열 (React 상태용, 마지막 봉만 새 객체) */
@@ -118,6 +118,25 @@ export function applyTick(bars: Bar[], tick: Tick, interval: Interval): Bar[] {
   }
   if (last && start < last.time) return bars; // 늦게 온 체결은 무시
   return [...bars, { time: start, open: tick.price, high: tick.price, low: tick.price, close: tick.price, volume: tick.volume }];
+}
+
+/**
+ * 모아 둔 체결 여러 개를 한 번에 반영. 배열은 한 번만 복사한다
+ * (체결마다 applyTick 으로 복사하면 봉이 수만 개일 때 0.25초마다 수십 번 전체 복사)
+ */
+export function applyTicks(bars: Bar[], ticks: Tick[], interval: Interval): Bar[] {
+  let out: Bar[] | null = null;
+  for (const tick of ticks) {
+    const list: Bar[] = out ?? bars;
+    const start = bucketStart(tick.time, interval);
+    const last = list[list.length - 1];
+    if (last && start < last.time) continue; // 늦게 온 체결은 무시
+    out ??= bars.slice();
+    if (last && last.time === start)
+      out[out.length - 1] = { ...last, high: Math.max(last.high, tick.price), low: Math.min(last.low, tick.price), close: tick.price, volume: last.volume + tick.volume };
+    else out.push({ time: start, open: tick.price, high: tick.price, low: tick.price, close: tick.price, volume: tick.volume });
+  }
+  return out ?? bars;
 }
 
 /** 실시간 체결 구독. 반환 함수로 해제 (백엔드가 0B 등록도 같이 뺀다) */

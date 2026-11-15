@@ -56,7 +56,7 @@ const HELP: Record<string, string> = {
   "anchored-vwap": "찍은 날부터 계산한 거래량 가중 평균가(VWAP) 선.",
   "fixed-range-volume-profile": "고른 구간의 가격대별 거래량(매물대)과 최대 거래 가격(POC).",
   // 브러시 · 화살표
-  brush: "누른 채 끌어서 자유롭게 그립니다.",
+  brush: "누른 채 끌어서 자유롭게 그립니다. (스마트 ON 이면 곧게 그은 획은 직선으로)",
   highlighter: "누른 채 끌어서 반투명하게 칠합니다.",
   arrow: "두 점을 잇는 화살표.",
   "arrow-marker": "굵은 화살표로 방향을 강조.",

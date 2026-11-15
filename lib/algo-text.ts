@@ -24,18 +24,21 @@ export function describeOperand(o: AlgoOperand, catalog?: AlgoCatalog | null): s
 }
 
 export function describeGroup(g: AlgoGroup, catalog?: AlgoCatalog | null): string {
+  if (!g || typeof g !== "object") return "—";
   if ("left" in g) return `${describeOperand(g.left, catalog)} ${OP_LABEL[g.op]} ${describeOperand(g.right, catalog)}`;
   if ("all" in g) return g.all.map((c) => (("left" in c) ? describeGroup(c, catalog) : `(${describeGroup(c, catalog)})`)).join(" 그리고 ");
   if ("any" in g) return g.any.map((c) => (("left" in c) ? describeGroup(c, catalog) : `(${describeGroup(c, catalog)})`)).join(" 또는 ");
-  return `아님(${describeGroup(g.not, catalog)})`;
+  return "not" in g ? `아님(${describeGroup(g.not, catalog)})` : "—";
 }
 
 export function describeRule(rule: AlgoRule, catalog?: AlgoCatalog | null) {
-  const base = `${rule.timeframe}분봉 · ${rule.quantity.toLocaleString("ko-KR")}주 · 하루 최대 ${rule.maxOrdersPerDay ?? 10}회`;
+  // 편집 중(칸을 비우거나 JSON 을 고치는 중)엔 값이 빠져 있을 수 있다 → 깨지지 않고 "?" 로 보인다
+  const qty = Number(rule.quantity);
+  const base = `${rule.timeframe ?? "?"}분봉 · ${Number.isFinite(qty) ? qty.toLocaleString("ko-KR") : "?"}주 · 하루 최대 ${rule.maxOrdersPerDay ?? 10}회`;
   if (rule.strategy === "RSI") return { entry: `RSI(${rule.period}) < ${rule.buyBelow}`, exit: `RSI(${rule.period}) > ${rule.sellAbove}`, base };
   if (rule.strategy === "SMA_CROSS") return { entry: `이동평균 ${rule.fast}이 ${rule.slow}을 상향 돌파`, exit: `이동평균 ${rule.fast}이 ${rule.slow}을 하향 돌파`, base };
   const exits = [rule.exit ? describeGroup(rule.exit, catalog) : null, rule.stopLossPct ? `손절 -${rule.stopLossPct}%` : null, rule.takeProfitPct ? `익절 +${rule.takeProfitPct}%` : null].filter(Boolean);
-  return { entry: describeGroup(rule.entry, catalog), exit: exits.join(" · "), base };
+  return { entry: rule.entry ? describeGroup(rule.entry, catalog) : "—", exit: exits.join(" · "), base };
 }
 
 export const STRATEGY_LABEL: Record<AlgoRule["strategy"], string> = { RSI: "RSI 프리셋", SMA_CROSS: "이동평균 교차", CUSTOM: "조건 조합" };

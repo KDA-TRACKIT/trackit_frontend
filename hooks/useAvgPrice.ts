@@ -1,7 +1,8 @@
 "use client";
-// 차트에 그릴 평균 단가: 계좌 보유(로그인) 우선, 없으면 이번에 낸 모의 주문 체결로 계산
+// 차트에 그릴 평균 단가: 연결한 증권사 계좌 보유(로그인) 우선, 없으면 이번에 낸 연습 주문 체결로 계산
+//   refreshKey 가 바뀌면 (주문 접수 등) 계좌 보유를 다시 읽는다
 import { useEffect, useMemo, useState } from "react";
-import { openPosition } from "../lib/api/positions";
+import { heldPosition } from "../lib/api/positions";
 
 export type AvgPrice = { price: number; quantity: number; source: "계좌" | "모의" };
 type Fill = { side: string; quantity: number; price?: number };
@@ -23,17 +24,17 @@ export function averageOf(fills: Fill[]): { price: number; quantity: number } | 
   return qty > 0 ? { price: avg, quantity: qty } : null;
 }
 
-export function useAvgPrice(symbol: string, fills: Fill[]): AvgPrice | null {
+export function useAvgPrice(symbol: string, fills: Fill[], refreshKey = 0): AvgPrice | null {
   const [account, setAccount] = useState<{ symbol: string; value: { quantity: number; avgPrice: number } | null } | null>(null);
   useEffect(() => {
     let alive = true;
-    openPosition(symbol)
+    heldPosition(symbol, refreshKey > 0)
       .then((value) => alive && setAccount({ symbol, value }))
       .catch(() => alive && setAccount({ symbol, value: null }));
     return () => {
       alive = false;
     };
-  }, [symbol]);
+  }, [symbol, refreshKey]);
   const local = useMemo(() => averageOf(fills), [fills]);
   const held = account?.symbol === symbol ? account.value : null;
   if (held) return { price: held.avgPrice, quantity: held.quantity, source: "계좌" };

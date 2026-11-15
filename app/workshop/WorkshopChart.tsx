@@ -7,6 +7,7 @@ import {
   HistogramSeries,
   LineSeries,
   LineStyle,
+  MismatchDirection,
   createChart,
   createSeriesMarkers,
   type ISeriesMarkersPluginApi,
@@ -27,12 +28,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
 import { DrawingLayer, fromChartTime, toChartTime } from "../../lib/drawing/render/lwc-adapter";
 import { toolHelp } from "../../lib/drawing/help";
+import { straightenStroke } from "../../lib/drawing/straighten";
 import ToolGlyph from "./ToolGlyph";
 import { buildScenariosFor, businessDaysBetween, lineValueAt, type Scenario, type ScenarioBase, type ScenarioName, type UserDrawing } from "../../lib/workspace/scenarios";
 import { type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import { PRESET_INTERVALS, UNIT_LABEL, UNIT_MAX, intervalLabel, isDailyLike, isSeconds, makeInterval, parseInterval, type IntervalUnit } from "../../lib/interval";
 import { fetchDailyNews, type NewsArticle } from "../../lib/api/news";
 import { fetchFlows, type FlowDay } from "../../lib/market-data";
+import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 
 /** 캔들 색: 양봉 초록 · 음봉 빨강 (거래량·MACD 막대도 같은 색) */
 const UP = "#089981";
@@ -186,6 +189,8 @@ const won = (value: number) => value.toLocaleString("ko-KR");
 /** 봉을 바꿨을 때 마지막 봉이 놓일 가로 위치 (0 = 왼쪽 끝, 1 = 오른쪽 끝) */
 const LAST_BAR_AT = 0.65;
 /** 실시간으로 봉을 쌓는 동안(초봉 등) 고정해 둘 화면 칸 수 */
+/** 실시간 체결 중 지표 재계산 간격 (ms) */
+const IND_LIVE_MS = 1000;
 const GROW_SLOTS = 150;
 
 type Props = {
@@ -226,6 +231,15 @@ function kstDay(time: number) {
 
 /** 올린 지표 목록 (브라우저에 저장). 처음엔 거래량만 */
 const INDICATOR_STORE = "trackit:indicators:v2";
+/** 평단 선 표시 on/off */
+const AVG_STORE = "trackit:show-avg-price";
+const SMART_DRAW_STORE = "trackit:smart-draw";
+/** 획 끝에서 이만큼(ms) 멈추면 더 삐뚤어도 직선으로 */
+const HOLD_SNAP_MS = 450;
+/** 이만큼(px) 안에서 누르고 떼면 클릭으로 본다 (손떨림·펜 흔들림 허용). 넘으면 끌어서 그리기 */
+const CLICK_SLOP = 10;
+/** 다점 도구(경로 등): 이 시간(ms) 안에 같은 자리를 또 누르면 완성 */
+const DOUBLE_TAP_MS = 400;
 const DEFAULT_INSTANCES: IndicatorInstance[] = [{ uid: "volume", id: "volume", params: { ma: 20 }, visible: true }];
 
 /**
@@ -251,7 +265,7 @@ function mergeOldMovingAverages(list: IndicatorInstance[]): IndicatorInstance[] 
 
 function loadInstances(): IndicatorInstance[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(INDICATOR_STORE) ?? "");
+    const saved = JSON.parse(readUserStorage(INDICATOR_STORE) ?? "");
     if (Array.isArray(saved)) return mergeOldMovingAverages((saved as IndicatorInstance[]).filter((i) => i && typeof i.uid === "string" && getIndicator(i.id)));
   } catch {
     // 처음이면 기본값
@@ -269,6 +283,51 @@ const CHART_CHROME_PX = 111;
 
 /** 보조 창 왼쪽 위 한 줄 범례: 지표 이름 + 선마다 값(선 색) */
 type PaneLegend = { uid: string; top: number; name: string; items: { label: string; color: string; value: string }[] };
+
+/**
+ * 선 단순화 (Ramer–Douglas–Peucker): 이웃을 잇는 직선에서 eps(px) 안쪽인 점을 뺀다. 남길 점의 번호(처음·끝 포함)
+ * 붓질처럼 점이 수백 개인 선을 모양 그대로 수십 개로 줄인다
+ */
+function simplifyIndexes(pts: { x: number; y: number }[], eps: number): number[] {
+  if (pts.length <= 2) return pts.map((_, i) => i);
+  const keep = new Array<boolean>(pts.length).fill(false);
+  keep[0] = keep[pts.length - 1] = true;
+  const stack: [number, number][] = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop()!;
+    const dx = pts[b].x - pts[a].x;
+    const dy = pts[b].y - pts[a].y;
+    const len = Math.hypot(dx, dy) || 1;
+    let far = -1;
+    let farDist = eps;
+    for (let i = a + 1; i < b; i++) {
+      const d = Math.abs(dy * (pts[i].x - pts[a].x) - dx * (pts[i].y - pts[a].y)) / len;
+      if (d > farDist) {
+        far = i;
+        farDist = d;
+      }
+    }
+    if (far >= 0) {
+      keep[far] = true;
+      stack.push([a, far], [far, b]);
+    }
+  }
+  return keep.flatMap((k, i) => (k ? [i] : []));
+}
+
+/** 차트 시각(toChartTime)으로 봉 찾기. 봉은 시간순이라 이분 탐색 (십자선 움직일 때마다 불림) */
+function barAt(bars: Bar[], chartTime: number): Bar | null {
+  let lo = 0;
+  let hi = bars.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const t = toChartTime(bars[mid].time) as number;
+    if (t === chartTime) return bars[mid];
+    if (t < chartTime) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return null;
+}
 
 /** 평소에 보이는 보조 창 최대 개수 (전체화면에서는 전부) */
 const MAX_SUB_PANES = 2;
@@ -319,10 +378,34 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   /** 평균 단가 선 */
   const avgLineRef = useRef<IPriceLine | null>(null);
   const lastClose = bars[bars.length - 1]?.close;
+  /** 평단 선 보이기 (툴바 "평단" 버튼, 사용자별로 이 브라우저에 저장) */
+  const [showAvg, setShowAvg] = useState(() => readUserStorage(AVG_STORE) !== "off");
+  function toggleAvg() {
+    setShowAvg((on) => {
+      localStorage.setItem(userStorageKey(AVG_STORE), on ? "off" : "on");
+      return !on;
+    });
+  }
+  /**
+   * 스마트 그리기 (차트 노트 옆 스위치, 기본 끔). 끄면 원래 그리기 방식 그대로.
+   * 켜면: 누름·놓음으로 점 찍기(조금 흔들려도 클릭), 누른 채 끌어 선 긋기, 도구를 든 동안 기존 드로잉 안 고름,
+   *       브러시·형광펜의 거의 곧은 획은 직선으로 (끝에서 멈추면 더 삐뚤어도)
+   */
+  const [smartDraw, setSmartDraw] = useState(() => readUserStorage(SMART_DRAW_STORE) === "on");
+  const smartRef = useRef(smartDraw);
+  useEffect(() => {
+    smartRef.current = smartDraw;
+  }, [smartDraw]);
+  function toggleSmartDraw() {
+    setSmartDraw((on) => {
+      localStorage.setItem(userStorageKey(SMART_DRAW_STORE), on ? "off" : "on");
+      return !on;
+    });
+  }
   useEffect(() => {
     const candle = candleRef.current;
     if (!candle) return;
-    if (!avgPrice) {
+    if (!avgPrice || !showAvg) {
       if (avgLineRef.current) candle.removePriceLine(avgLineRef.current);
       avgLineRef.current = null;
       return;
@@ -336,11 +419,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       axisLabelVisible: true,
       axisLabelColor: "#344d7d",
       axisLabelTextColor: "#fff",
-      title: `평단${avgPrice.source === "모의" ? "(모의)" : ""} ${avgPrice.quantity.toLocaleString("ko-KR")}주${pct === null ? "" : ` ${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}`,
+      title: `평단가${avgPrice.source === "모의" ? "(모의)" : ""}${pct === null ? "" : ` ${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}`,
     };
     if (avgLineRef.current) avgLineRef.current.applyOptions(options);
     else avgLineRef.current = candle.createPriceLine(options);
-  }, [avgPrice, lastClose]);
+  }, [avgPrice, lastClose, showAvg]);
 
   /** 시나리오: 만든 시점의 종목·간격(dataKey) 에서만 보인다 */
   const [scenarioState, setScenarioState] = useState<{ key: string; base: string; list: Scenario[] } | null>(null);
@@ -359,7 +442,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     selectTool(null);
     if (interval !== "1d") return setScenarioMsg("시나리오는 1일봉에서 볼 수 있어요.");
     const found = latestScenarioBase(drawingsRef.current, bars);
-    if (!found) return setScenarioMsg("먼저 수평선·추세선·채널·사각형(박스)·롱/숏 포지션·피보나치 되돌림 중 하나를 그려 주세요. 가장 최근 것이 기준이 됩니다.");
+    if (!found) return setScenarioMsg("기준이 될 선·박스·포지션을 먼저 그려 주세요");
     const dayBars = bars.map((b) => ({ time: ymdOf(b.time), open: b.open, high: b.high, low: b.low, close: b.close }));
     const list = buildScenariosFor(dayBars, found.base);
     if (!list.length) return setScenarioMsg("봉이 부족해 시나리오를 만들 수 없어요.");
@@ -417,8 +500,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const indSeriesRef = useRef(new Map<string, ISeriesApi<SeriesType>[]>());
   /** 지표 실시간 갱신 판정용: 지난번에 그린 데이터 key·봉 수 */
   const indShownRef = useRef<{ key: string; len: number; flows: unknown } | null>(null);
+  /** 실시간 체결 때 지표 재계산을 1초에 한 번으로 묶는다 (지표는 매번 전체 봉을 다시 계산해서 무겁다) */
+  const indLiveRef = useRef<{ at: number; instances: unknown; timer: ReturnType<typeof setTimeout> | null }>({ at: 0, instances: null, timer: null });
+  const [indTick, setIndTick] = useState(0);
   /** 보조 창마다 왼쪽 위에 띄우는 범례 (눈금 이름표 대신, 차트가 덜 복잡하게) */
   const [paneLegends, setPaneLegends] = useState<PaneLegend[]>([]);
+  const paneLegendSigRef = useRef("");
   const instancesRef = useRef(instances);
   useEffect(() => {
     instancesRef.current = instances;
@@ -427,6 +514,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [past, setPast] = useState<Drawing[][]>([]);
   const [future, setFuture] = useState<Drawing[][]>([]);
   const [openGroup, setOpenGroup] = useState<ToolGroup | "trash" | null>(null);
+  /** 도구 줄 묶음마다 마지막에 쓴 도구. 묶음 버튼을 누르면 바로 그 도구 (저장 안 함: 새로고침하면 처음처럼) */
+  const [lastTool, setLastTool] = useState<Partial<Record<ToolGroup, string>>>({});
   // 차트 노트 메뉴 (차트 노트 + 글·주석 도구). 메뉴 밖을 누르면 닫는다
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
   const noteMenuRef = useRef<HTMLDivElement>(null);
@@ -478,6 +567,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const legendPrev = legendBar ? (bars[bars.indexOf(legendBar) - 1] ?? legendBar) : undefined;
   const loadedKeyRef = useRef<string | null>(null);
   const shownRef = useRef<Bar[]>([]);
+  const markerKeyRef = useRef<{ notes: unknown; len: number; first: number } | null>(null);
 
   // 차트 생성 (한 번)
   useEffect(() => {
@@ -489,7 +579,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         background: { type: ColorType.Solid, color: "#ffffff" },
         textColor: "#555",
         fontSize: 11,
-        fontFamily: "Pretendard, 'Noto Sans KR', sans-serif",
+        // 숫자는 폭이 고정된(tabular) 글꼴에서 → 가격 축의 현재가·평단가·십자선 칸 크기가 같다. 한글은 Pretendard
+        fontFamily: "'Segoe UI', 'Helvetica Neue', Pretendard, 'Noto Sans KR', sans-serif",
         attributionLogo: false,
         // 아래 보조 창 사이 구분선 (회색). 끌어서 창 높이를 바꿀 수 있다
         panes: { separatorColor: "#b8bec7", separatorHoverColor: "rgba(52, 77, 125, 0.25)", enableResize: true },
@@ -549,10 +640,35 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     };
   }, []);
 
+  // 화면 테마(라이트/다크)에 맞춰 차트 바탕·글자·격자 색을 바꾼다. <html data-theme> 이 바뀌면 바로 따라간다
+  useEffect(() => {
+    const apply = () => {
+      const dark = document.documentElement.dataset.theme === "dark";
+      chartRef.current?.applyOptions({
+        layout: {
+          background: { type: ColorType.Solid, color: dark ? "#161a21" : "#ffffff" },
+          textColor: dark ? "#9098a7" : "#555",
+          panes: { separatorColor: dark ? "#353c4a" : "#b8bec7", separatorHoverColor: dark ? "rgba(124, 155, 224, 0.3)" : "rgba(52, 77, 125, 0.25)" },
+        },
+        grid: { vertLines: { color: dark ? "#20252e" : "#f0f0f0" }, horzLines: { color: dark ? "#20252e" : "#f0f0f0" } },
+        crosshair: { vertLine: { color: dark ? "#687183" : "#9598a1", labelBackgroundColor: dark ? "#353c4a" : "#131722" }, horzLine: { color: dark ? "#687183" : "#9598a1", labelBackgroundColor: dark ? "#353c4a" : "#131722" } },
+      });
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   // 차트 노트를 캔들 위 마커로 표시. 분봉에선 노트 시각 이전의 가장 가까운 봉에 붙인다
   useEffect(() => {
     const markers = markersRef.current;
     if (!markers || bars.length === 0) return;
+    // 실시간 체결로 마지막 봉 값만 바뀐 경우는 붙일 봉이 그대로라 건너뛴다 (노트마다 전체 봉을 훑어서)
+    const key = { notes, len: bars.length, first: bars[0].time };
+    const prevKey = markerKeyRef.current;
+    if (prevKey && prevKey.notes === key.notes && prevKey.len === key.len && prevKey.first === key.first) return;
+    markerKeyRef.current = key;
     const items = notes
       .map((note) => {
         let target: Bar | undefined;
@@ -631,6 +747,40 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     return () => cancelAnimationFrame(frame);
   }, [bars, interval, dataKey]);
 
+  // 오른쪽 가격 축 위에서 휠 = 그 칸의 가격 범위만 늘이고 줄임 (차트 위 휠은 그대로 시간 확대·축소)
+  // 마우스가 있는 가격을 중심으로. 가격 축을 두 번 누르면 자동 범위로 돌아감 (라이브러리 기본)
+  useEffect(() => {
+    const container = containerRef.current;
+    const chart = chartRef.current;
+    if (!container || !chart) return;
+    const onWheel = (e: WheelEvent) => {
+      const box = container.getBoundingClientRect();
+      for (const pane of chart.panes()) {
+        const el = pane.getHTMLElement();
+        const series = pane.getSeries()[0];
+        if (!el || !series) continue;
+        const r = el.getBoundingClientRect();
+        if (e.clientY < r.top || e.clientY > r.bottom) continue;
+        const scale = series.priceScale();
+        const axisLeft = box.right - scale.width();
+        if (e.clientX < axisLeft) return; // 차트 위면 원래 동작
+        const range = scale.getVisibleRange();
+        if (!range || e.deltaY === 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const at = series.coordinateToPrice(e.clientY - r.top);
+        const center = at === null ? (range.from + range.to) / 2 : Number(at);
+        const f = e.deltaY > 0 ? 1.12 : 1 / 1.12; // 아래로 굴리면 범위가 넓어져 캔들이 작아짐
+        scale.setAutoScale(false);
+        scale.setVisibleRange({ from: center - (center - range.from) * f, to: center + (range.to - center) * f });
+        return;
+      }
+    };
+    // 차트보다 먼저 받아야 시간 축 확대가 같이 일어나지 않는다
+    container.addEventListener("wheel", onWheel, { capture: true, passive: false });
+    return () => container.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
+
   // 클릭으로 점 찍기, 마우스 이동으로 미리보기·범례
   useEffect(() => {
     const chart = chartRef.current;
@@ -693,12 +843,25 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return name;
     };
 
-    const canPick = () => !noteModeRef.current && (!activeToolRef.current || pendingRef.current.length === 0);
+    // 원래: 도구를 들고 있어도 점을 찍기 전이면 기존 드로잉을 눌러 고를 수 있다
+    // 스마트 그리기: 도구를 들고 있으면 누름은 항상 "그리기" (근처 드로잉을 고르느라 점이 안 찍히는 일이 없게)
+    const canPick = () =>
+      !noteModeRef.current && (smartRef.current ? !activeToolRef.current : !activeToolRef.current || pendingRef.current.length === 0);
     const handleCaptureDown = (event: PointerEvent) => {
       if (!canPick() || event.button !== 0) return;
       const layer = layerRef.current;
       if (!layer) return;
       const { x, y } = localXY(event);
+      // 반투명 시나리오 캔들은 누르는 순간 바로 고른다 (기준선 드로잉이 겹쳐 있어도 시나리오가 먼저)
+      const scenario = scenarioAt(x, y);
+      if (scenario) {
+        event.stopPropagation();
+        setScenarioPick(scenario);
+        setScenarioHover(null);
+        lastScenarioHover = null;
+        skipClick = true;
+        return;
+      }
       const sel = layer.selected();
       const handle = sel ? layer.handleAt(sel, x, y) : null;
       const id = handle !== null ? sel : layer.drawingAt(x, y);
@@ -776,17 +939,98 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     };
     /** 브러시: 누른 채 끄는 동안 모은 점 */
     let stroke: DrawingPoint[] | null = null;
+    /** 붓질한 점의 화면 좌표 (끝날 때 모양을 유지한 채 점 수를 줄이는 데 씀) */
+    let strokeXY: { x: number; y: number }[] = [];
     let lastXY: { x: number; y: number } | null = null;
+    /** 점 찍는 도구로 누른 자리 (놓을 때 점을 찍거나, 끌었으면 선을 완성) */
+    let press: { x: number; y: number; point: DrawingPoint; dragging: boolean } | null = null;
+    /** 바로 전에 찍은 점 (다점 도구의 더블클릭 판정) */
+    let lastTap: { t: number; x: number; y: number } | null = null;
+
+    /** 점 하나 찍기. 다 모이면 드로잉 완성 */
+    const placePoint = (tool: DrawingTool, point: DrawingPoint, x: number, y: number) => {
+      if (tool.mode === "multi") {
+        const now = performance.now();
+        const double = lastTap && now - lastTap.t < DOUBLE_TAP_MS && Math.hypot(x - lastTap.x, y - lastTap.y) <= CLICK_SLOP;
+        lastTap = { t: now, x, y };
+        // 두 번 빠르게 누르면 점을 더하지 않고 끝낸다
+        if (double) {
+          lastTap = null;
+          if (pendingRef.current.length >= tool.pointCount) finishPending();
+          return;
+        }
+        pendingRef.current = [...pendingRef.current, point];
+        setPendingCount(pendingRef.current.length);
+        return;
+      }
+      const points = [...pendingRef.current, point];
+      if (points.length < tool.pointCount) {
+        pendingRef.current = points;
+        setPendingCount(points.length);
+        return;
+      }
+      pendingRef.current = [];
+      setPendingCount(0);
+      layerRef.current?.setPreview(null);
+      finish(tool, points, { x, y });
+    };
+    const releasePress = () => {
+      press = null;
+      chart.applyOptions({ handleScroll: true });
+    };
+
+    /** 획 끝에서 멈춰 직선으로 맞춘 두 끝점 (다시 움직이면 풀림) */
+    let held: [{ x: number; y: number }, { x: number; y: number }] | null = null;
+    let holdTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearHold = () => {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = null;
+    };
+
+    /** 직선으로 바꿀 때 쓸 툴: 브러시 → 추세선(끝점을 끌어 고칠 수 있음), 형광펜 → 곧은 형광펜 */
+    const straightToolOf = (tool: DrawingTool) => (tool.id === "brush" ? getTool("trendline") : tool);
+    /** 화면 좌표 두 점 → 차트 좌표 (차트 칸 안으로 살짝 당겨서) */
+    const endpointsToPoints = (ends: [{ x: number; y: number }, { x: number; y: number }]) => {
+      const w = chart.paneSize().width - 1;
+      const h = chart.paneSize(0).height - 1;
+      const pts = ends.map((p) => pointAt(Math.min(Math.max(p.x, 0), w), Math.min(Math.max(p.y, 0), h)));
+      return pts[0] && pts[1] ? [pts[0], pts[1]] : null;
+    };
+    const previewStraight = (tool: DrawingTool, ends: [{ x: number; y: number }, { x: number; y: number }]) => {
+      const target = straightToolOf(tool);
+      const points = endpointsToPoints(ends);
+      if (!target || !points) return false;
+      layerRef.current?.setPreview({ id: "preview", toolId: target.id, schemaVersion: target.schemaVersion, points, style: DRAW_STYLE });
+      return true;
+    };
 
     const handlePointerDown = (event: PointerEvent) => {
       down = { x: event.clientX, y: event.clientY };
       const tool = currentTool();
-      if (tool?.mode !== "free" || event.button !== 0) return;
+      if (!tool || event.button !== 0) return;
+      if (tool.mode !== "free") {
+        if (!smartRef.current) return; // 원래 방식: 점은 click 에서 찍는다
+        // 스마트 그리기 · 점 찍는 도구: 누른 자리를 기억하고, 누르는 동안 차트가 움직이지 않게 (손떨림으로 클릭이 끌기가 되지 않게)
+        const { x, y } = localXY(event);
+        const point = pointAt(x, y);
+        if (!point) return;
+        press = { x, y, point, dragging: false };
+        chart.applyOptions({ handleScroll: false });
+        try {
+          container.setPointerCapture(event.pointerId);
+        } catch {
+          // 포인터가 이미 사라진 경우
+        }
+        return;
+      }
       const { x, y } = localXY(event);
       const point = pointAt(x, y);
       if (!point) return;
       stroke = [point];
+      strokeXY = [{ x, y }];
       lastXY = { x, y };
+      held = null;
+      clearHold();
       try {
         container.setPointerCapture(event.pointerId); // 차트 밖으로 끌어도 끝까지 받게
       } catch {
@@ -795,27 +1039,80 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     };
     const handlePointerMove = (event: PointerEvent) => {
       const tool = currentTool();
+      if (press && tool && tool.mode !== "free") {
+        // 누른 채 끌기: 첫 점에서 커서까지 미리 보기 (놓으면 그 자리가 끝점)
+        const { x, y } = localXY(event);
+        if (!press.dragging && Math.hypot(x - press.x, y - press.y) <= CLICK_SLOP) return;
+        if (pendingRef.current.length > 0 || tool.pointCount < 2 || tool.mode === "multi") return;
+        press.dragging = true;
+        const point = pointAt(x, y);
+        if (point) layerRef.current?.setPreview({ id: "preview", toolId: tool.id, schemaVersion: tool.schemaVersion, points: [press.point, point], style: DRAW_STYLE });
+        return;
+      }
       if (!stroke || !tool) return;
       const { x, y } = localXY(event);
       if (lastXY && Math.hypot(x - lastXY.x, y - lastXY.y) < 3) return;
       const point = pointAt(x, y);
       if (!point) return;
       stroke.push(point);
+      strokeXY.push({ x, y });
       lastXY = { x, y };
+      held = null; // 멈춰서 맞춘 뒤 다시 움직이면 손그림으로 돌아감
       layerRef.current?.setPreview({ id: "preview", toolId: tool.id, schemaVersion: tool.schemaVersion, points: stroke, style: DRAW_STYLE });
+      // 끝에서 잠깐 멈추면 직선으로 맞춰 미리 보여 준다
+      clearHold();
+      if (smartRef.current) {
+        holdTimer = setTimeout(() => {
+          const t = currentTool();
+          if (!stroke || !t) return;
+          const ends = straightenStroke(strokeXY, "hold");
+          if (ends && previewStraight(t, ends)) held = ends;
+        }, HOLD_SNAP_MS);
+      }
     };
-    const handlePointerUp = () => {
+    const handlePointerUp = (event: PointerEvent) => {
       const tool = currentTool();
+      clearHold();
+      if (press) {
+        const p = press;
+        releasePress();
+        if (!tool || tool.mode === "free") return;
+        if (p.dragging) {
+          // 누른 채 끌어서 놓음: 누른 자리 → 놓은 자리
+          const { x, y } = localXY(event);
+          const end = pointAt(Math.min(Math.max(x, 0), chart.paneSize().width - 1), Math.min(Math.max(y, 0), chart.paneSize(0).height - 1));
+          layerRef.current?.setPreview(null);
+          if (!end) return;
+          placePoint(tool, p.point, p.x, p.y);
+          placePoint(tool, end, x, y);
+          return;
+        }
+        // 클릭 (조금 흔들려도): 누른 자리에 점
+        placePoint(tool, p.point, p.x, p.y);
+        return;
+      }
       if (!stroke || !tool) return;
-      const points = stroke;
+      // 거의 곧은 획(또는 끝에서 멈춰 맞춘 획)은 직선 두 점으로
+      const ends = smartRef.current ? (held ?? straightenStroke(strokeXY, "auto")) : null;
+      const straightTool = ends ? straightToolOf(tool) : undefined;
+      const straightPoints = ends ? endpointsToPoints(ends) : null;
+      // 붓질 한 번 = 드로잉 하나. 모양은 그대로 두고 거의 일직선인 중간 점만 덜어 낸다 (저장·AI 정리 크기 줄이기)
+      const keep = simplifyIndexes(strokeXY, 1.5);
+      const points = keep.map((i) => stroke![i]);
       stroke = null;
+      strokeXY = [];
       lastXY = null;
+      held = null;
       layerRef.current?.setPreview(null);
-      if (points.length >= 2) finish(tool, points);
+      if (straightTool && straightPoints) finish(straightTool, straightPoints);
+      else if (points.length >= 2) finish(tool, points);
     };
 
     const handleClick = (event: MouseEvent) => {
-      if (!down || Math.abs(event.clientX - down.x) + Math.abs(event.clientY - down.y) > 5) return;
+      if (!down || Math.abs(event.clientX - down.x) + Math.abs(event.clientY - down.y) > 5) {
+        skipClick = false; // 끌기로 끝난 누름은 다음 클릭에 영향 없게
+        return;
+      }
       const { x, y } = localXY(event);
       const point = pointAt(x, y);
       if (!point) return;
@@ -825,16 +1122,6 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       const tool = currentTool();
-      // 반투명 시나리오 캔들을 누르면 그것 하나만 남긴다
-      if (!tool && !skipClick) {
-        const name = scenarioAt(x, y);
-        if (name) {
-          setScenarioPick(name);
-          setScenarioHover(null);
-          lastScenarioHover = null;
-          return;
-        }
-      }
       if (!tool) {
         // 툴 없이 빈 곳을 누르면 선택 해제
         if (skipClick) skipClick = false;
@@ -842,6 +1129,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       if (tool.mode === "free") return;
+      if (smartRef.current) return; // 스마트 그리기: 점은 누름·놓음(handlePointerDown/Up)에서 찍었다
       if (tool.mode === "multi") {
         // 더블클릭(두 번째 click)이면 점을 더하지 않고 끝낸다
         if (event.detail >= 2) {
@@ -866,7 +1154,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     const handleMove = (param: MouseEventParams<Time>) => {
       const data = param.seriesData.get(candle) as CandlestickData<Time> | undefined;
-      setHovered(data ? (bars.find((b) => toChartTime(b.time) === data.time) ?? null) : null);
+      setHovered(data ? barAt(bars, data.time as number) : null);
       refreshPaneLegends(param.point ? param.seriesData : undefined);
 
       const tool = currentTool();
@@ -884,6 +1172,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     container.addEventListener("pointerleave", handleLeave);
     container.addEventListener("pointerup", handlePointerUp);
     container.addEventListener("pointerup", handleDragUp);
+    // 펜을 화면 밖으로 들어 올리는 등 누름이 취소되면 차트 이동을 되살린다
+    const handleCancel = () => {
+      if (press) {
+        releasePress();
+        layerRef.current?.setPreview(null);
+      }
+    };
+    container.addEventListener("pointercancel", handleCancel);
     container.addEventListener("click", handleClick);
     chart.subscribeCrosshairMove(handleMove);
     return () => {
@@ -895,7 +1191,9 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       container.removeEventListener("pointermove", handleHover);
       container.removeEventListener("pointerleave", handleLeave);
       container.removeEventListener("pointerup", handlePointerUp);
+      clearHold();
       container.removeEventListener("pointerup", handleDragUp);
+      container.removeEventListener("pointercancel", handleCancel);
       container.removeEventListener("click", handleClick);
       chart.unsubscribeCrosshairMove(handleMove);
     };
@@ -946,7 +1244,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
   // 지표 목록은 바꿀 때만 저장 (실시간 봉마다 쓰면 다른 탭의 선택을 덮어쓴다)
   useEffect(() => {
-    localStorage.setItem(INDICATOR_STORE, JSON.stringify(instances));
+    localStorage.setItem(userStorageKey(INDICATOR_STORE), JSON.stringify(instances));
   }, [instances]);
 
   // 수급 데이터: 수급 지표를 켜고 일봉일 때만 (백엔드가 하루 캐시)
@@ -973,7 +1271,24 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const ext = flows?.code === symbolCode ? { flows: flows.map } : undefined;
     const prevShown = indShownRef.current;
     // 수급 데이터가 새로 오면 처음부터 다시 그린다 (끝부분만 고치면 과거 값이 비어 있음)
-    const live = prevShown !== null && prevShown.key === dataKey && prevShown.flows === ext?.flows && bars.length >= prevShown.len && bars.length - prevShown.len <= 2;
+    const live = prevShown !== null && prevShown.key === dataKey && prevShown.flows === ext?.flows && bars.length >= prevShown.len && bars.length - prevShown.len <= 60;
+    // 실시간 체결만 바뀐 경우(지표 설정·표시 그대로)는 1초에 한 번만 다시 계산. 건너뛴 틱은 끝에 한 번 몰아서 반영
+    const throttle = indLiveRef.current;
+    const sameSet = throttle.instances === instances && shown.every((i) => map.has(i.uid)) && map.size === shown.length;
+    if (live && sameSet) {
+      const wait = IND_LIVE_MS - (Date.now() - throttle.at);
+      if (wait > 0) {
+        throttle.timer ??= setTimeout(() => {
+          throttle.timer = null;
+          setIndTick((t) => t + 1);
+        }, wait);
+        return;
+      }
+    }
+    if (throttle.timer) clearTimeout(throttle.timer);
+    throttle.timer = null;
+    throttle.at = Date.now();
+    throttle.instances = instances;
     indShownRef.current = { key: dataKey, len: bars.length, flows: ext?.flows };
 
     // 내려놓거나 숨긴 지표 지우기 (빈 보조 창은 라이브러리가 지운다)
@@ -1055,7 +1370,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     // 차트가 새 창을 그린 뒤(라이브러리도 다음 프레임에 그림) 범례 위치·값 갱신
     const timer = setTimeout(() => refreshPaneLegends(), 80);
     return () => clearTimeout(timer);
-  }, [bars, instances, dataKey, interval, flows, symbolCode, fullscreen]);
+  }, [bars, instances, dataKey, interval, flows, symbolCode, fullscreen, indTick]);
 
   /** 보조 창 범례: 창 위치(px)와 선별 값. 십자선이 있으면 그 봉 값, 없으면 마지막 값 */
   function refreshPaneLegends(values?: Map<ISeriesApi<SeriesType>, unknown>) {
@@ -1086,7 +1401,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           let v = hit?.value;
           if (v === undefined) {
             try {
-              v = (series[k].data().at(-1) as { value?: number } | undefined)?.value;
+              // data() 는 전체 배열을 복사하므로 마지막 한 점만 꺼낸다 (마우스를 움직일 때마다 불림)
+              v = (series[k].dataByIndex(Number.MAX_SAFE_INTEGER, MismatchDirection.NearestLeft) as { value?: number } | null)?.value;
             } catch {
               v = undefined; // 지워지는 중인 시리즈
             }
@@ -1095,6 +1411,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         }),
       });
     }
+    // 값·위치가 그대로면 상태를 바꾸지 않는다 (십자선이 움직일 때마다 차트 전체가 다시 렌더되지 않게)
+    const sig = JSON.stringify(next);
+    if (sig === paneLegendSigRef.current) return;
+    paneLegendSigRef.current = sig;
     setPaneLegends(next);
   }
 
@@ -1248,6 +1568,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   }
 
   function selectTool(toolId: string | null) {
+    const groupKey = toolId ? groupKeyOf(getTool(toolId)?.group) : null;
+    if (toolId && groupKey) setLastTool((cur) => (cur[groupKey] === toolId ? cur : { ...cur, [groupKey]: toolId }));
     if (toolId) {
       toggleNoteMode(false);
       selectDrawing(null);
@@ -1267,8 +1589,15 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   function onGroupClick(group: ToolGroup) {
     setToolTip(null);
     const tools = groupTools(group);
+    const last = lastTool[group];
     if (tools.length === 1) selectTool(tools[0].id);
+    else if (last && activeToolId !== last) selectTool(last); // 지난번에 쓴 도구 바로
     else if (tools.length > 1) setOpenGroup(openGroup === group ? null : group);
+  }
+  /** 묶음 버튼 오른쪽 › : 항상 메뉴 열기 (다른 도구 고르기) */
+  function onGroupMenu(group: ToolGroup) {
+    setToolTip(null);
+    setOpenGroup(openGroup === group ? null : group);
   }
 
   /**
@@ -1352,15 +1681,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               {intervalLabel(key).button}
             </button>
           ))}
-          {/* 직접 설정한 간격은 그 자리에 버튼으로 보인다 */}
-          {!PRESET_INTERVALS.includes(interval) && (
-            <button className="active" aria-pressed onClick={() => setCustomOpen(true)} title="간격 바꾸기">
-              {intervalLabel(interval).button}
-            </button>
-          )}
+          {/* 직접 설정한 간격은 "직접" 버튼 자리에 그대로 보인다 (예: 5분 ▾). 폭이 고정이라 툴바가 움직이지 않는다 */}
           <div className="ws-interval-custom">
-            <button className={customOpen ? "open" : ""} onClick={() => setCustomOpen(!customOpen)} aria-expanded={customOpen} title="봉 간격 직접 설정">
-              직접 ▾
+            <button
+              className={`${customOpen ? "open" : ""}${PRESET_INTERVALS.includes(interval) ? "" : " active"}`}
+              onClick={() => setCustomOpen(!customOpen)}
+              aria-expanded={customOpen}
+              aria-pressed={!PRESET_INTERVALS.includes(interval)}
+              title="봉 간격 직접 설정"
+            >
+              {PRESET_INTERVALS.includes(interval) ? "직접" : intervalLabel(interval).button} ▾
             </button>
             {customOpen && <CustomInterval current={interval} onApply={(next) => { setCustomOpen(false); onIntervalChange(next); }} onClose={() => setCustomOpen(false)} />}
           </div>
@@ -1368,6 +1698,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         <span className="ws-divider" />
         <button className={`ws-tool-text${pickerOpen ? " open" : ""}`} onClick={() => setPickerOpen(true)} title="지표 추가·설정">
           지표{instances.length ? ` ${instances.length}` : ""} ＋
+        </button>
+        <button
+          className={`ws-tool-text ws-avg-toggle${showAvg ? " active" : ""}`}
+          onClick={toggleAvg}
+          aria-pressed={showAvg}
+          title={avgPrice ? `내 평균 단가 선 ${showAvg ? "숨기기" : "보이기"} (${avgPrice.source === "계좌" ? "증권사 계좌 보유" : "연습 주문"} ${avgPrice.quantity.toLocaleString("ko-KR")}주)` : "이 종목을 보유하면 평균 단가 선을 차트에 표시해요"}
+        >
+          평단 {showAvg ? "ON" : "OFF"}
         </button>
         <span className="ws-divider" />
         <div className="ws-note-menu" ref={noteMenuRef}>
@@ -1437,6 +1775,19 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             </div>
           )}
         </div>
+        {/* 그리기 방식: 끄면 원래대로(클릭으로 점 찍기·브러시 손그림), 켜면 스마트 그리기 */}
+        <button
+          className={`ws-tool-text ws-avg-toggle${smartDraw ? " active" : ""}`}
+          onClick={toggleSmartDraw}
+          aria-pressed={smartDraw}
+          title={
+            smartDraw
+              ? "스마트 그리기 켜짐: 끌어서 선 긋기 · 흔들려도 클릭 · 곧게 그은 브러시는 직선으로. 누르면 원래 방식으로"
+              : "스마트 그리기 꺼짐: 원래 방식(클릭으로 점 찍기 · 브러시는 손그림 그대로). 누르면 켜짐"
+          }
+        >
+          스마트 {smartDraw ? "ON" : "OFF"}
+        </button>
         <span className="ws-divider" />
         <button className="ws-icon-button" onClick={undo} disabled={past.length === 0} title="실행 취소">↶</button>
         <button className="ws-icon-button" onClick={redo} disabled={future.length === 0} title="다시 실행">↷</button>
@@ -1463,10 +1814,21 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                 <button
                   className={activeGroup === key ? "active" : ""}
                   onClick={() => onGroupClick(key)}
-                  title={label}
+                  title={lastTool[key] ? `${getTool(lastTool[key]!)?.label ?? label} (› 다른 도구)` : label}
+                  aria-label={lastTool[key] ? (getTool(lastTool[key]!)?.label ?? label) : label}
                 >
-                  <Image src={icon} width={20} height={20} alt="" unoptimized />
-                  <span className="ws-more">›</span>
+                  {lastTool[key] ? <ToolGlyph id={lastTool[key]!} /> : <Image src={icon} width={20} height={20} alt="" unoptimized />}
+                  <span
+                    className="ws-more"
+                    role="button"
+                    aria-label={`${label} 메뉴 열기`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGroupMenu(key);
+                    }}
+                  >
+                    ›
+                  </span>
                 </button>
                 {openGroup === key && (
                   <div className="ws-flyout" role="menu">

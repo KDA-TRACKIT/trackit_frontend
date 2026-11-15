@@ -14,14 +14,6 @@ export const horizontalLine: DrawingTool = {
     ctx.moveTo(0, y);
     ctx.lineTo(view.width, y);
     ctx.stroke();
-    // 오른쪽 끝 가격 표시
-    const text = Number(drawing.points[0].price).toLocaleString("ko-KR");
-    ctx.font = "11px Pretendard, sans-serif";
-    const w = ctx.measureText(text).width + 10;
-    ctx.fillStyle = drawing.style.color;
-    ctx.fillRect(view.width - w - 4, y - 9, w, 18);
-    ctx.fillStyle = "#fff";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, view.width - w + 1, y);
+    // 가격은 오른쪽 가격 축에 칸으로 표시 (lwc-adapter 의 priceAxisViews — 현재가·평단가 칸과 같은 크기)
   },
 };

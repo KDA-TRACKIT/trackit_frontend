@@ -4,7 +4,8 @@
 //   POST /algo/rules                         만들기 { accountId, symbol, name?, rule } → 멈춘 상태로 시작
 //   GET  /algo/rules/:id                     상세 (버전 전체 + 최근 신호 50건)
 //   PATCH /algo/rules/:id                    실행/중지 { status }, 이름 { name }
-//   POST /algo/rules/:id/versions            새 버전 확정 { rule }
+//   POST /algo/rules/:id/versions            수정 = 새 버전 확정 { rule } (이전 버전은 DB 에 그대로)
+//   DELETE /algo/rules/:id                   지우기 = 보관 (규칙·버전·신호 기록은 DB 에 남고 목록·실행에서만 빠짐)
 // 실제 실행·주문은 백엔드 작업 프로그램(npm run algo)이 한다. 화면은 규칙 설정·상태만 다룬다.
 import type { AlgoCatalog, AlgoRule, TradingRule, TradingRuleDetail } from "../types/algo";
 import { apiRequest } from "./client";
@@ -27,6 +28,15 @@ export function createRule(input: { accountId: string; symbol: string; name?: st
 
 export function addRuleVersion(id: string, rule: AlgoRule) {
   return apiRequest<TradingRule>(`/algo/rules/${id}/versions`, { method: "POST", body: JSON.stringify({ rule }) });
+}
+
+export function renameRule(id: string, name: string | null) {
+  return apiRequest<TradingRule>(`/algo/rules/${id}`, { method: "PATCH", body: JSON.stringify({ name }) });
+}
+
+/** 지우기 (보관). 기록은 남는다 */
+export function archiveRule(id: string) {
+  return apiRequest<{ id: string; status: "ARCHIVED" }>(`/algo/rules/${id}`, { method: "DELETE" });
 }
 
 export function setRuleStatus(id: string, status: "ACTIVE" | "PAUSED") {

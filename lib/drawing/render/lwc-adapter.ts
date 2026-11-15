@@ -3,6 +3,7 @@
 import type {
   IPrimitivePaneRenderer,
   IPrimitivePaneView,
+  IPriceLine,
   ISeriesPrimitive,
   Logical,
   SeriesAttachedParameter,
@@ -30,12 +31,18 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
   private hoveredId: string | null = null;
   // 라이브러리가 배열 참조로 캐시하므로 같은 배열을 계속 돌려준다
   private readonly views: IPrimitivePaneView[] = [new DrawingPaneView(this)];
+  /**
+   * 오른쪽 가격 축 칸 (수평선 가격). 평단가와 같은 방식(캔들 시리즈의 가격선, 선은 숨김)으로 띄워
+   * 현재가·평단가 칸과 크기·모양이 똑같다 (플러그인 축 칸은 라이브러리가 위아래 여백을 더 줘서 커 보임)
+   */
+  private axisLines = new Map<string, { line: IPriceLine; key: string }>();
 
   attached(param: SeriesAttachedParameter<Time>) {
     this.param = param;
   }
 
   detached() {
+    this.clearAxisLines();
     this.param = null;
   }
 
@@ -43,13 +50,45 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     return this.views;
   }
 
+  /** 드로잉이 바뀔 때: 수평선 가격 칸(가격선)을 맞춘다 */
+  private syncAxisLines() {
+    const series = this.param?.series;
+    if (!series) return;
+    const wanted = new Map<string, Drawing>();
+    for (const d of this.items()) if (AXIS_LABEL_TOOLS.has(d.toolId) && Number(d.points[0]?.price) > 0) wanted.set(d.id, d);
+    for (const [id, it] of this.axisLines) {
+      if (wanted.has(id)) continue;
+      series.removePriceLine(it.line);
+      this.axisLines.delete(id);
+    }
+    for (const [id, d] of wanted) {
+      const price = Number(d.points[0].price);
+      const key = `${price}:${d.style.color}`;
+      const cur = this.axisLines.get(id);
+      if (cur?.key === key) continue;
+      const options = { price, color: d.style.color, lineVisible: false, axisLabelVisible: true, axisLabelColor: d.style.color, axisLabelTextColor: "#ffffff", title: "" };
+      if (cur) {
+        cur.line.applyOptions(options);
+        cur.key = key;
+      } else this.axisLines.set(id, { line: series.createPriceLine(options), key });
+    }
+  }
+
+  private clearAxisLines() {
+    const series = this.param?.series;
+    for (const it of this.axisLines.values()) series?.removePriceLine(it.line);
+    this.axisLines.clear();
+  }
+
   setDrawings(drawings: Drawing[]) {
     this.drawings = drawings;
+    this.syncAxisLines();
     this.param?.requestUpdate();
   }
 
   setPreview(preview: Drawing | null) {
     this.preview = preview;
+    this.syncAxisLines();
     this.param?.requestUpdate();
   }
 
@@ -179,6 +218,9 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     };
   }
 }
+
+/** 가격 축에 가격 칸을 띄우는 드로잉 (수평선·수평 반직선) */
+const AXIS_LABEL_TOOLS = new Set(["horizontal-line", "horizontal-ray"]);
 
 class DrawingPaneView implements IPrimitivePaneView {
   constructor(private readonly layer: DrawingLayer) {}

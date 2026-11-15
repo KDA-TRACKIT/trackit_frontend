@@ -2,7 +2,7 @@
 // 알고리즘 규칙 편집기: 프리셋(RSI·이동평균 교차) 또는 조건 조합. 저장하면 백엔드에 규칙(새 버전)이 확정된다.
 // 규칙은 확정 후 고칠 수 없고 새 버전으로만 바뀐다 (사전 판정 근거). 만든 규칙은 멈춘 상태로 시작
 import { useEffect, useMemo, useState } from "react";
-import { addRuleVersion, createRule } from "../../lib/api/algo";
+import { addRuleVersion, createRule, renameRule } from "../../lib/api/algo";
 import { errorMessage } from "../../lib/api/client";
 import { OP_LABEL, describeRule } from "../../lib/algo-text";
 import type { AlgoCatalog, AlgoCatalogIndicator, AlgoCondition, AlgoGroup, AlgoOperand, AlgoOperator, AlgoRule, AlgoSource, TradingRule } from "../../lib/types/algo";
@@ -108,6 +108,8 @@ export default function AlgoRuleEditor({ catalog, symbol, accounts, editing, onS
     setSaving(true);
     setError(null);
     try {
+      // 수정: 규칙 내용은 새 버전으로 쌓이고(이전 버전은 DB 에 남음), 이름이 바뀌었으면 이름만 고친다
+      if (editing && (name.trim() || null) !== (editing.name ?? null)) await renameRule(editing.id, name.trim() || null);
       const saved = editing ? await addRuleVersion(editing.id, rule) : await createRule({ accountId, symbol: symbol.code, name: name.trim() || undefined, rule });
       onSaved(saved);
     } catch (e) {
@@ -121,7 +123,7 @@ export default function AlgoRuleEditor({ catalog, symbol, accounts, editing, onS
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="algo-modal" role="dialog" aria-modal="true" aria-label="알고리즘 규칙">
         <header>
-          <h2>{editing ? `규칙 새 버전 · v${(editing.currentVersion?.version ?? 0) + 1}` : "새 알고리즘 규칙"}</h2>
+          <h2>{editing ? `규칙 수정 · v${(editing.currentVersion?.version ?? 0) + 1}로 저장` : "새 알고리즘 규칙"}</h2>
           <button className="ind-close" onClick={onClose} aria-label="닫기">
             ✕
           </button>
@@ -131,7 +133,7 @@ export default function AlgoRuleEditor({ catalog, symbol, accounts, editing, onS
           <div className="algo-row">
             <label>
               <span>이름</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} disabled={!!editing} maxLength={100} />
+              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
             </label>
             <label>
               <span>종목</span>

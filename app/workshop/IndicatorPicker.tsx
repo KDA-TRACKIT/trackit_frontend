@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ColorSwatches from "./ColorSwatches";
 import { INDICATOR_CATEGORIES, INDICATOR_LIBRARY, getIndicator, instanceLabel, type IndicatorDef, type IndicatorInstance } from "../../lib/indicators";
+import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 
 type Props = {
   instances: IndicatorInstance[];
@@ -30,12 +31,12 @@ const POSITION_NAV: { key: string; label: string; position: Position }[] = [
   { key: "pos:below", label: "차트 아래", position: "below" },
 ];
 
-/** 즐겨찾기한 지표 id (이 브라우저에 저장) */
+/** 즐겨찾기한 지표 id (이 브라우저에 사용자별로 저장) */
 const FAVORITE_STORE = "trackit:indicator-favorites";
 
 function loadFavorites(): string[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(FAVORITE_STORE) ?? "");
+    const saved = JSON.parse(readUserStorage(FAVORITE_STORE) ?? "");
     if (Array.isArray(saved)) return saved.filter((id) => typeof id === "string");
   } catch {
     // 처음이면 없음
@@ -52,7 +53,7 @@ export default function IndicatorPicker({ instances, onAdd, onUpdate, onRemove, 
   function toggleFavorite(id: string) {
     setFavorites((list) => {
       const next = list.includes(id) ? list.filter((f) => f !== id) : [...list, id];
-      localStorage.setItem(FAVORITE_STORE, JSON.stringify(next));
+      localStorage.setItem(userStorageKey(FAVORITE_STORE), JSON.stringify(next));
       return next;
     });
   }

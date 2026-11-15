@@ -1,7 +1,7 @@
 "use client";
 // 차트 주석(드로잉·노트) 불러오기·저장. 저장 때 새로 그린 것만 POST, 지운 것은 DELETE
 import { useCallback, useEffect, useState } from "react";
-import { errorMessage } from "../lib/api/client";
+import { ApiError, errorMessage } from "../lib/api/client";
 import { createAnnotation, deleteAnnotation, listAnnotations } from "../lib/api/journals";
 import type { ChartAnnotation, ChartDrawing } from "../lib/types/chart";
 import type { StorageMode } from "../lib/types/journal";
@@ -43,7 +43,15 @@ export function useChartAnnotations(journalId: string | null, mode: StorageMode)
         const wanted = new Set(drawings.map((d) => d.id));
         const added = await Promise.all(drawings.filter((d) => !savedIds.has(d.id)).map((d) => createAnnotation(targetJournalId, d, mode)));
         const removed = current.filter((a) => !wanted.has(clientIdOf(a)));
-        await Promise.all(removed.map((a) => deleteAnnotation(a.id, mode)));
+        // 이미 지워진 주석(다른 탭·이전 저장에서 지움)은 지운 것으로 본다 → "Annotation not found" 로 저장이 실패하지 않게
+        await Promise.all(
+          removed.map((a) =>
+            deleteAnnotation(a.id, mode).catch((e) => {
+              if (e instanceof ApiError && e.status === 404) return;
+              throw e;
+            }),
+          ),
+        );
         setSaved([...current.filter((a) => wanted.has(clientIdOf(a))), ...added]);
         setLoadedFor(targetJournalId);
         return { added: added.length, removed: removed.length };

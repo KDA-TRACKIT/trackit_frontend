@@ -36,10 +36,10 @@ export function intervalLabel(i: Interval) {
   return { button: text, legend: text, footer };
 }
 
-/** 서버에서 받을 원본 봉 (초봉은 없음) */
-export function sourceOf(i: Interval): "1m" | "60m" | "1d" | null {
+/** 서버에서 받을 원본 봉 (초봉은 오늘 정규장 체결로 만든 1초봉) */
+export function sourceOf(i: Interval): "1s" | "1m" | "60m" | "1d" {
   const { unit } = parseInterval(i);
-  return unit === "s" ? null : unit === "m" ? "1m" : unit === "h" ? "60m" : "1d";
+  return unit === "s" ? "1s" : unit === "m" ? "1m" : unit === "h" ? "60m" : "1d";
 }
 
 /** 그 시각이 들어갈 봉의 시작 시각 (UTC 초) */
@@ -81,4 +81,4 @@ export function groupBars(bars: Bar[], i: Interval): Bar[] {
 }
 
 /** 원본 그대로 써도 되는 간격 (1분·1시간·1일) */
-export const needsGrouping = (i: Interval) => !["1m", "1h", "1d"].includes(i) && !isSeconds(i);
+export const needsGrouping = (i: Interval) => !["1s", "1m", "1h", "1d"].includes(i);
