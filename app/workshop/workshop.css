@@ -1,12 +1,12 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
-/* 작업실 (피그마 노드 38:184). 1440 기준 콘텐츠 폭 1312px */
-.workshop { --ws-line:#e0e0e0; --ws-text:#191919; --ws-muted:#888; --ws-soft:#f5f2ec; --ws-active:#e7e9ef; --ws-up:#f0294f; --ws-down:#1666f0; min-height:100vh; background:#f6f6f6; color:var(--ws-text); font-family:Pretendard,"Noto Sans KR",sans-serif; line-height:1.2; }
+/* 작업실 (피그마 노드 38:184). 좌우 여백은 차트 도구 막대 폭에 맞춘다. */
+.workshop { --ws-tool-rail-width:47px; --ws-line:#e0e0e0; --ws-text:#191919; --ws-muted:#888; --ws-soft:#f5f2ec; --ws-active:#e7e9ef; --ws-up:#f0294f; --ws-down:#1666f0; min-height:100vh; background:#f6f6f6; color:var(--ws-text); font-family:Pretendard,"Noto Sans KR",sans-serif; line-height:1.2; }
 /* :where()로 우선순위를 0으로 둬서 아래 개별 스타일이 이기게 한다 */
 :where(.workshop) button { border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
 :where(.workshop) button:disabled { cursor:default; opacity:.4; }
 :where(.workshop) :is(h2,h3,h4,p) { margin:0; }
-.ws-layout { width:min(1312px,calc(100% - 48px)); margin:40px auto 60px; }
+.ws-layout { width:calc(100% - 2 * var(--ws-tool-rail-width)); margin:40px auto 60px; }
 .ws-divider { width:1px; height:22px; margin:0 4px; background:var(--ws-line); flex:none; }
 .up { color:var(--ws-up); } .down { color:var(--ws-down); }
 .workshop em { font-style:normal; }
@@ -74,7 +74,7 @@
 .ws-intervals .ws-caret { width:20px; font-size:10px; }
 .ws-tool-text { display:flex; height:34px; align-items:center; gap:5px; padding:0 8px; font-size:13px; }
 .ws-icon-button { width:34px; height:34px; font-size:17px; }
-.ws-chart-body { display:grid; min-height:0; grid-template-columns:47px 1fr; }
+.ws-chart-body { display:grid; min-height:0; grid-template-columns:var(--ws-tool-rail-width) 1fr; }
 .ws-draw-tools { display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:6px; border-right:1px solid var(--ws-line); }
 .ws-draw-tools button { position:relative; display:grid; width:38px; height:30px; place-items:center; border-radius:2px; color:#222; }
 .ws-draw-tools button.active { border-radius:4px; background:#f0f0f0; }
