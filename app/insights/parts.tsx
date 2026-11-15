@@ -4,6 +4,21 @@ export const pct = (n: number | null, d = 2) => (n === null ? "—" : `${n > 0 ?
 export const tone = (n: number | null) => (n === null || n === 0 ? "" : n > 0 ? "up" : "down");
 export const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
 
+export const MARKET_NAME = { kospi: "코스피", kosdaq: "코스닥", sp500: "S&P 500", nasdaq100: "나스닥 100", dow: "다우 30" } as const;
+/** 원 → "1,221조" / "8,430억", 달러 → "$5.18T" / "$820B" / "$45M" */
+export function money(n: number, currency: "KRW" | "USD") {
+  if (currency === "USD") {
+    if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+    if (n >= 1e9) return `$${Math.round(n / 1e9).toLocaleString("en-US")}B`;
+    return `$${Math.round(n / 1e6).toLocaleString("en-US")}M`;
+  }
+  if (n >= 1e12) return `${Math.round(n / 1e12).toLocaleString("ko-KR")}조`;
+  return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
+}
+/** 주가 → "212,000원" / "$356.27" */
+export const price = (n: number, currency: "KRW" | "USD") =>
+  currency === "USD" ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${n.toLocaleString("ko-KR")}원`;
+
 /** 백만원 → "1,234억" */
 export const eok = (millions: number) => `${millions < 0 ? "−" : ""}${Math.round(Math.abs(millions) / 100).toLocaleString("ko-KR")}억`;
 

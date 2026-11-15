@@ -2,11 +2,11 @@
 // 상승 · 하락 · 거래대금 상위 (섹터맵과 같은 데이터에서 계산 → 키움 추가 호출 없음) + 외국인·기관 순매수/순매도 상위
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { getFlows, type FlowRow, type SectorMap, type SectorMarket } from "../../lib/api/insights";
-import { CardHead, Failed, Loading, eok, pct, tone } from "./parts";
+import { getFlows, isUsMarket, type FlowRow, type KrMarket, type SectorMap } from "../../lib/api/insights";
+import { CardHead, Failed, Loading, MARKET_NAME, eok, money, pct, tone } from "./parts";
 import { useLoad } from "./useLoad";
 
-const href = (code: string, name: string, market: SectorMarket) => `/workshop?symbol=${code}&name=${encodeURIComponent(name)}&market=${market === "kospi" ? "KOSPI" : "KOSDAQ"}`;
+const href = (code: string, name: string, market: KrMarket) => `/workshop?symbol=${code}&name=${encodeURIComponent(name)}&market=${market === "kospi" ? "KOSPI" : "KOSDAQ"}`;
 
 type Mover = { code: string; name: string; changeRate: number; price: number; amount: number };
 
@@ -18,12 +18,12 @@ export function Rankings({ data }: { data: SectorMap | null }) {
     return [
       { key: "up", title: "상승률", rows: top((a, b) => b.changeRate - a.changeRate), show: (m: Mover) => pct(m.changeRate) },
       { key: "down", title: "하락률", rows: top((a, b) => a.changeRate - b.changeRate), show: (m: Mover) => pct(m.changeRate) },
-      { key: "amount", title: "거래대금", rows: top((a, b) => b.amount - a.amount), show: (m: Mover) => `${Math.round(m.amount / 1e8).toLocaleString("ko-KR")}억` },
+      { key: "amount", title: "거래대금", rows: top((a, b) => b.amount - a.amount), show: (m: Mover) => money(m.amount, data.currency) },
     ];
   }, [data]);
   return (
     <section className="ins-card">
-      <CardHead title="오늘의 종목" meta={data ? `${data.market === "kospi" ? "코스피" : "코스닥"} · 섹터맵에서 고른 시장` : undefined} />
+      <CardHead title="오늘의 종목" meta={data ? `${MARKET_NAME[data.market]} · 섹터맵에서 고른 시장` : undefined} />
       {!lists || !data ? (
         <Loading height={300} />
       ) : (
@@ -34,10 +34,17 @@ export function Rankings({ data }: { data: SectorMap | null }) {
               <ol className="ins-rank">
                 {l.rows.map((m) => (
                   <li key={m.code}>
-                    <Link href={href(m.code, m.name, data.market)}>
-                      <span>{m.name}</span>
-                      <em className={tone(m.changeRate)}>{l.show(m)}</em>
-                    </Link>
+                    {isUsMarket(data.market) ? (
+                      <a title={m.code}>
+                        <span>{m.name}</span>
+                        <em className={tone(m.changeRate)}>{l.show(m)}</em>
+                      </a>
+                    ) : (
+                      <Link href={href(m.code, m.name, data.market as KrMarket)}>
+                        <span>{m.name}</span>
+                        <em className={tone(m.changeRate)}>{l.show(m)}</em>
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ol>
@@ -49,7 +56,7 @@ export function Rankings({ data }: { data: SectorMap | null }) {
   );
 }
 
-function FlowList({ title, rows, market }: { title: string; rows: FlowRow[]; market: SectorMarket }) {
+function FlowList({ title, rows, market }: { title: string; rows: FlowRow[]; market: KrMarket }) {
   return (
     <div>
       <h3>{title}</h3>
@@ -68,7 +75,7 @@ function FlowList({ title, rows, market }: { title: string; rows: FlowRow[]; mar
 }
 
 export function Flows() {
-  const [market, setMarket] = useState<SectorMarket>("kospi");
+  const [market, setMarket] = useState<KrMarket>("kospi");
   const { data, error, loading, reload } = useLoad(`flows-${market}`, () => getFlows(market), 60_000);
   return (
     <section className="ins-card">

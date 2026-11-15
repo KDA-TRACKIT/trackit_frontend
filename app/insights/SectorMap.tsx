@@ -1,16 +1,22 @@
 "use client";
 // 섹터맵: 칸 넓이 = 시가총액, 색 = 등락률 (오르면 빨강, 내리면 파랑)
-// 업종 이름을 누르면 그 업종만 크게, 종목을 누르면 작업실에서 그 종목을 연다. 장중엔 1분마다 새로 받음
+// 업종 이름을 누르면 그 업종만 크게, 종목을 누르면 작업실에서 그 종목을 연다 (미국은 작업실 차트가 아직 없어 링크 없음)
+// 코스피 · 코스닥 · S&P 500 · 나스닥 100 · 다우 30
+//   미국 지수는 finviz 맵처럼: 섹터 → 세부 업종(작은 이름표) → 종목, 칸에는 티커와 등락률 (이름은 마우스를 올리면)
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
-import { getSectorMap, type SectorMap as SectorMapData, type SectorMarket, type SectorStock } from "../../lib/api/insights";
+import { getSectorMap, isUsMarket, type SectorMap as SectorMapData, type SectorMarket, type SectorStock } from "../../lib/api/insights";
 import { squarify, type Rect } from "../../lib/treemap";
+import { MARKET_NAME, money, price } from "./parts";
 
 const HEIGHT = 560;
 const HEADER = 22;
 /** 이 폭·높이보다 작은 칸은 글자를 안 쓴다 */
 const LABEL_MIN = { w: 46, h: 28 };
+/** 세부 업종 이름표 높이 (이보다 작은 묶음은 이름표 없이) */
+const IND_HEAD = 13;
+const MARKETS: SectorMarket[] = ["kospi", "kosdaq", "sp500", "nasdaq100", "dow"];
 
 /** 등락률 → 칸 색. ±3% 에서 가장 진함 */
 function heat(rate: number) {
@@ -22,11 +28,6 @@ function heat(rate: number) {
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 const pct = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
-/** 시가총액 → "1,221조" / "8,430억" */
-function cap(n: number) {
-  if (n >= 1e12) return `${Math.round(n / 1e12).toLocaleString("ko-KR")}조`;
-  return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
-}
 function stamp(iso: string) {
   const d = new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString();
   return `${d.slice(5, 7)}.${d.slice(8, 10)} ${d.slice(11, 16)}`;
@@ -128,15 +129,42 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
     return sectors.map((s, i) => {
       const r = outer[i];
       const inner: Rect = { x: r.x + 1, y: r.y + HEADER, w: Math.max(r.w - 2, 0), h: Math.max(r.h - HEADER - 1, 0) };
-      const cells = squarify(
-        s.stocks.map((t) => t.marketCap),
-        inner,
-      );
-      return { sector: s, rect: r, cells };
+      const cells: { stock: SectorStock; c: Rect }[] = [];
+      const groups: { name: string; rect: Rect; head: boolean }[] = [];
+      if (s.stocks.some((t) => t.industry)) {
+        // 세부 업종으로 한 번 더 나눈 뒤 그 안을 종목으로 (finviz 처럼)
+        const byInd = new Map<string, SectorStock[]>();
+        for (const t of s.stocks) byInd.set(t.industry ?? "", [...(byInd.get(t.industry ?? "") ?? []), t]);
+        const inds = [...byInd.entries()].map(([name, list]) => ({ name, list, cap: list.reduce((a, t) => a + t.marketCap, 0) })).sort((a, b) => b.cap - a.cap);
+        const rects = squarify(
+          inds.map((x) => x.cap),
+          inner,
+        );
+        inds.forEach((ind, k) => {
+          const g = rects[k];
+          if (!g) return;
+          const head = !!ind.name && g.w >= 70 && g.h >= 44;
+          groups.push({ name: ind.name, rect: g, head });
+          const box: Rect = { x: g.x + 1, y: g.y + (head ? IND_HEAD : 1), w: Math.max(g.w - 2, 0), h: Math.max(g.h - (head ? IND_HEAD : 1) - 1, 0) };
+          squarify(
+            ind.list.map((t) => t.marketCap),
+            box,
+          ).forEach((c, j) => cells.push({ stock: ind.list[j], c }));
+        });
+      } else {
+        squarify(
+          s.stocks.map((t) => t.marketCap),
+          inner,
+        ).forEach((c, j) => cells.push({ stock: s.stocks[j], c }));
+      }
+      return { sector: s, rect: r, cells, groups };
     });
   }, [sectors, width]);
+  const us = isUsMarket(market);
 
   const zoomed = zoom ? data?.sectors.find((s) => s.code === zoom) : null;
+  const cur = data?.currency ?? (us ? "USD" : "KRW");
+  const cap = (n: number) => money(n, cur);
 
   return (
     <section className="ins-card">
@@ -150,12 +178,12 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
           ) : null}
           {data && (
             <span className="ins-meta">
-              {data.marketOpen ? "장중 · 실시간" : "장 마감"} · {stamp(data.asOf)} 기준
+              {data.marketOpen ? (us ? "정규장 · 실시간" : "장중 · 실시간") : "장 마감"} · {stamp(data.asOf)} 기준
             </span>
           )}
         </div>
         <div className="ins-seg" role="radiogroup" aria-label="시장">
-          {(["kospi", "kosdaq"] as const).map((m) => (
+          {MARKETS.map((m) => (
             <button
               key={m}
               type="button"
@@ -166,7 +194,7 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
                 setZoom(null);
               }}
             >
-              {m === "kospi" ? "코스피" : "코스닥"}
+              {MARKET_NAME[m]}
             </button>
           ))}
         </div>
@@ -183,10 +211,10 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
         ) : !data ? (
           <div className="ins-state">
             <span className="ins-spinner" aria-hidden />
-            <p>업종 시세를 불러오는 중</p>
+            <p>{us ? "미국 시세를 처음 불러오는 중 (1분쯤)" : "업종 시세를 불러오는 중"}</p>
           </div>
         ) : (
-          layout.map(({ sector, rect, cells }) => (
+          layout.map(({ sector, rect, cells, groups }) => (
             <div key={sector.code} className="ins-sector" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}>
               <button
                 type="button"
@@ -198,28 +226,41 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
                 <span>{sector.name}</span>
                 {rect.w > 110 && <em className={sector.changeRate > 0 ? "up" : sector.changeRate < 0 ? "down" : ""}>{pct(sector.changeRate)}</em>}
               </button>
-              {sector.stocks.map((s, i) => {
-                const c = cells[i];
+              {groups.map((g) => (
+                <div
+                  key={g.name}
+                  className="ins-ind"
+                  style={{ left: g.rect.x - rect.x, top: g.rect.y - rect.y, width: g.rect.w, height: g.rect.h }}
+                  title={g.name}
+                >
+                  {g.head && <span style={{ height: IND_HEAD }}>{g.name}</span>}
+                </div>
+              ))}
+              {cells.map(({ stock: s, c }) => {
                 if (!c || c.w < 1 || c.h < 1) return null;
                 const big = c.w >= LABEL_MIN.w && c.h >= LABEL_MIN.h;
-                return (
-                  <Link
-                    key={s.code}
-                    href={`/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${market === "kospi" ? "KOSPI" : "KOSDAQ"}`}
-                    className="ins-cell"
-                    style={{ left: c.x - rect.x, top: c.y - rect.y, width: c.w, height: c.h, background: heat(s.changeRate), fontSize: Math.max(10, Math.min(22, Math.sqrt(c.w * c.h) / 6)) }}
-                    onMouseMove={(e) => {
-                      const host = boxRef.current?.getBoundingClientRect();
-                      if (host) setTip({ x: e.clientX - host.left, y: e.clientY - host.top, stock: s, sector: sector.name });
-                    }}
-                    aria-label={`${s.name} ${pct(s.changeRate)}`}
-                  >
-                    {big && (
-                      <>
-                        <strong>{s.name}</strong>
-                        <span>{pct(s.changeRate)}</span>
-                      </>
-                    )}
+                const cell = {
+                  className: "ins-cell",
+                  style: { left: c.x - rect.x, top: c.y - rect.y, width: c.w, height: c.h, background: heat(s.changeRate), fontSize: Math.max(10, Math.min(22, Math.sqrt(c.w * c.h) / 6)) },
+                  onMouseMove: (e: React.MouseEvent) => {
+                    const host = boxRef.current?.getBoundingClientRect();
+                    if (host) setTip({ x: e.clientX - host.left, y: e.clientY - host.top, stock: s, sector: sector.name });
+                  },
+                  "aria-label": `${s.name} ${pct(s.changeRate)}`,
+                };
+                const label = big && (
+                  <>
+                    <strong>{us ? s.code : s.name}</strong>
+                    <span>{pct(s.changeRate)}</span>
+                  </>
+                );
+                return us ? (
+                  <div key={s.code} {...cell} role="img">
+                    {label}
+                  </div>
+                ) : (
+                  <Link key={s.code} href={`/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${market === "kospi" ? "KOSPI" : "KOSDAQ"}`} {...cell}>
+                    {label}
                   </Link>
                 );
               })}
@@ -232,7 +273,7 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
               {tip.stock.name} <small>{tip.stock.code}</small>
             </strong>
             <span className={tip.stock.changeRate > 0 ? "up" : tip.stock.changeRate < 0 ? "down" : ""}>
-              {tip.stock.price.toLocaleString("ko-KR")}원 {pct(tip.stock.changeRate)}
+              {price(tip.stock.price, cur)} {pct(tip.stock.changeRate)}
             </span>
             <small>
               {tip.sector} · 시가총액 {cap(tip.stock.marketCap)} · 거래량 {tip.stock.volume.toLocaleString("ko-KR")}
@@ -245,7 +286,9 @@ export default function SectorMap({ onData }: { onData?: (data: SectorMapData | 
         <span>−3%</span>
         <i style={{ background: `linear-gradient(90deg, ${heat(-3)}, ${heat(0)}, ${heat(3)})` }} />
         <span>+3%</span>
-        <small>칸 크기 = 시가총액 · 업종 이름을 누르면 크게 · 종목을 누르면 작업실</small>
+        <small>
+          칸 크기 = 시가총액 · 업종 이름을 누르면 크게{us ? " · 섹터 안은 세부 업종별 · 정규장 한국 시간 23:30~06:00 (서머타임 22:30~05:00)" : " · 종목을 누르면 작업실"}
+        </small>
       </div>
     </section>
   );

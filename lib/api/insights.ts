@@ -1,11 +1,15 @@
 // 투자 정보 화면 (/insights) 에서 쓰는 시장 데이터. 키움 시세는 백엔드가 받아 캐시해 둔다 (로그인 필요 없음)
 import { apiRequest } from "./client";
 
-export type SectorMarket = "kospi" | "kosdaq";
-export type SectorStock = { code: string; name: string; price: number; changeRate: number; volume: number; marketCap: number };
+/** sp500 · nasdaq100 · dow = 미국 지수 맵 (키움 미국주식 시세, 달러) */
+export type SectorMarket = "kospi" | "kosdaq" | "sp500" | "nasdaq100" | "dow";
+export type KrMarket = "kospi" | "kosdaq";
+export const isUsMarket = (m: SectorMarket) => m === "sp500" || m === "nasdaq100" || m === "dow";
+/** industry: 세부 업종 (미국 지수 맵만) */
+export type SectorStock = { code: string; name: string; price: number; changeRate: number; volume: number; marketCap: number; industry?: string };
 export type Sector = { code: string; name: string; changeRate: number; marketCap: number; rising: number; falling: number; stocks: SectorStock[] };
 /** version: 서버 판 번호, full: sectors 가 전체인지(아니면 since 뒤에 바뀐 업종만) */
-export type SectorMap = { market: SectorMarket; asOf: string; marketOpen: boolean; version: number; full: boolean; sectors: Sector[] };
+export type SectorMap = { market: SectorMarket; currency: "KRW" | "USD"; asOf: string; marketOpen: boolean; version: number; full: boolean; sectors: Sector[] };
 
 /**
  * 섹터맵: 업종별 등락률 + 업종 안 종목(시가총액·등락률)
@@ -26,8 +30,8 @@ export const getBoard = () => apiRequest<Board>("/insights/board", { auth: false
 
 // ---------- 외국인·기관 ----------
 export type FlowRow = { code: string; name: string; amount: number };
-export type Flows = { market: SectorMarket; asOf: string; foreignBuy: FlowRow[]; foreignSell: FlowRow[]; institutionBuy: FlowRow[]; institutionSell: FlowRow[] };
-export const getFlows = (market: SectorMarket) => apiRequest<Flows>(`/insights/flows?market=${market}`, { auth: false });
+export type Flows = { market: KrMarket; asOf: string; foreignBuy: FlowRow[]; foreignSell: FlowRow[]; institutionBuy: FlowRow[]; institutionSell: FlowRow[] };
+export const getFlows = (market: KrMarket) => apiRequest<Flows>(`/insights/flows?market=${market}`, { auth: false });
 
 // ---------- 물가 ----------
 export type InflationSeries = { key: string; label: string; country: "KR" | "US"; source: string; points: { month: string; yoy: number }[] };
