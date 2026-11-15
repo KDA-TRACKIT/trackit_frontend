@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { isSeconds } from "../../lib/interval";
+import { isDailyLike, isSeconds } from "../../lib/interval";
 import { PHASE_LABEL, isRegularPhase, useMarketPhase } from "../../lib/market-session";
 import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations";
 import { useJournal } from "../../hooks/useJournal";
@@ -11,7 +11,7 @@ import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../li
 import { getTool, type Drawing } from "../../lib/drawing";
 import { requestChartMemo } from "../../lib/api/ai";
 import { errorMessage } from "../../lib/api/client";
-import { applyTicks, fetchBars, openStream, searchSymbols, type SymbolInfo, type Tick } from "../../lib/market-data";
+import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
 import RecordBoard from "./RecordBoard";
@@ -27,6 +27,14 @@ import "./workshop.css";
 const WorkshopChart = dynamic(() => import("./WorkshopChart"), { ssr: false, loading: () => <section className="ws-chart" /> });
 
 const won = (value: number) => value.toLocaleString("ko-KR");
+/** 가격 표시: 국내 12,300원 · 미국 $123.45 */
+const moneyOf = (usd: boolean) => (value: number) =>
+  usd ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${won(value)}원`;
+/** 전일 대비 금액 (부호 없이) */
+const diffOf = (usd: boolean) => (value: number) => (usd ? value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : won(value));
+const US_SESSION_LABEL: Record<UsSession, string> = { pre: "프리마켓", regular: "정규장", after: "애프터마켓", overnight: "주간거래", closed: "장 마감" };
+/** 미국 체결 → 일봉에 넣을 체결 (정규장 것만, 시각은 그날 일봉 자리로) */
+const usDailyTicks = (ticks: Tick[]) => ticks.filter((t) => t.regular).map((t) => ({ ...t, time: usDailyTickTime(t.time) }));
 
 const nowKst = () => kstNow().time;
 
@@ -51,11 +59,16 @@ export default function WorkshopPage() {
     intervalRef.current = interval;
   }, [interval]);
   const [symbol, setSymbol] = useState<SymbolInfo>(DEFAULT_SYMBOL);
+  const us = isUsSymbol(symbol);
+  const money = moneyOf(us);
+  const diff = diffOf(us);
   const [bars, setBars] = useState<Bar[]>([]);
   const [daily, setDaily] = useState<Bar[]>([]);
   /** live = 백엔드 시세, mock = 백엔드에 못 붙어서 예시 데이터 */
   const [source, setSource] = useState<"loading" | "live" | "mock">("loading");
   const [marketOpen, setMarketOpen] = useState<boolean | null>(null);
+  /** 미국 종목의 지금 거래 구간 (스트림이 알려 줌) */
+  const [usSession, setUsSession] = useState<UsSession | null>(null);
   /** 장 단계 (프리마켓 · 장 열림 · 애프터마켓 · 장 마감 …) */
   const phase = useMarketPhase();
 
@@ -70,11 +83,11 @@ export default function WorkshopPage() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     // 초봉은 서버가 오늘 장 시작(09:00)까지 뒤에서 채우는 동안 complete=false → 몇 초마다 다시 받아 앞쪽을 늘린다
     const load = (first: boolean) =>
-      fetchBars(symbol.code, interval, ac.signal)
+      fetchBars(symbol.code, interval, ac.signal, undefined, symbol.exchange)
         .then(({ symbol: info, bars: data, complete }) => {
           setBars(data);
           setSource("live");
-          if (first) setSymbol((cur) => (cur.code === info.code && (cur.name !== info.name || cur.market !== info.market) ? info : cur));
+          if (first) setSymbol((cur) => (cur.code === info.code && (cur.name !== info.name || cur.market !== info.market) ? { ...info, exchange: cur.exchange } : cur));
           if (!complete && !ac.signal.aborted) timer = setTimeout(() => void load(false), 4000);
         })
         .catch(() => {
@@ -87,44 +100,54 @@ export default function WorkshopPage() {
       ac.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [symbol.code, interval]);
+  }, [symbol.code, symbol.exchange, interval]);
 
   // 종목 정보 패널은 일봉 기준
   useEffect(() => {
     const ac = new AbortController();
-    fetchBars(symbol.code, "1d", ac.signal, 40)
+    fetchBars(symbol.code, "1d", ac.signal, 40, symbol.exchange)
       .then(({ bars: data }) => setDaily(data))
       .catch(() => {
         if (!ac.signal.aborted) setDaily(symbol.code === STOCK.code ? makeBars("1d") : []);
       });
     return () => ac.abort();
-  }, [symbol.code]);
+  }, [symbol.code, symbol.exchange]);
 
   // 실시간 체결: 화면에 띄운 종목만 구독. 체결이 몰리면 렌더가 밀리므로 0.25초마다 모아서 반영
   useEffect(() => {
     const queue: Tick[] = [];
-    const close = openStream(symbol.code, {
-      onTick: (t) => queue.push(t),
-      onStatus: (st) => setMarketOpen(st.marketOpen),
-    });
+    const exchange = symbol.exchange;
+    const close = openStream(
+      symbol.code,
+      {
+        onTick: (t) => queue.push(t),
+        onStatus: (st) => {
+          setMarketOpen(st.marketOpen);
+          if (st.session) setUsSession(st.session);
+        },
+      },
+      exchange,
+    );
     const timer = setInterval(() => {
       if (queue.length === 0) return;
       const ticks = queue.splice(0);
-      setBars((list) => applyTicks(list, ticks, intervalRef.current));
-      setDaily((list) => (list.length ? applyTicks(list, ticks, "1d") : list));
+      // 미국: 분·시간·초봉은 프리·애프터·주간거래 체결까지, 일·주·연봉은 정규장 체결만 (저장된 일봉이 정규장 기준)
+      const daily = exchange ? usDailyTicks(ticks) : ticks;
+      setBars((list) => applyTicks(list, exchange && isDailyLike(intervalRef.current) ? daily : ticks, intervalRef.current));
+      setDaily((list) => (list.length && daily.length ? applyTicks(list, daily, "1d") : list));
     }, 250);
     return () => {
       clearInterval(timer);
       close();
     };
-  }, [symbol.code]);
+  }, [symbol.code, symbol.exchange]);
 
   // 검색어 → 종목 목록 (0.2초 디바운스)
   useEffect(() => {
     if (!searchOpen) return;
     const ac = new AbortController();
     const timer = setTimeout(() => {
-      searchSymbols(query.trim(), ac.signal)
+      searchAllSymbols(query.trim(), ac.signal)
         .then(setResults)
         .catch(() => {
           if (!ac.signal.aborted) setResults([]);
@@ -154,6 +177,7 @@ export default function WorkshopPage() {
   function pickSymbol(next: SymbolInfo) {
     symbolLabelRef.current = symbolLabel(next);
     setSource("loading");
+    setUsSession(null);
     setSaveMessage(null);
     setExecutions([]);
     setLinkChoice("auto");
@@ -215,7 +239,7 @@ export default function WorkshopPage() {
   const [autoLinked, setAutoLinked] = useState<string | null>(null);
   /** 오른쪽 영역: 노트(기본) · 매매 */
   const [side, setSide] = useState<"notes" | "trade">("notes");
-  const tradeOpen = side === "trade";
+  const tradeOpen = side === "trade" && !us;
   const setTradeOpen = (open: boolean) => setSide(open ? "trade" : "notes");
 
   async function saveChart() {
@@ -236,8 +260,12 @@ export default function WorkshopPage() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const code = q.get("symbol")?.trim().toUpperCase();
-    if (!code || !/^[0-9A-Z]{6}$/.test(code) || code === DEFAULT_SYMBOL.code) return;
-    const next = { code, name: q.get("name")?.trim() || code, market: q.get("market")?.trim() || "KOSPI" };
+    const exchange = q.get("exchange")?.trim().toUpperCase() as UsExchange | undefined;
+    const usCode = !!exchange && ["ND", "NY", "NA"].includes(exchange) && !!code && /^[A-Z][A-Z0-9.]{0,9}$/.test(code);
+    if (!code || (!usCode && !/^[0-9A-Z]{6}$/.test(code)) || code === DEFAULT_SYMBOL.code) return;
+    const next: SymbolInfo = usCode
+      ? { code, name: q.get("name")?.trim() || code, market: q.get("market")?.trim() || "", exchange }
+      : { code, name: q.get("name")?.trim() || code, market: q.get("market")?.trim() || "KOSPI" };
     const timer = setTimeout(() => pickSymbol(next), 0);
     return () => clearTimeout(timer);
   }, []);
@@ -282,6 +310,7 @@ export default function WorkshopPage() {
           ...(d.text ? { text: d.text } : {}),
         })),
         notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+        currency: us ? "USD" : "KRW",
       });
       setNoteText(result.memo);
       setSuggestion(result.suggestion);
@@ -314,7 +343,7 @@ export default function WorkshopPage() {
     setEditVersion((v) => v + 1);
     setNoteText(note.text);
     setNoteTime(createdAt);
-    setSuggestion(`${won(note.price)}원 부근 판단 근거.\n체결되면 손절 기준도 함께 남김.`);
+    setSuggestion(`${money(note.price)} 부근 판단 근거.\n체결되면 손절 기준도 함께 남김.`);
     setSuggestionApplied(false);
     setConfirming(false);
     setConfirmed(false);
@@ -374,7 +403,9 @@ export default function WorkshopPage() {
     source === "loading"
       ? "차트를 불러오는 중…"
       : isSeconds(interval)
-        ? marketOpen === false
+        ? us
+          ? "미국 초봉은 지금부터 들어오는 체결로 만들어요. 체결이 들어오면 1초봉이 쌓여요."
+          : marketOpen === false
           ? "초봉은 오늘 장(09:00~15:30) 체결로 만들어요. 오늘 체결이 아직 없어요."
           : "오늘 체결을 불러오는 중이에요. 체결이 들어오면 1초봉이 이어서 쌓여요."
         : "표시할 시세가 없어요.";
@@ -412,14 +443,14 @@ export default function WorkshopPage() {
                   }
                 }}
                 aria-label="종목 검색"
-                placeholder="종목명 또는 코드"
+                placeholder="종목명 · 코드 · 미국 티커"
               />
               <Image src="/icons/search.svg" width={18} height={18} alt="" unoptimized />
             </label>
             {searchOpen && results.length > 0 && (
               <ul className="ws-search-list" role="listbox">
                 {results.map((item) => (
-                  <li key={item.code}>
+                  <li key={`${item.exchange ?? "KR"}:${item.code}`}>
                     <button onMouseDown={(e) => e.preventDefault()} onClick={() => pickSymbol(item)} role="option" aria-selected={item.code === symbol.code}>
                       <span>{item.code}</span>
                       <strong>{item.name}</strong>
@@ -430,17 +461,26 @@ export default function WorkshopPage() {
               </ul>
             )}
           </div>
+          {us ? (
+            <span
+              className={`ws-feed ${source === "loading" ? "closed" : usSession === "regular" ? "open" : usSession && usSession !== "closed" ? "extra" : "closed"}`}
+              title="미국 정규장 09:30~16:00 (뉴욕) · 프리마켓·애프터마켓·주간거래 체결은 분봉에만 들어가요. 시각은 한국 시각"
+            >
+              {source === "loading" ? "불러오는 중" : `미국 ${usSession ? US_SESSION_LABEL[usSession] : "장 정보 확인 중"}`}
+            </span>
+          ) : (
           <span
             className={`ws-feed ${source === "mock" ? "mock" : isRegularPhase(phase) ? "open" : phase === "pre" || phase === "after" ? "extra" : "closed"}`}
             title={phase === "pre" || phase === "after" ? "넥스트레이드 거래 시간이에요. 차트·시세는 정규장(09:00~15:30) 기준이라 지금은 바뀌지 않아요." : undefined}
           >
             {source === "mock" ? "예시 데이터 · 백엔드 연결 안 됨" : source === "loading" ? "불러오는 중" : PHASE_LABEL[phase]}
           </span>
+          )}
           <div className="ws-quote" aria-label="종목 시세 (일봉 기준)">
-            <strong>{today ? `${won(today.close)}원` : "—"}</strong>
+            <strong>{today ? money(today.close) : "—"}</strong>
             <em className={change >= 0 ? "up" : "down"}>
-              {change >= 0 ? "+" : ""}
-              {won(change)} ({change >= 0 ? "+" : ""}
+              {change >= 0 ? "+" : "-"}
+              {diff(Math.abs(change))} ({change >= 0 ? "+" : ""}
               {changeRate.toFixed(2)}%)
             </em>
             <small title="30일 평균 거래량">거래량 {today ? `${won(Math.round(today.volume / 10000))}만` : "—"} · 30일 평균 {won(Math.round(avgVolume / 10000))}만</small>
@@ -451,7 +491,13 @@ export default function WorkshopPage() {
               {/* 저장 상태만 (저장 중… · 자동 저장됨 · 저장 실패). 서버 오류 문장은 마우스를 올리면 */}
               {saveMessage ?? ""}
             </span>
-            <button className={`ws-trade${tradeOpen ? " open" : ""}`} onClick={() => setTradeOpen(!tradeOpen)} aria-expanded={tradeOpen}>
+            <button
+              className={`ws-trade${tradeOpen ? " open" : ""}`}
+              onClick={() => setTradeOpen(!tradeOpen)}
+              aria-expanded={tradeOpen}
+              disabled={us}
+              title={us ? "미국 주식 주문은 아직 연결하지 않았어요. 차트·노트·매매일지는 그대로 쓸 수 있어요." : undefined}
+            >
               {tradeOpen ? "매매 닫기" : "매매하기"}
             </button>
           </div>
@@ -473,6 +519,7 @@ export default function WorkshopPage() {
             symbolCode={symbol.code}
             symbolName={symbol.name}
             market={symbol.market}
+            currency={us ? "USD" : "KRW"}
             emptyMessage={emptyMessage}
           />
 
@@ -513,9 +560,9 @@ export default function WorkshopPage() {
                     {notes.map((n) => (
                       <li key={n.id}>
                         <span title={n.text}>
-                          <b>{won(n.price)}원</b> {n.text}
+                          <b>{money(n.price)}</b> {n.text}
                         </span>
-                        <button onClick={() => removeNote(n.id)} aria-label={`${won(n.price)}원 노트 지우기`} title="노트 지우기">
+                        <button onClick={() => removeNote(n.id)} aria-label={`${money(n.price)} 노트 지우기`} title="노트 지우기">
                           ✕
                         </button>
                       </li>

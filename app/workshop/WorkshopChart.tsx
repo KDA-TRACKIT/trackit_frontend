@@ -208,6 +208,8 @@ type Props = {
   symbolCode: string;
   symbolName: string;
   market: string;
+  /** 가격 단위: 국내 원(정수) · 미국 달러(센트까지). 기본 KRW */
+  currency?: "KRW" | "USD";
   /** 봉이 없을 때 차트 가운데 안내 */
   emptyMessage?: string;
   onAddNote: (note: { time: number; price: number; text: string }) => void;
@@ -356,9 +358,17 @@ function mainPaneRatio(subs: number, total?: number) {
 
 /** 지표 눈금 숫자: 큰 값은 천 단위 쉼표, 작은 값은 소수 */
 const fmtIndicator = (v: number) => (Math.abs(v) >= 1000 ? won(Math.round(v)) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
+const usd = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** 축·범례 가격 */
+const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(Math.round(v)));
+/** 드로잉 점 가격 반올림: 원은 1원, 달러는 1센트 */
+const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, emptyMessage }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage }: Props) {
+  /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
+  const currencyRef = useRef(currency);
+  currencyRef.current = currency;
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -495,7 +505,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [customOpen, setCustomOpen] = useState(false);
   /** 수급 지표용 일별 데이터 (종목별, 필요할 때만 받음) */
   const [flows, setFlows] = useState<{ code: string; map: Map<number, FlowDay> } | null>(null);
-  const needsFlows = interval === "1d" && instances.some((i) => i.visible && (getIndicator(i.id)?.data === "flows" || getIndicator(i.id)?.optionalData === "flows"));
+  // 국내 ↔ 미국 종목으로 바꾸면 가격 축 형식(원 정수 · 달러 센트)도 바꾼다
+  useEffect(() => {
+    candleRef.current?.applyOptions({ priceFormat: { type: "custom", minMove: currency === "USD" ? 0.01 : 1, formatter: (price: number) => pxText(price, currencyRef.current) } });
+  }, [currency]);
+  // 수급(개인·외국인·기관)은 국내만
+  const needsFlows = currency === "KRW" && interval === "1d" && instances.some((i) => i.visible && (getIndicator(i.id)?.data === "flows" || getIndicator(i.id)?.optionalData === "flows"));
   /** 올린 지표별 시리즈 (출력 선마다 하나) */
   const indSeriesRef = useRef(new Map<string, ISeriesApi<SeriesType>[]>());
   /** 지표 실시간 갱신 판정용: 지난번에 그린 데이터 key·봉 수 */
@@ -609,7 +624,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       borderVisible: false,
       priceLineColor: "#787b86",
       priceLineStyle: LineStyle.Dashed,
-      priceFormat: { type: "custom", minMove: 1, formatter: (price: number) => won(Math.round(price)) },
+      priceFormat: { type: "custom", minMove: currencyRef.current === "USD" ? 0.01 : 1, formatter: (price: number) => pxText(price, currencyRef.current) },
     });
     candle.priceScale().applyOptions({ scaleMargins: { top: 0.2, bottom: 0.24 } });
 
@@ -625,6 +640,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     chartRef.current = chart;
     candleRef.current = candle;
+    // (단위가 바뀌면 아래 효과가 priceFormat 을 다시 넣는다)
     // 새 차트에는 지표 시리즈가 없다 → 아래 지표 effect가 다시 만든다
     indSeriesRef.current.clear();
     indShownRef.current = null;
@@ -794,7 +810,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const time = layerRef.current?.xToTime(x) ?? null;
       const price = candle.coordinateToPrice(y);
       if (time === null || price === null) return null;
-      return { time, price: String(Math.round(price)) };
+      return { time, price: String(roundPx(price, currencyRef.current)) };
     };
     const localXY = (event: MouseEvent) => {
       const rect = container.getBoundingClientRect();
@@ -922,7 +938,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         if (px0 === null || py0 === null) return p;
         const time = layer.xToTime(px0 + dx);
         const price = layer.yToPrice(py0 + dy);
-        return time === null || price === null ? p : { time, price: String(Math.round(price)) };
+        return time === null || price === null ? p : { time, price: String(roundPx(price, currencyRef.current)) };
       });
       apply(drawingsRef.current.map((d) => (d.id === cur.id ? { ...cur.orig, points } : d)));
     };
@@ -1117,7 +1133,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const point = pointAt(x, y);
       if (!point) return;
       if (noteModeRef.current) {
-        setNoteDraft({ x, y, time: point.time, price: Math.round(Number(point.price) / 100) * 100 });
+        setNoteDraft({ x, y, time: point.time, price: currencyRef.current === "USD" ? roundPx(Number(point.price), "USD") : Math.round(Number(point.price) / 100) * 100 });
         setNoteInput("");
         return;
       }
@@ -1898,14 +1914,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         <div className="ws-chart-area" onMouseMove={onAreaMove} onMouseLeave={() => setAxisHover(null)}>
           <div className="ws-legend">
             <strong>
-              {symbolName} · {intervalLabel(interval).legend} · {market || "KRX"}
+              {symbolName} · {intervalLabel(interval).legend} · {market || (currency === "USD" ? "US" : "KRX")}
             </strong>
             {legendBar && (
             <span>
-              시 {won(legendBar.open)} 고 {won(legendBar.high)} 저 {won(legendBar.low)} 종 {won(legendBar.close)}{" "}
+              시 {pxText(legendBar.open, currency)} 고 {pxText(legendBar.high, currency)} 저 {pxText(legendBar.low, currency)} 종 {pxText(legendBar.close, currency)}{" "}
               <em className={change >= 0 ? "up" : "down"}>
-                {change >= 0 ? "+" : ""}
-                {won(change)} ({change >= 0 ? "+" : ""}
+                {change >= 0 ? "+" : "-"}
+                {pxText(Math.abs(change), currency)} ({change >= 0 ? "+" : ""}
                 {changeRate.toFixed(2)}%)
               </em>
             </span>
@@ -2111,7 +2127,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
           {noteDraft && (
             <div className="ws-note-pop" style={{ left: Math.max(8, noteDraft.x - 120), top: noteDraft.y + 14 }} onClick={(e) => e.stopPropagation()}>
-              <small>{won(Math.round(noteDraft.price))}원 지점</small>
+              <small>{currency === "USD" ? `$${usd(noteDraft.price)}` : `${won(Math.round(noteDraft.price))}원`} 지점</small>
               <textarea
                 autoFocus
                 value={noteInput}

@@ -1,13 +1,28 @@
 // 작업실 차트 시세 — 백엔드 /api/v1/charts 연결
 //   일봉: data/daily CSV(+오늘 봉은 키움으로 보충)  /  1분·60분봉: 종목을 열 때 키움 ka10080
 //   실시간: /stream (SSE) 체결로 마지막 봉 갱신, 초봉은 체결을 1초 단위로 묶어서 화면에서 만든다
+// 미국 종목(exchange 가 있는 종목): /charts/us/{티커}
+//   일봉: 밤 배치가 저장한 10년치 (+오늘 봉 키움 현재가)  /  1분·60분봉: 키움 usa06011 (프리마켓·애프터·주간거래 포함)
+//   실시간: 키움 FE (미국 실시간 체결가). 차트 시각은 국내와 같이 한국 시각으로 그린다
+//   화면의 code 는 BRK.B 처럼 점 표기, 키움에 보낼 땐 BRKb
 import { bucketStart, groupBars, needsGrouping, sourceOf, type Interval } from "./interval";
 import type { Bar } from "./mock/workshop";
 
 export { bucketStart, groupBars };
 
-export type SymbolInfo = { code: string; name: string; market: string };
-export type Tick = { code: string; time: number; price: number; volume: number };
+/** exchange: 미국 종목만 (ND 나스닥 · NY 뉴욕 · NA 아멕스) */
+export type SymbolInfo = { code: string; name: string; market: string; exchange?: UsExchange };
+/** regular: 미국 체결만 — 정규장(09:30~16:00 뉴욕) 체결인지. 일봉에는 정규장 체결만 넣는다 */
+export type Tick = { code: string; time: number; price: number; volume: number; regular?: boolean };
+export type UsExchange = "ND" | "NY" | "NA";
+
+export const isUsSymbol = (s: { exchange?: string }) => !!s.exchange;
+/** BRK.B → BRKb (키움 표기) */
+const kiwoomTicker = (code: string) => code.replace(/\.([A-Z])$/, (_, c: string) => c.toLowerCase());
+/** BRKb → BRK.B (화면 표기) */
+export const displayTicker = (code: string) => code.replace(/([a-z])$/, (c) => `.${c.toUpperCase()}`);
+/** 미국 일봉 time(그날 UTC 자정) → 국내 일봉과 같은 그날 KST 자정 */
+const usDay = (t: number) => t - 9 * 3600;
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 const KST = 9 * 3600;
@@ -21,6 +36,23 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 export function searchSymbols(q: string, signal?: AbortSignal) {
   return get<SymbolInfo[]>(`/charts/symbols?q=${encodeURIComponent(q)}`, signal);
+}
+
+type Hit = { code: string; name: string; market: string; exchange?: UsExchange; etf: boolean; country: "KR" | "US" };
+
+/**
+ * 작업실 종목 검색: 국내 + 미국 (한글·영문 이름, 코드·티커). 빈 검색어는 국내 목록
+ * 전 종목 검색을 못 쓰면 국내 목록 검색으로
+ */
+export async function searchAllSymbols(q: string, signal?: AbortSignal): Promise<SymbolInfo[]> {
+  if (!q.trim()) return searchSymbols(q, signal);
+  try {
+    const { items } = await get<{ items: Hit[] }>(`/insights/symbols?q=${encodeURIComponent(q)}&limit=20`, signal);
+    return items.map((h) => (h.country === "US" && h.exchange ? { code: displayTicker(h.code), name: h.name, market: h.etf ? `${h.market} ETF` : h.market, exchange: h.exchange } : { code: h.code, name: h.name, market: h.market }));
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    return searchSymbols(q, signal);
+  }
 }
 
 /** 종목 기본정보 (백엔드가 키움 ka10001로 조회). 금액은 억원, 상장주식수는 천주 */
@@ -102,8 +134,18 @@ export function fetchFlows(code: string, signal?: AbortSignal) {
 /**
  * complete=false: 초봉처럼 서버가 아직 오늘 장 시작 쪽을 채우는 중 → 잠시 뒤 다시 받으면 길어진다
  */
-export async function fetchBars(code: string, interval: Interval, signal?: AbortSignal, limit?: number): Promise<{ symbol: SymbolInfo; bars: Bar[]; complete: boolean }> {
+export async function fetchBars(code: string, interval: Interval, signal?: AbortSignal, limit?: number, exchange?: UsExchange): Promise<{ symbol: SymbolInfo; bars: Bar[]; complete: boolean }> {
   const api = sourceOf(interval);
+  if (exchange) {
+    // 미국: 초봉은 과거가 없어 실시간 체결로만 (빈 배열에서 시작)
+    if (api === "1s") return { symbol: { code, name: code, market: "", exchange }, bars: [], complete: true };
+    const data = await get<{ symbol: SymbolInfo & { code: string }; bars: Bar[]; complete?: boolean }>(
+      `/charts/us/${encodeURIComponent(kiwoomTicker(code))}/bars?interval=${api}&exchange=${exchange}&limit=${limit ?? (api === "1d" ? 3000 : 0)}`,
+      signal,
+    );
+    const raw = api === "1d" ? data.bars.map((b) => ({ ...b, time: usDay(b.time) })) : data.bars;
+    return { symbol: { code, name: data.symbol.name, market: data.symbol.market, exchange }, bars: needsGrouping(interval) ? groupBars(raw, interval) : raw, complete: data.complete !== false };
+  }
   const data = await get<{ symbol: SymbolInfo; bars: Bar[]; complete?: boolean }>(`/charts/${code}/bars?interval=${api}${limit ? `&limit=${limit}` : ""}`, signal);
   return { symbol: data.symbol, bars: needsGrouping(interval) ? groupBars(data.bars, interval) : data.bars, complete: data.complete !== false };
 }
@@ -139,9 +181,21 @@ export function applyTicks(bars: Bar[], ticks: Tick[], interval: Interval): Bar[
   return out ?? bars;
 }
 
+/** 미국 거래 구간 (뉴욕 시간): 프리 04:00~09:30 · 정규 09:30~16:00 · 애프터 16:00~20:00 · 주간거래 20:00~04:00 (한국 낮) */
+export type UsSession = "pre" | "regular" | "after" | "overnight" | "closed";
+
+/**
+ * 미국 체결을 일봉에 넣을 때 쓸 시각: 체결의 뉴욕 날짜 → 그날 KST 정오 (일봉 time 이 그날 KST 자정이라 같은 봉에 들어감)
+ * 국내 체결은 그대로
+ */
+export function usDailyTickTime(time: number) {
+  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(time * 1000));
+  return Date.parse(`${ymd}T12:00:00+09:00`) / 1000;
+}
+
 /** 실시간 체결 구독. 반환 함수로 해제 (백엔드가 0B 등록도 같이 뺀다) */
-export function openStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: { marketOpen: boolean }) => void; onError?: () => void }) {
-  const source = new EventSource(`${API}/api/v1/charts/${code}/stream`);
+export function openStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: { marketOpen: boolean; session?: UsSession }) => void; onError?: () => void }, exchange?: UsExchange) {
+  const source = new EventSource(exchange ? `${API}/api/v1/charts/us/${encodeURIComponent(kiwoomTicker(code))}/stream?exchange=${exchange}` : `${API}/api/v1/charts/${code}/stream`);
   source.addEventListener("tick", (e) => handlers.onTick(JSON.parse((e as MessageEvent).data)));
   source.addEventListener("status", (e) => handlers.onStatus?.(JSON.parse((e as MessageEvent).data)));
   source.onerror = () => handlers.onError?.();

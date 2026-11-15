@@ -23,6 +23,8 @@ export type ChartMemoRequest = {
   price: number;
   drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
   notes: { time: number; price: number; text: string }[];
+  /** 미국 종목은 USD (메모 금액을 $로) */
+  currency?: "KRW" | "USD";
 };
 export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
 

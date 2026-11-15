@@ -4,6 +4,7 @@
 //   지수 구성·인기 종목은 서버에 10년치가 저장돼 있어 0.1초 안, 그 밖은 키움에서 최근 100봉 먼저(1~2초)
 //   일 · 주 · 월 (주·월은 일봉을 묶음), 오르면 빨강 · 내리면 파랑, 가격은 달러(수정주가)
 import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChartApi, type ISeriesApi, type Time, type UTCTimestamp } from "lightweight-charts";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { getUsBars, type UsBar, type UsBars } from "../../lib/api/insights";
@@ -205,6 +206,15 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
               </button>
             ))}
           </div>
+          {sym?.exchange && (
+            <Link
+              className="open-log"
+              href={`/workshop?symbol=${encodeURIComponent(target.code.replace(/([a-z])$/, (c) => `.${c.toUpperCase()}`))}&name=${encodeURIComponent(sym.name)}&market=${encodeURIComponent(sym.market)}&exchange=${sym.exchange}`}
+              title="분봉 · 실시간 체결 · 드로잉 · 매매일지"
+            >
+              트레이딩 로그에서 열기
+            </Link>
+          )}
           <button type="button" className="close" aria-label="닫기" onClick={onClose}>
             ×
           </button>
