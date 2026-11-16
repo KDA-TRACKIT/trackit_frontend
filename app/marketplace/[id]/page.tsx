@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { TRADERS, monthLabel, pct, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
-import { useNotice } from "../parts";
+import { FavButton, useNotice } from "../parts";
 import "../marketplace.css";
 
 export default function TraderPage() {
@@ -46,7 +46,7 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <span className="mk-like">♥ {t.likes}</span>
+                  {t.name} <span className="mk-like">♥ {t.likes}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
                 <small>{monthLabel(t.since)}부터 전략을 공유하고 있어요</small>
               </div>
@@ -128,7 +128,7 @@ export default function TraderPage() {
 
         <section className="mk-section mk-similar">
           <h2>
-            <b>{t.name}</b>
+            <b className="mk-quote">“{t.name}”</b>
             {wa(t.name)} 비슷한 트레이더
           </h2>
           <div className="mk-similar-grid">

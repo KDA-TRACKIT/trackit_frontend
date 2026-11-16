@@ -1,12 +1,11 @@
 "use client";
-// 전략 쇼핑: 둘러보기(한 줄씩 비교) · 트레이더별 보기(카드) — 검색 · 기간별 수익률 · 필터 · 정렬 · 쪽 나눔은 같이 씀
+// 전략 쇼핑: 트레이더를 한 줄씩 비교 (검색 · 기간별 수익률 · 필터 · 정렬 · 쪽 나눔)
 //   데이터는 아직 예시(./data). 수익 초록 · 손실 빨강
 import Link from "next/link";
-import { Suspense, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import SiteHeader from "../SiteHeader";
-import { MARKETS, PERIODS, TRADERS, TYPES, pct, strategiesOf, tone, won, type Period, type Trader } from "./data";
-import { Pager, Range2, Spark, useNotice } from "./parts";
+import { MARKETS, PERIODS, TRADERS, TYPES, pct, tone, won, type Period, type Trader } from "./data";
+import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
 
 type Sort = "rec" | "pop" | "ret" | "price";
@@ -26,19 +25,8 @@ const filterCount = (f: Filter) =>
   (f.mdd[0] !== 0 || f.mdd[1] !== 100 ? 1 : 0) + (f.ret[0] !== -100 || f.ret[1] !== 100 ? 1 : 0) + (f.price[0] !== 0 || f.price[1] !== 50000 ? 1 : 0) + f.types.length + f.markets.length;
 
 export default function MarketplacePage() {
-  return (
-    <Suspense fallback={<main className="mk-page"><SiteHeader active="marketplace" /></main>}>
-      <Marketplace />
-    </Suspense>
-  );
-}
-
-function Marketplace() {
-  // 보기 방식은 상단 전략 쇼핑 메뉴에서 고름 (?view=traders 면 트레이더별 보기)
-  const view = useSearchParams().get("view") === "traders" ? "traders" : "browse";
   const [query, setQuery] = useState("");
   const [typed, setTyped] = useState("");
-  const { notify, node } = useNotice();
   const [period, setPeriod] = useState<Period>("3m");
   const [sort, setSort] = useState<Sort>("rec");
   const [filter, setFilter] = useState<Filter>(NO_FILTER);
@@ -63,7 +51,7 @@ function Marketplace() {
     return out;
   }, [query, period, sort, filter]);
 
-  const per = view === "traders" ? 9 : PER_PAGE;
+  const per = PER_PAGE;
   const pages = Math.max(1, Math.ceil(list.length / per));
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * per, cur * per);
@@ -74,7 +62,7 @@ function Marketplace() {
     <main className="mk-page">
       <SiteHeader active="marketplace" />
       <div className="mk-wrap">
-        <h1 className="mk-title">{view === "traders" ? "트레이더별 보기" : "둘러보기"}</h1>
+        <h1 className="mk-title">전략 쇼핑</h1>
 
         <form
           className="mk-search"
@@ -90,9 +78,31 @@ function Marketplace() {
         </form>
 
         <div className="mk-result-head">
-          <strong>
-            검색 결과 <em>{list.length}</em>건
-          </strong>
+          {/* 처음 들어오면 전체 목록. 검색하거나 필터를 걸었을 때만 "결과" 로 */}
+          {query.trim() ? (
+            <strong>
+              ‘{query.trim()}’ 검색 결과 <em>{list.length}</em>명
+              <button
+                type="button"
+                className="mk-clear"
+                onClick={() => {
+                  setQuery("");
+                  setTyped("");
+                  setPage(1);
+                }}
+              >
+                검색 지우기
+              </button>
+            </strong>
+          ) : nFilter ? (
+            <strong>
+              필터 결과 <em>{list.length}</em>명
+            </strong>
+          ) : (
+            <strong>
+              전체 트레이더 <em>{list.length}</em>명
+            </strong>
+          )}
           <small>2026.11.16 기준</small>
         </div>
         <div className="mk-toolbar">
@@ -120,8 +130,6 @@ function Marketplace() {
 
         {!shown.length ? (
           <p className="mk-card mk-empty">조건에 맞는 트레이더가 없어요. 검색어나 필터를 바꿔 보세요.</p>
-        ) : view === "traders" ? (
-          <TraderCards list={shown} period={period} periodLabel={periodLabel} onBuy={() => notify("결제는 준비 중이에요")} />
         ) : (
           <ul className="mk-list">
             {shown.map((t) => (
@@ -130,7 +138,7 @@ function Marketplace() {
                   <div className="mk-row-who">
                     <small>{t.tagline}</small>
                     <strong>
-                      {t.name} <span className="mk-like">♥ {t.likes}</span>
+                      {t.name} <span className="mk-like">♥ {t.likes}</span> <FavButton id={t.id} name={t.name} />
                     </strong>
                     <p>{t.intro}</p>
                   </div>
@@ -177,51 +185,7 @@ function Marketplace() {
           }}
         />
       )}
-      {node}
     </main>
-  );
-}
-
-/** 트레이더별 보기: 사람 단위 카드 (최근 전략 · 기간 수익률 · 가격 · 상세/구매) */
-function TraderCards({ list, period, periodLabel, onBuy }: { list: Trader[]; period: Period; periodLabel: string; onBuy: () => void }) {
-  return (
-    <ul className="mk-tcards">
-      {list.map((t) => {
-        const latest = strategiesOf(t)[0];
-        return (
-          <li key={t.id} className="mk-card mk-tcard">
-            <small className="mk-tcard-type">{t.type}</small>
-            <p className="mk-tcard-tag">{t.tagline}</p>
-            <div className="mk-tcard-who">
-              <span className="mk-avatar sm" aria-hidden>
-                {t.name.slice(0, 1)}
-              </span>
-              <strong>{t.name}</strong>
-              <span className="mk-like">♥ {t.likes}</span>
-            </div>
-            <p className="mk-tcard-latest">최근 전략 · {latest.title}</p>
-            <div className="mk-tcard-ret">
-              <b className={tone(t.returns[period])}>{pct(t.returns[period])}</b>
-              <Spark values={t.monthly.slice(-6).map((m) => m.ret)} w={96} h={30} />
-            </div>
-            <div className="mk-tcard-foot">
-              <small>
-                {periodLabel} 수익률 · 이행률 {t.follow}%
-              </small>
-              <strong>{won(t.price)}</strong>
-            </div>
-            <div className="mk-tcard-btns">
-              <Link href={`/marketplace/${t.id}`} className="mk-soft">
-                상세
-              </Link>
-              <button type="button" className="mk-primary" onClick={onBuy}>
-                구매하기
-              </button>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 

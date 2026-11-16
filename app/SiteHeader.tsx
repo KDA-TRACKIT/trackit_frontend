@@ -16,15 +16,7 @@ const MENU: Menu[] = [
       { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시 · 매매 캘린더" },
     ],
   },
-  {
-    key: "marketplace",
-    label: "전략 쇼핑",
-    href: "/marketplace",
-    sub: [
-      { label: "둘러보기", href: "/marketplace", desc: "트레이더를 한 줄씩 비교" },
-      { label: "트레이더별 보기", href: "/marketplace?view=traders", desc: "트레이더 카드로 보기" },
-    ],
-  },
+  { key: "marketplace", label: "전략 쇼핑", href: "/marketplace" },
   { key: "archive", label: "아카이브", href: "/archive" },
 ];
 

@@ -177,7 +177,23 @@ button.gnb-chip { border:0; cursor:pointer; font-family:inherit; }
 .gnb-bell-box { position:relative; }
 .gnb-bell { display:grid; width:36px; height:36px; place-items:center; padding:0; border:0; border-radius:50%; background:none; color:#141414; cursor:pointer; }
 .gnb-bell:hover { background:#f3f5f8; }
-.gnb-bell-menu { min-width:180px; padding:14px 16px; color:#7a7a7a; font-size:13px; }
+.gnb-bell { position:relative; }
+.gnb-bell-dot { position:absolute; top:3px; right:2px; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:#e03131; color:#fff; font-size:10px; font-weight:700; line-height:16px; text-align:center; }
+/* 알림 목록 */
+.gnb-bell-menu { width:340px; max-height:440px; overflow:auto; padding:6px; color:#7a7a7a; font-size:13px; }
+.gnb-bell-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:8px 10px 10px; border-bottom:1px solid #eef1f5; }
+.gnb-bell-head strong { color:#141414; font-size:14px; }
+.gnb-bell-head small { color:#9aa2af; font-size:11px; }
+.gnb-noti { margin:4px 0 0; padding:0; list-style:none; }
+.gnb-menu .gnb-noti a { display:grid; grid-template-columns:auto 1fr auto; column-gap:8px; row-gap:2px; align-items:baseline; padding:10px; border-radius:8px; white-space:normal; }
+.gnb-noti a.new { background:#f3f6fc; }
+.gnb-noti-kind { grid-row:span 2; align-self:start; padding:2px 6px; border-radius:5px; font-size:10.5px; font-weight:700; }
+.gnb-noti-kind.sale { background:#eaf6ef; color:#1f9d55; }
+.gnb-noti-kind.favorite { background:#fff6e0; color:#c98a00; }
+.gnb-noti b { color:#141414; font-size:13px; font-weight:700; }
+.gnb-noti small { grid-column:2 / 4; color:#7a7a7a; font-size:12px; }
+.gnb-noti time { color:#9aa2af; font-size:11px; white-space:nowrap; }
+.gnb-noti-empty { margin:0; padding:16px 12px; color:#7a7a7a; font-size:12.5px; line-height:1.6; }
 button.gnb-chip.gnb-user { height:40px; gap:16px; padding:0 0 0 6px; background:none; color:#141414; font-size:14px; font-weight:700; }
 button.gnb-chip.gnb-user:hover { background:none; opacity:.85; }
 .gnb-user .gnb-avatar-empty { background:#e6ebf3; color:#344d7d; }

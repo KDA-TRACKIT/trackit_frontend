@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "../lib/supabase-browser";
 import ThemeSwitch from "./ThemeSwitch";
+import { useNotifications } from "../lib/notifications";
 
 export type Profile = {
   name: string;
@@ -84,10 +85,12 @@ export function Avatar({
   );
 }
 
-/** 알림 종. 알림 API 가 아직 없어 누르면 "새 알림이 없어요"만 보여 준다 */
+/** 알림 종: 판매(내 전략을 누가 샀을 때) + 즐겨찾기한 트레이더의 새 전략 (lib/notifications) */
 function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const [prevSeen, setPrevSeen] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const { items, unread, markSeen, favorites } = useNotifications(true);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -96,15 +99,17 @@ function NotificationBell() {
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
   }, [open]);
+  const toggle = () => {
+    if (!open) {
+      // 연 순간까지 안 읽은 것은 이번에 열린 목록에서 "새" 로 보여 주고, 읽음 처리
+      setPrevSeen(localStorage.getItem("trackit:noti-seen") ?? "");
+      markSeen();
+    }
+    setOpen(!open);
+  };
   return (
     <div className="gnb-bell-box" ref={ref}>
-      <button
-        type="button"
-        className="gnb-bell"
-        aria-label="알림"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
+      <button type="button" className="gnb-bell" aria-label={unread ? `알림 ${unread}개 새로 옴` : "알림"} aria-expanded={open} onClick={toggle}>
         <svg
           width="22"
           height="22"
@@ -119,14 +124,49 @@ function NotificationBell() {
           <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
+        {unread > 0 && <span className="gnb-bell-dot">{unread > 9 ? "9+" : unread}</span>}
       </button>
       {open && (
-        <div className="gnb-menu gnb-bell-menu" role="status">
-          새 알림이 없어요.
+        <div className="gnb-menu gnb-bell-menu" role="menu" aria-label="알림">
+          <div className="gnb-bell-head">
+            <strong>알림</strong>
+            <small>판매 · 즐겨찾기한 트레이더의 새 전략</small>
+          </div>
+          {items.length ? (
+            <ul className="gnb-noti">
+              {items.map((n) => (
+                <li key={n.id}>
+                  <Link href={n.href} role="menuitem" className={!prevSeen || n.at > prevSeen ? "new" : ""} onClick={() => setOpen(false)}>
+                    <span className={`gnb-noti-kind ${n.kind}`}>{n.kind === "sale" ? "판매" : "즐겨찾기"}</span>
+                    <b>{n.title}</b>
+                    <small>{n.body}</small>
+                    <time dateTime={n.at}>{ago(n.at)}</time>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="gnb-noti-empty">
+              새 알림이 없어요.
+              <br />
+              {favorites ? "즐겨찾기한 트레이더가 전략을 올리거나 내 전략이 팔리면 알려 드려요." : "전략 쇼핑에서 트레이더를 ☆ 즐겨찾기하면 새 전략을 알려 드려요."}
+            </p>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+/** "방금" · "5분 전" · "3시간 전" · "2일 전" · 11.02 */
+function ago(iso: string) {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (m < 1) return "방금";
+  if (m < 60) return `${m}분 전`;
+  if (m < 1440) return `${Math.floor(m / 60)}시간 전`;
+  if (m < 1440 * 7) return `${Math.floor(m / 1440)}일 전`;
+  const d = new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString();
+  return `${d.slice(5, 7)}.${d.slice(8, 10)}`;
 }
 
 export default function AccountChip() {

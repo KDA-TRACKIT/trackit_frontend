@@ -1,6 +1,7 @@
 "use client";
-// 전략 쇼핑 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 준비 중 안내
+// 전략 쇼핑 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 준비 중 안내 · 즐겨찾기 버튼
 import { useEffect, useState } from "react";
+import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 
 /** 누적 수익 곡선 (월 수익률을 이어 붙임). 끝이 위면 초록, 아래면 빨강 */
 export function Spark({ values, w = 112, h = 36 }: { values: number[]; w?: number; h?: number }) {
@@ -77,4 +78,28 @@ export function useNotice() {
     </div>
   ) : null;
   return { notify: setMsg, node };
+}
+
+/** ☆ 즐겨찾기 (이 브라우저에 저장, 새 전략을 올리면 상단 종으로 알림) */
+export function FavButton({ id, name, label = false }: { id: string; name: string; label?: boolean }) {
+  const favs = useFavorites();
+  const on = isFavorite(favs, id);
+  return (
+    <button
+      type="button"
+      className={`mk-fav${on ? " on" : ""}${label ? " label" : ""}`}
+      aria-pressed={on}
+      aria-label={on ? `${name} 즐겨찾기 해제` : `${name} 즐겨찾기`}
+      title={on ? "즐겨찾기 해제" : "즐겨찾기 (새 전략을 올리면 알려 드려요)"}
+      onClick={(e) => {
+        // 줄 전체가 링크라서 누르면 이동하지 않게
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavorite(id, name);
+      }}
+    >
+      {on ? "★" : "☆"}
+      {label && <span>{on ? "즐겨찾기 중" : "즐겨찾기"}</span>}
+    </button>
+  );
 }
