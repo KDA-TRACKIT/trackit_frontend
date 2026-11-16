@@ -14,7 +14,9 @@ import { errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
+import UsTradePanel from "./UsTradePanel";
 import RecordBoard from "./RecordBoard";
+import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending } from "../../lib/records";
@@ -22,6 +24,7 @@ import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
 import "./workshop.css";
+import { uuid } from "../../lib/uuid";
 
 // 차트는 브라우저 캔버스가 필요하므로 서버 렌더링에서 뺀다
 const WorkshopChart = dynamic(() => import("./WorkshopChart"), { ssr: false, loading: () => <section className="ws-chart" /> });
@@ -239,7 +242,7 @@ export default function WorkshopPage() {
   const [autoLinked, setAutoLinked] = useState<string | null>(null);
   /** 오른쪽 영역: 노트(기본) · 매매 */
   const [side, setSide] = useState<"notes" | "trade">("notes");
-  const tradeOpen = side === "trade" && !us;
+  const tradeOpen = side === "trade";
   const setTradeOpen = (open: boolean) => setSide(open ? "trade" : "notes");
 
   async function saveChart() {
@@ -339,7 +342,7 @@ export default function WorkshopPage() {
   /** 새 차트 노트가 생기면 검증 창의 메모를 그 노트로 바꾼다 (AI가 불러온 메모 자리) */
   function addNote(note: { time: number; price: number; text: string }) {
     const createdAt = nowKst();
-    setNotes((list) => [...list, { ...note, id: crypto.randomUUID(), createdAt }]);
+    setNotes((list) => [...list, { ...note, id: uuid(), createdAt }]);
     setEditVersion((v) => v + 1);
     setNoteText(note.text);
     setNoteTime(createdAt);
@@ -353,7 +356,7 @@ export default function WorkshopPage() {
   /** 모의 주문이 접수되면 체결로 보고 지금 노트와 연결 후보로 둔다 */
   function placeOrder(order: MockOrder) {
     const now = kstNow();
-    const execution: Execution = { id: crypto.randomUUID(), time: now.time, side: order.side, quantity: order.quantity, price: order.price };
+    const execution: Execution = { id: uuid(), time: now.time, side: order.side, quantity: order.quantity, price: order.price };
     setExecutions((list) => [...list, execution]);
     setConfirmed(false);
     // 증권사 체결이 잔고에 반영될 시간을 조금 두고 평단을 다시 읽는다
@@ -495,8 +498,7 @@ export default function WorkshopPage() {
               className={`ws-trade${tradeOpen ? " open" : ""}`}
               onClick={() => setTradeOpen(!tradeOpen)}
               aria-expanded={tradeOpen}
-              disabled={us}
-              title={us ? "미국 주식 주문은 아직 연결하지 않았어요. 차트·노트·매매일지는 그대로 쓸 수 있어요." : undefined}
+              title={us ? "미국 주식 주문 (키움 계좌 · 주간거래 · 프리 · 정규 · 애프터)" : undefined}
             >
               {tradeOpen ? "매매 닫기" : "매매하기"}
             </button>
@@ -524,7 +526,9 @@ export default function WorkshopPage() {
           />
 
           <div className="ws-side">
-            {tradeOpen && today && yesterday ? (
+            {tradeOpen && today && yesterday && us && symbol.exchange ? (
+              <UsTradePanel key={symbol.code} code={symbol.code} symbolName={symbol.name} exchange={symbol.exchange} price={today.close} prevClose={yesterday.close} onClose={() => setTradeOpen(false)} />
+            ) : tradeOpen && today && yesterday && !us ? (
               <TradePanel key={symbol.code} code={symbol.code} symbolName={symbol.name} price={today.close} prevClose={yesterday.close} onOrder={placeOrder} holding={avgPrice?.quantity ?? 0} onClose={() => setTradeOpen(false)} />
             ) : (
             <>
@@ -606,6 +610,7 @@ export default function WorkshopPage() {
           <RecordBoard symbol={symbol} lastExecution={executions[executions.length - 1] ?? null} />
         )}
       </div>
+      <QuickMemo base={{ kind: "stock", code: symbol.code, name: symbol.name }} />
     </main>
   );
 }

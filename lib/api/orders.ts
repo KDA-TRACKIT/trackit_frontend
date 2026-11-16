@@ -159,3 +159,50 @@ export function cancelOrder(accountId: string, orderNo: string, input: { symbol:
     body: JSON.stringify({ ...input, confirm: true }),
   });
 }
+
+// ---------- 미국 주식 (키움) ----------
+//   GET  /brokers/accounts/:id/us/buying-power?symbol&exchange&price  → 지금 시간대 · 살 수 있는 수량 · 팔 수 있는 수량
+//   POST /brokers/accounts/:id/us/orders  { …, confirm }               → 주문 (넣은 시각의 시장: 주간 · 프리 · 정규 · 애프터)
+//   GET  /brokers/accounts/:id/us/orders                                → 오늘 미국 주문
+//   POST /brokers/accounts/:id/us/orders/:no/cancel|modify
+export type UsExchange = "ND" | "NY" | "NA";
+export type UsBuyingPower = {
+  session: "daytime" | "pre" | "regular" | "after" | "closed";
+  sessionLabel: string;
+  orderTypes: ("LIMIT" | "MARKET")[];
+  buyQty: number;
+  cashUsd: number;
+  krwOrder: boolean;
+  cashKrw: number;
+  sellQty: number;
+  holdingQty: number;
+  avgPrice: number;
+};
+export type UsOrderRequest = { side: "BUY" | "SELL"; symbol: string; exchange: UsExchange; quantity: number; orderType: "LIMIT" | "MARKET"; price?: number };
+export type UsTodayOrder = TodayOrder & { exchange: UsExchange | null };
+
+const acc = (id: string) => `/brokers/accounts/${encodeURIComponent(id)}/us`;
+
+export function usBuyingPower(accountId: string, q: { symbol: string; exchange: UsExchange; price: number }): Promise<UsBuyingPower> {
+  return apiRequest<UsBuyingPower>(`${acc(accountId)}/buying-power?symbol=${encodeURIComponent(q.symbol)}&exchange=${q.exchange}&price=${q.price}`);
+}
+
+/** 확인 화면에서 확정한 주문을 그대로 한 번 보낸다 (confirm: true). 실패해도 다시 보내지 않는다 */
+export function sendUsOrder(accountId: string, order: UsOrderRequest): Promise<{ orderNo: string; session: string }> {
+  return apiRequest(`${acc(accountId)}/orders`, {
+    method: "POST",
+    body: JSON.stringify({ ...order, ...(order.orderType === "MARKET" ? { price: undefined } : {}), confirm: true }),
+  });
+}
+
+export function usTodayOrders(accountId: string): Promise<UsTodayOrder[]> {
+  return apiRequest<UsTodayOrder[]>(`${acc(accountId)}/orders`);
+}
+
+export function cancelUsOrder(accountId: string, orderNo: string, input: { symbol: string; exchange: UsExchange }): Promise<{ orderNo: string }> {
+  return apiRequest(`${acc(accountId)}/orders/${encodeURIComponent(orderNo)}/cancel`, { method: "POST", body: JSON.stringify({ ...input, confirm: true }) });
+}
+
+export function modifyUsOrder(accountId: string, orderNo: string, input: { symbol: string; exchange: UsExchange; price: number }): Promise<{ orderNo: string }> {
+  return apiRequest(`${acc(accountId)}/orders/${encodeURIComponent(orderNo)}/modify`, { method: "POST", body: JSON.stringify({ ...input, confirm: true }) });
+}
