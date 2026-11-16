@@ -8,7 +8,7 @@ const model = new Module(file, module);
 model._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,file);
 const {sampleHero,CYCLE_MS,TILE_SIZE}=model.exports;
 let samples=0, verticalMoves=0, previous=null;
-const seen=new Set();
+const seen=new Set(); const exchangeStages=new Set();
 for(let t=0;t<=CYCLE_MS*20;t+=10){
   const state=sampleHero(t); seen.add(state.stage);
   assert(state.tiles.length<=27);
@@ -26,8 +26,8 @@ for(let t=0;t<=CYCLE_MS*20;t+=10){
       if(dy>1e-8) verticalMoves++;
       if(state.stage==='pack') assert(dy<1e-8,'vertical packing');
     }
-    if(a.foreground){
-      assert.equal(state.stage,'move-4');
+    if(a.foreground){ exchangeStages.add(state.stage);
+      assert(['move-2','move-4'].includes(state.stage));
       const lane=state.tiles.filter(b=>b.y===a.y).sort((a,b)=>a.x-b.x);
       if(a.role==='outgoing')assert.equal(a.id,lane[0].id,'exit not leftmost');
       if(a.role==='incoming')assert.equal(a.id,lane[lane.length-1].id,'entry not rightmost');
@@ -36,7 +36,7 @@ for(let t=0;t<=CYCLE_MS*20;t+=10){
   previous=state;samples++;
 }
 assert(verticalMoves>100,'no vertical choreography');
-assert.equal(seen.size,7);
+assert.equal(seen.size,7); assert.deepEqual([...exchangeStages],['move-2','move-4']);
 for(let cycle=0;cycle<20;cycle++){
   const expanded=sampleHero(cycle*CYCLE_MS+1900).tiles;
   for(const y of [0,90,180]){
