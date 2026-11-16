@@ -66,9 +66,9 @@ export default function Intro() {
     return () => { cancelAnimationFrame(frame); clearInterval(timer); window.removeEventListener("scroll", scroll); window.removeEventListener("resize", scroll); media.removeEventListener("change", scroll); };
   }, []);
 
-  const stage = motion.stack * 7.7;
-  const collapse = ease(clamp((stage - 5.8) / .85));
-  const fall = ease(clamp((stage - 6.65) / 1.05));
+  const stage = motion.stack * 5.95;
+  const collapse = ease(clamp((stage - 4.05) / .85));
+  const fall = ease(clamp((stage - 4.9) / 1.05));
 
   return <main className="ti" ref={root}>
     <a className="ti-skip" href="#ti-features">기능 소개로 건너뛰기</a>
@@ -105,16 +105,20 @@ export default function Intro() {
     <section className="ti-stack" ref={stack} id="ti-features">
       <div className="ti-stack-pin">
         <div className="ti-stack-heading" style={{ opacity: motion.simple ? 1 : clamp(1 - collapse * 4) }}><p className="ti-eyebrow">02 — FROM CHART TO INSIGHT</p><h2>당신의 생각이,<br/>기록이 되는 순간.</h2></div>
-        <div className="ti-card-scene" style={motion.simple ? undefined : { transform: `translateY(${fall * 48}vh) scale(${1 - collapse * .935}) rotate(${collapse * 90}deg)`, borderRadius: 12, clipPath: collapse > 0 ? `inset(0 ${collapse * 31}% round 12px)` : undefined }}>
+        <div className="ti-card-scene" style={motion.simple ? undefined : { transform: `translateY(${fall * 24}vh) scale(${1 - collapse * .935}) rotate(${collapse * 90}deg)`, borderRadius: 12, clipPath: collapse > 0 ? `inset(0 ${collapse * 31}% round 12px)` : undefined }}>
           {!motion.simple && collapse > .85 && (
             <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: 12, backgroundColor: "#384b69", opacity: clamp((collapse - .85) / .15) }} />
           )}
-          {tones.map((tone, i) => { const incoming = i === 0 ? 1 : clamp(stage - i + .25); const behind = clamp((stage - i) / 5) * 5; const detail = motion.simple ? 1 : clamp((stage - i - .08) * 3.5); return <article key={tone} className="ti-demo-card" style={style({ "--tone": tone, opacity: motion.simple ? 1 : 1 - collapse, zIndex: i + 1, transform: motion.simple ? "none" : `translateY(${((1 - ease(incoming)) * 150 + Math.min(i, stage) * 2.6) * (1 - collapse)}%) scale(${1 - behind * .035 * (1 - collapse)}) rotateX(${-behind * 1.4 * (1 - collapse)}deg)`, visibility: !motion.simple && i > 0 && incoming === 0 ? "hidden" : "visible" })} aria-label={`차트 분석 기록 예시 ${i + 1}`}>
+          {tones.map((tone, i) => { const cardStage = i === 0 ? stage : (stage - 0.32 - (i - 1) * 0.62) / 0.74 - 0.25;
+            const incoming = i === 0 ? 1 : clamp(cardStage + 0.25);
+            const behind = clamp(cardStage / 5) * 5;
+            const detail = motion.simple ? 1 : clamp((cardStage - 0.08) * 3.5);
+            return <article key={tone} className="ti-demo-card" style={style({ "--tone": tone, opacity: motion.simple ? 1 : 1 - collapse, zIndex: i + 1, transform: motion.simple ? "none" : `translateY(${((1 - ease(incoming)) * 150 + (i + Math.min(0, cardStage)) * 2.6) * (1 - collapse)}%) scale(${1 - behind * .035 * (1 - collapse)}) rotateX(${-behind * 1.4 * (1 - collapse)}deg)`, visibility: !motion.simple && i > 0 && incoming === 0 ? "hidden" : "visible" })} aria-label={`차트 분석 기록 예시 ${i + 1}`}>
             <div className="ti-chart-panel"><div className="ti-card-meta"><span>CHART ANALYSIS</span><span>0{i + 1} / 06</span></div><div className="ti-stock"><strong>나의 차트 분석</strong><span>DEMO · 일봉</span></div><Candles progress={detail}/><p className="ti-analysis-copy" aria-label="당신이 분석한 차트를 AI가 분석하여 기록으로 남길 수 있습니다.">{["당신이 분석한 차트를 AI가 분석하여", "기록으로 남길 수 있습니다."].map((line, lineIndex) => <span className="ti-copy-line" key={line} aria-hidden="true">{Array.from(line).map((letter, letterIndex) => <span key={letterIndex} style={{ opacity: motion.simple ? 1 : clamp(detail * 55 - lineIndex * 21 - letterIndex) }}>{letter}</span>)}</span>)}</p><div className="ti-chart-bottom"><span>차트 위의 생각을 놓치지 않도록</span><span>↗</span></div></div>
             <div className="ti-note-panel"><div className="ti-note-title"><span>✳</span> AI NOTE <small>분석 예시</small></div><div className="ti-note"><div className="ti-note-meta"><span>기록 #{String(i + 1).padStart(3, "0")}</span><span>차트에서 가져옴 ↗</span></div><h3>선으로 남긴 생각,<br/>문장으로 이어지다.</h3><div className="ti-note-content" style={{ opacity: detail }}><p><span>01</span> 상승 흐름을 따라 추세선을 그렸습니다.</p><p><span>02</span> 이전 가격 구간에 수평선을 추가했습니다.</p><p><span>03</span> 관심 구간을 표시해 기록으로 남깁니다.</p></div><div className="ti-note-tags"><span>추세선</span><span>지지 · 저항</span><span>나의 관점</span></div></div><div className="ti-note-footer"><span>한 번의 분석이 다음 투자의 바탕으로.</span><span>↗</span></div></div>
           </article>; })}
         </div>
-        <div className="ti-collapse-copy" style={{ opacity: clamp((collapse - .35) / .65) * (1 - fall) }}><p>작은 기록들이 모여</p><h2>당신만의 투자 언어가 됩니다.</h2><span>↓</span></div>
+        <div className="ti-collapse-copy" style={{ opacity: clamp((collapse - .35) / .65) }}><p>작은 기록들이 모여</p><h2>당신만의 투자 언어가 됩니다.</h2><span>↓</span></div>
       </div>
     </section>
 
