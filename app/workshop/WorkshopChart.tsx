@@ -704,18 +704,30 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const toCandle = (b: Bar) => ({ time: toChartTime(b.time), open: b.open, high: b.high, low: b.low, close: b.close });
     layerRef.current?.setBars(bars);
     const prev = shownRef.current;
-    const live = loadedKeyRef.current === dataKey && prev.length > 0 && bars.length >= prev.length && bars.length - prev.length <= 2;
+    // 끝에 봉이 붙기만 했을 때만 update. 앞쪽이 밀리거나(가장 오래된 봉이 빠지고 새 봉) 다시 받아 시각이 달라지면 전체 교체
+    //   (update 에 마지막보다 이른 시각을 주면 lightweight-charts 가 "Cannot update oldest data" 로 멈춘다)
+    const live =
+      loadedKeyRef.current === dataKey &&
+      prev.length > 0 &&
+      bars.length >= prev.length &&
+      bars.length - prev.length <= 2 &&
+      bars[prev.length - 1]?.time === prev[prev.length - 1].time &&
+      bars[0]?.time === prev[0].time;
     shownRef.current = bars;
     // 봉이 아직 적을 때(초봉처럼 실시간으로 쌓는 중)는 칸 수를 고정해 오른쪽부터 채운다.
     // fitContent 로 두면 첫 봉 몇 개가 화면 폭을 다 차지해, 새 봉마다 옆으로 밀리며 앞 봉이 안 보였다
     const growing = (n: number) => n > 0 && n < GROW_SLOTS;
     const showGrowing = () => chart.timeScale().setVisibleLogicalRange({ from: bars.length - GROW_SLOTS, to: bars.length + 4 });
     if (live) {
-      for (let i = Math.max(0, prev.length - 1); i < bars.length; i++) {
-        candle.update(toCandle(bars[i]));
+      try {
+        for (let i = Math.max(0, prev.length - 1); i < bars.length; i++) {
+          candle.update(toCandle(bars[i]));
+        }
+        if (bars.length > prev.length && growing(bars.length)) showGrowing();
+        return;
+      } catch {
+        // 순서가 어긋났으면 아래에서 전체 교체
       }
-      if (bars.length > prev.length && growing(bars.length)) showGrowing();
-      return;
     }
     candle.setData(bars.map(toCandle));
     loadedKeyRef.current = bars.length > 0 ? dataKey : null;
@@ -1362,12 +1374,19 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           return { time, value: v, color: o.colorBy ? (up ? UP_BAR : DOWN_BAR) : colors[k] };
         };
         const sr = series![k];
+        let updated = false;
         if (live && !fresh) {
-          for (let i = Math.max(0, prevShown!.len - 1); i < bars.length; i++) {
-            const it = item(i);
-            if (it) sr.update(it);
+          try {
+            for (let i = Math.max(0, prevShown!.len - 1); i < bars.length; i++) {
+              const it = item(i);
+              if (it) sr.update(it);
+            }
+            updated = true;
+          } catch {
+            // 순서가 어긋났으면 전체 교체
           }
-        } else {
+        }
+        if (!updated) {
           const data = [];
           for (let i = 0; i < bars.length; i++) {
             const it = item(i);
