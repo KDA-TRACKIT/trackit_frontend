@@ -27,5 +27,6 @@ export type ChartMemoRequest = {
 export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
 
 export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
-  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), auth: false });
+  // 차트 메모도 저장된 일지·주석과 같은 사용자 데이터이므로 인증 토큰을 보낸다.
+  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body) });
 }

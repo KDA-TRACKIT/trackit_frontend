@@ -192,16 +192,21 @@ export default function WorkshopPage() {
   const tradeOpen = side === "trade";
   const setTradeOpen = (open: boolean) => setSide(open ? "trade" : "notes");
 
-  async function saveChart() {
-    if (journal.loading) return;
+  async function saveChart(): Promise<boolean> {
+    if (journal.loading) return false;
     setSaveMessage("저장 중…");
     try {
       const target = await journal.ensure();
       const result = await annotations.sync(target.id, [...drawings.map(drawingToAnnotation), ...notes.map(noteToAnnotation)]);
-      if (!result) return setSaveMessage("저장 실패");
+      if (!result) {
+        setSaveMessage("저장 실패");
+        return false;
+      }
       setSaveMessage(result.added || result.removed ? "자동 저장됨" : null);
+      return true;
     } catch {
       setSaveMessage("저장 실패");
+      return false;
     }
   }
 
@@ -229,7 +234,8 @@ export default function WorkshopPage() {
     setMemoBusy(true);
     setSaveMessage("저장 중…");
     try {
-      await saveChart();
+      // 일지·작도 저장이 성공한 경우에만 저장된 최신 내용을 AI에 보낸다.
+      if (!(await saveChart())) return;
       const result = await requestChartMemo({
         symbol: { code: symbol.code, name: symbol.name },
         interval,
