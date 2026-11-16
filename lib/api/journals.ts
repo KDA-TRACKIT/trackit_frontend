@@ -5,6 +5,7 @@
 import type { ChartAnnotation, ChartDrawing } from "../types/chart";
 import type { Journal, StorageMode } from "../types/journal";
 import { accessToken, apiRequest } from "./client";
+import { uuid } from "../uuid";
 
 const LOCAL_KEY = "trackit:local-journals";
 
@@ -38,7 +39,7 @@ export async function createJournal(input: { title: string; symbol: string; mark
   if (mode === "local") {
     const store = readLocal();
     const journal: Journal = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       title: input.title,
       symbol: input.symbol,
       market: input.market,
@@ -73,7 +74,7 @@ export async function listAnnotations(journalId: string, mode: StorageMode): Pro
 export async function createAnnotation(journalId: string, drawing: ChartDrawing, mode: StorageMode): Promise<ChartAnnotation> {
   if (mode === "local") {
     const store = readLocal();
-    const annotation: ChartAnnotation = { ...drawing, payload: { ...drawing.payload, clientId: drawing.id }, id: crypto.randomUUID(), journalId, createdAt: new Date().toISOString() };
+    const annotation: ChartAnnotation = { ...drawing, payload: { ...drawing.payload, clientId: drawing.id }, id: uuid(), journalId, createdAt: new Date().toISOString() };
     store.annotations.push(annotation);
     writeLocal(store);
     return annotation;

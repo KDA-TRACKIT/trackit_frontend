@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react";
 import { accessToken } from "./api/client";
 import { MARKET_SYMBOL, listNotes, saveNote, hideNote } from "./api/notes";
+import { uuid } from "./uuid";
 
 export type TradeRecord = {
   id: string;
@@ -161,7 +162,7 @@ export async function addRecord(input: Omit<TradeRecord, "id"> & { drawings?: un
       return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };
     }
   }
-  localStorage.setItem(KEY, JSON.stringify([{ ...record, id: crypto.randomUUID() }, ...readLocal()]));
+  localStorage.setItem(KEY, JSON.stringify([{ ...record, id: uuid() }, ...readLocal()]));
   notify();
   return { ok: true };
 }

@@ -36,6 +36,7 @@ import { PRESET_INTERVALS, UNIT_LABEL, UNIT_MAX, intervalLabel, isDailyLike, isS
 import { fetchDailyNews, type NewsArticle } from "../../lib/api/news";
 import { fetchFlows, type FlowDay } from "../../lib/market-data";
 import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
+import { uuid } from "../../lib/uuid";
 
 /** 캔들 색: 양봉 초록 · 음봉 빨강 (거래량·MACD 막대도 같은 색) */
 const UP = "#089981";
@@ -1461,7 +1462,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     if (def.presets?.length && !instances.some((i) => i.id === id)) {
       setInstances((list) => [
         ...list,
-        ...def.presets!.map((pr) => ({ uid: crypto.randomUUID(), id, params: { ...params, ...pr.params }, visible: true, colors: [pr.color, ...def.outputs.slice(1).map((o) => o.color)] })),
+        ...def.presets!.map((pr) => ({ uid: uuid(), id, params: { ...params, ...pr.params }, visible: true, colors: [pr.color, ...def.outputs.slice(1).map((o) => o.color)] })),
       ]);
       return;
     }
@@ -1469,7 +1470,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const same = instances.filter((i) => i.id === id);
     const used = new Set(same.map((i) => i.colors?.[0] ?? def.outputs[0].color));
     const colors = same.length && def.outputs.length === 1 ? [INSTANCE_PALETTE.find((c) => !used.has(c)) ?? INSTANCE_PALETTE[same.length % INSTANCE_PALETTE.length]] : undefined;
-    setInstances((list) => [...list, { uid: crypto.randomUUID(), id, params, visible: true, ...(colors ? { colors } : {}) }]);
+    setInstances((list) => [...list, { uid: uuid(), id, params, visible: true, ...(colors ? { colors } : {}) }]);
   }
 
   // 저장본 드로잉 불러오기 (종목·일지가 바뀔 때)
@@ -1564,14 +1565,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const pr = y === null ? null : layer.yToPrice(y + 18);
       return t === null || pr === null ? p : { time: t, price: String(Math.round(pr)) };
     });
-    const copy = { ...d, id: crypto.randomUUID(), points };
+    const copy = { ...d, id: uuid(), points };
     commit([...drawingsRef.current, copy]);
     selectDrawing(copy.id);
   }
 
   /** 점을 다 모은 툴을 드로잉으로 확정 (글이 필요한 툴은 입력창부터) */
   function finish(tool: DrawingTool, points: DrawingPoint[], at?: { x: number; y: number }) {
-    const drawing: Drawing = { id: crypto.randomUUID(), toolId: tool.id, schemaVersion: tool.schemaVersion, points, style: DRAW_STYLE };
+    const drawing: Drawing = { id: uuid(), toolId: tool.id, schemaVersion: tool.schemaVersion, points, style: DRAW_STYLE };
     if (tool.needsText) {
       layerRef.current?.setPreview(drawing);
       setTextInput("");
