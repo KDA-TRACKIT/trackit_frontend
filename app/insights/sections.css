@@ -152,28 +152,30 @@
 
 /* 경제 캘린더 (달력 + 목록) */
 .ins-cal-ctl { display:flex; align-items:center; gap:8px; }
-.ins-cal-wrap { display:grid; grid-template-columns:260px minmax(0,1fr); gap:24px; align-items:stretch; }
+.ins-cal-wrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); gap:32px; align-items:stretch; }
 .ins-cal-grid { align-self:start; }
 /* 오른쪽 내용: 달력 옆에 붙어서 따로 스크롤 */
-.ins-cal-side { display:flex; flex-direction:column; min-width:0; max-height:400px; padding-left:24px; border-left:1px solid var(--c-line); }
+.ins-cal-side { display:flex; flex-direction:column; min-width:0; max-height:470px; padding-left:32px; border-left:1px solid var(--c-line); }
 .ins-cal-side-head { display:flex; align-items:baseline; gap:8px; padding-bottom:10px; border-bottom:1px solid var(--c-line); }
 .ins-cal-side-head strong { font-size:15px; font-weight:800; }
 .ins-cal-side-head span { color:var(--c-faint); font-size:12px; }
 .ins-cal-side-head button { margin-left:auto; padding:2px 8px; border:1px solid var(--c-line); border-radius:999px; background:none; color:var(--c-sub); font:inherit; font-size:12px; cursor:pointer; }
 .ins-cal-side .ins-cal { flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:4px; }
-.ins-cal-grid .ins-month { justify-content:space-between; margin-bottom:8px; }
+.ins-cal-grid .ins-month { justify-content:space-between; margin-bottom:12px; }
+.ins-cal-grid .ins-month strong { font-size:18px; font-weight:800; }
+.ins-cal-grid .ins-month button { width:34px; height:34px; }
 .ins-cal-grid .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.ins-cal-grid .wk { padding:4px 0; color:var(--c-faint); font-size:11px; text-align:center; }
-.ins-cal-grid .grid button { position:relative; height:32px; border:0; border-radius:8px; background:none; color:var(--c-ink); font:inherit; font-size:12px; font-variant-numeric:tabular-nums; cursor:pointer; }
+.ins-cal-grid .wk { padding:6px 0; color:var(--c-faint); font-size:12px; text-align:center; }
+.ins-cal-grid .grid button { position:relative; height:44px; border:0; border-radius:10px; background:none; color:var(--c-ink); font:inherit; font-size:14px; font-variant-numeric:tabular-nums; cursor:pointer; }
 .ins-cal-grid .grid button:disabled { color:var(--c-faint); cursor:default; }
 .ins-cal-grid .grid button:not(:disabled):hover { background:var(--c-hover); }
 .ins-cal-grid .grid button.today { box-shadow:inset 0 0 0 1px var(--c-line-strong); font-weight:800; }
 .ins-cal-grid .grid button.on { background:var(--c-ink); color:var(--c-surface); }
-.ins-cal-grid .grid .dot { position:absolute; bottom:3px; left:50%; transform:translateX(-50%); }
+.ins-cal-grid .grid .dot { position:absolute; bottom:6px; left:50%; transform:translateX(-50%); }
 .ins .dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--c-faint); vertical-align:middle; }
 .ins .dot.l3 { background:var(--c-up); }
 .ins .dot.l2 { background:var(--c-accent); }
-.ins-cal-grid .legend { display:flex; align-items:center; gap:5px; margin:10px 0 0; color:var(--c-faint); font-size:11px; }
+.ins-cal-grid .legend { display:flex; align-items:center; gap:5px; margin:12px 0 0; color:var(--c-faint); font-size:12px; }
 .ins-cal-grid .legend .dot + .dot, .ins-cal-grid .legend .dot:not(:first-child) { margin-left:8px; }
 .ins-cal li.past { opacity:.55; }
 .ins-cal .ev { display:grid !important; grid-template-columns:42px 38px auto minmax(0,1fr) 64px 64px 64px; align-items:center; }
@@ -185,12 +187,12 @@
 .ins-cal-side .ins-cal li { grid-template-columns:1fr; gap:6px; }
 .ins-cal-side .ins-cal .when { justify-content:flex-start; }
 .ins-cal-side .ins-cal .when em { margin-left:6px; }
-.ins-cal-side .ins-cal .ev { grid-template-columns:40px 34px 34px minmax(0,220px) 60px 60px 60px minmax(0,1fr); } /* 열 이름 줄과 맞게 나라 칸도 고정 */
+.ins-cal-side .ins-cal .ev { grid-template-columns:44px 40px 44px minmax(0,1fr) repeat(3,minmax(72px,.38fr)); } /* 나라 칸도 고정해야 열 이름 줄과 맞음 · 값 칸은 넓으면 같이 넓어짐 */
 .ins-cal-side .ins-cal .title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* 값은 이름 바로 오른쪽, 왼쪽 정렬 */
-.ins-cal-side .ins-cal .ev .v { text-align:left; }
+.ins-cal-side .ins-cal .ev .v { font-size:13px; text-align:center; }
 .ins-cal-side .ins-cal li.cols-row { position:sticky; top:0; z-index:1; display:block; padding:6px 0; border-top:0; border-bottom:1px solid var(--c-line); background:var(--c-surface); }
-.ins-cal-side .ins-cal li.cols-row .ev > .v { color:var(--c-faint); font-size:11px; font-weight:400; }
+.ins-cal-side .ins-cal li.cols-row .ev > .v { color:var(--c-faint); font-size:11.5px; font-weight:400; }
 .ins-cal-side .ins-cal li.cols-row .ev > .v:first-child { grid-column:5; }
 .ins-cal-side .ins-cal li.cols-row + li { border-top:0; }
 .ins-cal-side .ins-cal li.cols-row .ev { gap:6px 8px; font-size:13px; }
