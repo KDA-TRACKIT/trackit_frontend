@@ -16,6 +16,8 @@ function profileOf(user: User): Profile {
   return { name, avatar: pick("avatar_url", "picture") ?? null };
 }
 
+const nicknameSegmenter = new Intl.Segmenter("ko", { granularity: "grapheme" });
+
 export default function AccountChip() {
   const [profile, setProfile] = useState<Profile | null>(null);
   // Supabase 설정이 없으면 기다릴 세션이 없으니 바로 로그인 버튼
@@ -39,8 +41,11 @@ export default function AccountChip() {
         로그인
       </Link>
     );
+  const nicknameCharacters = Array.from(nicknameSegmenter.segment(profile.name), ({ segment }) => segment);
+  const displayName = nicknameCharacters.length > 4 ? nicknameCharacters.slice(0, 3).join("") + "..." : profile.name;
+
   return (
-    <Link className="gnb-chip" href="/login" title="내 계정">
+    <Link className="gnb-chip" href="/login" title={profile.name}>
       {profile.avatar ? (
         // 소셜 프로필 사진(외부 주소)이라 next/image 대신 img
         // eslint-disable-next-line @next/next/no-img-element
@@ -50,7 +55,7 @@ export default function AccountChip() {
           {profile.name.slice(0, 1)}
         </span>
       )}
-      <span className="gnb-name">{profile.name}</span>
+      <span className="gnb-name">{displayName}</span>
     </Link>
   );
 }
