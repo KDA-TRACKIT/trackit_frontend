@@ -24,6 +24,8 @@ export type ChartMemoRequest = {
   drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
   notes: { time: number; price: number; text: string }[];
   mode: "ai";
+  /** 차트 메모는 GPT를 우선 사용하도록 백엔드 provider 선택을 전달한다. */
+  provider?: "gemini" | "openai";
   /** 미국 종목은 USD (메모 금액을 $로) */
   currency?: "KRW" | "USD";
 };

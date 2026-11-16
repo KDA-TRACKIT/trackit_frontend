@@ -322,6 +322,7 @@ export default function WorkshopPage() {
         })),
         notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
         mode: "ai",
+        provider: "openai",
         currency: us ? "USD" : "KRW",
       });
       setAiMemoResult(result);
