@@ -10,17 +10,17 @@
 @media (max-width:800px) { .login-panel { width:min(360px,calc(100% - 48px)); margin-top:65px; }.login-wordmark { margin-bottom:48px; } }
 
 /* 공통 상단 바 (SiteHeader). 어느 화면이든 같은 높이·폭·글꼴로 로고와 메뉴 위치를 고정 */
-.gnb { position:relative; z-index:10; display:grid; height:104px; grid-template-columns:240px minmax(0,1fr) 240px; align-items:end; padding:0 40px 23px; background:#fff; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:1.2; }
+.gnb { position:relative; z-index:10; display:grid; grid-template-columns:240px minmax(0,1fr) 240px; align-items:end; padding:0 40px 23px; background:#fff; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:1.2; }
 .gnb-brand { display:block; width:200px; padding-bottom:8px; border-bottom:1px solid #333; color:#344d7d; font-size:28px; font-weight:800; letter-spacing:-1px; text-align:center; }
 .gnb-main { display:flex; height:57px; align-items:flex-end; gap:48px; border-bottom:1px solid #333; }
 .gnb-main a { position:relative; padding-bottom:9px; font-size:16px; white-space:nowrap; }
 .gnb-main a.active { font-weight:700; }
 .gnb-main a.active::after { content:""; position:absolute; left:-12px; right:-12px; bottom:-1px; height:2px; background:#000; }
 .gnb-account { display:flex; height:57px; align-items:flex-end; justify-content:flex-end; gap:25px; padding-bottom:10px; border-bottom:1px solid #333; font-size:12px; white-space:nowrap; }
-@media (max-width:800px) { .gnb { height:auto; grid-template-columns:1fr; gap:16px; padding:20px 24px 0; }.gnb-brand { width:145px; text-align:left; }.gnb-main,.gnb-account { height:auto; justify-content:flex-start; padding-bottom:8px; border-bottom:0; } }
+@media (max-width:800px) { .gnb-brand { width:145px; text-align:left; }.gnb-main,.gnb-account { height:auto; justify-content:flex-start; padding-bottom:8px; border-bottom:0; } }
 
 /* 상단 바 (시안): 밑줄 없이 한 줄, 아래 경계선 하나 · 오른쪽은 둥근 프로필 칩 */
-.gnb { height:104px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
+.gnb { height:84px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
 .gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; }
 /* 로고 크기·위치는 첫 화면(소개 페이지 .ti-brand)과 같게: 왼쪽 70px, 29px 굵기 850 */
 .gnb-brand { justify-self:start; margin:2px 0 0 30px; font-size:29px; font-weight:850; letter-spacing:-1.6px; line-height:29px; }
@@ -53,8 +53,11 @@
 .gnb-avatar-empty { display:grid; place-items:center; color:#344d7d; font-size:13px; font-weight:800; }
 .gnb-name { overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:800px) {
-  .gnb { height:auto; padding:16px 20px; }
-  .gnb-main { justify-content:flex-start; gap:28px; }
+  .gnb { grid-template-columns:minmax(0,1fr) auto; grid-template-rows:42px minmax(0,1fr); padding:2px 16px; }
+  .gnb-main { grid-area:2 / 1 / 3 / -1; justify-content:space-between; gap:8px; padding-bottom:0; }
+  .gnb-main a { font-size:13px; }
+  .gnb-account { grid-area:1 / 2; justify-content:flex-end; }
+  .gnb-chip.gnb-user { max-width:min(140px, 40vw); }
 }
 
 /* 프로필 칩 메뉴 (마이페이지 · 로그아웃) */
