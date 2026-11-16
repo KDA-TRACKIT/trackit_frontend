@@ -1,5 +1,6 @@
 "use client";
 // 경제 캘린더: 이번 주 세계 지표(시각·중요도·예상·이전) + FOMC·금통위·미국 지표 발표일 + 달력(점)
+import { memoAttr } from "../../lib/memo-target";
 import { useState } from "react";
 import { getEconCalendar, type EconEvent } from "../../lib/api/insights";
 import { CardHead, Failed, Loading, MissingKeys } from "./parts";
@@ -267,6 +268,7 @@ export function EconCalendar() {
                             <div
                               key={`${e.time ?? ""}${e.title}`}
                               className="ev"
+                              {...memoAttr({ kind: "topic", topic: "거시경제", label: `${Number(date.slice(5, 7))}.${Number(date.slice(8))} ${e.title}` })}
                             >
                               <span className="t">{e.time ?? ""}</span>
                               <span

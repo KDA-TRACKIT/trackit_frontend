@@ -1,5 +1,6 @@
 "use client";
 // 상승 · 하락 · 거래대금 상위 (섹터맵과 같은 데이터에서 계산 → 키움 추가 호출 없음) + 외국인·기관 순매수/순매도 상위
+import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { getFlows, isUsMarket, kiwoomTicker, type FlowRow, type KrMarket, type SectorMap } from "../../lib/api/insights";
@@ -34,7 +35,7 @@ export function Rankings({ data, onOpenUs }: { data: SectorMap | null; onOpenUs?
               <h3>{l.title} 상위</h3>
               <ol className="ins-rank">
                 {l.rows.map((m) => (
-                  <li key={m.code}>
+                  <li key={m.code} {...memoAttr({ kind: "stock", code: m.code, name: m.name, note: `${l.title} 상위` })}>
                     {isUsMarket(data.market) ? (
                       <button type="button" title={`${m.code} 차트`} onClick={() => onOpenUs?.({ code: kiwoomTicker(m.code), name: m.name })}>
                         <span>{m.name}</span>
@@ -63,7 +64,7 @@ function FlowList({ title, rows, market }: { title: string; rows: FlowRow[]; mar
       <h3>{title}</h3>
       <ol className="ins-rank">
         {rows.map((r) => (
-          <li key={r.code}>
+          <li key={r.code} {...memoAttr({ kind: "stock", code: r.code, name: r.name, note: title })}>
             <Link href={href(r.code, r.name, market)}>
               <span>{r.name}</span>
               <em className={tone(r.amount)}>{eok(r.amount)}</em>

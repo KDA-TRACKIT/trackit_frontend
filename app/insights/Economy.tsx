@@ -1,5 +1,6 @@
 "use client";
 // 기준금리 주요 4개국 (경제 탭) · 물가 (전년 대비 %, 지금은 화면에 안 씀). 경제 캘린더는 Calendar.tsx
+import { memoAttr } from "../../lib/memo-target";
 import { useEffect, useRef, useState } from "react";
 import {
   getInflation,
@@ -290,7 +291,7 @@ function RateChart({ r }: { r: PolicyRate }) {
 function RateTile({ r }: { r: PolicyRate }) {
   const ch = r.lastChange;
   return (
-    <div className="ins-infl ins-rate">
+    <div className="ins-infl ins-rate" {...memoAttr({ kind: "topic", topic: "거시경제", label: `${r.label} 기준금리 ${r.low !== undefined ? `${r.low.toFixed(2)}–` : ""}${r.value.toFixed(2)}%` })}>
       <div className="ins-infl-head">
         <span>
           {r.label} <b>{r.bank}</b>

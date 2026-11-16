@@ -3,6 +3,7 @@
 // 업종 이름을 누르면 그 업종만 크게, 종목을 누르면 작업실에서 그 종목을 연다 (미국은 작업실 차트가 아직 없어 링크 없음)
 // 코스피 · 코스닥 · S&P 500 · 나스닥 100 · 다우 30
 //   미국 지수는 finviz 맵처럼: 섹터 → 세부 업종(작은 이름표) → 종목, 칸에는 티커와 등락률 (이름은 마우스를 올리면)
+import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
@@ -226,6 +227,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
                 className="ins-sector-head"
                 style={{ height: HEADER }}
                 onClick={() => setZoom(zoom ? null : sector.code)}
+                {...memoAttr({ kind: "topic", topic: "업종·테마", label: `${sector.name} ${pct(sector.changeRate)}` })}
                 title={`${sector.name} ${pct(sector.changeRate)} · 시가총액 ${cap(sector.marketCap)} · 상승 ${sector.rising} 하락 ${sector.falling}`}
               >
                 <span>{sector.name}</span>
@@ -259,6 +261,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
                     if (host) setTip({ x: e.clientX - host.left, y: e.clientY - host.top, stock: s, sector: sector.name });
                   },
                   "aria-label": `${s.name} ${pct(s.changeRate)}`,
+                  ...memoAttr({ kind: "stock", code: s.code, name: s.name, note: `${sector.name} ${pct(s.changeRate)}` }),
                 };
                 const label = showName && (
                   <>

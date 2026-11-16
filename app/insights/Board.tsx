@@ -1,5 +1,6 @@
 "use client";
 // 시장 전광판: 지수 · 환율 · 금리 · 유가 · 코인 (장중엔 30초마다)
+import { memoAttr } from "../../lib/memo-target";
 import { getBoard, type BoardItem } from "../../lib/api/insights";
 import { CardHead, Failed, Loading, MissingKeys, pct, tone } from "./parts";
 import { useLoad } from "./useLoad";
@@ -37,7 +38,7 @@ export default function Board() {
         <>
           <div className="ins-board">
             {data.items.map((i) => (
-              <div key={i.key} className="ins-tile" title={`${i.source} · ${i.asOf}`}>
+              <div key={i.key} className="ins-tile" title={`${i.source} · ${i.asOf}`} {...memoAttr({ kind: "topic", topic: "시장 흐름", label: `${i.label} ${value(i)} (${change(i)})` })}>
                 <span>{i.label}</span>
                 <strong>{value(i)}</strong>
                 <em className={tone(i.unit === "%" ? i.change : i.changeRate)}>{change(i)}</em>

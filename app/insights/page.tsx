@@ -8,6 +8,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteHeader from "../SiteHeader";
+import QuickMemo from "../QuickMemo";
 import type { SectorMap as SectorMapData } from "../../lib/api/insights";
 import Board from "./Board";
 import News from "./News";
@@ -85,6 +86,7 @@ function Insights() {
         {tab === "mine" && <PnlCalendar />}
       </div>
       {usChart && <UsChart target={usChart} onClose={() => setUsChart(null)} />}
+      <QuickMemo pickable />
     </main>
   );
 }

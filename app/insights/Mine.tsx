@@ -1,5 +1,6 @@
 "use client";
 // 공시 (DART, 보유·관심 종목만 보기) + 매매 캘린더 (청산한 포지션의 날짜별 실현손익)
+import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { accountPortfolio, orderAccounts } from "../../lib/api/orders";
@@ -62,7 +63,7 @@ export function DisclosureList() {
       ) : (
         <ul className={`ins-disc${loading ? " stale" : ""}`}>
           {data.items.map((d) => (
-            <li key={d.url}>
+            <li key={d.url} {...memoAttr({ kind: "topic", topic: "공시", label: `${d.company} ${d.title}` })}>
               <span className="date">{d.date.slice(5).replace("-", ".")}</span>
               <span className="company">{d.company}</span>
               <a href={d.url} target="_blank" rel="noreferrer" className="title">

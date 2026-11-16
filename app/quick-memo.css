@@ -1,0 +1,41 @@
+/* 빠른 메모 (오른쪽 아래 원 · 메모 창 · 숨긴 뒤 다시 꺼내는 탭) — 라이트 · 다크 모두 --c-* 변수 */
+.qm-bubble-wrap { position:fixed; z-index:80; width:56px; height:56px; }
+.qm-bubble { width:56px; height:56px; border:0; border-radius:50%; background:var(--c-accent); color:var(--c-on-accent); font-size:22px; line-height:1; box-shadow:0 8px 22px rgba(15,35,103,.28); cursor:grab; touch-action:none; user-select:none; transition:transform .15s, box-shadow .15s; }
+.qm-bubble:hover { transform:scale(1.06); box-shadow:0 10px 26px rgba(15,35,103,.34); }
+.qm-bubble:active { cursor:grabbing; }
+.qm-bubble.open { font-size:18px; }
+.qm-hide { position:absolute; top:-6px; right:-6px; display:grid; place-items:center; width:22px; height:22px; padding:0; border:1px solid var(--c-line); border-radius:50%; background:var(--c-surface); color:var(--c-sub); font-size:14px; line-height:1; opacity:0; cursor:pointer; transition:opacity .15s; }
+.qm-bubble-wrap:hover .qm-hide, .qm-hide:focus-visible { opacity:1; }
+.qm-hide:hover { color:var(--c-ink); }
+html[data-theme="dark"] .qm-bubble { box-shadow:0 8px 22px rgba(0,0,0,.5); }
+
+/* 숨겼을 때: 오른쪽 끝에 붙은 작은 탭 */
+.qm-restore { position:fixed; right:0; bottom:120px; z-index:80; width:26px; height:44px; padding:0 0 0 4px; border:1px solid var(--c-line); border-right:0; border-radius:10px 0 0 10px; background:var(--c-surface); color:var(--c-accent); font-size:15px; box-shadow:var(--c-shadow); cursor:pointer; transition:width .15s; }
+.qm-restore:hover { width:34px; }
+
+/* 메모 창 */
+.qm-panel { position:fixed; z-index:81; width:340px; padding:14px; border:1px solid var(--c-line); border-radius:14px; background:var(--c-surface); color:var(--c-ink); box-shadow:var(--c-shadow); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.qm-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.qm-head strong { font-size:15px; }
+.qm-head a { color:var(--c-sub); font-size:12px; text-decoration:none; }
+.qm-head a:hover { color:var(--c-accent); }
+.qm-target { margin-bottom:8px; }
+.qm-chip { display:inline-flex; align-items:center; gap:6px; max-width:100%; padding:5px 6px 5px 10px; border-radius:8px; background:var(--c-accent-soft); color:var(--c-accent); font-size:12.5px; font-weight:700; }
+.qm-chip button { flex:none; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:none; color:inherit; font-size:14px; line-height:1; cursor:pointer; }
+.qm-chip button:hover { background:rgba(0,0,0,.08); }
+.qm-topics { display:flex; flex-wrap:wrap; gap:5px; }
+.qm-topics button { height:26px; padding:0 10px; border:0; border-radius:7px; background:var(--c-subtle); color:var(--c-sub); font:inherit; font-size:12px; cursor:pointer; }
+.qm-topics button.on { background:var(--c-accent); color:var(--c-on-accent); font-weight:700; }
+.qm-hint { margin:7px 0 0; color:var(--c-faint); font-size:11.5px; line-height:1.45; }
+.qm-panel textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-bg); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:1.5; resize:vertical; outline:0; }
+.qm-panel textarea:focus { border-color:var(--c-focus); }
+.qm-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
+.qm-foot small { color:var(--c-faint); font-size:11.5px; }
+.qm-foot small.ok { color:var(--c-ok); font-weight:600; }
+.qm-foot small.err { color:var(--c-err); }
+.qm-save { flex:none; height:34px; padding:0 16px; border:0; border-radius:9px; background:var(--c-accent); color:var(--c-on-accent); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.qm-save:disabled { opacity:.45; cursor:default; }
+
+/* 항목 고르는 중: 메모할 수 있는 항목에 마우스를 올리면 테두리 */
+body.memo-picking [data-memo] { cursor:copy !important; }
+body.memo-picking [data-memo]:hover { outline:2px dashed var(--c-accent); outline-offset:2px; border-radius:6px; }

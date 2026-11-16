@@ -1,6 +1,7 @@
 "use client";
 // 뉴스: 국내 경제·증권 뉴스 제목 (연합뉴스·한국경제·매일경제 RSS, 3분마다). 본문은 원문 사이트에서
 //   전체 · 종목 뉴스(제목에 상장사가 나온 것) · 관심 종목
+import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { getNews, type NewsItem } from "../../lib/api/insights";
@@ -72,7 +73,7 @@ export default function News() {
       ) : (
         <ul className={`ins-news${loading ? " stale" : ""}`}>
           {items.map((n) => (
-            <li key={n.id}>
+            <li key={n.id} {...memoAttr({ kind: "topic", topic: "뉴스", label: n.title.length > 40 ? `${n.title.slice(0, 40)}…` : n.title })}>
               <span className="time">{when(n.publishedAt, today)}</span>
               <div className="body">
                 <a href={n.url} target="_blank" rel="noreferrer" className="title">
@@ -83,6 +84,7 @@ export default function News() {
                   {n.stocks.map((s) => (
                     <Link
                       key={s.code}
+                      {...memoAttr({ kind: "stock", code: s.code, name: s.name, note: "뉴스" })}
                       className={`stock${watch.has(s.code) ? " on" : ""}`}
                       href={`/workshop?symbol=${s.code}&name=${encodeURIComponent(s.name)}&market=${encodeURIComponent(s.market)}`}
                     >

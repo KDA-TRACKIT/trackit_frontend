@@ -2,6 +2,7 @@
 // 관심 종목: 국내 · 미국 전 종목 검색으로 추가 (한글 · 영문 이름 · 코드/티커) · 시세 20초마다 · 국내는 작업실 차트로
 //   국내 키움 ka10095 / 미국 키움 usa20100 (나스닥 토탈뷰 실시간) — 백엔드가 캐시
 //   미국 종목은 티커를 크게, 한글 이름을 작게
+import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { getQuotes, searchAllSymbols, type Quote, type SymbolHit } from "../../lib/api/insights";
@@ -135,7 +136,7 @@ export default function Watchlist({ onOpenUs }: { onOpenUs?: (t: UsChartTarget) 
               </>
             );
             return (
-              <li key={it.code}>
+              <li key={it.code} {...memoAttr({ kind: "stock", code: it.code, name: it.name })}>
                 {us ? (
                   <button type="button" className="name" title={`${it.name} · ${it.market} 차트`} onClick={() => onOpenUs?.({ code: it.code, name: it.name, exchange: it.exchange })}>
                     {label}
@@ -149,7 +150,7 @@ export default function Watchlist({ onOpenUs }: { onOpenUs?: (t: UsChartTarget) 
                 <span className={`chg ${q ? tone(q.changeRate) : ""}`}>{q ? `${q.change > 0 ? "▲" : q.change < 0 ? "▼" : ""} ${change(q)}` : ""}</span>
                 <span className={`rate ${q ? tone(q.changeRate) : ""}`}>{q ? pct(q.changeRate) : ""}</span>
                 <span className="vol">{q ? `${won(q.volume)}주` : ""}</span>
-                <button type="button" className="del" aria-label={`${it.name} 관심 종목에서 빼기`} onClick={() => wl.remove(it.code)}>
+                <button type="button" className="del" data-memo-skip aria-label={`${it.name} 관심 종목에서 빼기`} onClick={() => wl.remove(it.code)}>
                   ×
                 </button>
               </li>
