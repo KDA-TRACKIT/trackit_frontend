@@ -1,3 +1,4 @@
+import HomeBanner from "./HomeBanner";
 import Link from "next/link";
 import SiteHeader from "./SiteHeader";
 
@@ -11,7 +12,7 @@ const trades = [
 ];
 
 export default function Home() {
-  return <main className="home"><SiteHeader active="home" /><section className="hero" aria-label="배너 공간" />
+  return <main className="home"><SiteHeader active="home" /><HomeBanner tradeCount={24} />
     <section id="trader-board" className="trader-board section-wrap">
       <div className="section-heading">
         <h2>트레이더 보드</h2>
