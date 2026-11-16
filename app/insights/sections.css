@@ -55,7 +55,7 @@
 .ins-cal .when strong { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; }
 .ins-cal .when span { color:var(--c-sub); font-size:12px; }
 .ins-cal .when em { margin-left:auto; color:var(--c-faint); font-size:11px; font-style:normal; font-weight:700; }
-.ins-cal .when em.today { color:var(--c-up); }
+.ins-cal .when em.today { color:var(--c-err); }
 .ins-cal .what { display:flex; flex-direction:column; gap:6px; }
 .ins-cal .what > div { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; font-size:13px; }
 .ins-cal .title { font-weight:600; }
@@ -88,8 +88,8 @@
 .ins-pnl .day span { color:var(--c-sub); font-size:12px; }
 .ins-pnl .day small { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
 .ins-pnl .day.none { background:transparent; cursor:default; }
-.ins-pnl .day.up { border-color:transparent; background:rgba(224,49,49,var(--k)); color:#fff; }
-.ins-pnl .day.down { border-color:transparent; background:rgba(22,102,240,var(--k)); color:#fff; }
+.ins-pnl .day.up { border-color:transparent; background:rgba(31,157,85,var(--k)); color:#fff; }
+.ins-pnl .day.down { border-color:transparent; background:rgba(224,49,49,var(--k)); color:#fff; }
 .ins-pnl .day.up span, .ins-pnl .day.down span { color:rgba(255,255,255,.85); }
 .ins-pnl .day.on { outline:2px solid var(--c-ink); outline-offset:1px; }
 .ins-pnl-day { margin:12px 0 0; padding:0; list-style:none; }
@@ -173,7 +173,7 @@
 .ins-cal-grid .grid button.on { background:var(--c-ink); color:var(--c-surface); }
 .ins-cal-grid .grid .dot { position:absolute; bottom:6px; left:50%; transform:translateX(-50%); }
 .ins .dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--c-faint); vertical-align:middle; }
-.ins .dot.l3 { background:var(--c-up); }
+.ins .dot.l3 { background:var(--c-err); }
 .ins .dot.l2 { background:var(--c-accent); }
 .ins-cal-grid .legend { display:flex; align-items:center; gap:5px; margin:12px 0 0; color:var(--c-faint); font-size:12px; }
 .ins-cal-grid .legend .dot + .dot, .ins-cal-grid .legend .dot:not(:first-child) { margin-left:8px; }
@@ -198,7 +198,7 @@
 .ins-cal-side .ins-cal li.cols-row .ev { gap:6px 8px; font-size:13px; }
 .ins-cal .ev .t { color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; }
 .ins-cal .ev .imp { color:var(--c-line-strong); font-size:10px; letter-spacing:-1px; }
-.ins-cal .ev .imp.l3 { color:var(--c-up); }
+.ins-cal .ev .imp.l3 { color:var(--c-err); }
 .ins-cal .ev .imp.l2 { color:#e8a317; }
 .ins-cal .ev .nums, .ins-cal .ev > small { grid-column:4 / -1; color:var(--c-faint); font-size:11px; font-variant-numeric:tabular-nums; }
 

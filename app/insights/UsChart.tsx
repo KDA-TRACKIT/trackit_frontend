@@ -100,8 +100,8 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const up = cssVar("--c-up", "#e03131");
-    const down = cssVar("--c-down", "#1666f0");
+    const up = cssVar("--c-up", "#1f9d55");
+    const down = cssVar("--c-down", "#e03131");
     const chart = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-sub", "#555"), fontSize: 11, attributionLogo: false },
@@ -145,8 +145,8 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
     const ts = chart.timeScale();
     const range = ts.getVisibleLogicalRange();
     const added = shown.length - prevLen.current;
-    const up = cssVar("--c-up", "#e03131");
-    const down = cssVar("--c-down", "#1666f0");
+    const up = cssVar("--c-up", "#1f9d55");
+    const down = cssVar("--c-down", "#e03131");
     candleRef.current.setData(shown.map((b) => ({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close })));
     volRef.current.setData(shown.map((b) => ({ time: b.time as UTCTimestamp, value: b.volume, color: `${b.close >= b.open ? up : down}66` })));
     // 처음 · 봉 단위를 바꿨을 때: 기본 화면 (일 120봉 · 주 2년 · 월 5년). 주·월은 10년치가 다 들어올 때 한 번 더 맞춘다
