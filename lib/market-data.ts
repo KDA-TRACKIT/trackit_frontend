@@ -7,6 +7,7 @@
 //   화면의 code 는 BRK.B 처럼 점 표기, 키움에 보낼 땐 BRKb
 import { bucketStart, groupBars, needsGrouping, sourceOf, type Interval } from "./interval";
 import type { Bar } from "./mock/workshop";
+import { apiBase } from "./api-url";
 
 export { bucketStart, groupBars };
 
@@ -24,7 +25,7 @@ export const displayTicker = (code: string) => code.replace(/([a-z])$/, (c) => `
 /** 미국 일봉 time(그날 UTC 자정) → 국내 일봉과 같은 그날 KST 자정 */
 const usDay = (t: number) => t - 9 * 3600;
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API = apiBase();
 const KST = 9 * 3600;
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {

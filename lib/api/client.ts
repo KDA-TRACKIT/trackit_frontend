@@ -1,8 +1,9 @@
 // 백엔드 API 공통 호출. 컴포넌트는 fetch를 직접 부르지 않고 lib/api/* 함수나 hooks/* 를 쓴다.
 // 브라우저에 두는 값은 NEXT_PUBLIC_API_URL, Supabase public URL·anon key 뿐이다 (AI·Redis·MCP·증권사 비밀값 없음).
 import { getSupabaseBrowser } from "../supabase-browser";
+import { apiBase } from "../api-url";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+export const API_URL = apiBase();
 
 /** 실제 API가 아직 없으면 mock 어댑터. NEXT_PUBLIC_AI_API=http 면 백엔드 /ai, /trading 을 부른다 */
 export const USE_MOCK_TRADING = process.env.NEXT_PUBLIC_AI_API !== "http";

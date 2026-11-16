@@ -17,7 +17,8 @@ export function GoogleIcon({ size = 24 }: { size?: number }) {
 
 /** 백엔드에서 Google 인증 주소를 받아 이동 (로그인·가입 같은 흐름. 처음이면 /auth/callback 에서 가입 마무리로 보냄) */
 export async function startGoogle() {
-  const response = await fetch(`${API_URL}/api/v1/auth/oauth/google`);
+  // 지금 연 주소(localhost 또는 같은 와이파이의 IP)로 돌아오게 알려 준다
+  const response = await fetch(`${API_URL}/api/v1/auth/oauth/google?origin=${encodeURIComponent(window.location.origin)}`);
   const body = await response.json();
   if (!response.ok || !body?.data?.authorizationUrl) throw new Error(body?.error?.message ?? "Google 로그인 준비에 실패했습니다.");
   window.location.assign(body.data.authorizationUrl);
