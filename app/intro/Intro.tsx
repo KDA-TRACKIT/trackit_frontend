@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import HeroGeometry from "./HeroGeometry";
+import { setTheme, watchTheme } from "../../lib/theme";
+import "./intro-dark.css";
 
 const words = ["차트분석", "매매일지", "전략공부", "전략판매"];
 const labels = ["차트분석", "전략구매", "기록", "매매", "전략 판매", "전략 공부"];
@@ -10,6 +12,24 @@ const tones = ["#263b61", "#7c8c9e", "#8d7465", "#6a7b73", "#a49883", "#384b69"]
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 const ease = (n: number) => n * n * (3 - 2 * n);
 const style = (v: Record<string, string | number>) => v as CSSProperties;
+
+/** 로그인 전에도 라이트/다크를 바꿀 수 있게 (계정 메뉴와 같은 저장값) */
+function ThemeToggle() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    const sync = () => setDark(el.dataset.theme === "dark");
+    const stopWatching = watchTheme();
+    sync();
+    const ob = new MutationObserver(sync);
+    ob.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => {
+      ob.disconnect();
+      stopWatching();
+    };
+  }, []);
+  return <button type="button" className="ti-theme" onClick={() => setTheme(dark ? "light" : "dark")} aria-label={dark ? "라이트 모드로" : "다크 모드로"} title={dark ? "라이트 모드" : "다크 모드"}>{dark ? "☀" : "☾"}</button>;
+}
 
 function Glyph({ kind = 0 }: { kind?: number }) {
   return <span className={`ti-glyph ti-glyph-${kind % 6}`} aria-hidden="true">{kind % 6 === 1 ? "✳" : kind % 6 === 4 ? "↗" : ""}</span>;
@@ -29,7 +49,7 @@ export default function Intro() {
   const hero = useRef<HTMLElement>(null);
   const stack = useRef<HTMLElement>(null);
   const [word, setWord] = useState(0);
-  const [motion, setMotion] = useState({ hero: 0, stack: 0, compact: false, simple: false });
+  const [motion, setMotion] = useState({ hero: 0, stack: 0, scrolled: false, simple: false });
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -37,7 +57,7 @@ export default function Intro() {
     const update = () => {
       frame = 0;
       const progress = (el: HTMLElement | null) => el ? clamp(-el.getBoundingClientRect().top / Math.max(1, el.offsetHeight - window.innerHeight)) : 0;
-      setMotion({ hero: progress(hero.current), stack: progress(stack.current), compact: window.scrollY > 70, simple: media.matches || window.innerWidth < 760 });
+      setMotion({ hero: progress(hero.current), stack: progress(stack.current), scrolled: window.scrollY > 0, simple: media.matches || window.innerWidth < 760 });
     };
     const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -52,9 +72,15 @@ export default function Intro() {
 
   return <main className="ti" ref={root}>
     <a className="ti-skip" href="#ti-features">기능 소개로 건너뛰기</a>
-    <header className={`ti-nav ${motion.compact ? "ti-compact" : ""}`}>
+    <header className={motion.scrolled ? "ti-nav ti-nav-scrolled" : "ti-nav"}>
       <a href="#ti-top" className="ti-brand">TRACKIT</a>
-      <Link href="/workshop" className="ti-nav-cta"><span>↗</span> 시작하기</Link>
+      <nav className="ti-nav-links" aria-label="주 메뉴">
+        <Link href="/">홈</Link>
+        <Link href="/workshop">트레이딩 로그</Link>
+        <Link href="/archive">아카이브</Link>
+        <Link href="/marketplace">전략 쇼핑</Link>
+      </nav>
+      <div className="ti-nav-right"><ThemeToggle/><Link href="/login" className="ti-nav-cta"><span>↗</span> 시작하기</Link></div>
     </header>
 
     <section className="ti-hero" id="ti-top" ref={hero}>

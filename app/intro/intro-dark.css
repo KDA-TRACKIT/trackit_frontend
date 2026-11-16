@@ -1,0 +1,77 @@
+/* 소개(로그인 전 첫 화면) 다크 모드: intro.css 는 원본(intro 브랜치) 그대로 두고 여기서만 덮어쓴다 */
+html[data-theme="dark"] .ti { --navy:#a9bde0; --black:#e8ebf0; --paper:#0e1116; --muted:#8f97a5; }
+html[data-theme="dark"] .ti-skip { background:#161a21; color:#e8ebf0; }
+
+/* 위 바 */
+html[data-theme="dark"] .ti-nav-scrolled { border-bottom-color:#282d35; }
+html[data-theme="dark"] .ti-nav-cta { background:#e8ebf0; color:#0e1116; }
+.ti-nav-right { display:flex; align-items:center; gap:10px; }
+.ti-theme { display:grid; place-items:center; width:40px; height:40px; border:1px solid #b1b5bb; border-radius:50%; background:none; color:inherit; font-size:17px; cursor:pointer; }
+.ti-theme:hover { background:#0000000d; }
+html[data-theme="dark"] .ti-theme { border-color:#3a4250; }
+html[data-theme="dark"] .ti-theme:hover { background:#ffffff12; }
+
+/* 첫 화면 */
+html[data-theme="dark"] .ti-hero-top, html[data-theme="dark"] .ti-hero-aside { color:#98a1ae; }
+html[data-theme="dark"] .ti-period { color:#7d93b5; }
+html[data-theme="dark"] .ti-art-grid { background-image:linear-gradient(90deg,#c9d6ea14 1px,transparent 1px),linear-gradient(#c9d6ea14 1px,transparent 1px); }
+html[data-theme="dark"] .ti-empty-mark { border-color:#3a4250; box-shadow:0 0 0 12px #0e11164d; }
+html[data-theme="dark"] .ti-art [data-frame] { fill:#161a21; stroke:#3a4250; }
+html[data-theme="dark"] .ti-art-caption, html[data-theme="dark"] .ti-hero-bottom { color:#7f8896; }
+html[data-theme="dark"] .ti-hero-bottom { border-top-color:#2c3340; }
+html[data-theme="dark"] .ti-hero-bottom a { color:#d5dae2; }
+
+/* 연결 */
+html[data-theme="dark"] .ti-connect { background-image:linear-gradient(90deg,#c9d6ea10 1px,transparent 1px),linear-gradient(#c9d6ea10 1px,transparent 1px); }
+html[data-theme="dark"] .ti-section-index, html[data-theme="dark"] .ti-connect-note { color:#8a93a1; }
+html[data-theme="dark"] .ti-orbit-ring { border-color:#56627a; }
+html[data-theme="dark"] .ti-orbit strong { background:#e8ebf0; color:#0e1116; }
+html[data-theme="dark"] .ti-orbit-arm span { background:#1c212a; color:#e8ebf0; }
+
+/* 카드 쌓기 */
+html[data-theme="dark"] .ti-stack { background:#12161c; }
+html[data-theme="dark"] .ti-stack-heading .ti-eyebrow { color:#8a96a8; }
+html[data-theme="dark"] .ti-demo-card { background:#181d25; box-shadow:0 5px 45px #00000060; }
+html[data-theme="dark"] .ti-card-meta, html[data-theme="dark"] .ti-stock > span, html[data-theme="dark"] .ti-chart-bottom { color:#8590a0; }
+html[data-theme="dark"] .ti-chart-bottom { border-top-color:#2c3340; }
+html[data-theme="dark"] .ti-candles line[stroke="#dce1e7"] { stroke:#2c3340; }
+html[data-theme="dark"] .ti-candles text { fill:#8590a0; }
+html[data-theme="dark"] .ti-candles path[stroke="#263b61"], html[data-theme="dark"] .ti-candles circle { stroke:#a9bde0; }
+html[data-theme="dark"] .ti-note { background:#1f252f; color:#e3e7ee; }
+html[data-theme="dark"] .ti-note-meta { color:#8a95a5; }
+html[data-theme="dark"] .ti-note-content p { border-top-color:#323a47; }
+html[data-theme="dark"] .ti-note-tags span { border-color:#3a4250; color:#a3adbb; }
+html[data-theme="dark"] .ti-collapse-copy p { color:#8f98a6; }
+
+/* 도구 */
+html[data-theme="dark"] .ti-arrival span { background:#7f97c2; }
+html[data-theme="dark"] .ti-arrival i { background:#3a4250; }
+html[data-theme="dark"] .ti-toolkit > .ti-eyebrow { color:#8e9bb0; }
+html[data-theme="dark"] .ti-outline-label { border-color:#56627a; }
+html[data-theme="dark"] .ti-toolkit aside p { color:#8f98a6; }
+html[data-theme="dark"] .ti-toolkit aside a { border-bottom-color:#3a4250; }
+html[data-theme="dark"] .ti-tile { background:#2a313c; color:#e8ebf0; }
+html[data-theme="dark"] .ti-tile-1 { background:#3b4756; }
+html[data-theme="dark"] .ti-tile-2 { background:#4a423c; }
+html[data-theme="dark"] .ti-tile-3 { background:#3c4640; }
+html[data-theme="dark"] .ti-tile-4 { background:#48443b; }
+html[data-theme="dark"] .ti-tile-5 { background:#263b61; }
+html[data-theme="dark"] .ti-tile:hover { box-shadow:0 15px 30px #00000055; }
+html[data-theme="dark"] .ti-glyph { color:#e8ebf0; opacity:.85; }
+html[data-theme="dark"] .ti-glyph-0 { background:repeating-radial-gradient(ellipse at center,#d5dce7 0,#d5dce7 13px,transparent 14px,transparent 23px); }
+html[data-theme="dark"] .ti-glyph-2 { border-color:#d5dce7; }
+html[data-theme="dark"] .ti-glyph-3 { background:#d5dce7; }
+
+/* 마무리 */
+html[data-theme="dark"] .ti-ending { background-image:linear-gradient(90deg,#c9d6ea10 1px,transparent 1px),linear-gradient(#c9d6ea10 1px,transparent 1px); }
+html[data-theme="dark"] .ti-cta-panel { background:#161a21; }
+html[data-theme="dark"] .ti-cta-panel .ti-eyebrow, html[data-theme="dark"] .ti-cta-panel > p:not(.ti-eyebrow), html[data-theme="dark"] .ti-login-link { color:#8f98a6; }
+html[data-theme="dark"] .ti-big-cta { background:#e8ebf0; color:#0e1116; }
+html[data-theme="dark"] .ti-big-cta:hover { background:#c7d2e4; }
+html[data-theme="dark"] .ti-clock-panel { background:#2b3747; color:#e8ebf0; }
+html[data-theme="dark"] .ti-clock { background:#161a21; border-color:#56627a; }
+html[data-theme="dark"] .ti-tick { border-top-color:#c9d1dc; }
+html[data-theme="dark"] .ti-hand, html[data-theme="dark"] .ti-clock-center { background:#e8ebf0; }
+html[data-theme="dark"] .ti-hand-second { background:#c99b85; }
+html[data-theme="dark"] .ti-footer { color:#7f8a99; }
+html[data-theme="dark"] .ti-footer .ti-brand { color:#a9bde0; }
