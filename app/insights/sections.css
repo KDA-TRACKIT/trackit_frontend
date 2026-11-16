@@ -74,7 +74,7 @@
 .ins-disc .title:hover { color:var(--c-accent); text-decoration:underline; }
 .ins-disc small { color:var(--c-faint); font-size:11px; }
 
-/* 내 손익 캘린더 */
+/* 매매 캘린더 */
 .ins-month { display:flex; align-items:center; gap:10px; }
 .ins-month button { width:30px; height:30px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:16px; cursor:pointer; }
 .ins-month strong { min-width:70px; font-size:15px; font-variant-numeric:tabular-nums; text-align:center; }

@@ -13,7 +13,7 @@ const MENU: Menu[] = [
     // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
     sub: [
       { label: "트레이딩 로그", href: "/workshop", desc: "차트 분석 · 매매 기록" },
-      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시 · 내 손익" },
+      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시 · 매매 캘린더" },
     ],
   },
   {

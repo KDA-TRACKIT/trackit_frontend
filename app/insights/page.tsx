@@ -4,7 +4,7 @@
 //   뉴스: 경제·증권 뉴스 제목 (종목 태그 · 관심 종목만)
 //   경제: 경제 캘린더(지난·이번 주·다가오는 지표, 실제·예상·이전) · 기준금리(미국·한국·유로·일본)
 //   공시: DART 최근 공시 (보유 종목만 보기)
-//   내 손익: 청산 손익 캘린더
+//   매매 캘린더: 청산 손익 캘린더
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteHeader from "../SiteHeader";
@@ -26,7 +26,7 @@ const TABS = [
   ["news", "뉴스"],
   ["economy", "경제"],
   ["disclosures", "공시"],
-  ["mine", "내 손익"],
+  ["mine", "매매 캘린더"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 

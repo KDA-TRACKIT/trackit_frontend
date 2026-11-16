@@ -1,5 +1,5 @@
 "use client";
-// 공시 (DART, 보유·관심 종목만 보기) + 내 손익 캘린더 (청산한 포지션의 날짜별 실현손익)
+// 공시 (DART, 보유·관심 종목만 보기) + 매매 캘린더 (청산한 포지션의 날짜별 실현손익)
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { accountPortfolio, orderAccounts } from "../../lib/api/orders";
@@ -116,7 +116,7 @@ export function PnlCalendar() {
 
   return (
     <section className="ins-card">
-      <CardHead title="내 손익" meta="청산한 거래의 날짜별 실현손익 (수수료·세금 포함)">
+      <CardHead title="매매 캘린더" meta="청산한 거래의 날짜별 실현손익 (수수료·세금 포함)">
         <div className="ins-month">
           <button type="button" onClick={() => move(-1)} aria-label="이전 달">
             ‹
@@ -132,7 +132,7 @@ export function PnlCalendar() {
       {error && !data ? (
         error.includes("로그인") ? (
           <div className="ins-state" style={{ height: 160 }}>
-            <p>로그인하면 내 손익을 볼 수 있어요</p>
+            <p>로그인하면 매매 캘린더를 볼 수 있어요</p>
             <Link href="/login">로그인</Link>
           </div>
         ) : (
