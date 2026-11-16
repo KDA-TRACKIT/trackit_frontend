@@ -14,6 +14,7 @@ import { searchSymbols } from "../lib/market-data";
 import { initRecordSource, useRecords, type TradeRecord } from "../lib/records";
 import { getSyncStatus, listConnections, syncNow, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
+import TraderCarousel from "./TraderCarousel";
 
 /** 리포트 기간: 최근 1개월 (시안의 날짜 축과 같은 폭) */
 const REPORT_DAYS = 30;
@@ -91,6 +92,15 @@ export default function HomeDashboard() {
     <main className="home">
       <SiteHeader active="home" />
       <section className="hero" aria-label="배너 공간" />
+      <section id="trader-board" className="trader-board section-wrap">
+        <div className="section-heading">
+          <h2>트레이더 보드</h2>
+          <Link className="heading-link" href="/marketplace">
+            전략 쇼핑 <span>→</span>
+          </Link>
+        </div>
+        <TraderCarousel />
+      </section>
       <section className="report section-wrap">
         <div className="section-heading">
           <h2>트레이딩 성과 리포트</h2>

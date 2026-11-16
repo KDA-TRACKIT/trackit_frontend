@@ -41,6 +41,7 @@
 .gnb-drop:hover .gnb-drop-menu, .gnb-drop:focus-within .gnb-drop-menu { display:block; }
 .gnb-main .gnb-drop-menu a { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; }
 .gnb-main .gnb-drop-menu a:hover { background:#f2f5f9; }
+.gnb-main .gnb-drop-menu .soon { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; opacity:.5; cursor:default; }
 @media (max-width:800px) { .gnb-main { align-self:auto; } .gnb-drop { height:auto; } }
 .gnb-drop-menu b { color:#141414; font-weight:700; }
 .gnb-drop-menu small { color:#8a92a0; font-size:12px; }
