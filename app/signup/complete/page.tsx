@@ -78,14 +78,14 @@ export default function SignupCompletePage() {
             <form onSubmit={submit}>
               <label className="field">
                 <span>닉네임 *</span>
-                <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="사용할 닉네임을 입력해주세요" maxLength={20} required />
+                <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="사용할 닉네임을 입력해주세요" maxLength={20} required />
               </label>
               <div className="field">
                 <span>생년월일 *</span>
                 <div className="birth">
-                  <input inputMode="numeric" value={birth.y} onChange={(e) => setBirth({ ...birth, y: digits(e.target.value, 4) })} placeholder="YYYY" aria-label="태어난 해" required />/
-                  <input inputMode="numeric" value={birth.m} onChange={(e) => setBirth({ ...birth, m: digits(e.target.value, 2) })} placeholder="MM" aria-label="태어난 달" required />/
-                  <input inputMode="numeric" value={birth.d} onChange={(e) => setBirth({ ...birth, d: digits(e.target.value, 2) })} placeholder="DD" aria-label="태어난 날" required />
+                  <input suppressHydrationWarning inputMode="numeric" value={birth.y} onChange={(e) => setBirth({ ...birth, y: digits(e.target.value, 4) })} placeholder="YYYY" aria-label="태어난 해" required />/
+                  <input suppressHydrationWarning inputMode="numeric" value={birth.m} onChange={(e) => setBirth({ ...birth, m: digits(e.target.value, 2) })} placeholder="MM" aria-label="태어난 달" required />/
+                  <input suppressHydrationWarning inputMode="numeric" value={birth.d} onChange={(e) => setBirth({ ...birth, d: digits(e.target.value, 2) })} placeholder="DD" aria-label="태어난 날" required />
                 </div>
               </div>
               <div className="gender" role="radiogroup" aria-label="성별">

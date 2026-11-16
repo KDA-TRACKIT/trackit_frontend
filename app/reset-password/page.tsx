@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
           <form onSubmit={submit}>
             <label>
               <span>ID (이메일)</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+              <input suppressHydrationWarning type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
             </label>
             <button className="login-submit" disabled={loading}>
               {loading ? "보내는 중..." : "재설정 메일 받기"}

@@ -76,11 +76,11 @@ export default function EmailSignupPage() {
           </div>
         ) : (
           <form onSubmit={submit}>
-            {row("ID (이메일)", <input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="이메일 주소를 입력하세요." autoComplete="email" required />)}
+            {row("ID (이메일)", <input suppressHydrationWarning type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="이메일 주소를 입력하세요." autoComplete="email" required />)}
             {row(
               "비밀번호",
               <span className="with-icon">
-                <input type={show.password ? "text" : "password"} value={form.password} onChange={(e) => set({ password: e.target.value })} placeholder="비밀번호를 입력하세요." autoComplete="new-password" minLength={8} required />
+                <input suppressHydrationWarning type={show.password ? "text" : "password"} value={form.password} onChange={(e) => set({ password: e.target.value })} placeholder="비밀번호를 입력하세요." autoComplete="new-password" minLength={8} required />
                 <button type="button" onClick={() => setShow({ ...show, password: !show.password })} aria-label={show.password ? "비밀번호 숨기기" : "비밀번호 보기"}>
                   <Eye off={!show.password} />
                 </button>
@@ -89,13 +89,13 @@ export default function EmailSignupPage() {
             {row(
               "비밀번호 확인",
               <span className="with-icon">
-                <input type={show.confirm ? "text" : "password"} value={form.confirm} onChange={(e) => set({ confirm: e.target.value })} placeholder="비밀번호를 다시 입력하세요." autoComplete="new-password" required />
+                <input suppressHydrationWarning type={show.confirm ? "text" : "password"} value={form.confirm} onChange={(e) => set({ confirm: e.target.value })} placeholder="비밀번호를 다시 입력하세요." autoComplete="new-password" required />
                 <button type="button" onClick={() => setShow({ ...show, confirm: !show.confirm })} aria-label={show.confirm ? "비밀번호 숨기기" : "비밀번호 보기"}>
                   <Eye off={!show.confirm} />
                 </button>
               </span>,
             )}
-            {row("이름", <input value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="이름을 입력하세요." autoComplete="name" maxLength={30} required />)}
+            {row("이름", <input suppressHydrationWarning value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="이름을 입력하세요." autoComplete="name" maxLength={30} required />)}
             <div className="signup-row">
               <span>
                 성별 <i>*</i>
@@ -109,8 +109,8 @@ export default function EmailSignupPage() {
                 </label>
               </div>
             </div>
-            {row("생년월일", <input type="date" value={form.birthdate} onChange={(e) => set({ birthdate: e.target.value })} max={new Date().toISOString().slice(0, 10)} required />)}
-            {row("닉네임", <input value={form.nickname} onChange={(e) => set({ nickname: e.target.value })} placeholder="닉네임을 입력하세요." autoComplete="nickname" maxLength={20} required />)}
+            {row("생년월일", <input suppressHydrationWarning type="date" value={form.birthdate} onChange={(e) => set({ birthdate: e.target.value })} max={new Date().toISOString().slice(0, 10)} required />)}
+            {row("닉네임", <input suppressHydrationWarning value={form.nickname} onChange={(e) => set({ nickname: e.target.value })} placeholder="닉네임을 입력하세요." autoComplete="nickname" maxLength={20} required />)}
             <button className="signup-submit" disabled={loading}>
               {loading ? "처리 중..." : "가입하기"}
             </button>

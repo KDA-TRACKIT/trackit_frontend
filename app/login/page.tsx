@@ -52,11 +52,11 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <label>
             <span>ID</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <input suppressHydrationWarning type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
           </label>
           <label>
             <span>PASSWORD</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            <input suppressHydrationWarning type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </label>
           <button className="login-submit" disabled={loading}>
             {loading ? "처리 중..." : "로그인"}

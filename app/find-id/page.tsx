@@ -32,7 +32,7 @@ export default function FindIdPage() {
         <form onSubmit={submit}>
           <label>
             <span>가입할 때 쓴 닉네임</span>
-            <input value={nickname} onChange={(e) => setNickname(e.target.value)} required />
+            <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} required />
           </label>
           <button className="login-submit" disabled={loading}>
             {loading ? "찾는 중..." : "아이디 찾기"}
