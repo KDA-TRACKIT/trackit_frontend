@@ -9,7 +9,7 @@ import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations
 import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
 import { getTool, type Drawing } from "../../lib/drawing";
-import { requestChartMemo } from "../../lib/api/ai";
+import { requestChartMemo, type ChartMemoResult } from "../../lib/api/ai";
 import { errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
@@ -182,6 +182,7 @@ export default function WorkshopPage() {
     setSource("loading");
     setUsSession(null);
     setSaveMessage(null);
+    setAiMemoResult(null);
     setExecutions([]);
     setLinkChoice("auto");
     setNotes([]);
@@ -196,6 +197,7 @@ export default function WorkshopPage() {
   const [noteText, setNoteText] = useState("");
   const [noteTime, setNoteTime] = useState("");
   const [suggestion, setSuggestion] = useState("");
+  const [aiMemoResult, setAiMemoResult] = useState<ChartMemoResult | null>(null);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -319,10 +321,12 @@ export default function WorkshopPage() {
           ...(d.text ? { text: d.text } : {}),
         })),
         notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+        mode: "ai",
         currency: us ? "USD" : "KRW",
       });
+      setAiMemoResult(result);
       setNoteText(result.memo);
-      setSuggestion(result.suggestion);
+      setSuggestion(result.suggestion ?? result.summary);
       setNoteTime(nowKst());
       setSuggestionApplied(false);
       setConfirming(false);
@@ -561,6 +565,15 @@ export default function WorkshopPage() {
                   aria-label="차트 메모"
                 />
               </div>
+              {aiMemoResult && (
+                <div className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
+                  <div><strong>요약</strong><p>{aiMemoResult.summary}</p></div>
+                  <div><strong>방향</strong><p>{aiMemoResult.direction}</p></div>
+                  <div><strong>사용한 작도</strong><p>{aiMemoResult.tools.length ? aiMemoResult.tools.join(" · ") : "없음"}</p></div>
+                  <div><strong>위험</strong><p>{aiMemoResult.risks.length ? aiMemoResult.risks.join(" · ") : "특이사항 없음"}</p></div>
+                  <div><strong>무효화 조건</strong><p>{aiMemoResult.invalidation}</p></div>
+                </div>
+              )}
 
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (

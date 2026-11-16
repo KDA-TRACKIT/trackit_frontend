@@ -23,10 +23,21 @@ export type ChartMemoRequest = {
   price: number;
   drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
   notes: { time: number; price: number; text: string }[];
+  mode: "ai";
   /** 미국 종목은 USD (메모 금액을 $로) */
   currency?: "KRW" | "USD";
 };
-export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
+export type ChartMemoResult = {
+  memo: string;
+  summary: string;
+  direction: string;
+  tools: string[];
+  risks: string[];
+  invalidation: string;
+  model?: string;
+  suggestion?: string;
+  items?: string[];
+};
 
 export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
   // 차트 메모도 저장된 일지·주석과 같은 사용자 데이터이므로 인증 토큰을 보낸다.

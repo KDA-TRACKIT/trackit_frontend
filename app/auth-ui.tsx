@@ -2,7 +2,6 @@
 // 로그인·회원가입 공통: Google 로고, Google OAuth 시작, 가입 때 받은 추가 정보(이름·성별·생년월일) 보관
 // 백엔드 /auth/signup 은 email·password·nickname 만 받아서, 나머지는 Supabase user_metadata 에 본인 세션으로 저장한다
 import { getSupabaseBrowser } from "../lib/supabase-browser";
-import { API_URL } from "../lib/api/client";
 
 export function GoogleIcon({ size = 24 }: { size?: number }) {
   return (
@@ -18,10 +17,15 @@ export function GoogleIcon({ size = 24 }: { size?: number }) {
 /** 백엔드에서 Google 인증 주소를 받아 이동 (로그인·가입 같은 흐름. 처음이면 /auth/callback 에서 가입 마무리로 보냄) */
 export async function startGoogle() {
   // 지금 연 주소(localhost 또는 같은 와이파이의 IP)로 돌아오게 알려 준다
-  const response = await fetch(`${API_URL}/api/v1/auth/oauth/google?origin=${encodeURIComponent(window.location.origin)}`);
+  // 로그인 시작 요청도 현재 접속한 프론트 origin으로 보낸다.
+  // Next rewrite가 백엔드(192.168.1.11:3000)로 전달하므로 오래된 .30 API 주소를 타지 않는다.
+  const response = await fetch(`/api/v1/auth/oauth/google?origin=${encodeURIComponent(window.location.origin)}`);
   const body = await response.json();
   if (!response.ok || !body?.data?.authorizationUrl) throw new Error(body?.error?.message ?? "Google 로그인 준비에 실패했습니다.");
-  window.location.assign(body.data.authorizationUrl);
+  // 백엔드에 예전 프론트 주소가 남아 있어도, 로그인 버튼을 누른 현재 origin으로 돌아온다.
+  const authorizationUrl = new URL(body.data.authorizationUrl);
+  authorizationUrl.searchParams.set("redirect_to", `${window.location.origin}/auth/callback`);
+  window.location.assign(authorizationUrl.toString());
 }
 
 export type ExtraProfile = { name?: string; gender?: "male" | "female"; birthdate?: string };
