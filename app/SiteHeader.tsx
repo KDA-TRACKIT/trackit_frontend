@@ -1,13 +1,31 @@
 import Link from "next/link";
 import AccountChip from "./AccountChip";
 
-type Active = "home" | "workshop" | "archive" | "marketplace" | null;
+type Active = "home" | "fortrade" | "archive" | "marketplace" | null;
 
-const MENU: { key: Exclude<Active, null>; label: string; href: string }[] = [
+type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href: string; desc: string }[] };
+const MENU: Menu[] = [
   { key: "home", label: "홈", href: "/" },
-  { key: "workshop", label: "트레이딩 로그", href: "/workshop" },
+  {
+    key: "fortrade",
+    label: "FOR TRADE",
+    href: "/workshop",
+    // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
+    sub: [
+      { label: "트레이딩 로그", href: "/workshop", desc: "차트 분석 · 매매 기록" },
+      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시 · 내 손익" },
+    ],
+  },
+  {
+    key: "marketplace",
+    label: "전략 쇼핑",
+    href: "/marketplace",
+    sub: [
+      { label: "둘러보기", href: "/marketplace", desc: "트레이더를 한 줄씩 비교" },
+      { label: "트레이더별 보기", href: "/marketplace?view=traders", desc: "트레이더 카드로 보기" },
+    ],
+  },
   { key: "archive", label: "아카이브", href: "/archive" },
-  { key: "marketplace", label: "전략 쇼핑", href: "/marketplace" },
 ];
 
 /**
@@ -25,11 +43,27 @@ export default function SiteHeader({ active = null, tone, right, menu = true }: 
       </Link>
       {menu ? (
         <nav className="gnb-main" aria-label="주요 메뉴">
-          {MENU.map((m) => (
-            <Link key={m.key} className={active === m.key ? "active" : ""} href={m.href} aria-current={active === m.key ? "page" : undefined}>
-              {m.label}
-            </Link>
-          ))}
+          {MENU.map((m) =>
+            m.sub ? (
+              <div key={m.key} className="gnb-drop">
+                <Link className={active === m.key ? "active" : ""} href={m.href} data-label={m.label} aria-current={active === m.key ? "page" : undefined} aria-haspopup="true">
+                  {m.label}
+                </Link>
+                <div className="gnb-drop-menu" role="menu" aria-label={m.label}>
+                  {m.sub.map((s) => (
+                    <Link key={s.href} href={s.href} role="menuitem">
+                      <b>{s.label}</b>
+                      <small>{s.desc}</small>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link key={m.key} className={active === m.key ? "active" : ""} href={m.href} data-label={m.label} aria-current={active === m.key ? "page" : undefined}>
+                {m.label}
+              </Link>
+            ),
+          )}
         </nav>
       ) : (
         <span className="gnb-main" aria-hidden />

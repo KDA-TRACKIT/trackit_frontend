@@ -51,6 +51,10 @@ html[data-theme="dark"] .gnb { background:var(--c-surface); border-bottom-color:
 html[data-theme="dark"] .gnb-brand { color:var(--c-brand); }
 html[data-theme="dark"] .gnb-main a { color:var(--c-sub); }
 html[data-theme="dark"] .gnb-main a:hover, html[data-theme="dark"] .gnb-main a.active { color:var(--c-ink); }
+html[data-theme="dark"] .gnb-drop-menu { border-color:var(--c-line); background:var(--c-surface); box-shadow:var(--c-shadow); }
+html[data-theme="dark"] .gnb-drop-menu a:hover { background:var(--c-hover); }
+html[data-theme="dark"] .gnb-drop-menu b { color:var(--c-ink); }
+html[data-theme="dark"] .gnb-drop-menu small { color:var(--c-faint); }
 html[data-theme="dark"] .gnb-bell, html[data-theme="dark"] button.gnb-chip.gnb-user { color:var(--c-ink); }
 html[data-theme="dark"] .gnb-bell:hover { background:var(--c-hover); }
 html[data-theme="dark"] .gnb-chip { background:var(--c-accent); color:var(--c-on-accent); }

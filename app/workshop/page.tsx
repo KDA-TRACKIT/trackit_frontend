@@ -413,7 +413,7 @@ export default function WorkshopPage() {
 
   return (
     <main className="workshop">
-      <SiteHeader active="workshop" />
+      <SiteHeader active="fortrade" />
 
       <div className="ws-layout">
         <div className="ws-topbar">

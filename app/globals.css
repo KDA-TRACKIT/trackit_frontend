@@ -22,11 +22,28 @@
 /* 상단 바 (시안): 밑줄 없이 한 줄, 아래 경계선 하나 · 오른쪽은 둥근 프로필 칩 */
 .gnb { height:104px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
 .gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; }
+/* 로고 크기·위치는 첫 화면(소개 페이지 .ti-brand)과 같게: 왼쪽 70px, 29px 굵기 850 */
+.gnb-brand { justify-self:start; margin:2px 0 0 30px; font-size:29px; font-weight:850; letter-spacing:-1.6px; line-height:29px; }
+@media (max-width:800px) { .gnb-brand { margin:0; } }
 .gnb-main { height:auto; align-items:center; justify-content:center; gap:56px; border-bottom:0; }
 .gnb-main a { padding:8px 4px; color:#7a7a7a; font-size:17px; }
 .gnb-main a:hover { color:#141414; }
 .gnb-main a.active { color:#141414; font-weight:700; }
 .gnb-main a.active::after { display:none; }
+/* 고른 메뉴가 굵어져도 폭이 안 바뀌게: 굵은 글씨 폭을 보이지 않는 줄로 미리 잡아 둔다 */
+.gnb-main > a, .gnb-drop > a { display:inline-flex; flex-direction:column; align-items:center; }
+.gnb-main > a::before, .gnb-drop > a::before { content:attr(data-label); height:0; overflow:hidden; visibility:hidden; font-weight:700; pointer-events:none; user-select:none; }
+/* FOR TRADE 같은 묶음 메뉴: 올리거나 키보드로 들어가면 상단 바 아래 선에 붙어서 펼침
+   메뉴 칸을 바 높이만큼 늘려 두고(top:100% = 바 아래 선) 그 아래로 내린다 */
+.gnb-main { align-self:stretch; }
+.gnb-drop { position:relative; display:flex; align-items:center; height:100%; }
+.gnb-drop-menu { position:absolute; top:calc(100% + 1px); left:50%; z-index:30; display:none; min-width:220px; padding:6px; transform:translateX(-50%); border:1px solid #e3e8ef; border-top:0; border-radius:0 0 12px 12px; background:#fff; box-shadow:0 12px 24px rgba(15,35,103,.12); }
+.gnb-drop:hover .gnb-drop-menu, .gnb-drop:focus-within .gnb-drop-menu { display:block; }
+.gnb-main .gnb-drop-menu a { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; }
+.gnb-main .gnb-drop-menu a:hover { background:#f2f5f9; }
+@media (max-width:800px) { .gnb-main { align-self:auto; } .gnb-drop { height:auto; } }
+.gnb-drop-menu b { color:#141414; font-weight:700; }
+.gnb-drop-menu small { color:#8a92a0; font-size:12px; }
 .gnb-account { height:auto; align-items:center; padding-bottom:0; border-bottom:0; }
 .gnb-chip { display:inline-flex; height:38px; max-width:220px; align-items:center; gap:8px; padding:0 16px 0 5px; border-radius:19px; background:#344d7d; color:#fff; font-size:14px; font-weight:700; text-decoration:none; white-space:nowrap; }
 .gnb-chip:hover { background:#2a3f68; }
