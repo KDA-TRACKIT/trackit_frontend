@@ -192,3 +192,17 @@
   .mp-table { overflow-x:auto; }
   .mp-tr { min-width:680px; }
 }
+
+/* 판매 · 구매 상태 표시 (전략 관리 · 판매 내역 · 정산 관리 · 구매 내역) */
+.mp-tr em.mp-state { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11.5px; font-weight:700; }
+.mp-state.on { background:color-mix(in srgb, var(--c-up) 14%, transparent); color:var(--c-up); }
+.mp-state.pause { background:var(--c-warn-soft); color:var(--c-warn); }
+.mp-state.off { background:var(--c-subtle); color:var(--c-sub); }
+/* 판매자 등급 · 수수료 */
+.mp-tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.mp-tiers > div { display:flex; flex-direction:column; gap:3px; padding:12px 14px; border:1px solid var(--c-line); border-radius:10px; }
+.mp-tiers > div.on { border-color:var(--c-accent); background:var(--c-accent-soft); }
+.mp-tiers strong { font-size:14px; }
+.mp-tiers b { font-size:18px; font-weight:800; }
+.mp-tiers small { color:var(--c-sub); font-size:11.5px; }
+

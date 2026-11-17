@@ -1,18 +1,13 @@
 "use client";
-// 마이페이지 첫 화면: 프로필 · 활동 이력 · 신뢰도 점수 · 판매 관리 요약
+// 마이페이지 첫 화면: 프로필 · 활동 이력 · 신뢰도 점수 · 판매 · 구매 요약
 import Link from "next/link";
 import { useMypage, metaText } from "./context";
 import { useActivity } from "./data";
 import { Card, PageHead, Stat } from "./ui";
 import { ProfileAvatar } from "./profile/ProfileAvatar";
 import { useBusiness } from "./business/state";
-
-const SALES = [
-  { title: "공개 전략", href: "/mypage/sales/strategies" },
-  { title: "유료 열람권", href: "/mypage/sales" },
-  { title: "판매 내역", href: "/mypage/sales/history" },
-  { title: "정산 내역", href: "/mypage/sales/settlements" },
-];
+import { useSeller, won } from "./sales/data";
+import { usePasses } from "../../lib/purchases";
 
 export default function MyPage() {
   const { profile, meta, user } = useMypage();
@@ -20,6 +15,14 @@ export default function MyPage() {
   const handle = metaText(meta, "handle") || user.email?.split("@")[0] || "";
   const bio = metaText(meta, "bio");
   const business = useBusiness(user.id) !== null;
+  const { strategies, totals } = useSeller();
+  const passes = usePasses();
+  const SALES = [
+    { title: "전략 관리", value: `${strategies?.length ?? 0}개`, href: "/mypage/sales/strategies" },
+    { title: "판매 내역", value: `${totals.count}건`, href: "/mypage/sales/history" },
+    { title: "정산 예정 금액", value: won(totals.pending), href: "/mypage/sales/settlements" },
+    { title: "구매 내역", value: `${passes.filter((p) => p.used).length}개 열람 중`, href: "/mypage/purchases" },
+  ];
 
   return (
     <>
@@ -65,12 +68,12 @@ export default function MyPage() {
         </Card>
       </div>
 
-      <Card title="판매 관리">
+      <Card title="판매 · 구매 관리">
         <div className="mp-quad">
           {SALES.map((s) => (
             <Link key={s.title} href={s.href}>
               <span>{s.title}</span>
-              <strong>0</strong>
+              <strong>{s.value}</strong>
             </Link>
           ))}
         </div>

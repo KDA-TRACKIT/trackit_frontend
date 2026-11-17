@@ -24,9 +24,9 @@ const GROUPS: Group[] = [
     label: "판매 관리",
     href: "/mypage/sales",
     children: [
-      { label: "공개 전략", href: "/mypage/sales/strategies" },
+      { label: "전략 관리", href: "/mypage/sales/strategies" },
       { label: "판매 내역", href: "/mypage/sales/history" },
-      { label: "정산 내역", href: "/mypage/sales/settlements" },
+      { label: "정산 관리", href: "/mypage/sales/settlements" },
     ],
   },
   {
@@ -60,6 +60,7 @@ function Sidebar() {
             신뢰도 점수 <span aria-hidden>›</span>
           </Link>
         </div>
+        <div className="mp-side-group">{link({ label: "구매 내역", href: "/mypage/purchases" })}</div>
         {GROUPS.map((g) => (
           <div key={g.label} className="mp-side-group">
             <div className={`row ${path === g.href ? "on" : ""}`}>

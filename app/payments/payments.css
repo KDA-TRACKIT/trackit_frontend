@@ -1,0 +1,20 @@
+/* 결제 완료 · 실패 화면 (라이트 · 다크 --c-* 변수) */
+.pay-page { min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.pay-card { display:flex; flex-direction:column; align-items:center; gap:10px; width:min(460px, calc(100% - 32px)); margin:56px auto; padding:36px 28px 28px; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); text-align:center; }
+.pay-card h1 { margin:6px 0 0; font-size:22px; font-weight:800; }
+.pay-card p { margin:0; color:var(--c-sub); font-size:14px; line-height:1.6; }
+.pay-card p b { color:var(--c-ink); }
+.pay-icon { display:grid; place-items:center; width:56px; height:56px; border-radius:50%; font-size:26px; font-weight:800; }
+.pay-icon.ok { background:color-mix(in srgb, var(--c-up) 16%, transparent); color:var(--c-up); }
+.pay-icon.err { background:color-mix(in srgb, var(--c-err) 14%, transparent); color:var(--c-err); }
+.pay-spinner { width:40px; height:40px; border:3px solid var(--c-line); border-top-color:var(--c-accent); border-radius:50%; animation:pay-spin .8s linear infinite; }
+@keyframes pay-spin { to { transform:rotate(360deg); } }
+.pay-detail { display:grid; grid-template-columns:auto 1fr; gap:8px 16px; width:100%; margin:14px 0 4px; padding:14px 16px; border-radius:10px; background:var(--c-subtle); font-size:13px; text-align:left; }
+.pay-detail dt { color:var(--c-sub); }
+.pay-detail dd { margin:0; color:var(--c-ink); font-weight:600; text-align:right; word-break:break-all; }
+.mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:var(--c-faint); }
+.pay-detail dd.mono { color:var(--c-ink-2); }
+.pay-actions { display:flex; gap:8px; width:100%; margin-top:10px; }
+.pay-actions a { flex:1; display:grid; place-items:center; height:44px; border-radius:10px; font-size:14px; font-weight:700; text-decoration:none; }
+.pay-primary { background:var(--c-accent); color:var(--c-on-accent); }
+.pay-ghost { border:1px solid var(--c-line); color:var(--c-ink-2); }
