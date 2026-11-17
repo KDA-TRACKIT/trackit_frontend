@@ -184,7 +184,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
           ) : null}
           {data && (
             <span className="ins-meta">
-              {data.marketOpen ? (us ? "정규장 · 실시간" : "장중 · 실시간") : "장 마감"} · {stamp(data.asOf)} 기준
+              {data.marketOpen ? (us ? "정규장 · 실시간" : data.session === "pre" ? "프리마켓(NXT) · 실시간" : data.session === "after" ? "애프터마켓(NXT) · 실시간" : "정규장 · 실시간") : "장 마감"} · {stamp(data.asOf)} 기준
             </span>
           )}
         </div>
@@ -302,7 +302,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
         <i style={{ background: `linear-gradient(90deg, ${heat(-3)}, ${heat(0)}, ${heat(3)})` }} />
         <span>+3%</span>
         <small>
-          칸 크기 = 시가총액 · 업종 이름을 누르면 크게{us ? " · 섹터 안은 세부 업종별 · 정규장 한국 시간 23:30~06:00 (서머타임 22:30~05:00)" : " · 종목을 누르면 작업실"}
+          칸 크기 = 시가총액 · 업종 이름을 누르면 크게{us ? " · 섹터 안은 세부 업종별 · 정규장 한국 시간 23:30~06:00 (서머타임 22:30~05:00)" : " · KRX + NXT 통합 시세 (08:00~20:00) · 종목을 누르면 작업실"}
         </small>
       </div>
     </section>

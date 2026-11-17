@@ -1,13 +1,13 @@
 "use client";
-// 관심 종목: 국내 · 미국 전 종목 검색으로 추가 (한글 · 영문 이름 · 코드/티커) · 시세 20초마다 · 국내는 작업실 차트로
-//   국내 키움 ka10095 / 미국 키움 usa20100 (나스닥 토탈뷰 실시간) — 백엔드가 캐시
+// 관심 종목: 국내 · 미국 전 종목 검색으로 추가 (한글 · 영문 이름 · 코드/티커) · 국내는 작업실 차트로
+//   시세는 페이지 공통 줄(lib/live-quotes, 장중 5초)에서 — 백엔드도 한 줄로 모아 키움 ka10095 / usa20100 를 한 번에
 //   미국 종목은 티커를 크게, 한글 이름을 작게
 import { memoAttr } from "../../lib/memo-target";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { getQuotes, searchAllSymbols, type Quote, type SymbolHit } from "../../lib/api/insights";
-import { CardHead, Failed, pct, price, tone, won } from "./parts";
-import { useLoad } from "./useLoad";
+import { searchAllSymbols, type Quote, type SymbolHit } from "../../lib/api/insights";
+import { useQuotes } from "../../lib/live-quotes";
+import { CardHead, pct, price, tone, won } from "./parts";
 import type { UsChartTarget } from "./UsChart";
 import { quoteKey, useWatchlist, type WatchItem } from "./useWatchlist";
 
@@ -104,8 +104,9 @@ function AddBox({ onPick, has }: { onPick: (s: SymbolHit) => void; has: (code: s
 export default function Watchlist({ onOpenUs }: { onOpenUs?: (t: UsChartTarget) => void }) {
   const wl = useWatchlist();
   const keys = wl.items.map(quoteKey);
-  const { data, error, reload } = useLoad(`quotes-${keys.join(",")}`, () => (keys.length ? getQuotes(keys) : Promise.resolve({ quotes: [] })), 20_000);
-  const byKey = new Map((data?.quotes ?? []).map((q) => [q.code, q]));
+  // 현재가는 페이지 공통 줄(live-quotes)에서: 다른 칸과 같이 한 번에 받아 나눠 씀
+  const { quotes } = useQuotes(keys);
+  const byKey = new Map(Object.entries(quotes));
 
   return (
     <section className="ins-card">
@@ -117,8 +118,6 @@ export default function Watchlist({ onOpenUs }: { onOpenUs?: (t: UsChartTarget) 
         <div className="ins-state" style={{ height: 96 }}>
           <p>국내·미국 종목을 추가하면 시세와 뉴스·공시를 모아 볼 수 있어요</p>
         </div>
-      ) : error && !data ? (
-        <Failed message={error} onRetry={reload} height={96} />
       ) : (
         <ul className="ins-watch">
           {wl.items.map((it) => {

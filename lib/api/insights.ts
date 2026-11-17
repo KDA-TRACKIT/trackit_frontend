@@ -9,7 +9,9 @@ export const isUsMarket = (m: SectorMarket) => m === "sp500" || m === "nasdaq100
 export type SectorStock = { code: string; name: string; price: number; changeRate: number; volume: number; marketCap: number; industry?: string };
 export type Sector = { code: string; name: string; changeRate: number; marketCap: number; rising: number; falling: number; stocks: SectorStock[] };
 /** version: 서버 판 번호, full: sectors 가 전체인지(아니면 since 뒤에 바뀐 업종만) */
-export type SectorMap = { market: SectorMarket; currency: "KRW" | "USD"; asOf: string; marketOpen: boolean; version: number; full: boolean; sectors: Sector[] };
+export type SectorMap = { market: SectorMarket; currency: "KRW" | "USD"; asOf: string; marketOpen: boolean;
+  /** 국내: pre 프리마켓 · regular 정규장 · after 애프터마켓(NXT) · closed */
+  session?: "pre" | "regular" | "after" | "closed"; version: number; full: boolean; sectors: Sector[] };
 
 /**
  * 섹터맵: 업종별 등락률 + 업종 안 종목(시가총액·등락률)
@@ -120,3 +122,34 @@ export const getUsBars = (code: string, opts: { exchange?: string; limit?: numbe
 };
 /** "BRK.B" (위키백과·지수 맵 표기) → "BRKb" (키움 표기) */
 export const kiwoomTicker = (s: string) => s.replace(/\.([A-Z])$/, (_, c: string) => c.toLowerCase());
+
+// ---------- 지수 카드 · 차트 · 시장 현황 (/insights/indices) ----------
+export type IndexKey = "kospi" | "kosdaq" | "usdkrw" | "spx" | "ndx" | "dji" | "jpykrw" | "us10y" | "kr3y" | "wti" | "vix" | "btc";
+export type IndexCard = {
+  key: IndexKey;
+  label: string;
+  country: "KR" | "US" | "JP" | "GL";
+  value: number;
+  change: number;
+  changeRate: number;
+  /** open = 장중 · closed = 장 마감 · daily = 하루 단위 자료 (asOf 날짜 종가) · live = 24시간 (코인) */
+  status: "open" | "closed" | "daily" | "live";
+  asOf: string;
+  spark: number[];
+  prevClose: number;
+  unit: "pt" | "원" | "%" | "$";
+};
+export type IndexBar = { t: number; o: number; h: number; l: number; c: number };
+export type IndexDetail = IndexCard & {
+  mode: "intraday" | "daily";
+  bars: IndexBar[];
+  todayFrom?: number;
+  high?: { t: number; v: number };
+  low?: { t: number; v: number };
+  stats?: { rising?: number; upper?: number; flat?: number; falling?: number; lower?: number; volume?: number; amount?: number; w52Low: number; w52High: number };
+  investors?: { foreign: number; institution: number; individual: number };
+  headline?: string;
+};
+export type IndexCards = { items: IndexCard[]; failed: string[]; missing: string[]; live: boolean };
+export const getIndexCards = () => apiRequest<IndexCards>("/insights/indices", { auth: false });
+export const getIndexDetail = (key: IndexKey) => apiRequest<IndexDetail>(`/insights/indices?key=${key}`, { auth: false });
