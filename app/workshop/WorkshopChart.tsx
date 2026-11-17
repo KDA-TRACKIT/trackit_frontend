@@ -28,6 +28,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
 import { DrawingLayer, fromChartTime, toChartTime } from "../../lib/drawing/render/lwc-adapter";
 import { toolHelp } from "../../lib/drawing/help";
+import { INK_TOOLS } from "../../lib/drawing/tools/shapes-text";
 import { straightenStroke } from "../../lib/drawing/straighten";
 import ToolGlyph from "./ToolGlyph";
 import { buildScenariosFor, businessDaysBetween, lineValueAt, type Scenario, type ScenarioBase, type ScenarioName, type UserDrawing } from "../../lib/workspace/scenarios";
@@ -160,7 +161,7 @@ const TOOL_GROUPS: { key: ToolGroup; label: string; icon: string; members: ToolG
   { key: "fib", label: "피보나치·갠", icon: "/icons/fib.svg", members: ["fib"] },
   { key: "pattern", label: "패턴·엘리엇·사이클", icon: "/icons/pattern.svg", members: ["pattern"] },
   { key: "measure", label: "예측·측정·거래량", icon: "/icons/measure.svg", members: ["measure"] },
-  { key: "brush", label: "브러시", icon: "/icons/brush.svg", members: ["brush"] },
+  { key: "brush", label: "펜·지우개", icon: "/icons/brush.svg", members: ["brush"] },
   { key: "shape", label: "도형·화살표", icon: "/icons/shape.svg", members: ["shape", "arrow"] },
 ];
 /** 묶음 안에서 소제목이 없는 도구에 붙일 소제목 */
@@ -217,6 +218,8 @@ type Props = {
   /** 기록으로 저장: 드로잉·메모를 저장하고 AI 가 차트 메모로 정리 */
   onSave?: () => void;
   saving?: boolean;
+  /** 바깥(AI 노트의 선 목록)에서 마우스를 올린 드로잉 → 차트에서 강조 */
+  highlightId?: string | null;
 };
 
 /** 노트 입력창을 띄울 위치(차트 영역 기준 px)와 데이터 좌표 */
@@ -366,7 +369,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -381,6 +384,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const activeToolRef = useRef<string | null>(null);
   const pendingRef = useRef<DrawingPoint[]>([]);
+  /** Shift + 클릭 빠른 측정: 시작점 · 고정 여부 (저장 안 함) */
+  const measureRef = useRef<{ start: DrawingPoint; fixed: boolean; x: number; y: number } | null>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [instances, setInstances] = useState<IndicatorInstance[]>(loadInstances);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -561,6 +566,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
   /** 눌러서 고른 드로잉 (색·굵기·삭제·이동) */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // AI 노트 선 목록에서 마우스를 올리면 그 선을 강조 (떼면 해제)
+  useEffect(() => {
+    if (highlightId === undefined) return;
+    layerRef.current?.setHovered(highlightId);
+  }, [highlightId]);
   /** 지금 툴로 찍은 점 수 (안내 문구용) */
   const [pendingCount, setPendingCount] = useState(0);
   const [hovered, setHovered] = useState<Bar | null>(null);
@@ -825,6 +835,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       if (time === null || price === null) return null;
       return { time, price: String(roundPx(price, currencyRef.current)) };
     };
+    /** 펜 · 지우개: 봉에 맞추지 않은 그 자리 그대로의 점 */
+    const pointAtExact = (x: number, y: number): DrawingPoint | null => {
+      if (x > chart.paneSize().width || y > chart.paneSize(0).height) return null;
+      const time = layerRef.current?.xToTimeExact(x) ?? null;
+      const price = candle.coordinateToPrice(y);
+      if (time === null || price === null) return null;
+      return { time, price: String(price) };
+    };
     const localXY = (event: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -872,10 +890,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return name;
     };
 
-    // 원래: 도구를 들고 있어도 점을 찍기 전이면 기존 드로잉을 눌러 고를 수 있다
-    // 스마트 그리기: 도구를 들고 있으면 누름은 항상 "그리기" (근처 드로잉을 고르느라 점이 안 찍히는 일이 없게)
-    const canPick = () =>
-      !noteModeRef.current && (smartRef.current ? !activeToolRef.current : !activeToolRef.current || pendingRef.current.length === 0);
+    // 도구를 들고 있으면 누름은 항상 "그리기" (근처 드로잉을 고르느라 점이 안 찍히는 일이 없게). 고르기 · 옮기기는 도구를 내려놓고
+    const canPick = () => !noteModeRef.current && !activeToolRef.current;
     const handleCaptureDown = (event: PointerEvent) => {
       if (!canPick() || event.button !== 0) return;
       const layer = layerRef.current;
@@ -1033,13 +1049,92 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return true;
     };
 
+    /** 지우개: 누른 동안 지운 결과 (놓을 때 실행 취소 기록 한 번) */
+    let erasing: { before: Drawing[]; changed: boolean } | null = null;
+    const ERASE_PX = 10;
+    /**
+     * 지우개 원(반지름 ERASE_PX) 안에 든 잉크만 지움. 선분이 원을 지나가면 원 가장자리에서 정확히 끊어
+     * 원 밖 부분은 그대로 남기고, 가운데를 지우면 두 획으로 나눔
+     */
+    const eraseAt = (x: number, y: number) => {
+      const layer = layerRef.current;
+      if (!layer || !erasing) return;
+      const R = ERASE_PX;
+      const inside = (p: { x: number; y: number }) => Math.hypot(p.x - x, p.y - y) < R;
+      /** 선분 a→b 중 원 안에 드는 구간 [t1, t2] (없으면 null) */
+      const cut = (a: { x: number; y: number }, b: { x: number; y: number }): [number, number] | null => {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const fx = a.x - x;
+        const fy = a.y - y;
+        const A = dx * dx + dy * dy;
+        if (!A) return inside(a) ? [0, 1] : null;
+        const B = 2 * (fx * dx + fy * dy);
+        const C = fx * fx + fy * fy - R * R;
+        const disc = B * B - 4 * A * C;
+        if (disc <= 0) return null;
+        const sq = Math.sqrt(disc);
+        const t1 = Math.max(0, (-B - sq) / (2 * A));
+        const t2 = Math.min(1, (-B + sq) / (2 * A));
+        return t1 < t2 ? [t1, t2] : null;
+      };
+      const at = (a: { x: number; y: number }, b: { x: number; y: number }, t: number) => pointAtExact(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+      let changed = false;
+      const next: Drawing[] = [];
+      for (const d of drawingsRef.current) {
+        const px = INK_TOOLS.has(d.toolId) ? layer.toPixels(d) : null;
+        if (!px || !px.some((p, k) => inside(p) || (k > 0 && cut(px[k - 1], p)))) {
+          next.push(d);
+          continue;
+        }
+        changed = true;
+        const runs: DrawingPoint[][] = [];
+        let run: DrawingPoint[] = inside(px[0]) ? [] : [d.points[0]];
+        for (let k = 1; k < px.length; k++) {
+          const c = cut(px[k - 1], px[k]);
+          if (!c) {
+            if (run.length || !inside(px[k])) run.push(d.points[k]);
+            continue;
+          }
+          const [t1, t2] = c;
+          if (t1 > 0) {
+            const e = at(px[k - 1], px[k], t1);
+            if (e) run.push(e);
+          }
+          if (run.length >= 2) runs.push(run);
+          run = [];
+          if (t2 < 1) {
+            const s0 = at(px[k - 1], px[k], t2);
+            run = s0 ? [s0, d.points[k]] : [d.points[k]];
+          }
+        }
+        if (run.length >= 2) runs.push(run);
+        runs.forEach((r, k) => next.push({ ...d, id: k === 0 ? d.id : uuid(), points: r }));
+      }
+      if (!changed) return;
+      erasing.changed = true;
+      apply(next);
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       down = { x: event.clientX, y: event.clientY };
       const tool = currentTool();
       if (!tool || event.button !== 0) return;
+      if (tool.id === "eraser") {
+        const { x, y } = localXY(event);
+        erasing = { before: drawingsRef.current, changed: false };
+        chart.applyOptions({ handleScroll: false, handleScale: false });
+        try {
+          container.setPointerCapture(event.pointerId);
+        } catch {
+          // 포인터가 이미 사라진 경우
+        }
+        eraseAt(x, y);
+        return;
+      }
       if (tool.mode !== "free") {
-        if (!smartRef.current) return; // 원래 방식: 점은 click 에서 찍는다
-        // 스마트 그리기 · 점 찍는 도구: 누른 자리를 기억하고, 누르는 동안 차트가 움직이지 않게 (손떨림으로 클릭이 끌기가 되지 않게)
+        // 점 찍는 도구: 누른 자리를 기억하고, 누르는 동안 차트가 움직이지 않게 (손떨림으로 클릭이 끌기가 되어 점이 안 찍히던 것)
+        //   예전엔 스마트 그리기를 끄면 브라우저 click 에서 찍었는데, 조금만 움직여도 차트가 끌려 클릭이 사라졌다
         const { x, y } = localXY(event);
         const point = pointAt(x, y);
         if (!point) return;
@@ -1053,7 +1148,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       const { x, y } = localXY(event);
-      const point = pointAt(x, y);
+      const point = tool.id === "pen" ? pointAtExact(x, y) : pointAt(x, y);
       if (!point) return;
       stroke = [point];
       strokeXY = [{ x, y }];
@@ -1068,6 +1163,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     };
     const handlePointerMove = (event: PointerEvent) => {
       const tool = currentTool();
+      if (erasing) {
+        const { x, y } = localXY(event);
+        eraseAt(x, y);
+        return;
+      }
       if (press && tool && tool.mode !== "free") {
         // 누른 채 끌기: 첫 점에서 커서까지 미리 보기 (놓으면 그 자리가 끝점)
         const { x, y } = localXY(event);
@@ -1080,8 +1180,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       }
       if (!stroke || !tool) return;
       const { x, y } = localXY(event);
-      if (lastXY && Math.hypot(x - lastXY.x, y - lastXY.y) < 3) return;
-      const point = pointAt(x, y);
+      // 펜은 손그림 그대로 남기려고 더 촘촘히 (뾰족한 꺾임이 뭉개지지 않게)
+      const exact = tool.id === "pen";
+      if (lastXY && Math.hypot(x - lastXY.x, y - lastXY.y) < (exact ? 1.5 : 3)) return;
+      const point = exact ? pointAtExact(x, y) : pointAt(x, y);
       if (!point) return;
       stroke.push(point);
       strokeXY.push({ x, y });
@@ -1090,7 +1192,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       layerRef.current?.setPreview({ id: "preview", toolId: tool.id, schemaVersion: tool.schemaVersion, points: stroke, style: DRAW_STYLE });
       // 끝에서 잠깐 멈추면 직선으로 맞춰 미리 보여 준다
       clearHold();
-      if (smartRef.current) {
+      if (smartRef.current && !exact) {
         holdTimer = setTimeout(() => {
           const t = currentTool();
           if (!stroke || !t) return;
@@ -1102,6 +1204,17 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const handlePointerUp = (event: PointerEvent) => {
       const tool = currentTool();
       clearHold();
+      if (erasing) {
+        const e = erasing;
+        erasing = null;
+        chart.applyOptions({ handleScroll: true, handleScale: true });
+        if (e.changed) {
+          // 문지른 한 번 = 실행 취소 한 번
+          setPast((p) => [...p, e.before]);
+          setFuture([]);
+        }
+        return;
+      }
       if (press) {
         const p = press;
         releasePress();
@@ -1122,11 +1235,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       }
       if (!stroke || !tool) return;
       // 거의 곧은 획(또는 끝에서 멈춰 맞춘 획)은 직선 두 점으로
-      const ends = smartRef.current ? (held ?? straightenStroke(strokeXY, "auto")) : null;
+      // 펜은 직선으로 바꾸지 않음
+      const ends = smartRef.current && tool.id !== "pen" ? (held ?? straightenStroke(strokeXY, "auto")) : null;
       const straightTool = ends ? straightToolOf(tool) : undefined;
       const straightPoints = ends ? endpointsToPoints(ends) : null;
       // 붓질 한 번 = 드로잉 하나. 모양은 그대로 두고 거의 일직선인 중간 점만 덜어 낸다 (저장·AI 정리 크기 줄이기)
-      const keep = simplifyIndexes(strokeXY, 1.5);
+      const keep = simplifyIndexes(strokeXY, tool.id === "pen" ? 0.6 : 1.5);
       const points = keep.map((i) => stroke![i]);
       stroke = null;
       strokeXY = [];
@@ -1158,27 +1272,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       if (tool.mode === "free") return;
-      if (smartRef.current) return; // 스마트 그리기: 점은 누름·놓음(handlePointerDown/Up)에서 찍었다
-      if (tool.mode === "multi") {
-        // 더블클릭(두 번째 click)이면 점을 더하지 않고 끝낸다
-        if (event.detail >= 2) {
-          if (pendingRef.current.length >= tool.pointCount) finishPending();
-          return;
-        }
-        pendingRef.current = [...pendingRef.current, point];
-        setPendingCount(pendingRef.current.length);
-        return;
-      }
-      const points = [...pendingRef.current, point];
-      if (points.length < tool.pointCount) {
-        pendingRef.current = points;
-        setPendingCount(points.length);
-        return;
-      }
-      pendingRef.current = [];
-      setPendingCount(0);
-      layerRef.current?.setPreview(null);
-      finish(tool, points, { x, y });
+      // 점은 누름 · 놓음(handlePointerDown/Up)에서 찍는다 (손떨림 · 끌기에도 안 사라지게)
     };
 
     const handleMove = (param: MouseEventParams<Time>) => {
@@ -1192,6 +1286,55 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       layerRef.current?.setPreview({ id: "preview", toolId: tool.id, schemaVersion: tool.schemaVersion, points: [...pendingRef.current, point], style: DRAW_STYLE });
     };
 
+    // Shift + 클릭 → 마우스까지 등락 · 봉 수 · 기간 (트레이딩뷰처럼). 다시 클릭하면 고정, 한 번 더 누르거나 Esc 면 지움
+    const measureOf = (start: DrawingPoint, end: DrawingPoint): Drawing => ({ id: "measure", toolId: "quick-measure", schemaVersion: 1, points: [start, end], style: DRAW_STYLE });
+    const endMeasure = () => {
+      measureRef.current = null;
+      layerRef.current?.setPreview(null);
+      chart.applyOptions({ handleScroll: true, handleScale: true });
+    };
+    const handleMeasureDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      const m = measureRef.current;
+      if (m) {
+        event.stopImmediatePropagation();
+        skipClick = true;
+        if (!m.fixed) {
+          m.fixed = true;
+          chart.applyOptions({ handleScroll: true, handleScale: true });
+        } else endMeasure();
+        return;
+      }
+      if (!event.shiftKey || pendingRef.current.length) return;
+      const { x, y } = localXY(event);
+      const p = pointAt(x, y);
+      if (!p) return;
+      event.stopImmediatePropagation();
+      skipClick = true;
+      measureRef.current = { start: p, fixed: false, x, y };
+      chart.applyOptions({ handleScroll: false, handleScale: false });
+      layerRef.current?.setPreview(measureOf(p, p));
+    };
+    const handleMeasureMove = (event: PointerEvent) => {
+      const m = measureRef.current;
+      if (!m || m.fixed) return;
+      const { x, y } = localXY(event);
+      const p = pointAt(Math.min(x, chart.paneSize().width - 1), Math.min(y, chart.paneSize(0).height - 1));
+      if (p) layerRef.current?.setPreview(measureOf(m.start, p));
+    };
+    // Shift 를 누른 채 끌었다 놓아도 그 자리에서 고정
+    const handleMeasureUp = (event: PointerEvent) => {
+      const m = measureRef.current;
+      if (!m || m.fixed) return;
+      const { x, y } = localXY(event);
+      if (Math.hypot(x - m.x, y - m.y) > CLICK_SLOP) {
+        m.fixed = true;
+        chart.applyOptions({ handleScroll: true, handleScale: true });
+      }
+    };
+    container.addEventListener("pointerdown", handleMeasureDown, true);
+    container.addEventListener("pointermove", handleMeasureMove);
+    container.addEventListener("pointerup", handleMeasureUp);
     container.addEventListener("pointerdown", handleCaptureDown, true);
     container.addEventListener("mousedown", blockWhileDragging, true);
     container.addEventListener("pointerdown", handlePointerDown);
@@ -1212,6 +1355,9 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     container.addEventListener("click", handleClick);
     chart.subscribeCrosshairMove(handleMove);
     return () => {
+      container.removeEventListener("pointerdown", handleMeasureDown, true);
+      container.removeEventListener("pointermove", handleMeasureMove);
+      container.removeEventListener("pointerup", handleMeasureUp);
       container.removeEventListener("pointerdown", handleCaptureDown, true);
       container.removeEventListener("mousedown", blockWhileDragging, true);
       container.removeEventListener("pointerdown", handlePointerDown);
@@ -1244,6 +1390,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         return;
       }
       if (event.key !== "Escape") return;
+      if (measureRef.current) {
+        measureRef.current = null;
+        chartRef.current?.applyOptions({ handleScroll: true, handleScale: true });
+      }
       setTextDraft(null);
       selectDrawing(null);
       pendingRef.current = [];
@@ -1580,6 +1730,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return;
     }
     commit([...drawingsRef.current, drawing]);
+    // 트레이딩뷰처럼: 다 그리면 커서로 돌아가 방금 그린 것을 골라 둔다 → 바로 끌어 옮기거나 점을 고칠 수 있게 (펜 · 지우개는 계속 그리기)
+    if (!INK_TOOLS.has(tool.id)) {
+      selectTool(null);
+      selectDrawing(drawing.id);
+    }
   }
 
   /** 다점 툴(경로·폴리라인): 더블클릭·Enter 로 완성 */
@@ -1600,7 +1755,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     layerRef.current?.setPreview(null);
     if (!text) return;
     if (textDraft.editing) commit(drawingsRef.current.map((d) => (d.id === textDraft.drawing.id ? { ...d, text } : d)));
-    else commit([...drawingsRef.current, { ...textDraft.drawing, text }]);
+    else {
+      commit([...drawingsRef.current, { ...textDraft.drawing, text }]);
+      selectTool(null);
+      selectDrawing(textDraft.drawing.id);
+    }
   }
 
   function selectTool(toolId: string | null) {

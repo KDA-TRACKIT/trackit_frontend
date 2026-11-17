@@ -9,7 +9,7 @@ import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations
 import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
 import { getTool, type Drawing } from "../../lib/drawing";
-import { requestChartMemo } from "../../lib/api/ai";
+import { requestChartMemo, type ChartMemoResult } from "../../lib/api/ai";
 import { errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
@@ -20,6 +20,7 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending } from "../../lib/records";
+import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -182,6 +183,7 @@ export default function WorkshopPage() {
     setSource("loading");
     setUsSession(null);
     setSaveMessage(null);
+    setAiMemoResult(null);
     setExecutions([]);
     setLinkChoice("auto");
     setNotes([]);
@@ -196,9 +198,20 @@ export default function WorkshopPage() {
   const [noteText, setNoteText] = useState("");
   const [noteTime, setNoteTime] = useState("");
   const [suggestion, setSuggestion] = useState("");
+  const [aiMemoResult, setAiMemoResult] = useState<ChartMemoResult | null>(null);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  /** 투자자가 확인 · 수정하는 계획 (진입 근거 · 매수 조건 · 손절 기준 · 목표). AI 는 채우지 않고 되묻기만 */
+  const [plan, setPlan] = useState<Plan>(EMPTY_PLAN);
+  /** 그은 선마다 투자자가 고른 의미 */
+  const [lineMeaning, setLineMeaning] = useState<Record<string, string>>({});
+  /** AI 노트 선 목록에서 마우스를 올린 드로잉 (차트에서 강조) */
+  const [hoverLine, setHoverLine] = useState<string | null>(null);
+  /** 확정한 시각 (최초 확정본) · 그 뒤 남긴 사후 해설 */
+  const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
+  const [afterText, setAfterText] = useState("");
+  const [afterNotes, setAfterNotes] = useState<{ at: string; text: string }[]>([]);
   const [sessionNotes, setNotes] = useState<ChartNote[]>([]);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -245,17 +258,22 @@ export default function WorkshopPage() {
   const tradeOpen = side === "trade";
   const setTradeOpen = (open: boolean) => setSide(open ? "trade" : "notes");
 
-  async function saveChart() {
-    if (journal.loading) return;
+  async function saveChart(): Promise<boolean> {
+    if (journal.loading) return false;
     setSaveMessage("저장 중…");
     setSaveDetail(null);
     try {
       const target = await journal.ensure();
       const result = await annotations.sync(target.id, [...drawings.map(drawingToAnnotation), ...notes.map(noteToAnnotation)]);
-      if (!result) return setSaveMessage("저장 실패");
+      if (!result) {
+        setSaveMessage("저장 실패");
+        return false;
+      }
       setSaveMessage(result.added || result.removed ? "자동 저장됨" : null);
+      return true;
     } catch {
       setSaveMessage("저장 실패");
+      return false;
     }
   }
 
@@ -297,7 +315,8 @@ export default function WorkshopPage() {
     setMemoBusy(true);
     setSaveMessage("저장 중…");
     try {
-      await saveChart();
+      // 일지·작도 저장이 성공한 경우에만 저장된 최신 내용을 AI에 보낸다.
+      if (!(await saveChart())) return;
       const result = await requestChartMemo({
         symbol: { code: symbol.code, name: symbol.name },
         interval,
@@ -313,10 +332,16 @@ export default function WorkshopPage() {
           ...(d.text ? { text: d.text } : {}),
         })),
         notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+        mode: "ai",
         currency: us ? "USD" : "KRW",
       });
+      setAiMemoResult(result);
+      setPlan(EMPTY_PLAN);
+      setLineMeaning({});
+      setConfirmedAt(null);
+      setAfterNotes([]);
       setNoteText(result.memo);
-      setSuggestion(result.suggestion);
+      setSuggestion(result.suggestion ?? result.summary ?? "");
       setNoteTime(nowKst());
       setSuggestionApplied(false);
       setConfirming(false);
@@ -346,6 +371,10 @@ export default function WorkshopPage() {
     setEditVersion((v) => v + 1);
     setNoteText(note.text);
     setNoteTime(createdAt);
+    setPlan(EMPTY_PLAN);
+    setLineMeaning({});
+    setConfirmedAt(null);
+    setAfterNotes([]);
     setSuggestion(`${money(note.price)} 부근 판단 근거.\n체결되면 손절 기준도 함께 남김.`);
     setSuggestionApplied(false);
     setConfirming(false);
@@ -382,7 +411,8 @@ export default function WorkshopPage() {
       quantity: linkedExecution?.quantity,
       symbol: symbol.code,
       symbolName: symbol.name,
-      text: noteText,
+      // 메모 + 투자자가 확인한 계획 (최초 확정본)
+      text: [noteText.trim(), planText(plan)].filter(Boolean).join("\n\n"),
       drawings: drawings.map(drawingToAnnotation),
     });
     setConfirmBusy(false);
@@ -392,6 +422,28 @@ export default function WorkshopPage() {
     }
     setConfirming(false);
     setConfirmed(true);
+    setConfirmedAt(nowKst());
+  }
+
+  /** 사후 해설: 최초 확정본은 그대로 두고, 날짜 · 시각과 함께 따로 남김 */
+  const [afterBusy, setAfterBusy] = useState(false);
+  async function saveAfterNote() {
+    const text = afterText.trim();
+    if (!text || afterBusy) return;
+    setAfterBusy(true);
+    const at = nowKst();
+    const r = await addRecord({
+      date: kstNow().date,
+      noteTime: at,
+      executionTime: null,
+      symbol: symbol.code,
+      symbolName: symbol.name,
+      text: `[사후 해설 · 최초 확정 ${confirmedAt ? hhmm(confirmedAt) : ""}] ${text}`,
+    });
+    setAfterBusy(false);
+    if (!r.ok) return setConfirmError(r.error ?? "사후 해설을 저장하지 못했어요.");
+    setAfterNotes((l) => [...l, { at, text }]);
+    setAfterText("");
   }
 
   // 종목 정보는 일봉 기준
@@ -523,6 +575,7 @@ export default function WorkshopPage() {
             market={symbol.market}
             currency={us ? "USD" : "KRW"}
             emptyMessage={emptyMessage}
+            highlightId={hoverLine}
           />
 
           <div className="ws-side">
@@ -555,6 +608,48 @@ export default function WorkshopPage() {
                   aria-label="차트 메모"
                 />
               </div>
+              {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
+              {aiMemoResult?.summary && (
+                <div className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
+                  <div>
+                    <strong>요약</strong>
+                    <p>{aiMemoResult.summary}</p>
+                  </div>
+                  <div>
+                    <strong>방향</strong>
+                    <p>{({ LONG: "상승", SHORT: "하락", WAIT: "관망", UNKNOWN: "판단 보류" } as Record<string, string>)[aiMemoResult.direction ?? "UNKNOWN"] ?? aiMemoResult.direction}</p>
+                  </div>
+                  <div>
+                    <strong>사용한 작도</strong>
+                    <p>{aiMemoResult.tools?.length ? aiMemoResult.tools.join(" · ") : "없음"}</p>
+                  </div>
+                  <div>
+                    <strong>위험</strong>
+                    <p>{aiMemoResult.risks?.length ? aiMemoResult.risks.join(" · ") : "특이사항 없음"}</p>
+                  </div>
+                  <div>
+                    <strong>무효화 조건</strong>
+                    <p>{Array.isArray(aiMemoResult.invalidation) ? aiMemoResult.invalidation.join(" · ") || "없음" : aiMemoResult.invalidation || "없음"}</p>
+                  </div>
+                  {aiMemoResult.model && <small>{aiMemoResult.provider ? `${aiMemoResult.provider} · ` : ""}{aiMemoResult.model}</small>}
+                </div>
+              )}
+
+              {/* 투자자가 확인 · 수정해서 확정하는 계획 (AI 는 되묻기만) */}
+              <PlanConfirm
+                drawings={drawings}
+                plan={plan}
+                onPlan={setPlan}
+                answers={lineMeaning}
+                onAnswer={(id, m) => setLineMeaning((a) => ({ ...a, [id]: m }))}
+                aiSummary={aiMemoResult?.summary}
+                aiQuestions={aiMemoResult?.questions}
+                money={money}
+                locked={confirmed}
+                current={today?.close}
+                nowTime={bars[bars.length - 1]?.time}
+                onHover={setHoverLine}
+              />
 
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (
@@ -587,9 +682,23 @@ export default function WorkshopPage() {
                   </div>
                 </div>
               ) : (
-                <button className="ws-save" disabled={confirmed || !noteText.trim()} onClick={() => setConfirming(true)}>
-                  {confirmed ? "확정 완료" : "확인하고 저장"}
+                <button className="ws-save" disabled={confirmed || (!noteText.trim() && !plan.entry.trim())} onClick={() => setConfirming(true)}>
+                  {confirmed ? "확정 완료" : "확인하고 확정"}
                 </button>
+              )}
+              {confirmed && (
+                <div className="ws-after">
+                  <p className="ws-after-origin">✓ 최초 확정본{confirmedAt ? ` · ${hhmm(confirmedAt)}` : ""} — 구매자에겐 이 원본이 그대로 보여요</p>
+                  {afterNotes.map((n) => (
+                    <p key={n.at} className="ws-after-note">
+                      <b>사후 해설 · {hhmm(n.at)}</b> {n.text}
+                    </p>
+                  ))}
+                  <textarea value={afterText} onChange={(e) => setAfterText(e.target.value)} placeholder="결과를 보고 덧붙일 해설 (원본과 따로 날짜 · 시각과 함께 남아요)" rows={2} />
+                  <button type="button" onClick={() => void saveAfterNote()} disabled={!afterText.trim() || afterBusy}>
+                    {afterBusy ? "저장 중…" : "사후 해설 남기기"}
+                  </button>
+                </div>
               )}
             </section>
 

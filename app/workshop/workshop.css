@@ -113,6 +113,11 @@
 .ws-panel small { display:block; color:var(--ws-muted); font-size:11.5px; line-height:1.45; }
 .ws-panel .ws-muted { margin-top:6px; font-size:12px; }
 .ws-memo { margin-top:12px; padding:12px 12px 14px; border:1px solid var(--ws-line); border-radius:4px; }
+.ws-ai-breakdown { display:grid; gap:10px; margin-top:10px; padding:12px; border:1px solid var(--ws-line); border-radius:4px; background:var(--c-surface); }
+.ws-ai-breakdown strong { display:block; color:var(--c-sub); font-size:12px; }
+.ws-ai-breakdown p { margin:3px 0 0; font-size:13px; line-height:20px; word-break:keep-all; }
+.ws-ai-breakdown small { color:var(--c-faint); font-size:11px; }
+.ws-ai-fallback { margin:8px 0 0; padding:8px 10px; border-radius:4px; background:var(--c-warn-soft); color:var(--c-warn); font-size:12px; line-height:1.5; }
 .ws-memo p { margin-top:8px; font-size:14px; line-height:22px; word-break:keep-all; }
 .ws-suggest { margin-top:16px; padding:12px; background:var(--ws-soft); }
 .ws-suggest p { margin:8px 0 10px; font-size:13px; line-height:21px; white-space:pre-line; word-break:keep-all; }
@@ -121,8 +126,9 @@
 .ws-confirm { margin-top:14px; padding:10px 12px; border:1px solid var(--c-err); background:rgba(224,49,49,.08); }
 .ws-confirm p { font-size:12px; line-height:18px; word-break:keep-all; }
 .ws-confirm div { display:flex; gap:6px; margin-top:8px; }
-.ws-confirm button { flex:1; height:30px; border:1px solid var(--ws-line); background:var(--c-surface); font-size:12px; }
-.ws-confirm button.primary { border-color:var(--ws-text); background:var(--ws-text); color:#fff; font-weight:700; }
+.ws-confirm button { flex:1; height:30px; border:1px solid var(--ws-line); background:var(--c-surface); color:var(--ws-text); font-size:12px; cursor:pointer; }
+.ws-confirm button.primary { border-color:var(--ws-text); background:var(--ws-text); color:var(--c-surface); font-weight:700; } /* 다크 모드엔 배경이 밝아지니 글자는 배경의 반대색 */
+.ws-confirm button.primary:disabled { opacity:.6; cursor:default; }
 .ws-badge { display:inline-block; padding:4px 10px; border-radius:2px; font-size:11.5px; font-weight:700; }
 .ws-badge.pre { background:rgba(43,138,62,.14); color:#1f8a4c; }
 .ws-badge.post { background:var(--c-subtle); color:var(--c-ink); }
@@ -1023,3 +1029,63 @@
 .ws-us-orders li button { height:26px; padding:0 9px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink-2); font-size:12px; }
 .ws-us-cancel { display:flex; gap:4px; }
 .ws-us-orders li button.danger { border-color:var(--c-err); background:var(--c-err); color:#fff; }
+/* 확정 전 확인 (AI 되묻기 · 투자자 계획) · 최초 확정본 · 사후 해설 */
+.ws-plan { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.ws-plan-ask { padding:10px 12px; border-radius:8px; background:var(--c-accent-soft); }
+.ws-plan-ask h4 { margin:0 0 6px; font-size:12.5px; font-weight:800; color:var(--c-accent); }
+.ws-plan-ask ul { display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none; }
+.ws-plan-ask p { margin:0 0 4px; font-size:12.5px; line-height:1.5; }
+.ws-plan-chips { display:flex; flex-wrap:wrap; gap:4px; }
+.ws-plan-chips button { padding:3px 8px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink-2); font-size:11.5px; cursor:pointer; }
+.ws-plan-chips button.on { border-color:var(--c-accent); background:var(--c-accent); color:#fff; }
+.ws-plan-field { display:flex; flex-direction:column; gap:3px; }
+.ws-plan-field span { color:var(--c-sub); font-size:12px; font-weight:700; }
+.ws-plan-field textarea { width:100%; padding:6px 8px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:12.5px; resize:vertical; }
+.ws-plan-suggest { align-self:flex-start; padding:4px 8px; border:1px dashed var(--c-line); border-radius:6px; background:none; color:var(--c-sub); font-size:11.5px; text-align:left; cursor:pointer; }
+.ws-plan-note { margin:0; color:var(--c-faint); font-size:11px; }
+.ws-after { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.ws-after-origin { margin:0; color:var(--c-up); font-size:12px; font-weight:700; }
+.ws-after-note { margin:0; padding:6px 8px; border-radius:6px; background:var(--c-subtle); font-size:12px; }
+.ws-after-note b { color:var(--c-accent); }
+.ws-after textarea { width:100%; padding:6px 8px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:12.5px; }
+.ws-after button { align-self:flex-end; padding:6px 12px; border:0; border-radius:6px; background:var(--c-accent); color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+.ws-after button:disabled { opacity:.5; cursor:default; }
+
+/* 확정 전 확인 (간소화) */
+.ws-plan-lines { display:flex; flex-direction:column; gap:6px; margin:0; padding:0; list-style:none; }
+.ws-plan-lines li { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:var(--c-sub); }
+.ws-plan-lines li b { color:var(--c-ink); font-variant-numeric:tabular-nums; }
+.ws-plan-lines select { height:28px; padding:0 6px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:12.5px; }
+.ws-plan-q { margin:0; padding:8px 10px; border-radius:8px; background:var(--c-accent-soft); color:var(--c-ink-2); font-size:13px; line-height:1.5; }
+.ws-plan-in { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.ws-plan-in span { color:var(--c-sub); font-size:12.5px; font-weight:700; }
+.ws-plan-in input, .ws-plan-in textarea { width:100%; padding:6px 8px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; }
+.ws-plan-in textarea { resize:vertical; }
+.ws-plan-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.ws-plan-suggest { font-size:12.5px; }
+
+/* AI 노트 · 그은 선 사다리 (현재가 기준 위 · 아래 가격순, PlanConfirm) */
+.ws-ladder { display:flex; flex-direction:column; gap:4px; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); }
+.ws-ladder-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:2px; }
+.ws-ladder-head strong { font-size:13.5px; }
+.ws-ladder-head small, .ws-ladder-sec { color:var(--c-faint); font-size:11.5px; }
+.ws-ladder-sec { margin:2px 0 0; }
+.ws-ladder ul { display:flex; flex-direction:column; margin:0; padding:0; list-style:none; }
+.ws-ladder ul li { display:grid; grid-template-columns:76px minmax(0,1fr); gap:8px; align-items:start; padding:6px 4px; border-top:1px solid var(--c-line); border-radius:6px; }
+.ws-ladder ul li:hover { background:var(--c-subtle); }
+.ws-ladder ul li > b { font-size:13px; font-variant-numeric:tabular-nums; line-height:22px; }
+.ws-ladder-kind { color:var(--c-sub); font-size:12px; }
+.ws-ladder-kind b { color:var(--c-ink); font-variant-numeric:tabular-nums; }
+.ws-ladder-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+.ws-ladder-chips button { height:24px; padding:0 9px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink-2); font:inherit; font-size:11.5px; cursor:pointer; white-space:nowrap; }
+.ws-ladder-chips button:hover { border-color:var(--c-line-strong); }
+.ws-ladder-chips button.sug { border-style:dashed; border-color:var(--c-accent); color:var(--c-accent); }
+.ws-ladder-chips button.on { border-color:var(--c-accent); background:var(--c-accent); color:#fff; }
+.ws-ladder-chips button.ghost { border-color:transparent; color:var(--c-accent); }
+.ws-ladder-now { display:flex; align-items:center; gap:8px; margin:4px 0; color:var(--c-accent); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+.ws-ladder-now::before, .ws-ladder-now::after { content:""; flex:1; border-top:1px dashed var(--c-accent); }
+.ws-ladder-more { align-self:flex-start; margin-top:2px; padding:0; border:0; background:none; color:var(--c-accent); font:inherit; font-size:12px; cursor:pointer; }
+.ws-ladder-groups { margin-top:6px !important; }
+.ws-ladder-groups li { display:block !important; }
+.ws-ladder-picked { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; padding-top:8px; border-top:1px solid var(--c-line); }
+.ws-ladder-picked span { padding:3px 8px; border-radius:6px; background:var(--c-subtle); color:var(--c-ink-2); font-size:11.5px; font-variant-numeric:tabular-nums; }

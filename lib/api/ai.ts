@@ -23,11 +23,31 @@ export type ChartMemoRequest = {
   price: number;
   drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
   notes: { time: number; price: number; text: string }[];
+  mode: "ai";
   /** 미국 종목은 USD (메모 금액을 $로) */
   currency?: "KRW" | "USD";
 };
-export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
+export type ChartMemoResult = {
+  memo: string;
+  /** AI 분석일 때만 (규칙 메모면 없음) */
+  summary?: string;
+  direction?: "LONG" | "SHORT" | "WAIT" | "UNKNOWN" | string;
+  tools?: string[];
+  risks?: string[];
+  /** 백엔드는 목록으로 줌 */
+  invalidation?: string | string[];
+  model?: string;
+  provider?: string;
+  suggestion?: string;
+  items?: string[];
+  /** AI 가 투자자에게 되묻는 질문 (빈칸을 임의로 채우지 않고) */
+  questions?: string[];
+  /** AI 를 못 써서(꺼짐 · 키 없음 · 오류) 규칙 메모로 대신 정리했을 때 그 이유 */
+  aiFallback?: string;
+};
 
 export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
-  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), auth: false });
+  // 차트 메모도 저장된 일지·주석과 같은 사용자 데이터이므로 인증 토큰을 보낸다.
+  // 프론트 주소로 보내 next.config rewrite 가 AI 백엔드(AI_API_URL, Gemini 키가 있는 곳)로 넘기게
+  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), sameOrigin: true });
 }

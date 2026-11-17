@@ -46,15 +46,46 @@ export async function accessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+let recovering: Promise<string | null> | null = null;
+/**
+ * 서버가 401 을 줬는데 브라우저엔 세션이 있을 때: 토큰을 새로 받아 본다.
+ * 다른 곳에서 로그아웃 · 다시 로그인해서 Supabase 쪽 세션이 없어졌으면(새로 받기 실패) 이 브라우저도 로그아웃하고 로그인 화면으로
+ * 여러 요청이 동시에 401 이어도 한 번만
+ */
+export function recoverSession(): Promise<string | null> {
+  recovering ??= (async () => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) return null;
+    const { data, error } = await supabase.auth.refreshSession();
+    if (!error && data.session) return data.session.access_token;
+    await supabase.auth.signOut({ scope: "local" });
+    if (typeof window !== "undefined" && !["/", "/login", "/intro"].includes(window.location.pathname)) window.location.assign("/login");
+    return null;
+  })().finally(() => setTimeout(() => (recovering = null), 1000));
+  return recovering;
+}
+
 /** { data } 를 벗겨서 돌려준다. 실패하면 ApiError */
-export async function apiRequest<T>(path: string, init: RequestInit & { auth?: boolean } = {}): Promise<T> {
-  const { auth = true, ...rest } = init;
+/**
+ * sameOrigin: 백엔드 주소 대신 지금 연 프론트 주소로 보냄 (next.config rewrites 가 넘겨 줌).
+ *   AI 처럼 다른 백엔드로 보낼 수 있는 요청에 씀 (AI_API_URL)
+ */
+export async function apiRequest<T>(path: string, init: RequestInit & { auth?: boolean; sameOrigin?: boolean } = {}): Promise<T> {
+  const { auth = true, sameOrigin = false, ...rest } = init;
+  const base = sameOrigin ? "" : API_URL;
   const token = auth ? await accessToken() : null;
-  const res = await fetch(`${API_URL}/api/v1${path}`, {
-    ...rest,
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...rest.headers },
-  });
+  const send = (t: string | null) =>
+    fetch(`${base}/api/v1${path}`, {
+      ...rest,
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", ...(t ? { Authorization: `Bearer ${t}` } : {}), ...rest.headers },
+    });
+  let res = await send(token);
+  // 세션이 서버에서 끊겼으면 토큰을 새로 받아 한 번만 다시
+  if (res.status === 401 && token) {
+    const fresh = await recoverSession();
+    if (fresh) res = await send(fresh);
+  }
   const body = (await res.json().catch(() => null)) as { data?: T; error?: { code?: string; message?: string } } | null;
   if (!res.ok || !body || !("data" in body)) {
     const status = res.ok ? 500 : res.status;

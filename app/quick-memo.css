@@ -1,16 +1,16 @@
 /* 빠른 메모 (오른쪽 아래 원 · 메모 창 · 숨긴 뒤 다시 꺼내는 탭) — 라이트 · 다크 모두 --c-* 변수 */
 .qm-bubble-wrap { position:fixed; z-index:80; width:56px; height:56px; }
-.qm-bubble { width:56px; height:56px; border:0; border-radius:50%; background:var(--c-accent); color:var(--c-on-accent); font-size:22px; line-height:1; box-shadow:0 8px 22px rgba(15,35,103,.28); cursor:grab; touch-action:none; user-select:none; transition:transform .15s, box-shadow .15s; }
-.qm-bubble:hover { transform:scale(1.06); box-shadow:0 10px 26px rgba(15,35,103,.34); }
+/* 검은 원 + 한 가지 색(서비스 네이비 계열) 캔들 아이콘. 검은 바탕에서도 보이게 밝은 네이비 */
+.qm-bubble { --qm-ink:#3b5bab; position:relative; display:grid; place-items:center; width:56px; height:56px; padding:0; border:0; border-radius:50%; background:#fff; color:var(--qm-ink); border:1px solid #dde3ee; line-height:1; box-shadow:0 8px 22px rgba(20,32,60,.16); cursor:grab; touch-action:none; user-select:none; transition:transform .15s, box-shadow .15s; }
+.qm-bubble:hover { transform:scale(1.06); box-shadow:0 10px 26px rgba(20,32,60,.22); }
 .qm-bubble:active { cursor:grabbing; }
-.qm-bubble.open { font-size:18px; }
 .qm-hide { position:absolute; top:-6px; right:-6px; display:grid; place-items:center; width:22px; height:22px; padding:0; border:1px solid var(--c-line); border-radius:50%; background:var(--c-surface); color:var(--c-sub); font-size:14px; line-height:1; opacity:0; cursor:pointer; transition:opacity .15s; }
 .qm-bubble-wrap:hover .qm-hide, .qm-hide:focus-visible { opacity:1; }
 .qm-hide:hover { color:var(--c-ink); }
-html[data-theme="dark"] .qm-bubble { box-shadow:0 8px 22px rgba(0,0,0,.5); }
+html[data-theme="dark"] .qm-bubble { background:#0b0b0b; border-color:#2c3340; box-shadow:0 0 0 1px #2c3340, 0 8px 22px rgba(0,0,0,.5); }
 
 /* 숨겼을 때: 오른쪽 끝에 붙은 작은 탭 */
-.qm-restore { position:fixed; right:0; bottom:120px; z-index:80; width:26px; height:44px; padding:0 0 0 4px; border:1px solid var(--c-line); border-right:0; border-radius:10px 0 0 10px; background:var(--c-surface); color:var(--c-accent); font-size:15px; box-shadow:var(--c-shadow); cursor:pointer; transition:width .15s; }
+.qm-restore { position:fixed; right:0; bottom:120px; z-index:80; display:grid; place-items:center; width:26px; height:44px; padding:0 0 0 2px; border:1px solid var(--c-line); border-right:0; border-radius:10px 0 0 10px; background:var(--c-surface); color:var(--c-accent); font-size:15px; box-shadow:var(--c-shadow); cursor:pointer; transition:width .15s; }
 .qm-restore:hover { width:34px; }
 
 /* 메모 창 */

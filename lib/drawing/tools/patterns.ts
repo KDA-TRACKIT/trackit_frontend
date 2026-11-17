@@ -1,6 +1,6 @@
 // 차트 패턴 · 엘리엇 파동 · 사이클
 import type { Drawing, DrawingTool, PixelPoint } from "../types";
-import { FILL, dots, extendTo, fillPoly, label, line, poly, priceOf, stroke } from "./draw-utils";
+import { dots, extendTo, fillPoly, label, line, poly, priceOf, stroke, tint } from "./draw-utils";
 
 /** 점마다 이름표 (위로 튄 점은 위에, 아래로 꺼진 점은 아래에) */
 function tagPoints(ctx: CanvasRenderingContext2D, px: PixelPoint[], names: string[], color: string) {
@@ -29,8 +29,8 @@ function harmonic(id: string, name: string, names: string[]): DrawingTool {
     schemaVersion: 1,
     draw(ctx, px, d) {
       const [x, a, b, c, e] = px;
-      if (b) fillPoly(ctx, [x, a, b], FILL);
-      if (e) fillPoly(ctx, [b, c, e], FILL);
+      if (b) fillPoly(ctx, [x, a, b], tint(d.style.color, 0.12));
+      if (e) fillPoly(ctx, [b, c, e], tint(d.style.color, 0.12));
       stroke(ctx, d.style.color, d.style.width);
       poly(ctx, px);
       stroke(ctx, d.style.color, 1, [4, 3]);
@@ -70,7 +70,7 @@ export const headShoulders: DrawingTool = {
       // 넥라인: 두 골짜기를 잇고 오른쪽으로 연장
       stroke(ctx, d.style.color, 1, [5, 4]);
       line(ctx, px[2], extendTo(px[2], px[4], view));
-      if (px[1] && px[3] && px[5]) fillPoly(ctx, [px[2], px[3], px[4]], FILL);
+      if (px[1] && px[3] && px[5]) fillPoly(ctx, [px[2], px[3], px[4]], tint(d.style.color, 0.12));
     }
     tagPoints(ctx, px, ["", "왼어깨", "", "머리", "", "오른어깨", ""], d.style.color);
   },

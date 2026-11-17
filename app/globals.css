@@ -22,14 +22,18 @@
 /* 상단 바 (시안): 밑줄 없이 한 줄, 아래 경계선 하나 · 오른쪽은 둥근 프로필 칩 */
 .gnb { height:84px; align-items:center; padding:0 40px; border-bottom:1px solid #d2d8e1; }
 .gnb-brand { width:auto; padding-bottom:0; border-bottom:0; color:#0f2367; text-align:left; }
-/* 로고 크기·위치는 첫 화면(소개 페이지 .ti-brand)과 같게: 왼쪽 70px, 29px 굵기 850 */
-.gnb-brand { justify-self:start; margin:2px 0 0 30px; font-size:29px; font-weight:850; letter-spacing:-1.6px; line-height:29px; }
-@media (max-width:800px) { .gnb-brand { margin:0; } }
+/* 상단 바 = 소개(첫 화면) 위 바와 같게 (intro 브랜치 a78ff9a "상단바 높이 통일"): 높이 84px, 좌우 여백 clamp(24px, 4.444vw, 64px), 로고 34px 굵기 850, 메뉴 18px */
+.gnb { height:84px; padding:0 clamp(24px,4.444vw,64px); }
+.gnb-brand { justify-self:start; margin:0; font-size:34px; font-weight:850; letter-spacing:-1.6px; line-height:34px; }
+@media (max-width:800px) { .gnb { height:auto; } .gnb-brand { font-size:26px; line-height:26px; } }
 .gnb-main { height:auto; align-items:center; justify-content:center; gap:56px; border-bottom:0; }
 .gnb-main a { padding:8px 4px; color:#7a7a7a; font-size:17px; }
 .gnb-main a:hover { color:#141414; }
 .gnb-main a.active { color:#141414; font-weight:700; }
 .gnb-main a.active::after { display:none; }
+/* 메뉴 크기 · 간격도 소개 위 바(.ti-nav-links)와 같게: 18px, 간격 clamp(22px, 5.3vw, 76px), 좌우 여백 없이 */
+.gnb-main { gap:clamp(22px,5.3vw,76px); }
+.gnb-main > a, .gnb-drop > a { padding:8px 0; font-size:18px; }
 /* 고른 메뉴가 굵어져도 폭이 안 바뀌게: 굵은 글씨 폭을 보이지 않는 줄로 미리 잡아 둔다 */
 .gnb-main > a, .gnb-drop > a { display:inline-flex; flex-direction:column; align-items:center; }
 .gnb-main > a::before, .gnb-drop > a::before { content:attr(data-label); height:0; overflow:hidden; visibility:hidden; font-weight:700; pointer-events:none; user-select:none; }
@@ -41,6 +45,7 @@
 .gnb-drop:hover .gnb-drop-menu, .gnb-drop:focus-within .gnb-drop-menu { display:block; }
 .gnb-main .gnb-drop-menu a { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; }
 .gnb-main .gnb-drop-menu a:hover { background:#f2f5f9; }
+.gnb-main .gnb-drop-menu .soon { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; opacity:.5; cursor:default; }
 @media (max-width:800px) { .gnb-main { align-self:auto; } .gnb-drop { height:auto; } }
 .gnb-drop-menu b { color:#141414; font-weight:700; }
 .gnb-drop-menu small { color:#8a92a0; font-size:12px; }
@@ -200,3 +205,5 @@ button.gnb-chip { border:0; cursor:pointer; font-family:inherit; }
 button.gnb-chip.gnb-user { height:40px; gap:16px; padding:0 0 0 6px; background:none; color:#141414; font-size:14px; font-weight:700; }
 button.gnb-chip.gnb-user:hover { background:none; opacity:.85; }
 .gnb-user .gnb-avatar-empty { background:#e6ebf3; color:#344d7d; }
+/* 로그인 로고: 상자(143px)보다 글자가 넓어 오른쪽으로 삐져나가던 것 → 글자 폭에 맞춰 가운데 */
+.login-wordmark.brand { width:fit-content; white-space:nowrap; }

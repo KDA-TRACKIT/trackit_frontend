@@ -22,6 +22,8 @@ export type TradeRecord = {
   /** 종목 없는 메모의 주제 (뉴스, 거시경제, 시장 흐름, 기타) */
   topic?: string;
   text: string;
+  /** 차트에 그린 선 · 도형 수 (있으면 차트 노트) */
+  drawings?: number;
 };
 
 /** 종목 없는 메모의 주제 */
@@ -81,6 +83,7 @@ function fromServer(): Promise<TradeRecord[]> {
           symbolName: market ? null : (s.symbolName ?? journal.title),
           topic: market ? (s.topic ?? "시장 전반") : undefined,
           text: s.summary ?? "",
+          drawings: Array.isArray(n.drawings) ? n.drawings.length : 0,
         } satisfies TradeRecord;
       }),
     ),
@@ -141,7 +144,7 @@ function subscribe(listener: () => void) {
  * 새 기록. 같은 메모·체결 조합이 이미 있으면 그대로 둔다.
  * 로그인했으면 서버에 확정 노트로 저장 (drawings 는 서버에만 같이 남김). 실패하면 error 를 돌려준다
  */
-export async function addRecord(input: Omit<TradeRecord, "id"> & { drawings?: unknown }): Promise<{ ok: boolean; error?: string }> {
+export async function addRecord(input: Omit<TradeRecord, "id" | "drawings"> & { drawings?: unknown }): Promise<{ ok: boolean; error?: string }> {
   const { drawings, ...record } = input;
   const list = read();
   if (list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
@@ -162,7 +165,8 @@ export async function addRecord(input: Omit<TradeRecord, "id"> & { drawings?: un
       return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };
     }
   }
-  localStorage.setItem(KEY, JSON.stringify([{ ...record, id: uuid() }, ...readLocal()]));
+  const drawn = Array.isArray(drawings) ? drawings.length : 0;
+  localStorage.setItem(KEY, JSON.stringify([{ ...record, ...(drawn ? { drawings: drawn } : {}), id: uuid() }, ...readLocal()]));
   notify();
   return { ok: true };
 }

@@ -17,7 +17,8 @@ export type Drawing = {
 };
 
 /** 왼쪽 도구 바의 그룹 */
-export type ToolGroup = "line" | "fib" | "pattern" | "measure" | "brush" | "arrow" | "shape" | "text";
+/** hidden: 메뉴에는 없고 예전에 그린 것만 그리는 툴 (브러시 · 형광펜) */
+export type ToolGroup = "line" | "fib" | "pattern" | "measure" | "brush" | "arrow" | "shape" | "text" | "hidden";
 
 export type PixelPoint = { x: number; y: number };
 

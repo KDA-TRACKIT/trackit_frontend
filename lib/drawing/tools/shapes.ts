@@ -1,5 +1,6 @@
 // 수직선 · 화살표 · 사각형 · 마커
 import type { DrawingTool } from "../types";
+import { tint } from "./draw-utils";
 
 export const verticalLine: DrawingTool = {
   id: "vertical-line",
@@ -82,7 +83,7 @@ export const rectangle: DrawingTool = {
     const y = Math.min(a.y, b.y);
     const w = Math.abs(b.x - a.x);
     const h = Math.abs(b.y - a.y);
-    ctx.fillStyle = "rgba(41, 98, 255, 0.08)";
+    ctx.fillStyle = tint(drawing.style.color, 0.12);
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = drawing.style.color;
     ctx.lineWidth = drawing.style.width;

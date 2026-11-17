@@ -1,6 +1,6 @@
 // 예측·측정·거래량 기반: 롱/숏 포지션, 예측, 가격·날짜 범위, 고정 VWAP, 고정 범위 매물대
 import type { DrawingTool } from "../types";
-import { DOWN, UP, anchor, barsBetween, changeText, dots, label, line, priceOf, spanText, stroke, won } from "./draw-utils";
+import { DOWN, UP, anchor, barsBetween, changeText, dots, label, line, priceOf, spanText, stroke, won, tint } from "./draw-utils";
 
 /** 진입(A) → 목표(B, 오른쪽 끝도 정함) → 손절(C) */
 function position(long: boolean): DrawingTool {
@@ -102,7 +102,7 @@ export const dateRange: DrawingTool = {
   draw(ctx, px, d, view) {
     const [a, b] = px;
     if (!b) return dots(ctx, px, d.style.color);
-    ctx.fillStyle = "rgba(41,98,255,0.08)";
+    ctx.fillStyle = tint(d.style.color, 0.12);
     ctx.fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
     stroke(ctx, d.style.color, 1);
     const my = (a.y + b.y) / 2;

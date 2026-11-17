@@ -1,10 +1,11 @@
 "use client";
-// 빠른 메모: 오른쪽 아래 작은 원 (챗봇처럼). 트레이딩 로그 · 증시 캘린더에 기본으로 떠 있음
+// 빠른 메모: 오른쪽 아래 작은 원 (챗봇처럼, 검은 원에 캔들 차트). 트레이딩 로그 · 증시 캘린더에 기본으로 떠 있음
 //   - 끌어서 옮길 수 있고(위치는 이 브라우저에 기억), × 로 숨기면 화면 오른쪽 끝의 작은 탭으로 다시 꺼냄
 //   - 누르면 메모 창. 저장하면 트레이딩 로그의 기록(lib/records)으로 들어감 (로그인했으면 서버)
 //   - pickable: 창이 열려 있을 때 화면에서 data-memo 가 달린 항목(종목 · 지수 · 업종 · 뉴스 · 경제 지표 · 공시 …)을 누르면
 //     그 항목에 대한 메모가 됨 (그때는 원래 동작 — 차트 열기 · 링크 이동 — 대신 고르기만)
 import Link from "next/link";
+import { Pencil, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addRecord, initRecordSource, kstNow, recordSource } from "../lib/records";
 import { parseMemo, targetLabel, type MemoTarget } from "../lib/memo-target";
@@ -95,7 +96,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
   if (pos.hidden) {
     return (
       <button type="button" className="qm-restore" onClick={() => save({ ...pos, hidden: false })} aria-label="빠른 메모 다시 꺼내기" title="빠른 메모 다시 꺼내기">
-        ✎
+        <Pencil size={15} aria-hidden />
       </button>
     );
   }
@@ -164,7 +165,12 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
           aria-expanded={open}
           title="빠른 메모 (끌어서 옮기기)"
         >
-          {open ? "✕" : "✎"}
+          {open ? (
+            <X size={22} aria-hidden />
+          ) : (
+            // 연필 (검은 원 + 꿀벌 노란색, 글자 없음)
+            <Pencil size={26} strokeWidth={2.2} aria-hidden />
+          )}
         </button>
         {!open && (
           <button type="button" className="qm-hide" onClick={() => save({ ...pos, hidden: true })} aria-label="빠른 메모 숨기기" title="숨기기 (오른쪽 끝 탭으로 다시 꺼내요)">
@@ -177,7 +183,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
         <div ref={panelRef} className="qm-panel" style={panelStyle} role="dialog" aria-label="빠른 메모">
           <div className="qm-head">
             <strong>빠른 메모</strong>
-            <Link href="/workshop">기록 보기 ›</Link>
+            <Link href="/archive">기록 보기 ›</Link>
           </div>
 
           <div className="qm-target">

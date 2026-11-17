@@ -141,3 +141,6 @@ html[data-theme="dark"] :is(.mypage-conn-form input, .mypage-conn-form select) {
 html[data-theme="dark"] .mypage-conn em.mock { background:rgba(92,157,255,.16); color:#5c9dff; }
 html[data-theme="dark"] .mypage-conn em.real { background:rgba(255,107,107,.14); color:#ff6b6b; }
 html[data-theme="dark"] .mypage-conn button { color:var(--c-err); }
+
+/* 로그인 확인 중 빈 화면 (AuthGate) */
+.auth-gate { min-height:100vh; background:var(--c-bg); }

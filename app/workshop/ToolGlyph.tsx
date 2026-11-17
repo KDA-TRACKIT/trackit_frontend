@@ -267,6 +267,8 @@ const GLYPHS: Record<string, ReactNode> = {
   ),
   // 브러시 · 화살표
   brush: <path d="M2 14C5 8 8 16 11 9S16 5 18 7" strokeWidth={1.8} />,
+  pen: <path d="M13.5 3.5L16.5 6.5L7 16H4V13L13.5 3.5Z" strokeWidth={1.6} strokeLinejoin="round" />,
+  eraser: <path d="M7 16H17M3.5 12.5L10.5 5.5C11.3 4.7 12.5 4.7 13.3 5.5L15.5 7.7C16.3 8.5 16.3 9.7 15.5 10.5L10 16H7L3.5 12.5ZM6.5 9.5L12.5 15.5" strokeWidth={1.5} strokeLinejoin="round" />,
   highlighter: <path d="M2 13C6 9 10 14 18 7" strokeWidth={5} strokeOpacity={0.35} />,
   arrow: <L d="M3 17L16 4M9 4H16V11" />,
   "arrow-marker": <path d="M3 13L11 5L9.5 3.5H17V11L15.5 9.5L7.5 17.5Z" fill="currentColor" fillOpacity={0.25} />,
