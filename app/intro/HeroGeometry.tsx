@@ -5,6 +5,7 @@ import { sampleHero, tileAppearance } from "./hero-motion";
 
 const initial = sampleHero(0);
 const slots = Array.from({ length: 27 }, (_, i) => i);
+const PLAYBACK_SPEED = 1.2;
 
 export default function HeroGeometry() {
   const svg = useRef<SVGSVGElement>(null);
@@ -26,7 +27,7 @@ export default function HeroGeometry() {
       const dt = previous ? Math.min(time - previous, 64) : 0;
       previous = time;
       if (!visible || document.hidden) return;
-      if (!reduced.matches) elapsed += dt;
+      if (!reduced.matches) elapsed += dt * PLAYBACK_SPEED;
       const state = sampleHero(reduced.matches ? 0 : elapsed);
       [...base, ...front].forEach(group => group.setAttribute("visibility", "hidden"));
       state.tiles.forEach((tile, index) => {
