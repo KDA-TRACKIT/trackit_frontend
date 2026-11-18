@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import SiteHeader from "../SiteHeader";
+import AuthHeader from "../AuthHeader";
 import { FormEvent, useEffect, useState } from "react";
 import { getSupabaseBrowser } from "../../lib/supabase-browser";
 import { API_URL } from "../../lib/api/client";
@@ -55,10 +55,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <SiteHeader right={false} />
+    <main className="login-page auth-design">
+      <AuthHeader />
       <section className="login-panel">
-        <div className="login-wordmark brand">TRACKIT</div>
+        <h1 className="login-wordmark">TRACKIT</h1>
         <form onSubmit={handleLogin}>
           <label>
             <span>ID</span>
@@ -82,7 +82,7 @@ export default function LoginPage() {
             <GoogleIcon size={28} />
           </span>
           <strong>Google 계정으로 로그인</strong>
-          <span className="login-arrow">›</span>
+          <img className="login-arrow" src="/auth/chevron.svg" alt="" />
         </button>
         <div className="login-links">
           <button type="button" onClick={() => setFind("id")}>
@@ -96,8 +96,8 @@ export default function LoginPage() {
           계정이 없으신가요? <Link href="/signup">회원가입</Link>
         </p>
         {error && <p className="auth-error">{error}</p>}
-        {find && <FindModal kind={find} onKind={setFind} onClose={() => setFind(null)} />}
       </section>
+      {find && <FindModal key={find} kind={find} onKind={setFind} onClose={() => setFind(null)} />}
     </main>
   );
 }
