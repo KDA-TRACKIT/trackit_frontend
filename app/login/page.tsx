@@ -8,7 +8,6 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser";
 import { API_URL } from "../../lib/api/client";
 import { GoogleIcon, applyStashedProfile, startGoogle } from "../auth-ui";
 import { FindModal } from "../auth-forms";
-import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

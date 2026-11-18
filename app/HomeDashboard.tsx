@@ -127,6 +127,7 @@ export default function HomeDashboard() {
       </section>
       <HomeWeeklyRecords trades={recent} records={records} names={names} loading={!data && !error} failed={!!error} />
       {!!data?.accounts.length && <div className="home-container"><SyncBar accounts={data.accounts} onSynced={load} compact /></div>}
+      <div className="home-container"><HomePolicies /></div>
     </main>
   );
 }
