@@ -35,7 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: email, password }) });
+      const response = await fetch(`${API_URL}/api/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: email, identifier: email, password }) });
       const body = await response.json();
       if (!response.ok || !body?.data?.session) throw new Error(body?.error?.message ?? "로그인에 실패했습니다.");
       const supabase = getSupabaseBrowser();

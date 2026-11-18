@@ -14,6 +14,13 @@ const COUNTRY: Record<EconEvent["country"], string> = {
   JP: "일본",
   EU: "유로",
 };
+/** 나라 고르기 (체크박스). 전체를 고르면 다른 나라 일정(받아 둔 경우)도 다 보임 */
+type Nation = "US" | "KR" | "JP";
+const NATIONS: [Nation, string][] = [
+  ["US", "미국"],
+  ["KR", "한국"],
+  ["JP", "일본"],
+];
 const ymd = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 /** 한국 시간 오늘 · 이번 주 월~일 */
@@ -118,15 +125,32 @@ export function EconCalendar() {
   const { data, error, reload } = useLoad(
     "calendar",
     getEconCalendar,
-    30 * 60_000,
+    // 발표 5분 전부터 값이 나올 때까지는 10초마다, 그 밖에는 다음 발표 5분 전에 (길어도 30분)
+    (d) => {
+      if (d?.live) return 10_000;
+      const until = d?.nextAt ? Date.parse(d.nextAt) - 5 * 60_000 - Date.now() : Infinity;
+      return Math.max(10_000, Math.min(30 * 60_000, until));
+    },
   );
   const [week] = useState(thisWeek);
   /** null: 이번 주에 일정이 있으면 이번 주, 없으면(주말 등) 다가오는 일정 */
   const [rangePick, setRange] = useState<Range | null>(null);
   const [onlyTop, setOnlyTop] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
+  /** 볼 나라 (처음엔 전체) */
+  const [nations, setNations] = useState<Set<Nation>>(() => new Set(NATIONS.map(([k]) => k)));
+  const allNations = nations.size === NATIONS.length;
+  const toggleNation = (k: Nation) =>
+    setNations((cur) => {
+      const next = new Set(cur);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
 
-  const all = (data?.events ?? []).filter((e) => !onlyTop || e.impact === 3);
+  const all = (data?.events ?? []).filter(
+    (e) => (!onlyTop || e.impact === 3) && (allNations || nations.has(e.country as Nation)),
+  );
   const range: Range =
     rangePick ??
     (all.some((e) => e.date >= week.today && e.date <= week.to)
@@ -157,6 +181,22 @@ export function EconCalendar() {
     <section className="ins-card">
       <CardHead title="경제 캘린더">
         <div className="ins-cal-ctl">
+          <div className="ins-cal-nations" role="group" aria-label="나라">
+            <label>
+              <input
+                type="checkbox"
+                checked={allNations}
+                onChange={() => setNations(new Set(allNations ? [] : NATIONS.map(([k]) => k)))}
+              />
+              전체
+            </label>
+            {NATIONS.map(([k, label]) => (
+              <label key={k}>
+                <input type="checkbox" checked={nations.has(k)} onChange={() => toggleNation(k)} />
+                {label}
+              </label>
+            ))}
+          </div>
           <button
             type="button"
             className="ins-toggle"
