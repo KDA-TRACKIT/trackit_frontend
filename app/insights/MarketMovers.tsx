@@ -17,6 +17,7 @@ import type { UsChartTarget } from "./UsChart";
 import { Failed, Loading, money, pct, price, tone } from "./parts";
 import { useLoad } from "./useLoad";
 import { useWatchlist } from "./useWatchlist";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 const MARKETS: [SectorMarket, string][] = [
   ["kospi", "코스피"],
@@ -373,6 +374,8 @@ function MiniCandles({ bars }: { bars: Bar[] }) {
     if (!el) return;
     const up = cssVar("--c-up", "#1f9d55");
     const down = cssVar("--c-down", "#e03131");
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(el);
     const c: IChartApi = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-faint", "#999"), fontSize: 10, attributionLogo: false },
@@ -391,7 +394,10 @@ function MiniCandles({ bars }: { bars: Bar[] }) {
     c.priceScale("v").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     vol.setData(bars.map((b) => ({ time: b.time as UTCTimestamp, value: b.volume, color: cssVar("--c-line-strong", "#ccc") })));
     c.timeScale().fitContent();
-    return () => c.remove();
+    return () => {
+      unfixZoom();
+      c.remove();
+    };
   }, [bars, dark]);
   return <div ref={box} className="ins-mv-chart" />;
 }

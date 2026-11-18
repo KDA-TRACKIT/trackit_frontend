@@ -77,7 +77,7 @@
 .an-opened { display:flex; flex-direction:column; gap:6px; margin:24px 0 0; padding:0; list-style:none; font-size:13px; color:var(--c-ink-2); }
 .an-opened li { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .an-opened small { color:var(--c-faint); }
-@media (max-width:860px) { .ar-cards { grid-template-columns:1fr; } }
+@media (max-width:800px) { .ar-cards { grid-template-columns:1fr; } }
 
 
 /* ───────── 아카이브 허브 (목록 · 보드 · 차트) · AI 전략 만들기 · 내 전략 ───────── */
@@ -413,7 +413,7 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-prow-btn { display:grid; place-items:center; height:42px; padding:0 20px; border-radius:10px; background:var(--c-subtle); color:var(--c-ink); font-size:13.5px; font-weight:700; text-decoration:none; }
 .ar-prow-btn:hover { background:var(--c-hover); }
 
-@media (max-width:900px) {
+@media (max-width:800px) {
   .ar-list, .ar-board-top, .ar-ai, .ar-ai-bottom, .ar-detail { grid-template-columns:1fr; }
   .ar-side-nav { position:static; flex-direction:row; flex-wrap:wrap; }
   .ar-ai-side { position:static; }

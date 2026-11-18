@@ -4,6 +4,7 @@ import "./theme.css";
 import "./consistency.css";
 import "./auth-design.css";
 import { THEME_INIT_SCRIPT } from "../lib/theme-script";
+import { FIT_INIT_SCRIPT } from "../lib/fit-script";
 import ThemeSync from "./ThemeSync";
 import AuthGate from "./AuthGate";
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: FIT_INIT_SCRIPT }} />
       </head>
       <body>
         <ThemeSync />

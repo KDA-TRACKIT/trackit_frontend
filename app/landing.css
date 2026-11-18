@@ -1,5 +1,5 @@
 /* 시작 화면 (시안: 시작 화면 · TRAKIT 랜딩) */
-.landing { min-height:100vh; background:#fff; color:#1b2a44; font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.landing { min-height:calc(100 * var(--vh, 1vh)); background:#fff; color:#1b2a44; font-family:Pretendard,"Noto Sans KR",sans-serif; }
 /* 상단 바: 다른 화면과 같은 .gnb (위치·크기 동일), 검은 바탕에 맞춰 색만 바꿈 */
 :root .gnb.gnb-dark { background:#0a0c11; border-bottom-color:#1d222c; }
 :root .gnb-dark .gnb-brand { color:#fff; }
@@ -13,8 +13,8 @@
 .landing-copy { position:relative; z-index:1; display:flex; flex-direction:column; }
 .landing-copy .eyebrow { margin:0; color:#8ea6cf; font-size:15px; font-weight:700; letter-spacing:.3px; }
 .landing-copy .bar { width:48px; height:4px; margin:28px 0 48px; border-radius:2px; background:#5f7fb6; }
-.landing-copy h1 { margin:0; font-size:clamp(36px,4.6vw,66px); font-weight:800; letter-spacing:-1.5px; line-height:1.15; white-space:nowrap; }
-.landing-copy h2 { margin:30px 0 0; font-size:clamp(24px,3vw,42px); font-weight:800; letter-spacing:-1px; }
+.landing-copy h1 { margin:0; font-size:clamp(36px,calc(4.6 * var(--vw, 1vw)),66px); font-weight:800; letter-spacing:-1.5px; line-height:1.15; white-space:nowrap; }
+.landing-copy h2 { margin:30px 0 0; font-size:clamp(24px,calc(3 * var(--vw, 1vw)),42px); font-weight:800; letter-spacing:-1px; }
 .landing-copy .lead { margin:76px 0 0; color:#c9d0db; font-size:15px; }
 .landing-copy .scroll { margin-top:auto; color:#8ea6cf; font-size:12px; font-weight:700; }
 .landing-copy .scroll span { margin-left:10px; }
@@ -44,7 +44,7 @@
 .landing-cta { display:inline-flex; width:256px; height:60px; align-items:center; justify-content:center; margin-top:104px; border-radius:10px; background:#344d7d; color:#fff; font-size:20px; font-weight:800; }
 .landing-foot { height:104px; background:#0a0c11; }
 
-@media (max-width:1000px) {
+@media (max-width:800px) {
   .landing-hero { flex-direction:column; min-height:0; padding:64px 20px 40px; }
   .landing-copy h1 { white-space:normal; }
   .landing-copy .lead { margin-top:36px; }

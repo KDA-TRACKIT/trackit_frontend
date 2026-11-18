@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { getUsBars, type UsBar, type UsBars } from "../../lib/api/insights";
 import { pct, price } from "./parts";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 export type UsChartTarget = { code: string; name?: string; exchange?: string };
 type Period = "D" | "W" | "M";
@@ -102,6 +103,8 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
     if (!el) return;
     const up = cssVar("--c-up", "#1f9d55");
     const down = cssVar("--c-down", "#e03131");
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(el);
     const chart = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-sub", "#555"), fontSize: 11, attributionLogo: false },
@@ -128,6 +131,7 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
     candleRef.current = candle;
     volRef.current = vol;
     return () => {
+      unfixZoom();
       chart.remove();
       chartRef.current = null;
     };

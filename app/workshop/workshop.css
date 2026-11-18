@@ -1,7 +1,7 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
 /* 작업실 (피그마 노드 38:184). 1440 기준 콘텐츠 폭 1312px */
-.workshop { --ws-line:var(--c-line); --ws-text:var(--c-ink); --ws-muted:var(--c-sub); --ws-soft:var(--c-subtle); --ws-active:var(--c-pill); --ws-navy:#344d7d; --ws-strong:#191919; --ws-on-strong:#fff; --ws-up:var(--c-up); --ws-down:var(--c-down); min-height:100vh; background:var(--c-bg); color:var(--ws-text); font-family:Pretendard,"Noto Sans KR",sans-serif; line-height:1.2; }
+.workshop { --ws-line:var(--c-line); --ws-text:var(--c-ink); --ws-muted:var(--c-sub); --ws-soft:var(--c-subtle); --ws-active:var(--c-pill); --ws-navy:#344d7d; --ws-strong:#191919; --ws-on-strong:#fff; --ws-up:var(--c-up); --ws-down:var(--c-down); min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--ws-text); font-family:Pretendard,"Noto Sans KR",sans-serif; line-height:1.2; }
 /* :where()로 우선순위를 0으로 둬서 아래 개별 스타일이 이기게 한다 */
 :where(.workshop) button { border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
 :where(.workshop) button:disabled { cursor:default; opacity:.4; }
@@ -66,7 +66,7 @@
 
 /* 차트 */
 .ws-chart { display:grid; height:100%; min-height:0; grid-template-rows:38px 1fr 45px; border:1px solid var(--ws-line); background:var(--c-surface); }
-.ws-chart.expanded { position:fixed; z-index:200; inset:0; width:100vw; height:100vh; border:0; }
+.ws-chart.expanded { position:fixed; z-index:200; inset:0; width:calc(100 * var(--vw, 1vw)); height:calc(100 * var(--vh, 1vh)); border:0; }
 .ws-chart-toolbar { display:flex; align-items:center; gap:4px; padding-left:10px; border-bottom:1px solid var(--ws-line); }
 .ws-intervals { display:flex; gap:4px; }
 .ws-intervals button { width:50px; height:34px; font-size:13px; }
@@ -84,7 +84,7 @@
 .ws-more:hover { color:var(--c-ink); }
 .ws-draw-group { position:relative; }
 .ws-draw-divider { width:32px; height:1px; margin:4px 0; background:var(--ws-line); }
-.ws-flyout { position:absolute; z-index:5; top:0; left:44px; min-width:190px; max-height:min(520px,calc(100vh - 160px)); overflow-y:auto; padding:6px; border:1px solid var(--ws-line); background:var(--c-surface); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.ws-flyout { position:absolute; z-index:5; top:0; left:44px; min-width:190px; max-height:min(520px,calc(calc(100 * var(--vh, 1vh)) - 160px)); overflow-y:auto; padding:6px; border:1px solid var(--ws-line); background:var(--c-surface); box-shadow:0 4px 14px rgba(0,0,0,.08); }
 .ws-flyout h5 { margin:6px 8px 2px; padding-top:6px; border-top:1px solid var(--c-line); color:var(--c-faint); font-size:10.5px; font-weight:700; }
 .ws-flyout > div:first-of-type h5 { border-top:0; padding-top:0; }
 .ws-flyout p { padding:4px 8px 6px; color:var(--ws-muted); font-size:11px; }
@@ -285,7 +285,7 @@
 .ai-order .ai-btn { margin-top:8px; }
 
 .modal-backdrop { position:fixed; z-index:100; inset:0; display:grid; place-items:center; padding:16px; background:rgba(15,20,30,.45); }
-.modal { width:min(440px,100%); max-height:calc(100vh - 32px); overflow-y:auto; padding:22px 22px 18px; background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); outline:0; font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.modal { width:min(440px,100%); max-height:calc(calc(100 * var(--vh, 1vh)) - 32px); overflow-y:auto; padding:22px 22px 18px; background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); outline:0; font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .modal h2 { margin:0 0 14px; font-size:18px; }
 .modal-grid { padding:12px 0; border-top:1px solid var(--ws-line); border-bottom:1px solid var(--ws-line); font-size:13px; }
 .modal .ai-risk-warnings { margin-top:12px; }
@@ -308,7 +308,7 @@
   .ai-steps li span { font-size:9.5px; }
 }
 
-@media (max-width:1100px) {
+@media (max-width:800px) {
   .ws-grid { grid-template-columns:minmax(0,1fr); }
   .ws-grid { grid-template-rows:auto; }
   .ws-chart { height:591px; }
@@ -345,7 +345,7 @@
 .ws-rec-search { height:30px; margin-left:auto; padding:0 20px; background:var(--ws-strong); color:var(--ws-on-strong); font-size:12.5px; font-weight:700; }
 .ws-rec-summary { margin-top:12px; color:var(--c-sub); font-size:12.5px; font-variant-numeric:tabular-nums; }
 
-@media (max-width:900px) {
+@media (max-width:800px) {
   .ws-rec-search { margin-left:0; }
 }
 
@@ -369,7 +369,7 @@
 .ws-range-ends span:last-child { align-items:flex-end; }
 .ws-range-ends small { color:var(--ws-muted); font-size:11px; }
 .ws-company-range p { margin-top:14px; color:var(--c-sub); font-size:12.5px; }
-@media (max-width:1100px) {
+@media (max-width:800px) {
   .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ws-company-grid dl:nth-child(3), .ws-company-range { border-left:0; padding-left:0; }
 }
@@ -424,7 +424,7 @@
 .ws-legend-ind { position:absolute; z-index:2; top:56px; left:17px; display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; font-weight:700; pointer-events:none; }
 
 /* 지표 창 */
-.ind-modal { display:flex; flex-direction:column; width:min(860px,100%); height:min(560px,calc(100vh - 32px)); background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.ind-modal { display:flex; flex-direction:column; width:min(860px,100%); height:min(560px,calc(calc(100 * var(--vh, 1vh)) - 32px)); background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .ind-modal header { display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid var(--ws-line); }
 .ind-modal header h2 { font-size:17px; font-weight:700; white-space:nowrap; }
 .ind-modal header input { flex:1; height:36px; padding:0 12px; border:1px solid var(--ws-line); background:var(--c-subtle); font:14px Pretendard,sans-serif; outline:0; }
@@ -530,7 +530,7 @@
 .algo-signals em { font-style:normal; color:var(--c-sub); }
 
 /* 규칙 편집 창 */
-.algo-modal { display:flex; flex-direction:column; width:min(820px,100%); max-height:calc(100vh - 32px); background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.algo-modal { display:flex; flex-direction:column; width:min(820px,100%); max-height:calc(calc(100 * var(--vh, 1vh)) - 32px); background:var(--c-surface); box-shadow:0 18px 50px rgba(0,0,0,.25); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .algo-modal > header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--ws-line); }
 .algo-modal > header h2 { font-size:17px; font-weight:700; }
 .algo-modal > footer { display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--ws-line); }
@@ -578,7 +578,7 @@
 .ws-rec-card.thought { border-color:var(--c-line); }
 /* 오른쪽 열은 높이를 정하지 않고 차트 높이를 따른다 (넘치면 안에서 스크롤) */
 .ws-grid > .ws-side { contain:size; }
-@media (max-width:1100px) { .ws-grid > .ws-side { contain:none; } }
+@media (max-width:800px) { .ws-grid > .ws-side { contain:none; } }
 
 /* 지표 창: 위치(차트 위/아래)·분류 소제목 */
 .ind-body nav h6 { margin:8px 14px 2px; color:var(--c-faint); font-size:10.5px; font-weight:700; }
@@ -602,7 +602,7 @@
 .ws-note-panel .ws-memo p { flex:1; overflow-y:auto; }
 .ws-note-panel .ws-memo textarea { flex:1; min-height:120px; resize:none; }
 .ws-note-panel .ws-save { flex:none; }
-@media (max-width:1100px) {
+@media (max-width:800px) {
   .ws-note-panel .ws-memo { flex:none; }
 }
 /* 매매 창 내용은 줄어들지 않고, 넘치면 창 안에서 스크롤 */
@@ -721,7 +721,7 @@
 .ws-company-group h3 { margin-bottom:10px; color:var(--c-ink); font-size:13px; font-weight:700; }
 .ws-company-group h3 small { margin-left:4px; color:var(--ws-muted); font-size:11px; font-weight:400; }
 .ws-company-group dl.ws-company-two { grid-template-columns:auto 1fr auto 1fr; column-gap:14px; }
-@media (max-width:1100px) {
+@media (max-width:800px) {
   .ws-company-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ws-company-grid .ws-company-range { border-left:0; padding-left:0; }
 }
@@ -1195,3 +1195,5 @@ details.ws-ladder { padding:10px 12px; }
 .ws-news-mark svg .eye { fill:#1f2442; }
 .ws-news-mark svg .cheek { fill:#f5a38f; opacity:.75; }
 .ws-news-mark:hover { width:22px; height:22px; background:rgba(248,210,122,.25); }
+/* 신호 목록의 안내 줄(불러오는 중 · 아직 신호가 없어요)은 칸 나눔 없이 한 줄 (30px 첫 칸에 갇혀 세로로 꺾이던 것) */
+.algo-signals li.algo-note { display:block; white-space:nowrap; }
