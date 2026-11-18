@@ -41,12 +41,15 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+        const response = await fetch(`${API_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: email, password }),
+        body: JSON.stringify({
+          id: email,
+          identifier: email,
+          password,
+        }),
       });
-
       const body = await response.json();
 
       if (!response.ok || !body?.data?.session) {

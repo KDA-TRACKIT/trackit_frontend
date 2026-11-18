@@ -70,7 +70,15 @@ export type EconEvent = {
   note?: string;
   source: string;
 };
-export type EconCalendar = { events: EconEvent[]; missing: string[]; failed: string[] };
+export type EconCalendar = {
+  events: EconEvent[];
+  missing: string[];
+  failed: string[];
+  /** 발표 5분 전 ~ 값이 나올 때까지 (이때는 10초마다 다시 받음) */
+  live?: boolean;
+  /** 다음 발표 시각 ISO */
+  nextAt?: string | null;
+};
 export const getEconCalendar = () => apiRequest<EconCalendar>("/insights/calendar", { auth: false });
 
 // ---------- 공시 ----------

@@ -55,7 +55,7 @@ export default function EmailSignupPage() {
     const email = form.email.trim();
     const extra: ExtraProfile = { name: form.name.trim(), gender: form.gender, birthdate: form.birthdate };
     try {
-      const result = await signUp({ email, password: form.password, nickname: form.nickname.trim(), username: form.username.trim().toLowerCase() });
+      const result = await signUp({ email, password: form.password, passwordConfirmation: form.confirm, nickname: form.nickname.trim(), username: form.username.trim().toLowerCase(), name: form.name.trim(), gender: form.gender, birthDate: form.birthdate });
       if (result.loggedIn) {
         await getSupabaseBrowser()?.auth.updateUser({ data: { ...extra, signup_completed: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } });
         return window.location.replace("/onboarding");

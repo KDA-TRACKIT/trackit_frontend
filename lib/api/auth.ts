@@ -6,7 +6,8 @@ import { apiRequest } from "./client";
 type Session = { access_token: string; refresh_token: string };
 
 /** 가입. 메일 확인을 켜 둔 프로젝트면 session 이 없고 확인 메일이 간다 */
-export async function signUp(input: { email: string; password: string; nickname: string; username?: string }) {
+/** 회원가입. 백엔드는 아이디 · 비밀번호 확인 · 이름 · 성별 · 생년월일(YYYY-MM-DD)까지 받는다 */
+export async function signUp(input: { email: string; password: string; passwordConfirmation?: string; nickname: string; username?: string; name?: string; gender?: string; birthDate?: string }) {
   const data = await apiRequest<{ session: Session | null; requiresEmailConfirmation: boolean }>("/auth/signup", {
     method: "POST",
     auth: false,
