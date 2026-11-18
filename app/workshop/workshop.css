@@ -1197,3 +1197,20 @@ details.ws-ladder { padding:10px 12px; }
 .ws-news-mark:hover { width:22px; height:22px; background:rgba(248,210,122,.25); }
 /* 신호 목록의 안내 줄(불러오는 중 · 아직 신호가 없어요)은 칸 나눔 없이 한 줄 (30px 첫 칸에 갇혀 세로로 꺾이던 것) */
 .algo-signals li.algo-note { display:block; white-space:nowrap; }
+/* 종목 검색: 맨 앞 ☆ 로 관심 종목 넣고 빼기 (증시 캘린더 관심 종목과 같은 목록), 빈 칸이면 관심 종목 먼저 */
+.ws-search-list .ws-search-item { display:flex; align-items:center; }
+.ws-search-list .ws-search-item > button[role="option"] { flex:1; padding-left:4px; }
+.ws-search-list button.ws-search-star { display:grid; flex:none; width:34px; height:34px; padding:0; place-items:center; color:#b3bac6; font-size:16px; line-height:1; }
+.ws-search-list button.ws-search-star.on { color:#f2b01e; }
+.ws-search-list button.ws-search-star:hover { background:var(--ws-active); color:#f2b01e; }
+.ws-search-head { padding:8px 14px 4px; color:var(--ws-muted); font-size:11px; font-weight:700; }
+/* AI 노트 점검 칸 간단하게 (2026-11-18): 종류 선택칸 · 방향 한 줄, 필수 항목은 칩(✓ 채움 / + 빠짐), 빠진 칩을 눌러야 입력칸 */
+.ws-pc-lite { display:flex; flex-direction:column; gap:10px; }
+.ws-pc-top { display:flex; align-items:center; gap:8px; }
+.ws-pc-top select { height:32px; padding:0 8px; border:1px solid var(--ws-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:700; }
+.ws-pc-top .ws-pc-left { margin-left:auto; color:var(--ws-muted); font-size:12px; }
+.ws-pc-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.ws-pc-chips > * { display:inline-flex; align-items:center; height:28px; padding:0 10px; border-radius:14px; font-size:12px; white-space:nowrap; }
+.ws-pc-chips .ok { background:#e8f5ec; color:#1f8a4c; font-weight:700; }
+.ws-pc-chips button { border:1px dashed var(--ws-line); background:none; color:var(--ws-muted); font:inherit; font-size:12px; cursor:pointer; }
+.ws-pc-chips button:hover, .ws-pc-chips button.on { border-style:solid; border-color:#0f2367; color:#0f2367; }

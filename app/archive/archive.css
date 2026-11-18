@@ -490,3 +490,56 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-page .mk-guess { margin-top:0; }
 /* 연습하기 차트: 지난 일봉만 쓰므로 간격 바꾸기 · 평단 버튼은 숨김 */
 .mk-guess-chart .ws-intervals, .mk-guess-chart .ws-interval-custom, .mk-guess-chart .ws-avg-toggle { display:none; }
+
+/* ===== 구매한 전략 시안 (2026-11-18): 트레이더 카드 ===== */
+.ar-traders { display:flex; flex-direction:column; gap:20px; margin:28px 0 0; padding:0; list-style:none; }
+.ar-trader { display:grid; grid-template-columns:minmax(0,2.3fr) 1fr 1fr 1.1fr 1.4fr; align-items:center; gap:16px; padding:24px 24px; border:1px solid var(--c-line); border-radius:12px; background:var(--c-surface); color:var(--c-ink); text-decoration:none; transition:border-color .12s, box-shadow .12s; }
+.ar-trader:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
+.ar-trader-who small { display:block; color:var(--c-sub); font-size:12px; font-weight:600; }
+.ar-trader-who strong { display:flex; align-items:center; gap:8px; margin:6px 0 4px; font-size:21px; font-weight:800; }
+.ar-heart { color:#d64545; font-size:12px; font-weight:600; }
+.ar-trader-who p { margin:0; color:var(--c-sub); font-size:13px; }
+.ar-trader-stat small { display:block; color:var(--c-sub); font-size:12px; }
+.ar-trader-stat b { display:block; margin-top:6px; font-size:18px; font-weight:700; white-space:nowrap; }
+.ar-trader-stat b.gain { color:#d64545; } .ar-trader-stat b.loss { color:#2f64c4; }
+@media (max-width:800px) { .ar-trader { grid-template-columns:1fr 1fr; } .ar-trader-who { grid-column:1 / -1; } }
+/* 구매한 전략 → 트레이더 (시안) */
+.ar-pt-back { display:inline-block; margin-top:8px; color:var(--c-sub); font-size:14px; text-decoration:none; }
+.ar-pt-head { display:flex; align-items:center; justify-content:space-between; margin:10px 0 18px; }
+.ar-pt-head h1 { margin:0; font-size:26px; font-weight:800; }
+.ar-pt-head select { border:0; background:none; color:inherit; font:inherit; font-size:26px; font-weight:800; cursor:pointer; }
+.ar-pt-manage { color:#0f2367; font-size:18px; font-weight:800; text-decoration:none; }
+.ar-pt-trades { padding:18px 16px 12px; }
+.ar-pt-trades h2 { margin:0 0 10px 8px; font-size:18px; font-weight:800; }
+.ar-pt-table .th, .ar-pt-table .tr { display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr; align-items:center; gap:8px; padding:9px 14px; text-align:left; }
+.ar-pt-table .th { border-radius:8px; background:var(--c-subtle); color:var(--c-sub); font-size:13px; }
+.ar-pt-table .tb { max-height:180px; overflow-y:auto; }
+.ar-pt-table .tr { width:100%; border:0; border-bottom:1px solid var(--c-line); background:none; color:var(--c-ink); font:inherit; font-size:15px; cursor:pointer; }
+.ar-pt-table .tr.on, .ar-pt-table .tr:hover { background:#f2f6fd; }
+.ar-pt-table .tr b.gain { color:#1f9d55; } .ar-pt-table .tr b.loss { color:#e03131; }
+.ar-pt-table .tr small { color:var(--c-sub); font-size:12px; }
+.ar-pt-hold { padding:3px 14px; border-radius:12px; background:#e8eefc; color:#0f2367; font-size:13px; font-style:normal; font-weight:700; }
+.ar-pt-tools { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:26px 0 16px; }
+.ar-pt-tabs { display:flex; gap:6px; }
+.ar-pt-tabs button { height:40px; padding:0 20px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:16px; cursor:pointer; }
+.ar-pt-tabs button[aria-selected="true"] { background:#e8eefc; color:#0f2367; font-weight:800; }
+.ar-pt-search { display:flex; align-items:center; gap:8px; width:min(464px,100%); height:46px; padding:0 4px 0 14px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); }
+.ar-pt-search input { flex:1; min-width:0; border:0; outline:0; background:none; color:var(--c-ink); font:inherit; font-size:16px; }
+.ar-pt-search button { height:36px; padding:0 18px; border:0; border-radius:6px; background:#0f2367; color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+.ar-pt-chart { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; padding:20px; }
+.ar-pt-sym strong { font-size:20px; font-weight:800; } .ar-pt-sym small { color:var(--c-sub); font-size:14px; }
+.ar-pt-ohlc { margin:6px 0 10px; color:var(--c-sub); font-size:14px; } .ar-pt-ohlc b { margin-right:12px; color:var(--c-ink); }
+.ar-pt-memos { padding-left:20px; border-left:1px solid var(--c-line); }
+.ar-pt-memos h3 { margin:0; font-size:19px; font-weight:800; }
+.ar-pt-memos > small { color:var(--c-sub); font-size:13px; }
+.ar-pt-memos ul { display:flex; flex-direction:column; gap:14px; max-height:360px; margin:16px 0 0; padding:0 6px 0 0; overflow-y:auto; list-style:none; }
+.ar-pt-memos li { padding:14px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); }
+.ar-pt-memos li div { display:flex; align-items:center; gap:10px; color:var(--c-sub); font-size:13px; }
+.ar-pt-memos li em { padding:2px 10px; border-radius:10px; background:#e8eefc; color:#0f2367; font-size:12px; font-style:normal; font-weight:700; }
+.ar-pt-memos li p { margin:10px 0 0; font-size:15px; line-height:1.5; }
+.ar-pt-memos li.empty { color:var(--c-sub); font-size:13px; }
+.ar-pt-etc-title { margin:30px 0 12px; font-size:22px; font-weight:800; }
+.ar-pt-etc { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.ar-pt-etc div { padding:16px 18px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); }
+.ar-pt-etc small { color:var(--c-sub); font-size:14px; } .ar-pt-etc b { display:block; margin-top:6px; color:#0f2367; font-size:26px; font-weight:800; }
+@media (max-width:800px) { .ar-pt-chart { grid-template-columns:1fr; } .ar-pt-memos { padding-left:0; border-left:0; } .ar-pt-etc { grid-template-columns:1fr 1fr; } .ar-pt-tools { flex-direction:column; align-items:stretch; } }

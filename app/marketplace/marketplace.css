@@ -523,3 +523,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-grade.g-F, .mk-grade.g-N { background:rgba(214,59,59,.1); color:var(--c-err); }
 .mk-stopped { margin:8px 0; padding:10px 12px; border-radius:8px; background:rgba(214,59,59,.08); color:var(--c-err); font-size:13px; line-height:1.5; }
 .mk-grade.g-U { background:var(--c-subtle); color:var(--c-faint); }
+/* 열람권으로 열기 확인 팝업 */
+.mk-redeem-ask { margin:0 0 18px; color:var(--c-ink-2, var(--c-ink)); font-size:14px; line-height:1.7; }
+.mk-redeem-acts { display:flex; justify-content:flex-end; gap:8px; }
+.mk-redeem-acts button { min-width:80px; }
