@@ -61,7 +61,7 @@ function OnboardingForm() {
         ) : (
           <>
             <Card title="기본 프로필" desc="다른 사용자에게 보여질 정보를 작성해주세요.">
-              <InvestmentFields value={value} onChange={setValue} showPeriod={false} variant="onboarding" />
+              <InvestmentFields value={value} onChange={setValue} variant="onboarding" />
               <Notice text={note} />
             </Card>
             <div className="onboarding-foot">

@@ -480,3 +480,4 @@ html:not([data-theme="dark"]) :is(.mp, .mp-modal, .mp-cf) { --c-accent:#0f2367; 
 .mp-wallet-none strong { font-size:19px; font-weight:800; }
 .mp-wallet-none .mp-btn { height:38px; padding:0 22px; }
 .mp-optional { margin-left:2px; color:var(--c-sub); font-size:12px; font-style:normal; font-weight:500; }
+.mp-period-chips button small { margin-left:6px; color:var(--c-sub); font-size:11px; font-weight:500; } .mp-period-chips button.on small { color:inherit; opacity:.75; }
