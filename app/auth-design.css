@@ -32,11 +32,11 @@ html:has(.auth-design) { scrollbar-gutter:auto; }
 .auth-header-login { color:#151515; font-size:18px; font-weight:600; }
 .auth-design .login-panel { width:min(360px,calc(100% - 48px)); margin:93px auto 0; }
 .auth-design .login-wordmark { margin:0 0 76px; color:#344d7d; font-size:53.55px; line-height:61px; letter-spacing:-1.6px; font-weight:800; text-align:center; }
-.auth-design .login-panel form { display:flex; flex-direction:column; gap:38px; }
-.auth-design .login-panel form label { position:relative; display:flex; flex-direction:column; align-items:stretch; height:80px; padding:0; border-bottom:1px solid #e4e6e9; }
-.auth-design .login-panel form label span { position:static; color:#000; font-size:18px; line-height:22px; transform:none; }
-.auth-design .login-panel form label:focus-within { border-bottom-color:#344d7d; }
-.auth-design .login-panel input { flex:1; min-height:0; height:auto; color:#1b2a44; font-size:16px; }
+.auth-design .login-panel > form { display:flex; flex-direction:column; gap:38px; }
+.auth-design .login-panel > form > label { position:relative; display:flex; flex-direction:column; align-items:stretch; height:80px; padding:0; border-bottom:1px solid #e4e6e9; }
+.auth-design .login-panel > form > label > span { position:static; color:#000; font-size:18px; line-height:22px; transform:none; }
+.auth-design .login-panel > form > label:focus-within { border-bottom-color:#344d7d; }
+.auth-design .login-panel > form > label > input { flex:1; min-height:0; height:auto; color:#1b2a44; font-size:16px; }
 .auth-design .login-submit { height:45px; margin-top:-10px; border-radius:10px; background:var(--auth-primary); font-size:24px; line-height:29px; font-weight:500; }
 .auth-design .or-divider { margin:49px 0 20px; height:14px; color:#8591a1; font-size:12px; }
 .auth-design .google-login { height:56px; border-color:#c9ced7; border-radius:8px; color:#242a34; background:#fff; font-size:12.9px; }

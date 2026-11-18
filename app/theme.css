@@ -78,8 +78,8 @@ html[data-theme="dark"] .gnb-avatar-empty { background:var(--c-pill); color:var(
 /* 로그인 · 회원가입 · 아이디/비밀번호 찾기 */
 html[data-theme="dark"] :is(.login-page, .auth-page) { background:var(--c-bg); color:var(--c-ink); }
 html[data-theme="dark"] :is(.login-wordmark, .auth-panel h1) { color:var(--c-brand); }
-html[data-theme="dark"] .login-panel form label { border-bottom-color:var(--c-line-strong); }
-html[data-theme="dark"] .login-panel form label span, html[data-theme="dark"] .login-panel input { color:var(--c-ink); }
+html[data-theme="dark"] .login-panel > form > label { border-bottom-color:var(--c-line-strong); }
+html[data-theme="dark"] .login-panel > form > label > span, html[data-theme="dark"] .login-panel > form > label > input { color:var(--c-ink); }
 html[data-theme="dark"] .login-submit { border-color:var(--c-accent); background:var(--c-accent); color:var(--c-on-accent); }
 html[data-theme="dark"] :is(.google-login, .auth-button.google) { border-color:var(--c-line-strong); background:var(--c-surface); color:var(--c-ink); }
 html[data-theme="dark"] .auth-button.primary { background:var(--c-accent); color:var(--c-on-accent); }
