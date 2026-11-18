@@ -105,29 +105,28 @@ export default function TraderPage() {
           </aside>
         </div>
 
-        <div className="mk-card mk-kpis">
-          {/* 윗줄: 매매 · 승률 · 이행률 · 구매자 / 아랫줄: 누적 수익률 · 최대 낙폭 · 가장 큰 이익 · 손실 */}
-          {t.facts ? (
-            <>
-              <Kpi label="매매" value={`${t.facts.wins + t.facts.losses}건`} />
-              <Kpi label="승률" value={`${t.facts.wins + t.facts.losses ? Math.round((t.facts.wins / (t.facts.wins + t.facts.losses)) * 100) : 0}%`} />
-            </>
-          ) : (
-            <>
-              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
-              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
-            </>
-          )}
-          <Kpi label="전략 이행률" value={`${t.follow}%`} />
-          <Kpi label="구매자" value={`${t.buyers.toLocaleString("ko-KR")}명`} />
-          {t.facts && (
-            <>
-              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
-              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
-              <Kpi label="가장 큰 이익" value={t.facts.best ? pct(t.facts.best.ret) : "-"} tone="gain" />
-              <Kpi label="가장 큰 손실" value={t.facts.worst ? pct(t.facts.worst.ret) : "-"} tone="loss" />
-            </>
-          )}
+        {/* 시안: 남색 카드 4개 (누적 수익률 · 전략 이행률 · 최대 낙폭 · 구매한 사람) */}
+        <div className="mk-kpis-navy">
+          <div>
+            <span>누적 수익률</span>
+            <strong>{pct(total)}</strong>
+            <small>{t.since.replace("-", "년 ")}월부터</small>
+          </div>
+          <div>
+            <span>전략 이행률</span>
+            <strong>{t.follow}%</strong>
+            <small>{t.facts ? `매매 ${t.facts.wins + t.facts.losses}건 기준` : "계획대로 한 비율"}</small>
+          </div>
+          <div>
+            <span>최대 낙폭</span>
+            <strong>{pct(t.mdd)}</strong>
+            <small>기간 중 가장 크게 빠진 폭</small>
+          </div>
+          <div>
+            <span>구매한 사람</span>
+            <strong>{t.buyers.toLocaleString("ko-KR")}명</strong>
+            <small>누적 구매자 수</small>
+          </div>
         </div>
 
         <MonthlyChart t={t} />

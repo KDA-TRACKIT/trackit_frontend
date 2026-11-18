@@ -12,17 +12,24 @@ import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct,
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
 import "./marketplace.css";
+import { useSupabaseUser } from "../mypage/context";
+import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
 import { useLikeTotals } from "../../lib/feedback";
 import { isFavorite, useFavorites } from "../../lib/favorites";
 
-type Sort = "rec" | "pop" | "like" | "ret" | "price";
-const SORTS: { key: Sort; label: string }[] = [
+// 정렬 4가지 × 높은순(↓) · 낮은순(↑) (시안: 정렬 드롭다운 8가지). 주소에는 "ret" · "ret-asc"
+type SortKey = "rec" | "pop" | "ret" | "price";
+type Sort = SortKey | `${SortKey}-asc`;
+const SORTS: { key: SortKey; label: string }[] = [
   { key: "rec", label: "추천순" },
   { key: "pop", label: "인기순" },
-  { key: "like", label: "좋아요순" },
   { key: "ret", label: "수익률순" },
   { key: "price", label: "가격순" },
 ];
+const SORT_ALL: Sort[] = SORTS.flatMap((s) => [s.key, `${s.key}-asc` as Sort]);
+const sortKey = (s: Sort) => s.replace(/-asc$/, "") as SortKey;
+const sortAsc = (s: Sort) => s.endsWith("-asc");
+const sortLabel = (s: Sort) => `${SORTS.find((x) => x.key === sortKey(s))!.label} ${sortAsc(s) ? "↑" : "↓"}`;
 type Filter = { mdd: [number, number]; ret: [number, number]; price: [number, number]; types: string[]; markets: string[] };
 const NO_FILTER: Filter = { mdd: [0, 100], ret: [-100, 100], price: [0, 50000], types: [], markets: [] };
 const PER_PAGE = 8;
@@ -46,7 +53,7 @@ function readState(sp: URLSearchParams): ListState {
   return {
     query: sp.get("q") ?? "",
     period: period && PERIODS.some((p) => p.key === period) ? period : "3m",
-    sort: sort && SORTS.some((s) => s.key === sort) ? sort : "rec",
+    sort: sort && SORT_ALL.includes(sort) ? sort : (sort as string | null) === "like" ? "pop" : "rec",
     filter: {
       mdd: range(sp.get("mdd"), NO_FILTER.mdd),
       ret: range(sp.get("ret"), NO_FILTER.ret),
@@ -92,6 +99,9 @@ function MarketplaceList() {
   const state = useMemo(() => readState(new URLSearchParams(sp.toString())), [sp]);
   const { query, period, sort, filter, page } = state;
   const [open, setOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const mine = useMyInvestment();
+  const [asOf] = useState(() => new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10).replaceAll("-", "."));
 
   /** 상태 바꾸기 = 주소 바꾸기 (기록은 쌓지 않음: 뒤로 가기는 전 화면으로) */
   const update = (patch: Partial<ListState>) => {
@@ -121,7 +131,9 @@ function MarketplaceList() {
     const out = TRADERS.filter(listed).filter(hit);
     const likes = (t: Trader) => likeTotals[t.id] ?? 0;
     const ret = (t: Trader) => (oneStock(t, period) ? -Infinity : t.returns[period]);
-    const score = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
+    // 추천순: 내 투자 정보(매매 방식 · 참고 지표 · 시장 · 기간)와 트레이더가 겹칠수록 위로. 투자 정보가 없으면 좋아요 · 이행률 · 수익률
+    const base = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
+    const score = (t: Trader) => (mine ? similarity(mine, t) * 1000 : 0) + base(t);
     // 즐겨찾기한 트레이더를 맨 위에, 그 안에서는 고른 정렬대로
     const fav = (t: Trader) => (isFavorite(favs, t.id) ? 1 : 0);
     out.sort(
@@ -129,10 +141,11 @@ function MarketplaceList() {
         fav(b) - fav(a) ||
         // 지금 살 수 있는(등급 D 이상) 트레이더 먼저
         Number(sellable(b)) - Number(sellable(a)) ||
-        (sort === "pop" ? b.buyers - a.buyers : sort === "like" ? likes(b) - likes(a) || b.buyers - a.buyers : sort === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sort === "price" ? a.price - b.price : score(b) - score(a)),
+        (sortAsc(sort) ? -1 : 1) *
+          (sortKey(sort) === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : sortKey(sort) === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sortKey(sort) === "price" ? b.price - a.price : score(b) - score(a)),
     );
     return out;
-  }, [query, period, sort, filter, likeTotals, favs]);
+  }, [query, period, sort, filter, likeTotals, favs, mine]);
 
   const per = PER_PAGE;
   const pages = Math.max(1, Math.ceil(list.length / per));
@@ -145,7 +158,7 @@ function MarketplaceList() {
     <main className="mk-page">
       <SiteHeader active="marketplace" />
       <div className="mk-wrap">
-        <h1 className="mk-title">전략 쇼핑</h1>
+        <h1 className="mk-title">트레이더</h1>
 
         <form
           className="mk-search"
@@ -161,27 +174,15 @@ function MarketplaceList() {
         </form>
 
         <div className="mk-result-head">
-          {/* 처음 들어오면 전체 목록. 검색하거나 필터를 걸었을 때만 "결과" 로 */}
-          {query.trim() ? (
-            <strong>
-              ‘{query.trim()}’ 검색 결과 <em>{list.length}</em>명
-              <button
-                type="button"
-                className="mk-clear"
-                onClick={() => update({ query: "", page: 1 })}
-              >
+          <strong>
+            {query.trim() ? `‘${query.trim()}’ ` : ""}검색 결과 <em>{list.length}</em>건
+            {query.trim() && (
+              <button type="button" className="mk-clear" onClick={() => update({ query: "", page: 1 })}>
                 검색 지우기
               </button>
-            </strong>
-          ) : nFilter ? (
-            <strong>
-              필터 결과 <em>{list.length}</em>명
-            </strong>
-          ) : (
-            <strong>
-              전체 트레이더 <em>{list.length}</em>명
-            </strong>
-          )}
+            )}
+          </strong>
+          <small className="mk-asof">{asOf} 기준</small>
         </div>
         <div className="mk-toolbar">
           <div className="mk-periods" role="radiogroup" aria-label="수익률 기간">
@@ -193,13 +194,22 @@ function MarketplaceList() {
             ))}
           </div>
           <div className="mk-tools">
-            {/* 정렬: 글자만 나란히, 고른 것만 진하게 */}
-            <div className="mk-sorts" role="radiogroup" aria-label="정렬">
-              {SORTS.map((s) => (
-                <button key={s.key} type="button" role="radio" aria-checked={sort === s.key} className={sort === s.key ? "on" : ""} onClick={() => update({ sort: s.key, page: 1 })}>
-                  {s.label}
-                </button>
-              ))}
+            {/* 정렬: 드롭다운 (4가지 × 높은순 ↓ · 낮은순 ↑) */}
+            <div className="mk-sortdd" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSortOpen(false)}>
+              <button type="button" className="mk-sortdd-btn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
+                {sortLabel(sort)} ▾
+              </button>
+              {sortOpen && (
+                <ul className="mk-sortdd-list" role="listbox" aria-label="정렬">
+                  {SORT_ALL.map((k, i) => (
+                    <li key={k} className={i % 2 === 0 && i > 0 ? "sep" : ""}>
+                      <button type="button" role="option" aria-selected={sort === k} className={sort === k ? "on" : ""} onClick={() => (update({ sort: k, page: 1 }), setSortOpen(false))}>
+                        {sortLabel(k)} {sort === k && <span aria-hidden>✓</span>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <button type="button" className={`mk-filter-btn${nFilter ? " on" : ""}`} onClick={() => setOpen(true)} aria-label={nFilter ? `필터 ${nFilter}개 적용됨` : "필터"}>
               <SlidersHorizontal size={15} aria-hidden />
@@ -212,49 +222,41 @@ function MarketplaceList() {
         {!shown.length ? (
           <p className="mk-card mk-empty">조건에 맞는 트레이더가 없어요. 검색어나 필터를 바꿔 보세요.</p>
         ) : (
-          <div className="mk-table">
-            <div className="mk-thead" aria-hidden>
-              <span>트레이더</span>
-              <span>열람권</span>
-              <span>이행률</span>
-              <span>{periodLabel} 수익률</span>
-              <span>추이</span>
-            </div>
-            <ul className="mk-list">
-              {shown.map((t, i) => (
-                <li key={t.id}>
-                  <Link href={`/marketplace/${t.id}`} className="mk-row">
-                    <span className="mk-rank">{(cur - 1) * PER_PAGE + i + 1}</span>
-                    <span className="mk-avatar" aria-hidden>
-                      {t.name.slice(0, 1)}
-                    </span>
-                    <div className="mk-row-who">
-                      <strong>
-                        <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name} <FavButton id={t.id} name={t.name} />
-                      </strong>
-                      <p>{t.tagline}</p>
-                    </div>
-                    <span className="mk-cell">{sellable(t) ? won(t.price) : "판매 중지"}</span>
-                    <span className="mk-cell">{t.follow}%</span>
+          <ul className="mk-cards">
+            {shown.map((t) => (
+              <li key={t.id}>
+                <Link href={`/marketplace/${t.id}`} className="mk-tcard">
+                  <div className="mk-tcard-who">
+                    <small>{t.tagline}</small>
+                    <strong>
+                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart">♥ {likeTotals[t.id] ?? t.likes}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+                    </strong>
+                    <p>{t.intro}</p>
+                  </div>
+                  <div className="mk-tcard-stat">
+                    <small>가격</small>
+                    <b>{sellable(t) ? won(t.price) : "판매 중지"}</b>
+                  </div>
+                  <div className="mk-tcard-stat">
+                    <small>전략 이행률</small>
+                    <b>{t.follow}%</b>
+                  </div>
+                  <div className="mk-tcard-stat">
+                    <small>{periodLabel} 수익률</small>
                     {oneStock(t, period) ? (
-                      <>
-                        <span className="mk-cell big" title="이 기간엔 매매가 없거나 한 종목만 매매해 수익률을 비교하지 않아요">-</span>
-                        <span className="mk-row-spark mk-cell">-</span>
-                      </>
+                      <b title="이 기간엔 매매가 없거나 한 종목만 매매해 수익률을 비교하지 않아요">-</b>
                     ) : (
-                      <>
-                        <span className={`mk-cell big ${tone(t.returns[period])}`}>{pct(t.returns[period])}</span>
-                        <span className="mk-row-spark">
-                          {/* 고른 기간(월초부터)의 날마다 평가금 — 기간을 바꾸면 그래프도 바뀜 */}
-                          <Spark equity={t.curves?.[period] ?? [10000]} w={110} h={34} />
-                        </span>
-                      </>
+                      <b className={`big ${tone(t.returns[period])}`}>{pct(t.returns[period])}</b>
                     )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  </div>
+                  <div className="mk-tcard-spark">
+                    <small>수익률 추이</small>
+                    {oneStock(t, period) ? <span>-</span> : <Spark equity={t.curves?.[period] ?? [10000]} w={110} h={34} />}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
         <Pager page={cur} pages={pages} onPage={(p) => (setPage(p), window.scrollTo({ top: 0, behavior: "smooth" }))} />
         <p className="mk-policy-foot">
@@ -292,7 +294,7 @@ function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; i
         <span className="mk-range-label">정렬</span>
         <div className="mk-seg">
           {SORTS.map((s) => (
-            <button key={s.key} type="button" className={sort === s.key ? "on" : ""} onClick={() => setSort(s.key)}>
+            <button key={s.key} type="button" className={sortKey(sort) === s.key ? "on" : ""} onClick={() => setSort(s.key)}>
               {s.label}
             </button>
           ))}
@@ -334,4 +336,23 @@ function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; i
       </div>
     </div>
   );
+}
+
+/** 내 투자 정보 (로그인했으면 계정의 investment). 추천순에 씀 */
+function useMyInvestment(): Investment | null {
+  const { user } = useSupabaseUser();
+  return useMemo(() => {
+    if (!user) return null;
+    const inv = readInvestment((user.user_metadata ?? {}) as Record<string, unknown>);
+    return inv.styles.length || inv.indicators.length || inv.market || inv.period ? inv : null;
+  }, [user]);
+}
+
+/** 내 투자 정보와 트레이더가 겹치는 정도 (매매 방식 2점 · 참고 지표 1점 · 시장 2점 · 기간 1점) */
+function similarity(me: Investment, t: Trader) {
+  const norm = (x: string) => x.replace(/\s/g, "");
+  const common = (a: string[], b: string[]) => a.filter((x) => b.some((y) => norm(y) === norm(x))).length;
+  const marketHit = (me.market.includes("국내") && t.market === "국내 주식") || ((me.market.includes("미국") || me.market.includes("해외")) && t.market === "해외 주식") ? 1 : 0;
+  const periodHit = (me.period.includes("단기") && t.type === "단기 매매") || (me.period.includes("중기") && t.type === "스윙") || (me.period.includes("장기") && t.type === "추세 추종") ? 1 : 0;
+  return common(me.styles, t.styles) * 2 + common(me.indicators, t.indicators) + marketHit * 2 + periodHit;
 }
