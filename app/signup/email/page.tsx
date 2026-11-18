@@ -3,7 +3,7 @@
 // 이름·성별·생년월일은 Supabase user_metadata 에 넣는다 (세션이 바로 없으면 첫 로그인 때)
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import SiteHeader from "../../SiteHeader";
+import AuthHeader from "../../AuthHeader";
 import { checkUsername, signUp } from "../../../lib/api/auth";
 import { DateField, TERMS_VERSION, TermsChecks } from "../../auth-forms";
 import { errorMessage } from "../../../lib/api/client";
@@ -82,8 +82,8 @@ export default function EmailSignupPage() {
   );
 
   return (
-    <main className="auth-page">
-      {sentTo ? <SiteHeader title="가입 완료" right={false} /> : <SiteHeader title="회원가입" right={<Link className="gnb-login" href="/login">로그인</Link>} />}
+    <main className="auth-page auth-design">
+      <AuthHeader title={sentTo ? "가입 완료" : "회원가입"} login={!sentTo} />
       <section className={sentTo ? "signup-done" : "signup-form"}>
         {!sentTo && <h1>회원가입</h1>}
         {sentTo ? (
@@ -117,7 +117,7 @@ export default function EmailSignupPage() {
                 <span className="with-icon">
                   <input suppressHydrationWarning type={show.password ? "text" : "password"} value={form.password} onChange={(e) => set({ password: e.target.value })} placeholder="비밀번호를 입력하세요." autoComplete="new-password" minLength={8} required />
                   <button type="button" onClick={() => setShow({ ...show, password: !show.password })} aria-label={show.password ? "비밀번호 숨기기" : "비밀번호 보기"}>
-                    <Eye off={!show.password} />
+                    {show.password ? <Eye off={false} /> : <img src="/auth/password-hidden.png" width="19" height="20" alt="" />}
                   </button>
                 </span>
                 <small className={`signup-hint${form.password ? (PASSWORD_OK(form.password) ? " ok" : " err") : ""}`}>영문, 숫자, 특수문자 조합 8자 이상</small>
@@ -129,7 +129,7 @@ export default function EmailSignupPage() {
                 <span className="with-icon">
                   <input suppressHydrationWarning type={show.confirm ? "text" : "password"} value={form.confirm} onChange={(e) => set({ confirm: e.target.value })} placeholder="비밀번호를 다시 입력하세요." autoComplete="new-password" required />
                   <button type="button" onClick={() => setShow({ ...show, confirm: !show.confirm })} aria-label={show.confirm ? "비밀번호 숨기기" : "비밀번호 보기"}>
-                    <Eye off={!show.confirm} />
+                    {show.confirm ? <Eye off={false} /> : <img src="/auth/password-hidden.png" width="19" height="20" alt="" />}
                   </button>
                 </span>
                 {form.confirm && (
@@ -138,7 +138,7 @@ export default function EmailSignupPage() {
               </span>,
             )}
             {row("이메일", <input suppressHydrationWarning type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="이메일을 입력하세요." autoComplete="email" required />)}
-            <div className="signup-row">
+            <div className="signup-row signup-gender-row">
               <span>
                 성별 <i>*</i>
               </span>
@@ -162,7 +162,7 @@ export default function EmailSignupPage() {
             )}
             <TermsChecks value={terms} onChange={setTerms} />
             <button className="signup-submit" disabled={loading}>
-              {loading ? "처리 중..." : "가입 완료하고 프로필 설정하기 →"}
+              {loading ? "처리 중..." : "가입 완료하고 프로필 설정하기"}
             </button>
           </form>
         )}

@@ -4,7 +4,8 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import SiteHeader from "../../SiteHeader";
+import AuthHeader from "../../AuthHeader";
+import { startGoogle } from "../../auth-ui";
 import { getSupabaseBrowser } from "../../../lib/supabase-browser";
 import { DateField, TERMS_VERSION, TermsChecks } from "../../auth-forms";
 
@@ -18,8 +19,9 @@ export default function SignupCompletePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getSupabaseBrowser()
-      ?.auth.getSession()
+    const supabase = getSupabaseBrowser();
+    if (!supabase) return;
+    supabase.auth.getSession()
       .then(({ data }) => {
         const u = data.session?.user ?? null;
         setUser(u);
@@ -35,27 +37,37 @@ export default function SignupCompletePage() {
     if (!terms.service || !terms.privacy) return setError("필수 약관에 동의해 주세요.");
     setLoading(true);
     setError("");
-    const { error: err } = (await getSupabaseBrowser()?.auth.updateUser({
-      data: { nickname: nickname.trim(), birthdate, gender, signup_completed: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
-    })) ?? { error: null };
-    if (err) {
-      setError(err.message);
+    try {
+      const supabase = getSupabaseBrowser();
+      if (!supabase || !user) throw new Error("Google 계정을 먼저 연결해 주세요.");
+      const { error: err } = await supabase.auth.updateUser({
+        data: { nickname: nickname.trim(), birthdate, gender, signup_completed: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
+      });
+      if (err) throw err;
+      window.location.replace("/onboarding");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "가입 정보를 저장하지 못했습니다.");
       setLoading(false);
-      return;
     }
-    window.location.replace("/onboarding");
   }
 
   return (
-    <main className="auth-page">
-      <SiteHeader title="회원가입" right={<Link className="gnb-login" href="/login">로그인</Link>} />
+    <main className="auth-page auth-design">
+      <AuthHeader title="회원가입" />
       <section className="signup-complete">
-        {user === undefined ? (
+        {user === undefined && getSupabaseBrowser() ? (
           <p className="mp-muted">불러오는 중…</p>
         ) : !user ? (
-          <p className="auth-done">
-            로그인 정보가 없어요. <Link href="/signup">회원가입</Link>으로 돌아가 주세요.
-          </p>
+          <>
+            <h1>Google 계정으로 가입</h1>
+            <p>Google 계정을 연결하고 가입을 마무리해 주세요.</p>
+            <button type="button" className="google-connect" disabled={loading} onClick={async () => {
+              setLoading(true);
+              try { await startGoogle(); } catch (err) { setError(err instanceof Error ? err.message : "Google 계정을 연결하지 못했습니다."); setLoading(false); }
+            }}>Google 계정 연결하기 →</button>
+            <Link href="/signup">다른 방법으로 가입하기</Link>
+            {error && <p className="auth-error" role="alert">{error}</p>}
+          </>
         ) : (
           <>
             <div className="google-linked">

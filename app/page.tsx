@@ -3,11 +3,15 @@
 //   예전 랜딩(Landing.tsx)은 지금 안 씀
 import { useProfile } from "./AccountChip";
 import HomeDashboard from "./HomeDashboard";
+import HomeInvestmentPrompt from "./HomeInvestmentPrompt";
 import Intro from "./intro/Intro";
 import "./intro/intro.css";
 
 export default function Home() {
   const { profile, ready } = useProfile();
   if (!ready) return <main className="home" />;
-  return profile ? <HomeDashboard /> : <Intro />;
+  return profile ? <>
+    <HomeDashboard />
+    {!profile.hasInvestment && <HomeInvestmentPrompt key={`${profile.userId}:${profile.lastSignInAt}`} userId={profile.userId} lastSignInAt={profile.lastSignInAt} />}
+  </> : <Intro />;
 }

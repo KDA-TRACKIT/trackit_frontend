@@ -7,8 +7,12 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "../lib/supabase-browser";
 import ThemeSwitch from "./ThemeSwitch";
 import { useNotifications } from "../lib/notifications";
+import { hasSavedInvestment } from "../lib/investment-profile";
 
 export type Profile = {
+  userId: string;
+  lastSignInAt: string | null;
+  hasInvestment: boolean;
   name: string;
   email: string | null;
   avatar: string | null;
@@ -26,6 +30,9 @@ export function profileOf(user: User): Profile {
     user.email?.split("@")[0] ??
     "내 계정";
   return {
+    userId: user.id,
+    lastSignInAt: user.last_sign_in_at ?? null,
+    hasInvestment: hasSavedInvestment(meta),
     name,
     email: user.email ?? null,
     avatar: pick("avatar_url", "picture") ?? null,
@@ -42,16 +49,19 @@ export function useProfile() {
     if (!supabase) return;
     supabase.auth.getSession().then(async ({ data }) => {
       let session = data.session;
+      let verifiedUser = session?.user;
       // 브라우저에 남은 세션이 Supabase 에서도 살아 있는지 확인 (다른 곳에서 로그아웃하면 토큰은 남아도 서버가 401)
       if (session) {
-        const { error } = await supabase.auth.getUser();
+        const { data: verified, error } = await supabase.auth.getUser();
+        if (verified.user) verifiedUser = verified.user;
         if (error && (error.status === 401 || error.status === 403 || /session/i.test(error.message))) {
           const refreshed = await supabase.auth.refreshSession();
           session = refreshed.data.session;
+          verifiedUser = session?.user;
           if (!session) await supabase.auth.signOut({ scope: "local" });
         }
       }
-      setProfile(session ? profileOf(session.user) : null);
+      setProfile(session && verifiedUser ? profileOf(verifiedUser) : null);
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) =>
