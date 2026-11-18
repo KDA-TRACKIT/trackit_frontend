@@ -1,5 +1,5 @@
 /* 투자 정보 (/insights). 색은 theme.css 의 --c-* 만 → 다크 모드 자동. 내용 폭은 작업실처럼 상단 바 끝선(40px)까지 */
-.ins { min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.ins { min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .ins-body { display:flex; width:calc(100% - 80px); flex-direction:column; gap:16px; margin:32px auto 80px; }
 .ins-body h1 { margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px; }
 
@@ -104,7 +104,7 @@
 .ins-mk-w52 .bar { position:relative; height:4px; margin:12px 6px; border-radius:2px; background:var(--c-line); }
 .ins-mk-w52 .bar i { position:absolute; top:50%; width:14px; height:14px; border:3px solid var(--c-ink); border-radius:50%; background:var(--c-surface); transform:translate(-50%,-50%); }
 .ins-mk-w52 .ends { display:flex; justify-content:space-between; font-size:15px; font-variant-numeric:tabular-nums; }
-@media (max-width:1000px) {
+@media (max-width:800px) {
   .ins-mk-body { grid-template-columns:1fr; }
   .ins-mk-stats { padding:18px 0 0; border-left:0; border-top:1px solid var(--c-line); }
   .ins-mk-headline { display:none; }
@@ -152,8 +152,8 @@ li.ins-mv-row.on { background:var(--c-subtle); }
 .ins-mv-facts dd { margin:3px 0 0; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
 .ins-mv-go { display:grid; place-items:center; height:40px; margin-top:4px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; }
 .ins-mv-go:hover { background:var(--c-hover); }
-@media (max-width:1280px) { .ins-mv-row { grid-template-columns:34px minmax(150px,1.6fr) minmax(86px,1fr) minmax(116px,1.1fr) minmax(80px,.9fr); } .ins-mv-row .opt { display:none; } }
-@media (max-width:1000px) { .ins-mv-body { grid-template-columns:1fr; } .ins-mv-table { padding-right:0; } .ins-mv-detail { position:static; padding:16px 0 0; border-left:0; border-top:1px solid var(--c-line); } }
+@media (max-width:800px) { .ins-mv-row { grid-template-columns:34px minmax(150px,1.6fr) minmax(86px,1fr) minmax(116px,1.1fr) minmax(80px,.9fr); } .ins-mv-row .opt { display:none; } }
+@media (max-width:800px) { .ins-mv-body { grid-template-columns:1fr; } .ins-mv-table { padding-right:0; } .ins-mv-detail { position:static; padding:16px 0 0; border-left:0; border-top:1px solid var(--c-line); } }
 .ins-mv-wait { margin:-200px 0 200px; text-align:center; }
 /* 미국 장이 닫혀 거래량이 없을 때: 거래량 · 거래대금 칸 없이 */
 .ins-mv-table.novol .ins-mv-row { grid-template-columns:34px minmax(170px,1.6fr) minmax(90px,1fr) minmax(120px,1.1fr) minmax(90px,1fr); }

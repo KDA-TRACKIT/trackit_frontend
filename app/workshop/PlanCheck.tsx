@@ -51,8 +51,8 @@ export function checkPlan(plan: Plan, text: string, ctx: CheckContext = {}) {
       { key: "condition", label: "진입 조건 · 가격", ok: t(plan.condition), value: plan.condition },
       { key: "stop", label: "손절", ok: t(plan.stop), value: plan.stop },
       { key: "target", label: "목표 · 청산", ok: t(plan.target), value: plan.target },
-      { key: "weight", label: "비중", ok: t(plan.weight), value: plan.weight },
     ];
+    // 비중은 선택 (필수에서 뺌, 적으면 아래 검사만)
     const range = nums(plan.condition);
     const lo = Math.min(...range);
     const hi = Math.max(...range);
@@ -111,6 +111,29 @@ function deadlines() {
     { label: `이번 주 (${md(fri)})`, value: `${md(fri)}까지` },
     { label: "이번 달", value: `${md(end)}까지` },
   ];
+}
+
+/**
+ * AI 정리 직후 계획 칸 자동 채우기 (사용자가 따로 채우지 않아도 되게, 빈 칸만):
+ *   방향 = AI 판단(상승 → 매수 · 하락 → 매도), 진입 조건 · 손절 · 목표 = 그은 선 중 지금 가격에 가까운 것
+ *   (매수: 아래 첫 선 = 진입, 아래 둘째 선 = 손절, 위 첫 선 = 목표 / 매도는 반대)
+ */
+export function autoPlan(base: Plan, drawings: Drawing[], nowTime: number | undefined, current: number | undefined, money: (n: number) => string, aiDirection?: string): Plan {
+  const dir: Plan["direction"] = base.direction || (/상승|LONG/i.test(aiDirection ?? "") ? "매수" : /하락|SHORT/i.test(aiDirection ?? "") ? "매도" : "");
+  const sell = dir === "매도";
+  const rungs = buildLadder(drawings, nowTime).rungs.map((r) => r.price);
+  const cur = current ?? 0;
+  const below = [...new Set(rungs.filter((p) => !cur || p < cur))].sort((a, b) => b - a);
+  const above = [...new Set(rungs.filter((p) => !cur || p >= cur))].sort((a, b) => a - b);
+  const [near, far] = sell ? [above[0], above[1]] : [below[0], below[1]];
+  const tgt = sell ? below[0] : above[0];
+  return {
+    ...base,
+    direction: dir,
+    condition: base.condition || (near ? `${money(near)} ${sell ? "도달 시 매도" : "지지 확인 후 매수"}` : ""),
+    stop: base.stop || (far ? `${money(far)} ${sell ? "돌파 시 손절" : "이탈 시 손절"}` : ""),
+    target: base.target || (tgt ? money(tgt) : ""),
+  };
 }
 
 export const STATUS_LABEL: Record<PlanStatus, string> = { plan: "완성", partial: "일부", none: "미완성" };
@@ -172,33 +195,28 @@ export default function PlanCheck({
     cause: "장중 급락에 겁먹음",
     next: "손절선 전엔 팔지 않기",
   };
+  // 빠진 칩을 눌렀을 때만 그 항목 입력칸이 열림 (늘 떠 있던 입력칸 · 탭 · 진행 막대를 줄임)
   const [pick, setPick] = useState<string | null>(null);
   const missing = c.items.filter((it) => !it.ok);
-  const cur = missing.find((it) => it.key === pick) ?? missing[0];
+  const cur = missing.find((it) => it.key === pick) ?? null;
   const finish = (key: string) => {
     const v = draft.trim();
     if (v && field[key]) set({ [field[key]]: v } as Partial<Plan>);
     setDraft("");
+    setPick(null);
   };
 
   return (
-    <div className="ws-pc" aria-label="노트 완성도 점검">
-      {/* 노트 종류: 한 줄 4칸 */}
-      <div className="ws-pc-kinds" role="radiogroup" aria-label="노트 종류">
-        {KINDS.map((k) => (
-          <button key={k} type="button" role="radio" aria-checked={plan.kind === k} className={plan.kind === k ? "on" : ""} onClick={() => set({ kind: k })}>
-            {KIND_LABEL[k]}
-          </button>
-        ))}
-      </div>
-      {/* 진행 막대 + (매매 · 보유면) 방향 */}
-      <div className="ws-pc-head">
-        <span className="ws-pc-count" title={STATUS_LABEL[c.status]}>
-          필수 <b className={c.filled === c.total ? "done" : ""}>{c.filled}</b>/{c.total}
-        </span>
-        <i className="ws-pc-bar" aria-hidden>
-          <i className={c.filled === c.total ? "done" : ""} style={{ width: `${c.total ? (c.filled / c.total) * 100 : 0}%` }} />
-        </i>
+    <div className="ws-pc ws-pc-lite" aria-label="노트 완성도 점검">
+      {/* 한 줄: 노트 종류(작은 선택칸) + (매매 · 보유면) 방향 */}
+      <div className="ws-pc-top">
+        <select value={plan.kind} onChange={(e) => (set({ kind: e.target.value as NoteKind }), setPick(null))} aria-label="노트 종류">
+          {KINDS.map((k) => (
+            <option key={k} value={k}>
+              {KIND_LABEL[k]}
+            </option>
+          ))}
+        </select>
         {(plan.kind === "trade" || plan.kind === "hold") && (
           <span className="ws-pc-dir" role="radiogroup" aria-label="방향">
             {(["매수", "매도"] as const).map((d) => (
@@ -208,32 +226,29 @@ export default function PlanCheck({
             ))}
           </span>
         )}
+        <small className="ws-pc-left" title={STATUS_LABEL[c.status]}>
+          {missing.length ? `${missing.length}개 남음` : "다 채움"}
+        </small>
       </div>
-      {/* 채운 것은 한 줄 태그로 */}
-      {c.items.some((it) => it.ok) && (
-        <div className="ws-pc-done">
-          {c.items
-            .filter((it) => it.ok)
-            .map((it) => (
-              <span key={it.key} title={it.value}>
-                ✓ {it.label} <b>{it.value}</b>
-              </span>
-            ))}
-        </div>
-      )}
-      {/* 빠진 것: 이름 탭 + 고른 항목의 입력 칸(항상 보임) + 그은 선에서 고른 추천 */}
-      {missing.length > 0 && cur && (
+      {/* 필수 항목 칩: 채운 것 ✓, 빠진 것 + (누르면 아래에 입력칸) */}
+      <div className="ws-pc-chips">
+        {c.items.map((it) =>
+          it.ok ? (
+            <span key={it.key} className="ok" title={it.value}>
+              ✓ {it.label}
+            </span>
+          ) : (
+            <button key={it.key} type="button" className={cur?.key === it.key ? "on" : ""} onClick={() => (setPick(cur?.key === it.key ? null : it.key), setDraft(""))}>
+              + {it.label}
+            </button>
+          ),
+        )}
+      </div>
+      {cur && (
         <div className="ws-pc-step">
-          <div className="ws-pc-miss" role="tablist" aria-label="빠진 항목">
-            {missing.map((it) => (
-              <button key={it.key} type="button" role="tab" aria-selected={cur.key === it.key} className={cur.key === it.key ? "on" : ""} onClick={() => (setPick(it.key), setDraft(""))}>
-                {it.label}
-              </button>
-            ))}
-          </div>
           {field[cur.key] && (
             <div className="ws-pc-field">
-              <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && finish(cur.key)} placeholder={placeholder[cur.key] ?? cur.label} aria-label={cur.label} />
+              <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && finish(cur.key)} placeholder={placeholder[cur.key] ?? cur.label} aria-label={cur.label} />
               <button type="button" onClick={() => finish(cur.key)} disabled={!draft.trim()}>
                 넣기
               </button>
@@ -243,7 +258,7 @@ export default function PlanCheck({
             <div className="ws-pc-ask">
               <small>{field[cur.key] ? "추천" : "고르기"}</small>
               {(chips[cur.key] ?? []).map((ch) => (
-                <button key={ch.label} type="button" onClick={() => set(ch.patch)}>
+                <button key={ch.label} type="button" onClick={() => (set(ch.patch), setPick(null))}>
                   {ch.label}
                 </button>
               ))}

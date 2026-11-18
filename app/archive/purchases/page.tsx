@@ -46,12 +46,20 @@ export default function PurchasesPage() {
   const byTrader = [...new Map(unused.map((p) => [p.traderId, { traderId: p.traderId, name: p.traderName, count: unused.filter((x) => x.traderId === p.traderId).length }])).values()];
   const total = passes.reduce((a, p) => a + p.amount, 0) + (server ?? []).filter((p) => p.paymentStatus === "PAID").reduce((a, p) => a + Number(p.price), 0);
   const nothing = server !== null && !passes.length && !server.length;
+  // 시안: 열람권을 산 트레이더별 카드 (보유 열람권 · 전략 이행률 · 최근 1개월 수익률 · 보유 전략)
+  const traders = [...new Set(passes.map((p) => p.traderId))].map((id) => {
+    const mine = passes.filter((p) => p.traderId === id);
+    const t = traderById(id);
+    const months = [...new Set(mine.flatMap((p) => (p.used ? [p.used.month] : [])))].sort().reverse();
+    return { id, t, name: t?.name ?? mine[0].traderName, count: mine.length, months, ret: t?.monthly.at(-1)?.ret ?? null };
+  });
+  const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
 
   return (
     <main className="mk-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
-        <h1 className="mk-title">구매한 전략</h1>
+        <h1 className="mk-title">트레이더</h1>
         <p className="ar-summary">
           {server === null ? (
             "불러오는 중…"
@@ -73,6 +81,39 @@ export default function PurchasesPage() {
           </div>
         ) : (
           <>
+            {traders.length > 0 && (
+              <ul className="ar-traders">
+                {traders.map((g) => (
+                  <li key={g.id}>
+                    <Link href={`/archive/purchases/${g.id}`} className="ar-trader">
+                      <div className="ar-trader-who">
+                        <small>{g.t?.tagline}</small>
+                        <strong>
+                          {g.name} {g.t && <span className="ar-heart">♥ {g.t.likes}</span>}
+                        </strong>
+                        <p>{g.t?.intro}</p>
+                      </div>
+                      <div className="ar-trader-stat">
+                        <small>보유 열람권</small>
+                        <b>{g.count}개</b>
+                      </div>
+                      <div className="ar-trader-stat">
+                        <small>전략 이행률</small>
+                        <b>{g.t ? `${g.t.follow}%` : "—"}</b>
+                      </div>
+                      <div className="ar-trader-stat">
+                        <small>최근 1개월 수익률</small>
+                        <b className={g.ret === null ? "" : tone(g.ret)}>{g.ret === null ? "—" : pct(g.ret)}</b>
+                      </div>
+                      <div className="ar-trader-stat">
+                        <small>보유 전략</small>
+                        <b>{g.months.length ? g.months.slice(0, 2).map(shortMonth).join(" · ") + (g.months.length > 2 ? ` 외 ${g.months.length - 2}` : "") : "아직 안 연 열람권"}</b>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
             {byTrader.length > 0 && (
               <section className="ar-day">
                 <h2>남은 열람권</h2>

@@ -75,13 +75,8 @@ export default function Intro() {
     <a className="ti-skip" href="#ti-features">기능 소개로 건너뛰기</a>
     <header className={motion.scrolled ? "ti-nav ti-nav-scrolled" : "ti-nav"}>
       <a href="#ti-top" className="ti-brand">TRACKIT</a>
-      <nav className="ti-nav-links" aria-label="주 메뉴">
-        {/* 지금 상단 바 메뉴와 같게. 소개 화면은 로그인 전에만 보여서 홈 말고는 바로 로그인으로 */}
-        <Link href="/">홈</Link>
-        <Link href="/login">FOR TRADE</Link>
-        <Link href="/login">전략 쇼핑</Link>
-        <Link href="/login">아카이브</Link>
-      </nav>
+      {/* 소개 화면은 로그인 전에만 보여서 메뉴 없음 (가운데 칸은 남겨 로고 · 오른쪽 위치 그대로) */}
+      <nav className="ti-nav-links" aria-label="주 메뉴" />
       <div className="ti-nav-right"><ThemeToggle/><Link href="/login" className="ti-nav-cta"><span>↗</span> 시작하기</Link></div>
     </header>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "../../../lib/supabase-browser";
 import { applyStashedProfile } from "../../auth-ui";
+import { apiRequest } from "../../../lib/api/client";
 
 export default function AuthCallbackPage() {
   const [message, setMessage] = useState("로그인 처리 중입니다...");
@@ -28,6 +29,14 @@ export default function AuthCallbackPage() {
       if (user && user.app_metadata?.provider === "google" && user.user_metadata?.signup_completed !== true) {
         window.location.replace("/signup/complete");
         return;
+      }
+      // 가입은 마쳤어도 DB 에 닉네임 · 생년월일 · 성별이 비어 있으면 (예전 Google 가입은 DB 에 안 넣었음) 가입 마무리에서 다시 받음
+      if (user && user.app_metadata?.provider === "google") {
+        const me = await apiRequest<{ nickname: string | null; gender: string | null; birthDate: string | null }>("/me").catch(() => null);
+        if (me && (!me.nickname || !me.gender || !me.birthDate)) {
+          window.location.replace("/signup/complete");
+          return;
+        }
       }
       if (user && user.app_metadata?.provider !== "google" && user.user_metadata?.signup_completed !== true) {
         await applyStashedProfile(user.email ?? "");

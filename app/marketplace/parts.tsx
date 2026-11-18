@@ -178,6 +178,7 @@ export function PassBuyButton({
 export function StrategyButton({ trader, strategy, className = "mk-primary", notify }: { trader: Trader; strategy: Strategy; className?: string; notify: (m: string) => void }) {
   const passes = usePasses();
   const [busy, setBusy] = useState(false);
+  const [asking, setAsking] = useState(false);
   if (opened(passes, trader.id, strategy.month) || strategy.free) {
     // 연 전략 · 무료 첫 전략: 내용(그은 선 · 매매 · 차트) 보러 가기
     return (
@@ -188,27 +189,50 @@ export function StrategyButton({ trader, strategy, className = "mk-primary", not
   }
   const left = unusedPasses(passes, trader.id).length;
   if (left > 0) {
+    // 확인은 화면 안 팝업으로 (window.confirm 은 앱 안 브라우저 · 일부 환경에서 바로 '취소'로 처리돼 아무 일도 안 일어났음)
+    const open = async () => {
+      setAsking(false);
+      setBusy(true);
+      try {
+        await redeem(trader.id, strategy.month, strategy.title);
+        notify("전략을 열었어요");
+      } catch (e) {
+        notify(errorMessage(e));
+      } finally {
+        setBusy(false);
+      }
+    };
     return (
-      <button
-        type="button"
-        className={`${className} mk-redeem`}
-        disabled={busy}
-        onClick={async () => {
-          const ok = window.confirm(`열람권 1장으로 "${strategy.title}" (${strategy.month}) 전략을 열까요?\n한 번 바꾸면 다른 전략으로 바꿀 수 없어요. (남은 열람권 ${left}장)`);
-          if (!ok) return;
-          setBusy(true);
-          try {
-            await redeem(trader.id, strategy.month, strategy.title);
-            notify("전략을 열었어요");
-          } catch (e) {
-            notify(errorMessage(e));
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "여는 중…" : "열람권으로 열기"}
-      </button>
+      <>
+        <button type="button" className={`${className} mk-redeem`} disabled={busy} onClick={() => setAsking(true)}>
+          {busy ? "여는 중…" : "열람권으로 열기"}
+        </button>
+        {asking && (
+          <div className="mk-overlay" role="dialog" aria-modal="true" aria-label="열람권으로 열기" onClick={() => setAsking(false)}>
+            <div className="mk-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="mk-modal-head">
+                <strong>열람권으로 열기</strong>
+                <button type="button" onClick={() => setAsking(false)} aria-label="닫기">
+                  ×
+                </button>
+              </div>
+              <p className="mk-redeem-ask">
+                열람권 1장으로 <b>&quot;{strategy.title}&quot;</b> ({strategy.month}) 전략을 열까요?
+                <br />
+                한 번 바꾸면 다른 전략으로 바꿀 수 없어요. (남은 열람권 {left}장)
+              </p>
+              <div className="mk-redeem-acts">
+                <button type="button" className="mk-ghost" onClick={() => setAsking(false)}>
+                  취소
+                </button>
+                <button type="button" className="mk-primary" onClick={() => void open()}>
+                  열기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
   return <PassBuyButton trader={trader} className={className} notify={notify} />;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useWatchlist } from "../insights/useWatchlist";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,7 +22,7 @@ import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
-import PlanCheck, { checkPlan, nums, type CheckContext } from "./PlanCheck";
+import PlanCheck, { autoPlan, checkPlan, nums, type CheckContext } from "./PlanCheck";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -83,6 +84,13 @@ export default function WorkshopPage() {
   const [query, setQuery] = useState(symbolLabel(DEFAULT_SYMBOL));
   const [results, setResults] = useState<SymbolInfo[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  // 관심 종목 (증시 캘린더 관심 종목과 같은 목록: 로그인하면 계정, 아니면 이 브라우저)
+  const watch = useWatchlist();
+  const typed = query.trim() !== "";
+  /** 검색칸이 비었으면 관심 종목, 아니면 검색 결과 (관심 종목이 없으면 검색 결과 그대로) */
+  const shownResults: SymbolInfo[] = !typed && watch.items.length ? watch.items.map((w) => ({ code: w.code, name: w.name, market: w.market, exchange: w.exchange })) : results;
+  const toggleWatch = (item: SymbolInfo) =>
+    void (watch.has(item.code) ? watch.remove(item.code) : watch.add({ code: item.code, name: item.name, market: item.market, ...(item.exchange ? { exchange: item.exchange } : {}) }));
 
   // 봉: 종목·간격이 바뀔 때 받음 (분봉은 백엔드가 종목별로 캐싱)
   useEffect(() => {
@@ -356,7 +364,8 @@ export default function WorkshopPage() {
         currency: us ? "USD" : "KRW",
       });
       setAiMemoResult(result);
-      setPlan(EMPTY_PLAN);
+      // 필수 항목을 따로 채우지 않아도 되게: AI 방향 + 그은 선으로 진입 조건 · 손절 · 목표를 미리 채움
+      setPlan(autoPlan(EMPTY_PLAN, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction));
       setLineMeaning({});
       setConfirmedAt(null);
       setAfterNotes([]);
@@ -530,7 +539,7 @@ export default function WorkshopPage() {
                   }, 150)
                 }
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && results[0]) pickSymbol(results[0]);
+                  if (e.key === "Enter" && shownResults[0]) pickSymbol(shownResults[0]);
                   if (e.key === "Escape") {
                     e.currentTarget.blur();
                   }
@@ -540,10 +549,21 @@ export default function WorkshopPage() {
               />
               <Image src="/icons/search.svg" width={18} height={18} alt="" unoptimized />
             </label>
-            {searchOpen && results.length > 0 && (
+            {searchOpen && shownResults.length > 0 && (
               <ul className="ws-search-list" role="listbox">
-                {results.map((item) => (
-                  <li key={`${item.exchange ?? "KR"}:${item.code}`}>
+                {!typed && watch.items.length > 0 && <li className="ws-search-head">관심 종목</li>}
+                {shownResults.map((item) => (
+                  <li key={`${item.exchange ?? "KR"}:${item.code}`} className="ws-search-item">
+                    <button
+                      type="button"
+                      className={`ws-search-star${watch.has(item.code) ? " on" : ""}`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => toggleWatch(item)}
+                      aria-label={watch.has(item.code) ? `${item.name} 관심 종목에서 빼기` : `${item.name} 관심 종목에 넣기`}
+                      aria-pressed={watch.has(item.code)}
+                    >
+                      {watch.has(item.code) ? "★" : "☆"}
+                    </button>
                     <button onMouseDown={(e) => e.preventDefault()} onClick={() => pickSymbol(item)} role="option" aria-selected={item.code === symbol.code}>
                       <span>{item.code}</span>
                       <strong>{item.name}</strong>

@@ -38,6 +38,7 @@ import { fetchDailyNews, fetchNewsDays, newsDays, type NewsArticle } from "../..
 import { fetchFlows, type FlowDay } from "../../lib/market-data";
 import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import { uuid } from "../../lib/uuid";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 /** 캔들 색: 양봉 초록 · 음봉 빨강 (거래량·MACD 막대도 같은 색) */
 const UP = "#089981";
@@ -649,6 +650,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(container);
     const chart = createChart(container, {
       autoSize: true,
       layout: {
@@ -709,6 +712,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     return () => {
       resizeObserver.disconnect();
+      unfixZoom();
       chart.remove();
       chartRef.current = null;
       candleRef.current = null;

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "../lib/supabase-browser";
 import ThemeSwitch from "./ThemeSwitch";
+import { useLocalAvatar } from "../lib/local-avatar";
 import { useNotifications } from "../lib/notifications";
 import { hasSavedInvestment } from "../lib/investment-profile";
 import { LogOut } from "lucide-react";
@@ -36,7 +37,8 @@ export function profileOf(user: User): Profile {
     hasInvestment: hasSavedInvestment(meta),
     name,
     email: user.email ?? null,
-    avatar: pick("avatar_url", "picture") ?? null,
+    // 직접 올린 계정 사진(custom_avatar_url)이 먼저, 없으면 소셜 로그인 사진
+    avatar: pick("custom_avatar_url", "avatar_url", "picture") ?? null,
   };
 }
 
@@ -85,12 +87,15 @@ export function Avatar({
   profile: Profile;
   size?: number;
 }) {
-  return profile.avatar ? (
-    // 소셜 프로필 사진(외부 주소)이라 next/image 대신 img
+  // 마이페이지에서 직접 올린 사진이 있으면 그것 (바꾸면 바로 반영), 없으면 소셜 프로필 사진
+  const local = useLocalAvatar(profile.userId);
+  const src = local ?? profile.avatar;
+  return src ? (
+    // 소셜 프로필 사진(외부 주소) · 직접 올린 사진(data URL)이라 next/image 대신 img
     // eslint-disable-next-line @next/next/no-img-element
     <img
       className="gnb-avatar"
-      src={profile.avatar}
+      src={src}
       alt=""
       referrerPolicy="no-referrer"
       style={{ width: size, height: size }}

@@ -4,6 +4,7 @@
 //   글씨가 봉 · 선과 겹치지 않게: 선 이름은 차트 위 범례로 빼고, 가격 창 위아래에 여백을 두어 매수/매도 · 꼭지 이름표는 빈 곳에
 import { useEffect, useMemo, useRef } from "react";
 import { CandlestickSeries, ColorType, HistogramSeries, LineSeries, LineStyle, createChart, createSeriesMarkers, type Logical, type SeriesMarker, type Time } from "lightweight-charts";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 export type SimLine =
   /** ray: 반직선 — a, b 두 점을 지나 차트 오른쪽 끝까지 */
@@ -62,11 +63,20 @@ function plan(candles: SimCandle[], lines: SimLine[]): { plans: Plan[]; tags: Ta
   const plans: Plan[] = [];
   const tags: Tag[] = [];
   const doodles: Doodle[] = [];
+  // 손그림은 저장된 차트 좌표(날짜 + 봉 사이 소수, 가격) 그대로 그린다.
+  //   이 차트 봉에 없는 날짜거나 봉 범위 밖으로 나가는 그림(다른 달 · 다른 구간에서 그린 것)은 빼서,
+  //   가격 축이 그 가격까지 늘어나 봉이 눌리거나 그림이 차트 밖에 그려지지 않게
+  const barOf = new Map(candles.map(([d], x) => [d, x]));
+  //   마지막 봉 뒤 날짜(그 달 끝까지가 머리카락일 때 오른쪽 귀 · 어깨)는 마지막 봉 다음 칸으로 (차트 오른쪽 여백 3봉 안)
+  const lastDay = candles.at(-1)?.[0] ?? "";
+  const barAt = (d: string) => barOf.get(d) ?? (d > lastDay ? candles.length : undefined);
+  const inChart = (strokes: [string, number, number][][]) =>
+    strokes.every((st) => st.every(([d, f]) => barAt(d) !== undefined && barAt(d)! + f >= -0.5 && barAt(d)! + f <= candles.length + 3));
   let color = 0;
   for (const ln of lines) {
     if (ln.kind === "doodle") {
       const key = `${ln.label}:${ln.strokes[0]?.[0]?.join(",")}`;
-      if (!seen.has(key)) {
+      if (!seen.has(key) && inChart(ln.strokes)) {
         seen.add(key);
         doodles.push({ label: ln.label, strokes: ln.strokes });
       }
@@ -154,6 +164,8 @@ export default function StrategyChart({
     if (!el || !candles.length) return;
     const up = dark ? "#4fd18b" : "#1f9d55";
     const down = dark ? "#ff6b6b" : "#e03131";
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(el);
     const chart = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: dark ? "#161a22" : "#ffffff" }, textColor: dark ? "#aab2c0" : "#555", fontSize: 11, attributionLogo: false },
@@ -164,6 +176,8 @@ export default function StrategyChart({
     });
     const candle = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false, priceLineVisible: false, lastValueVisible: false });
     candle.setData(candles.map(([d, o, h, l, c]) => ({ time: d as Time, open: o, high: h, low: l, close: c })));
+    // 원화는 소수점 없이 (기본 형식이면 440000.00 처럼 보였음)
+    if (currency !== "USD") candle.applyOptions({ priceFormat: { type: "price", precision: 0, minMove: 1 } });
     // 가격 창 위아래 여백: 매수/매도 · 꼭지 이름표가 봉 · 선 위가 아니라 빈 곳에
     candle.priceScale().applyOptions({ scaleMargins: { top: 0.2, bottom: 0.2 } });
     // 손그림(기영이 얼굴 · 빛의 검)이 다 보이게 세로 범위를 넓힘
@@ -274,7 +288,8 @@ export default function StrategyChart({
           for (const st of g.strokes) {
             const pts: string[] = [];
             for (const [d, f, v] of st) {
-              const k = at.get(d);
+              // 마지막 봉 뒤 날짜는 마지막 봉 다음 칸 (plan 의 inChart 와 같게)
+              const k = at.get(d) ?? (d > candles[candles.length - 1][0] ? candles.length : undefined);
               // 봉 사이(소수) 위치는 라이브러리가 0 을 돌려줘서 양옆 봉 좌표로 직접 나눔
               const base = Math.floor(f);
               const c0 = k === undefined ? null : ts.logicalToCoordinate((k + base) as Logical);
@@ -371,9 +386,10 @@ export default function StrategyChart({
       ro.disconnect();
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
       layer?.replaceChildren();
+      unfixZoom();
       chart.remove();
     };
-  }, [candles, mine, plans, tags, doodles, ind, dark, money]);
+  }, [candles, mine, plans, tags, doodles, ind, dark, money, currency]);
 
   const n = (ind.volume ? 1 : 0) + (ind.rsi ? 1 : 0) + (ind.macd ? 1 : 0);
   const legend = [...new Map(plans.map((p) => [`${p.label}:${p.color}`, p])).values()];

@@ -1,5 +1,5 @@
 /* 마이페이지 (시안: Trackit.zip 마이페이지 세트). 색은 globals.css 의 테마 변수(--c-*)만 쓴다 → 다크 모드 자동 */
-.mp { min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.mp { min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .mp-shell { display:grid; width:min(1060px,calc(100% - 48px)); grid-template-columns:168px minmax(0,1fr); gap:12px; align-items:start; margin:32px auto 80px; }
 .mp-muted { color:var(--c-sub); font-size:14px; }
 .mp-muted a { color:var(--c-accent); font-weight:700; }
@@ -184,7 +184,7 @@
 .mp-seg button { height:32px; padding:0 14px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .mp-seg button[aria-checked="true"] { background:var(--c-surface); color:var(--c-ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
 
-@media (max-width:900px) {
+@media (max-width:800px) {
   .mp-shell { grid-template-columns:1fr; }
   .mp-side { position:static; }
   .mp-grid-2, .mp-row-2 { grid-template-columns:1fr; }
@@ -288,7 +288,7 @@
 .mp-home-sales span { color:var(--c-sub); font-size:12.5px; }
 .mp-home-sales a { margin-top:10px; color:var(--c-accent); font-size:12.5px; font-weight:600; }
 .mp-home-sales a:hover { text-decoration:underline; }
-@media (max-width:900px) { .mp-grid-2.mp-home-grid, .mp-home-sales { grid-template-columns:1fr 1fr; } }
+@media (max-width:800px) { .mp-grid-2.mp-home-grid, .mp-home-sales { grid-template-columns:1fr 1fr; } }
 /* 프로필 공개 범위 */
 .mp-scope { padding:6px 22px; }
 .mp-scope-row { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:64px; padding:12px 0; border-bottom:1px solid var(--c-line); }
@@ -625,3 +625,26 @@ html:not([data-theme="dark"]) .mp-modal {
   .mp-scope-row { gap:12px; }
   .mp-modal { padding:24px; }
 }
+/* 본인인증 시연: 문자 대신 화면 위쪽에 뜨는 인증번호 팝업 (휴대폰 알림처럼) */
+.mp-cf-sms { position:fixed; top:24px; left:50%; z-index:1000; width:min(360px, calc(100% - 32px)); padding:14px 16px 12px; transform:translateX(-50%); border-radius:16px; background:rgba(255,255,255,.97); color:#1b2a44; box-shadow:0 18px 40px rgba(15,25,45,.28); animation:mp-cf-sms-in .25s ease-out; }
+.mp-cf-sms-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px; }
+.mp-cf-sms-head small { color:#8a93a3; }
+.mp-cf-sms p { margin:0; font-size:14px; line-height:1.5; }
+.mp-cf-sms p strong { color:#344d7d; font-size:16px; letter-spacing:2px; }
+.mp-cf-sms-actions { display:flex; gap:8px; margin-top:12px; }
+.mp-cf-sms-actions button { flex:1; height:36px; border:0; border-radius:9px; background:#344d7d; color:#fff; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.mp-cf-sms-actions button.ghost { background:#eef2f8; color:#344d7d; }
+.mp-cf-sms em { display:block; margin-top:8px; color:#8a93a3; font-size:11px; font-style:normal; text-align:center; }
+.mp-cf-sms-again { align-self:flex-start; padding:0; border:0; background:none; color:var(--c-accent, #344d7d); font:inherit; font-size:12px; text-decoration:underline; cursor:pointer; }
+@keyframes mp-cf-sms-in { from { opacity:0; transform:translate(-50%, -16px); } to { opacity:1; transform:translate(-50%, 0); } }
+html[data-theme="dark"] .mp-cf-sms { background:var(--c-surface); color:var(--c-ink); }
+/* 시안(2026-11-18 2차): 마이페이지 강조색 = 진한 남색 #0F2367 (버튼 · 고른 탭 · 스위치 등) */
+html:not([data-theme="dark"]) :is(.mp, .mp-modal, .mp-cf) { --c-accent:#0f2367; --c-accent-hover:#0b1b52; }
+.mp-cf-sms-actions button { background:#0f2367; }
+.mp-cf-sms-actions button.ghost { color:#0f2367; }
+/* 내 계좌 · 연결한 계좌 없음 (시안) */
+.mp-wallet-none { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; min-height:250px; text-align:center; }
+.mp-wallet-none strong { font-size:19px; font-weight:800; }
+.mp-wallet-none .mp-btn { height:38px; padding:0 22px; }
+.mp-optional { margin-left:2px; color:var(--c-sub); font-size:12px; font-style:normal; font-weight:500; }
+.mp-period-chips button small { margin-left:6px; color:var(--c-sub); font-size:11px; font-weight:500; } .mp-period-chips button.on small { color:inherit; opacity:.75; }
