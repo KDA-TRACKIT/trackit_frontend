@@ -3,8 +3,7 @@
 //   아래에 판매자 등급 · 수수료 · 열람권 가격 범위 (조건 기준값은 보여 주지 않음)
 import { useMemo, useState } from "react";
 import { Card, Empty, FilterChips, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
-import { useSeller, won, type Sale } from "../data";
-import { FEE, GRADE_RULES, PRICE_ANCHOR } from "../../../../lib/grade";
+import { useSeller, type Sale } from "../data";
 
 const STATUS = ["전체 정산", "정산 예정", "정산 완료"] as const;
 
@@ -47,7 +46,7 @@ export default function SettlementsPage() {
   return (
     <>
       <PageHead title="정산 내역" desc="판매 수익의 정산 금액과 지급 상태를 확인합니다." parent={["판매 관리", "/mypage/sales"]} />
-      <Card title="정산 내역" desc="정산 예정 금액과 완료된 지급 내역을 확인합니다.">
+      <Card className="mp-settlement-history" title="정산 내역" desc="정산 예정 금액과 완료된 지급 내역을 확인합니다.">
         <div className="mp-boxes">
           <div>
             <span>정산 예정 금액</span>
@@ -108,34 +107,6 @@ export default function SettlementsPage() {
         )}
         <p className="mp-muted" style={{ margin: "14px 0 0", fontSize: 12 }}>
           지금은 모의 정산이라 실제로 지급되지 않아요.
-        </p>
-      </Card>
-      {/* 판매자 등급 · 수수료 (2026-11-17 회의 공식, lib/grade). 매달 1일 최근 min(활동개월, 24)개월로 평가 */}
-      <Card title="판매자 등급 · 수수료" meta="매달 1일 평가">
-        <p className="mp-muted" style={{ margin: "0 0 10px", fontSize: 13 }}>
-          등급은 매달 1일 초과수익(시장 대비) · 샤프 지수 · PSR · 최대 낙폭 · 이행률 · 활동 기간으로 평가해요. 등급이 오를수록 열람권 가격 범위가 높아지고 수수료는 낮아져요.
-        </p>
-        <div className="mp-tiers">
-          {(["D", "C", "B", "A", "VIP"] as const).map((g, i, all) => {
-            // 열람권 가격 범위: [이 등급 하한, 다음 등급 하한 − 1단위]. A · VIP 는 상한 없음
-            const next = all[i + 1];
-            const top = next && g !== "A" ? PRICE_ANCHOR[next].L - (PRICE_ANCHOR[next].L > 100_000 ? 1000 : 100) : null;
-            return (
-              <div key={g}>
-                <strong>{g}</strong>
-                <b>수수료 {Math.round(FEE[g] * 100)}%</b>
-                <small>
-                  열람권 {won(PRICE_ANCHOR[g].L)} ~ {top ? won(top) : "상한 없음"}
-                </small>
-                <small>
-                  활동 {GRADE_RULES[g].T}개월 이상{g === "VIP" ? " · A 등급 연속 12개월" : ""}
-                </small>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mp-muted" style={{ margin: "8px 0 0", fontSize: 11.5 }}>
-          승급하면 새 등급 하한가로, 강등되면 아래 등급 상한가로 열람권 가격을 다시 정해요.
         </p>
       </Card>
     </>

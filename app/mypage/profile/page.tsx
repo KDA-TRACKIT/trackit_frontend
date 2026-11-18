@@ -1,14 +1,12 @@
 "use client";
 // 내 프로필: 사진 · 닉네임 · 소개. 닉네임·소개는 Supabase user_metadata 에 저장
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { metaText, useMypage } from "../context";
 import { Card, Notice, PageHead } from "../ui";
 import { ProfileAvatar, setLocalAvatar, shrinkImage, useLocalAvatar } from "./ProfileAvatar";
 
 export default function ProfilePage() {
   const { user, profile, meta, saveMeta } = useMypage();
-  const router = useRouter();
   const local = useLocalAvatar(user.id);
   const [nickname, setNickname] = useState(profile.name);
   const [bio, setBio] = useState(metaText(meta, "bio"));
@@ -18,7 +16,7 @@ export default function ProfilePage() {
   const [note, setNote] = useState<{ ok: boolean; msg: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const handle = metaText(meta, "handle") || user.email?.split("@")[0] || "";
-  const dirty = nickname.trim() !== profile.name || bio.trim() !== metaText(meta, "bio") || photo !== undefined;
+  const dirty = nickname.trim() !== profile.name || bio.trim() !== metaText(meta, "bio") || (photo !== undefined && (photo ?? "") !== (local ?? profile.avatar ?? ""));
 
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -50,7 +48,7 @@ export default function ProfilePage() {
   return (
     <>
       <PageHead title="내 프로필" desc="프로필 이미지, 닉네임, 소개를 한곳에서 관리하세요." />
-      <Card title="프로필 정보" desc="닉네임과 프로필 소개는 다른 사용자에게 공개될 수 있습니다.">
+      <Card className="mp-profile-editor" title="프로필 정보" desc="닉네임과 프로필 소개는 다른 사용자에게 공개될 수 있습니다.">
         <div className="mp-form">
           <div className="mp-field">
             <span>프로필 이미지</span>
@@ -91,9 +89,6 @@ export default function ProfilePage() {
         </div>
       </Card>
       <div className="mp-actions">
-        <button type="button" className="mp-btn" onClick={() => router.push("/mypage")} disabled={busy}>
-          취소
-        </button>
         <button type="button" className="mp-btn primary" onClick={() => void save()} disabled={busy || !dirty}>
           {busy ? "저장 중…" : "변경사항 저장"}
         </button>

@@ -1,7 +1,7 @@
 "use client";
 // 마이페이지 공통 조각: 제목, 카드, 숫자 칸, 빈 화면, 칩 선택, 모달
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 설명 아래에 경로(상위 / 지금)를 작게 둔다 (시안: "판매 관리 / 판매 내역").
@@ -299,17 +299,18 @@ export function Table({ cols, children }: { cols: string[]; children?: React.Rea
 }
 
 export function Modal({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
+  const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
   return (
-    <div className="mp-overlay" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mp-modal" role="dialog" aria-modal="true" aria-label={label}>
+    <dialog ref={ref} className="mp-overlay" aria-label={label} onCancel={(e) => { e.preventDefault(); onClose(); }} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="mp-modal">
         {children}
       </div>
-    </div>
+    </dialog>
   );
 }
 

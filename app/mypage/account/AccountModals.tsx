@@ -74,7 +74,7 @@ export function EmailModal({ user, onClose }: { user: User; onClose: () => void 
           <span>변경할 이메일</span>
           <div className="mp-inline">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="변경할 이메일을 입력하세요" autoComplete="email" />
-            <button type="button" className="mp-btn outline" onClick={() => void request()} disabled={!valid || busy || (left > 150)}>
+            <button type="button" className="mp-btn secondary" onClick={() => void request()} disabled={!valid || busy || (left > 150)}>
               인증요청
             </button>
           </div>

@@ -3,7 +3,6 @@
 //   전략 판매 시작하기 → 판매 약관 동의 → 정산 정보 입력 → 프로필 정보 공개 안내(동의) → 완료
 //   판매자 API 가 생기기 전까지 전환 상태는 이 브라우저에만. 정산 계좌는 끝 4자리만 저장 (전체 번호는 남기지 않음)
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMypage } from "../context";
 import { Card, Modal, PageHead } from "../ui";
 import { SELLER_TERMS_VERSION, saveBusiness, useBusiness, type Settlement } from "./state";
@@ -26,8 +25,8 @@ type Step = "none" | "terms" | "settle" | "public" | "done";
 
 export default function BusinessPage() {
   const { user, profile, meta, saveMeta } = useMypage();
-  const router = useRouter();
   const business = useBusiness(user.id);
+  const pending = business?.status === "pending";
   const [step, setStep] = useState<Step>("none");
   const [agreed, setAgreed] = useState<Record<string, boolean>>({});
   const all = TERMS.every((t) => agreed[t.key]);
@@ -37,6 +36,7 @@ export default function BusinessPage() {
   const [publicOk, setPublicOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const settleOk = !!bank && account.length >= 10 && (biz === "" || biz.replace(/\D/g, "").length === 10);
 
   async function convert() {
@@ -47,7 +47,7 @@ export default function BusinessPage() {
       await saveMeta({ privacy: allPublic(readPrivacy(meta)) });
       const settlement: Settlement = { bank, accountLast4: account.slice(-4), holder: profile.name, ...(biz ? { businessNo: biz } : {}) };
       const now = new Date().toISOString();
-      saveBusiness(user.id, { termsVersion: SELLER_TERMS_VERSION, acceptedAt: now, settlement, publicConsentAt: now });
+      saveBusiness(user.id, { status: "pending", termsVersion: SELLER_TERMS_VERSION, acceptedAt: now, settlement, publicConsentAt: now });
       setAccount(""); // 계좌번호는 바로 지운다
       setStep("done");
     } catch (err) {
@@ -56,38 +56,70 @@ export default function BusinessPage() {
     setBusy(false);
   }
 
-  const close = () => setStep("none");
+  const close = () => { if (!busy) { setAccount(""); setError(null); setStep("none"); } };
+
+  function startConversion() {
+    setAgreed({});
+    setPublicOk(false);
+    setBank("");
+    setAccount("");
+    setBiz("");
+    setError(null);
+    setEditing(false);
+    setStep("terms");
+  }
+
+  function editAccount() {
+    setBank(business?.settlement?.bank ?? "");
+    setAccount("");
+    setBiz(business?.settlement?.businessNo ?? "");
+    setError(null);
+    setEditing(true);
+    setStep("settle");
+  }
+
+  function registerAccount() {
+    if (!business || !settleOk) return;
+    try {
+      saveBusiness(user.id, { ...business, settlement: { bank, accountLast4: account.slice(-4), holder: business.settlement?.holder || profile.name, ...(biz ? { businessNo: biz } : {}) } });
+      setAccount("");
+      setEditing(false);
+      close();
+    } catch {
+      setError("계좌 변경 내용을 저장하지 못했어요. 다시 시도해 주세요.");
+    }
+  }
 
   return (
     <>
-      <PageHead title="비즈니스 프로필 전환" desc="내 투자 전략을 판매하려면 비즈니스 프로필로 전환해 주세요." />
-      <Card title="전략 판매 시작하기" desc="판매 조건을 확인하고 약관에 동의하면 비즈니스 프로필로 전환할 수 있어요.">
-        {business ? (
-          <div className="mp-biz-box ok">
-            <strong>비즈니스 프로필 사용 중</strong>
-            <p>
-              약관 동의 {new Date(business.acceptedAt).toLocaleDateString("ko-KR")}
-              {business.settlement && ` · 정산 계좌 ${business.settlement.bank} ····${business.settlement.accountLast4}`}
-            </p>
+      <PageHead title={business && !pending ? "비즈니스 프로필 관리" : "비즈니스 프로필 전환"} desc={business && !pending ? undefined : "내 투자 전략을 판매하려면 비즈니스 프로필로 전환해 주세요."} />
+      {pending ? <Card className="mp-business-pending" title="전략 판매 시작하기"><div className="mp-biz-box"><strong>계정 전환 심사 중입니다.</strong><p>최대 영업일 기준 3~5일 소요됩니다.</p></div></Card> : business ? (
+        <Card className="mp-business-management">
+          <h2>정산 정보</h2>
+          <p className="mp-card-desc">판매 수익은 매월 20일, 전월 확정 금액이 아래 계좌로 입금됩니다.</p>
+          <div className="mp-form mp-settle">
+            <div className="mp-row-2">
+              <label className="mp-field"><span>정산 은행</span><input value={business.settlement?.bank ?? "미등록"} readOnly /></label>
+              <label className="mp-field"><span>계좌번호</span><input value={business.settlement ? `•••• ${business.settlement.accountLast4}` : "미등록"} readOnly /></label>
+            </div>
+            <label className="mp-field"><span>예금주 <small>본인 인증 정보와 같아야 합니다.</small></span><input value={business.settlement?.holder || profile.name} readOnly /></label>
+            <label className="mp-field"><span>사업자등록번호 <small>선택 · 개인사업자/법인만 입력</small></span><input value={business.settlement?.businessNo || "미등록"} readOnly /></label>
           </div>
-        ) : (
+        </Card>
+      ) : <Card title="전략 판매 시작하기" desc="판매 조건을 확인하고 약관에 동의하면 비즈니스 프로필로 전환할 수 있어요.">
           <div className="mp-biz-box">
             <strong>개인 프로필 → 비즈니스 프로필</strong>
             <p>비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요.</p>
           </div>
-        )}
-      </Card>
+      </Card>}
       <div className="mp-actions">
-        <button type="button" className="mp-btn" onClick={() => router.push("/mypage")}>
-          {business ? "돌아가기" : "취소"}
-        </button>
-        {business ? (
-          <button type="button" className="mp-btn primary" onClick={() => router.push("/mypage/sales")}>
-            전략 판매 관리로
+        {pending ? <button type="button" className="mp-btn primary" disabled>계정 전환 취소</button> : business ? (
+          <button type="button" className="mp-btn primary" onClick={editAccount}>
+            계좌 변경
           </button>
         ) : (
-          <button type="button" className="mp-btn primary" onClick={() => setStep("terms")}>
-            판매 약관 확인
+          <button type="button" className="mp-btn primary" onClick={startConversion}>
+            계정 전환
           </button>
         )}
       </div>
@@ -158,7 +190,7 @@ export default function BusinessPage() {
               <span>
                 예금주 <small>본인 인증 정보와 같아야 합니다.</small>
               </span>
-              <input value={profile.name} readOnly />
+              <input value={editing ? business?.settlement?.holder || profile.name : profile.name} readOnly />
             </label>
             <label className="mp-field">
               <span>
@@ -167,12 +199,13 @@ export default function BusinessPage() {
               <input inputMode="numeric" value={biz} onChange={(e) => setBiz(bizNo(e.target.value))} placeholder="000-00-00000" />
             </label>
           </div>
+          {error && <p className="mp-notice err" role="alert">{error}</p>}
           <div className="mp-actions">
             <button type="button" className="mp-btn" onClick={close}>
               취소
             </button>
-            <button type="button" className="mp-btn primary" disabled={!settleOk} onClick={() => setStep("public")}>
-              다음
+            <button type="button" className="mp-btn primary" disabled={!settleOk} onClick={() => editing ? registerAccount() : setStep("public")}>
+              {editing ? "계좌 등록" : "다음"}
             </button>
           </div>
         </Modal>
@@ -215,9 +248,9 @@ export default function BusinessPage() {
       )}
 
       {step === "done" && (
-        <Modal label="전환 완료" onClose={close}>
-          <h2>비즈니스 프로필로 전환했어요</h2>
-          <p className="mp-modal-desc">이제 내 투자 전략을 판매할 수 있어요.</p>
+        <Modal label="전환 신청 완료" onClose={close}>
+          <h2>비즈니스 프로필 전환 신청</h2>
+          <p className="mp-modal-desc">계정 전환 심사 중입니다. 최대 영업일 기준 3~5일 소요됩니다.</p>
           <div className="mp-actions">
             <button type="button" className="mp-btn primary" style={{ minWidth: 88 }} onClick={close}>
               닫기

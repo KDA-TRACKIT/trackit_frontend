@@ -7,7 +7,6 @@ import { metaText, useMypage } from "../context";
 import { Card, Notice, PageHead } from "../ui";
 import { readPrivacy, type Privacy } from "./privacy/privacy";
 import { EmailModal, LinkModal, PasswordModal } from "./AccountModals";
-import ThemeSwitch from "../../ThemeSwitch";
 
 export default function AccountPage() {
   const { user, meta, saveMeta } = useMypage();
@@ -33,7 +32,7 @@ export default function AccountPage() {
   }
 
   const btn = (label: string, onClick: () => void) => (
-    <button type="button" className="mp-btn outline small" onClick={onClick}>
+    <button type="button" className="mp-btn secondary small" onClick={onClick}>
       {label}
     </button>
   );
@@ -68,7 +67,7 @@ export default function AccountPage() {
           <div>
             <strong>프로필 공개 범위</strong>
             <span>공개 정보 관리</span>
-            <Link className="mp-btn outline small" href="/mypage/account/privacy">
+            <Link className="mp-btn secondary small" href="/mypage/account/privacy">
               변경
             </Link>
           </div>
@@ -84,15 +83,6 @@ export default function AccountPage() {
           </div>
         </div>
         <Notice text={note} />
-      </Card>
-      <Card title="화면" desc="라이트 · 다크 테마">
-        <div className="mp-set-list">
-          <div>
-            <strong>테마</strong>
-            <span />
-            <ThemeSwitch className="mp-seg" />
-          </div>
-        </div>
       </Card>
       {modal === "email" && <EmailModal user={user} onClose={() => setModal(null)} />}
       {modal === "password" && <PasswordModal user={user} onClose={() => setModal(null)} />}

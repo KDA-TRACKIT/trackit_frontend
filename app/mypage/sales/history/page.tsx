@@ -24,7 +24,7 @@ export default function SalesHistoryPage() {
   return (
     <>
       <PageHead title="판매 내역" desc="유료 열람권의 구매와 판매 기록을 조회합니다." parent={["판매 관리", "/mypage/sales"]} />
-      <Card title="판매 내역" desc="기간별 판매 실적과 상세 주문 내역을 확인합니다.">
+      <Card className="mp-sales-history" title="판매 내역" desc="기간별 판매 실적과 상세 주문 내역을 확인합니다.">
         <div className="mp-boxes">
           <div>
             <span>총 판매 건수</span>
@@ -82,7 +82,7 @@ export default function SalesHistoryPage() {
             );
           })}
         </div>
-        {!loading && !strategies?.length && <Empty text="등록된 전략이 없습니다." />}
+        {!loading && !strategies?.length && <Empty text="표시할 전략별 판매 내역이 없습니다." />}
 
         <h3 className="mp-sub-title">최근 판매 내역</h3>
         <div className="mp-toolbar">
@@ -119,7 +119,7 @@ export default function SalesHistoryPage() {
             </div>
           ))}
         </div>
-        {loading ? <Empty text="불러오는 중…" /> : !list.length && <Empty text="판매 내역이 없습니다." />}
+        {loading ? <Empty text="불러오는 중…" /> : !list.length && <div className="mp-empty-2"><strong>판매 내역이 없습니다.</strong><p>열람권 판매가 발생하면 이곳에서 확인할 수 있습니다.</p></div>}
       </Card>
       {open && <StrategiesModal strategies={strategies} views={byStrategy} onClose={() => setOpen(false)} />}
     </>

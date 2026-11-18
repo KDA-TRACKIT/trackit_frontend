@@ -13,7 +13,8 @@ export default function SalesPage() {
   const [open, setOpen] = useState(false);
   const { user } = useMypage();
   // 판매자가 아니면 비즈니스 전환부터, 판매자면 달마다 잠긴 기록(아카이브)에서 전략으로
-  const registerHref = useBusiness(user.id) ? "/archive" : "/mypage/business";
+  const business = useBusiness(user.id);
+  const registerHref = business && business.status !== "pending" ? "/archive" : "/mypage/business";
   const dash = (v: string | null) => (loading || v === null ? "—" : v);
   return (
     <>

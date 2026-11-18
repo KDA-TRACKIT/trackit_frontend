@@ -8,8 +8,7 @@ const key = (userId: string) => `trackit:avatar:${userId}`;
 const listeners = new Set<() => void>();
 
 export function setLocalAvatar(userId: string, dataUrl: string | null) {
-  if (dataUrl) localStorage.setItem(key(userId), dataUrl);
-  else localStorage.removeItem(key(userId));
+  localStorage.setItem(key(userId), dataUrl ?? "");
   listeners.forEach((l) => l());
 }
 
@@ -46,7 +45,7 @@ export function shrinkImage(file: File): Promise<string> {
 export function ProfileAvatar({ size, preview }: { size: number; preview?: string | null }) {
   const { user, profile } = useMypage();
   const local = useLocalAvatar(user.id);
-  const src = preview === undefined ? (local ?? profile.avatar) : (preview ?? profile.avatar);
+  const src = preview === undefined ? (local ?? profile.avatar) : preview;
   return (
     <span className="mp-avatar" style={{ width: size, height: size, fontSize: size * 0.42 }}>
       {src ? (

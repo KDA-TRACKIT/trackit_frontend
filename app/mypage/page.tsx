@@ -13,16 +13,15 @@ export default function MyPage() {
   const { trades, records, symbols } = useActivity();
   const handle = metaText(meta, "handle") || user.email?.split("@")[0] || "";
   const bio = metaText(meta, "bio");
-  const business = useBusiness(user.id) !== null;
-  const { strategies, totals } = useSeller();
+  const businessState = useBusiness(user.id);
+  const business = businessState !== null && businessState.status !== "pending";
+  const { totals } = useSeller();
   const num = (n: number, unit: string, ready = true) => (
     <strong>
       {ready && n > 0 ? n.toLocaleString("ko-KR") : "—"} <small>{unit}</small>
     </strong>
   );
   const SALES = [
-    { title: "공개 전략", sub: strategies?.length ? `${strategies.length}개 · 무료 열람` : "무료 열람", href: "/mypage/sales" },
-    { title: "유료 열람권", sub: "열람권 관리", href: "/mypage/sales" },
     { title: "판매 내역", sub: totals.count ? `판매 기록 ${totals.count}건` : "판매 기록", href: "/mypage/sales/history" },
     { title: "정산 내역", sub: "정산 기록", href: "/mypage/sales/settlements" },
   ];
@@ -93,7 +92,7 @@ export default function MyPage() {
         </Card>
       </div>
 
-      <Card title="판매 관리" desc="내 전략의 공개·유료 열람권과 판매 내역을 관리합니다.">
+      <Card title="판매 관리" desc="내 전략의 판매 내역과 정산 내역을 관리합니다.">
         <div className="mp-home-sales">
           {SALES.map((s) => (
             <div key={s.title}>
