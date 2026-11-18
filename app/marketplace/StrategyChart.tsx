@@ -4,6 +4,7 @@
 //   글씨가 봉 · 선과 겹치지 않게: 선 이름은 차트 위 범례로 빼고, 가격 창 위아래에 여백을 두어 매수/매도 · 꼭지 이름표는 빈 곳에
 import { useEffect, useMemo, useRef } from "react";
 import { CandlestickSeries, ColorType, HistogramSeries, LineSeries, LineStyle, createChart, createSeriesMarkers, type Logical, type SeriesMarker, type Time } from "lightweight-charts";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 export type SimLine =
   /** ray: 반직선 — a, b 두 점을 지나 차트 오른쪽 끝까지 */
@@ -154,6 +155,8 @@ export default function StrategyChart({
     if (!el || !candles.length) return;
     const up = dark ? "#4fd18b" : "#1f9d55";
     const down = dark ? "#ff6b6b" : "#e03131";
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(el);
     const chart = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: dark ? "#161a22" : "#ffffff" }, textColor: dark ? "#aab2c0" : "#555", fontSize: 11, attributionLogo: false },
@@ -371,6 +374,7 @@ export default function StrategyChart({
       ro.disconnect();
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
       layer?.replaceChildren();
+      unfixZoom();
       chart.remove();
     };
   }, [candles, mine, plans, tags, doodles, ind, dark, money]);

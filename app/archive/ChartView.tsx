@@ -9,6 +9,7 @@ import { KINDS, KIND_COLOR, WEEK, topSymbols, type Item, type ItemKind } from ".
 import { KindChips, ALL_KINDS } from "./BoardView";
 import { KindTag, PurchasedCards } from "./parts";
 import type { Bar } from "../../lib/interval";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 const RANGES = [
   { key: 30, label: "1개월" },
@@ -252,6 +253,8 @@ function RecordChart({ bars, recs, picked, onDot }: { bars: Bar[]; recs: Item[];
     const css = getComputedStyle(document.documentElement);
     const up = css.getPropertyValue("--c-up").trim() || "#1f9d55";
     const down = css.getPropertyValue("--c-down").trim() || "#e03131";
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(box);
     const chart = createChart(box, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: dark ? "#aab2c0" : "#667085", fontSize: 11, attributionLogo: false },
@@ -301,6 +304,7 @@ function RecordChart({ bars, recs, picked, onDot }: { bars: Bar[]; recs: Item[];
       if (list?.length) onDotRef.current(list.map((r) => r.id));
     });
     return () => {
+      unfixZoom();
       chart.remove();
       chartRef.current = null;
     };

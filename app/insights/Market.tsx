@@ -25,6 +25,7 @@ import { getIndexCards, getIndexDetail, type IndexCard, type IndexDetail, type I
 import { Failed, Loading, MissingKeys, pct, tone } from "./parts";
 import { useLoad } from "./useLoad";
 import { useDark } from "../marketplace/GuessFirst";
+import { fixZoomPointer } from "../../lib/zoom-pointer";
 
 const KST = 9 * 3600;
 /** 단위별 값: 금리 5.15% · 유가 $89.62 · 코인처럼 큰 원 값은 소수 없이 */
@@ -166,6 +167,8 @@ function IndexChart({ d, kind }: { d: IndexDetail; kind: Kind }) {
     const el = box.current;
     if (!el) return;
     const intraday = d.mode === "intraday";
+    // 화면 맞춤(zoom)일 때 마우스 좌표 바로잡기 (lib/zoom-pointer.ts)
+    const unfixZoom = fixZoomPointer(el);
     const c = createChart(el, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-sub", "#555"), fontSize: 11, attributionLogo: false },
@@ -221,6 +224,7 @@ function IndexChart({ d, kind }: { d: IndexDetail; kind: Kind }) {
     s.markers = createSeriesMarkers(s.main, []);
     series.current = s;
     return () => {
+      unfixZoom();
       c.remove();
       chart.current = null;
       series.current = {};

@@ -1,5 +1,5 @@
 /* 마이페이지 (시안: Trackit.zip 마이페이지 세트). 색은 globals.css 의 테마 변수(--c-*)만 쓴다 → 다크 모드 자동 */
-.mp { min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+.mp { min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .mp-shell { display:grid; width:min(1060px,calc(100% - 48px)); grid-template-columns:168px minmax(0,1fr); gap:12px; align-items:start; margin:32px auto 80px; }
 .mp-muted { color:var(--c-sub); font-size:14px; }
 .mp-muted a { color:var(--c-accent); font-weight:700; }
@@ -183,7 +183,7 @@
 .mp-seg button { height:32px; padding:0 14px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .mp-seg button[aria-checked="true"] { background:var(--c-surface); color:var(--c-ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
 
-@media (max-width:900px) {
+@media (max-width:800px) {
   .mp-shell { grid-template-columns:1fr; }
   .mp-side { position:static; }
   .mp-grid-2, .mp-row-2 { grid-template-columns:1fr; }
@@ -287,7 +287,7 @@
 .mp-home-sales span { color:var(--c-sub); font-size:12.5px; }
 .mp-home-sales a { margin-top:10px; color:var(--c-accent); font-size:12.5px; font-weight:600; }
 .mp-home-sales a:hover { text-decoration:underline; }
-@media (max-width:900px) { .mp-grid-2.mp-home-grid, .mp-home-sales { grid-template-columns:1fr 1fr; } }
+@media (max-width:800px) { .mp-grid-2.mp-home-grid, .mp-home-sales { grid-template-columns:1fr 1fr; } }
 /* 프로필 공개 범위 */
 .mp-scope { padding:6px 22px; }
 .mp-scope-row { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:64px; padding:12px 0; border-bottom:1px solid var(--c-line); }

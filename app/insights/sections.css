@@ -98,7 +98,7 @@
 .ins-pnl-day strong { font-variant-numeric:tabular-nums; }
 .ins-state a { color:var(--c-accent); font-weight:700; }
 
-@media (max-width:1000px) {
+@media (max-width:800px) {
   .ins-grid-2, .ins-grid-2.economy { grid-template-columns:1fr; }
   .ins-cols.four { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ins-top { flex-direction:column; align-items:flex-start; }
@@ -207,7 +207,7 @@
   .ins-cal-grid { width:100%; max-width:300px; }
   .ins-cal-side { max-height:none; padding-left:0; border-left:0; }
 }
-@media (max-width:1000px) {
+@media (max-width:800px) {
   .ins-add input { width:160px; }
 }
 

@@ -1,6 +1,6 @@
 /* 전략 쇼핑 (라이트 · 다크 모두 --c-* 변수로) — 수익 초록 · 손실 빨강 */
 .mk-page { --mk-gain:#1f9d55; --mk-loss:#e03131; --mk-primary:#0f2367; --mk-primary-ink:#fff; --mk-like:#e5484d;
-  min-height:100vh; background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
+  min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-primary:#7c9be0; --mk-primary-ink:#0e1116; --mk-like:#ff7a80; }
 .mk-page .gain { color:var(--mk-gain); }
 .mk-page .loss { color:var(--mk-loss); }
@@ -103,7 +103,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 
 /* 필터 창 */
 .mk-overlay { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:var(--c-overlay); }
-.mk-modal { width:min(420px,100%); max-height:calc(100vh - 40px); overflow:auto; padding:22px 24px; border-radius:16px; background:var(--c-surface); box-shadow:var(--c-shadow); }
+.mk-modal { width:min(420px,100%); max-height:calc(calc(100 * var(--vh, 1vh)) - 40px); overflow:auto; padding:22px 24px; border-radius:16px; background:var(--c-surface); box-shadow:var(--c-shadow); }
 .mk-modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .mk-modal-head strong { font-size:18px; }
 .mk-modal-head button { width:30px; height:30px; border:0; border-radius:8px; background:none; color:var(--c-sub); }
@@ -222,7 +222,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 /* 안내 */
 .mk-toast { position:fixed; left:50%; bottom:32px; z-index:70; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--c-ink); color:var(--c-surface); font-size:13.5px; font-weight:600; box-shadow:var(--c-shadow); }
 
-@media (max-width:860px) {
+@media (max-width:800px) {
   .mk-row { grid-template-columns:1fr 1fr 1fr; }
   .mk-row-who { grid-column:1 / -1; }
   .mk-row-spark { display:none; }
@@ -309,7 +309,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-screen li b { color:var(--c-sub); font-size:11.5px; font-weight:600; }
 .mk-screen li em { color:var(--c-ink); font-size:16px; font-style:normal; font-weight:800; font-variant-numeric:tabular-nums; }
 .mk-screen li small { color:var(--c-faint); font-size:11px; }
-@media (max-width:860px) { .mk-screen ul { grid-template-columns:1fr 1fr; } }
+@media (max-width:800px) { .mk-screen ul { grid-template-columns:1fr 1fr; } }
 
 /* 월별 전략 보기 (그은 선 · 매매 기록) */
 .mk-narrow .mk-sim-head { padding:18px 22px; }
@@ -385,7 +385,7 @@ html[data-theme="dark"] .mk-sim-legend i.doodle { border-top-color:#f1f3f7; }
 .mk-facts li b.gain { color:var(--mk-gain); } .mk-facts li b.loss { color:var(--mk-loss); }
 .mk-facts li small { color:var(--c-faint); font-size:11.5px; }
 .mk-facts > p { margin:10px 0 0; color:var(--c-faint); font-size:12px; }
-@media (max-width:860px) { .mk-facts ul { grid-template-columns:1fr 1fr; } }
+@media (max-width:800px) { .mk-facts ul { grid-template-columns:1fr 1fr; } }
 .mk-row-facts { display:block; margin-top:2px; color:var(--c-up); font-size:11.5px; font-weight:600; }
 .mk-strat-peek { margin:4px 0 0 !important; color:var(--c-faint) !important; font-size:12px !important; }
 /* 구매 전 미리 보기 · 먼저 판단해 보기 · 이어진 보유 · 내 종목에 적용 */
