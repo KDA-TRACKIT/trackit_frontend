@@ -3,17 +3,21 @@
 //   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · ♡ 좋아요, 누르면 트레이더 상세
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
-import TraderAvatar from "./TraderAvatar";
-import { GradeBadge } from "./marketplace/GradeParts";
+import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
-import { TRADERS, listed, oneStock, pct, tone } from "./marketplace/data";
+import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
 
 
 export default function TraderCarousel() {
   const likeTotals = useLikeTotals();
+  const [order, setOrder] = useState("이번 달 인기");
   // ♥(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
-  const BOARD = TRADERS.filter(listed).sort((a, b) => (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || (oneStock(b, "3m") ? -1e9 : b.returns["3m"]) - (oneStock(a, "3m") ? -1e9 : a.returns["3m"])).slice(0, 10);
+  const BOARD = TRADERS.filter(listed).sort((a, b) => {
+    if (order === "이행률 높은 순") return b.follow - a.follow || b.returns["1m"] - a.returns["1m"];
+    if (order === "최근 활동") return (strategiesOf(b)[0]?.month ?? "").localeCompare(strategiesOf(a)[0]?.month ?? "") || b.returns["1m"] - a.returns["1m"];
+    return (likeTotals[b.id] ?? b.likes) - (likeTotals[a.id] ?? a.likes) || b.returns["1m"] - a.returns["1m"];
+  }).slice(0, 10);
   const track = useRef<HTMLUListElement>(null);
   const target = useRef<number | null>(null);
   const [edges, setEdges] = useState({ previous: false, next: true });
@@ -51,24 +55,24 @@ export default function TraderCarousel() {
   }
 
   return (
+    <div className="home-leaderboard-content">
+      <div className="home-leaderboard-tabs" role="group" aria-label="트레이더 정렬">
+        {["이번 달 인기", "이행률 높은 순", "최근 활동"].map((label) => <button type="button" key={label} aria-pressed={order === label} onClick={() => { setOrder(label); target.current = null; track.current?.scrollTo({ left: 0 }); }}>{label}</button>)}
+      </div>
     <div className="trader-carousel">
       <ul id="trader-cards" className="trader-grid" ref={track}>
-        {BOARD.map((t) => (
+        {BOARD.map((t, index) => (
           <li key={t.id}>
             <Link href={`/marketplace/${t.id}`} className="trader-card">
               <h3>
-                <TraderAvatar seed={t.id} size={40} />
-                <span>
-                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name}
-                </span>
+                <b className="home-trader-rank">{index + 1}</b>
+                <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/avatar.svg" alt="" width={30} height={30} /><Image src="/home/avatar-icon.svg" alt="" width={18} height={18} /></span>
+                <span>{t.name}</span>
               </h3>
-              <p className="trader-return">
-                수익률 {oneStock(t, "3m") ? <b>-</b> : <b className={tone(t.returns["3m"]) === "gain" ? "up" : tone(t.returns["3m"]) === "loss" ? "down" : ""}>{pct(t.returns["3m"]).replace("+", "")}</b>}
-              </p>
-              <p>전략이행률 {t.follow}%</p>
-              <p className="trader-likes">
-                <Heart size={15} aria-label="좋아요" /> + {likeTotals[t.id] ?? 0}
-              </p>
+              <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
+              <p className="home-trader-return-label">한 달 수익률</p>
+              <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
+              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><Heart size={11} fill="currentColor" aria-label="좋아요" /> {likeTotals[t.id] ?? t.likes}</span></div>
             </Link>
           </li>
         ))}
@@ -83,6 +87,7 @@ export default function TraderCarousel() {
           <ChevronRight size={22} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </div>
+    </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { getSupabaseBrowser } from "../lib/supabase-browser";
 import ThemeSwitch from "./ThemeSwitch";
 import { useNotifications } from "../lib/notifications";
 import { hasSavedInvestment } from "../lib/investment-profile";
+import { LogOut } from "lucide-react";
 
 export type Profile = {
   userId: string;
@@ -193,6 +194,12 @@ function shortName(name: string) {
 
 export default function AccountChip() {
   const { profile, ready } = useProfile();
+  if (!ready) return <span className="gnb-chip gnb-chip-loading" aria-hidden />;
+  if (!profile) return <Link className="gnb-chip" href="/login">로그인</Link>;
+  return <SignedInAccountMenu profile={profile} />;
+}
+
+export function SignedInAccountMenu({ profile }: { profile: Profile }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -206,13 +213,6 @@ export default function AccountChip() {
     return () => document.removeEventListener("pointerdown", onDown);
   }, [open]);
 
-  if (!ready) return <span className="gnb-chip gnb-chip-loading" aria-hidden />;
-  if (!profile)
-    return (
-      <Link className="gnb-chip" href="/login">
-        로그인
-      </Link>
-    );
   return (
     <>
       <NotificationBell />
@@ -243,13 +243,15 @@ export default function AccountChip() {
               <span>화면</span>
               <ThemeSwitch />
             </div>
+            <div className="gnb-menu-separator" role="separator" />
             <button
               type="button"
               role="menuitem"
               className="gnb-signout"
               onClick={() => void signOut()}
             >
-              로그아웃
+              <LogOut size={18} strokeWidth={1.7} aria-hidden="true" />
+              <span>로그아웃</span>
             </button>
           </div>
         )}

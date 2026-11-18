@@ -82,6 +82,9 @@ button.gnb-chip { border:0; cursor:pointer; font-family:inherit; }
 .gnb-menu a, .gnb-menu button { display:block; width:100%; padding:9px 10px; border:0; border-radius:8px; background:none; color:#141414; font:inherit; font-size:14px; text-align:left; text-decoration:none; cursor:pointer; }
 .gnb-menu a:hover, .gnb-menu button:hover { background:#f3f5f8; }
 .gnb-menu button { color:#c92a2a; }
+.gnb-menu-separator { height:1px; margin:10px 4px 8px; background:var(--c-line,#e5e9f0); }
+.gnb-menu .gnb-signout { display:flex; align-items:center; gap:9px; padding:12px 10px; }
+.gnb-signout svg { flex:none; color:var(--c-ink,#141414); }
 
 /* 마이페이지 */
 .mypage { min-height:100vh; background:#f6f6f6; font-family:Pretendard,"Noto Sans KR",sans-serif; }

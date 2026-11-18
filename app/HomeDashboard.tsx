@@ -1,10 +1,10 @@
 "use client";
 // 로그인한 사용자의 홈: 화면의 숫자는 모두 실제 내역에서 온다
-// - 지표 4칸: GET /performance (최근 1개월, 증권사 체결로 만든 청산 포지션 기준, 수수료·세금 포함)
+// - 월간 수익률·이행률: GET /performance (이번 달 청산 포지션 기준)
 // - 누적 수익률 그래프: GET /positions?status=CLOSED (최근 1개월 안에 청산된 포지션을 시간순으로 누적)
 // - 최근 거래 표: 일지별 체결 + 확정 노트(매매일지)를 체결 시각으로 짝지음
 // - 증권사 연결: 체결은 "동기화"해야 들어온다 → 연결돼 있으면 어디까지 반영됐는지와 "지금 불러오기"
-// - 맨 위 배너 자리는 시안 그대로 비워 둠
+// - 주간 기록: 체결과 확정 메모를 한국 날짜로 묶는다
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SiteHeader from "./SiteHeader";
@@ -12,13 +12,13 @@ import HomeBanner from "./HomeBanner";
 import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
-import { initRecordSource, useRecords, type TradeRecord } from "../lib/records";
+import { initRecordSource, useRecords } from "../lib/records";
 import { getSyncStatus, listConnections, syncNow, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
-
-/** 리포트 기간: 최근 1개월 (시안의 날짜 축과 같은 폭) */
-const REPORT_DAYS = 30;
+import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
+import { weekDays } from "../lib/home-calendar";
+import Image from "next/image";
 
 /** 연결된 증권사 계좌 하나와 동기화 상태 */
 type BrokerAccount = { id: string; label: string; status: SyncStatus | null };
@@ -36,7 +36,6 @@ async function brokerAccounts(): Promise<BrokerAccount[]> {
 }
 
 const num = (s: string | null | undefined) => (s === null || s === undefined || s === "" ? null : Number(s));
-const won = (n: number, sign = false) => `${sign && n > 0 ? "+" : n < 0 ? "−" : ""}₩${Math.abs(Math.round(n)).toLocaleString("ko-KR")}`;
 const pct = (n: number, digits = 1) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n * 100).toFixed(digits)}%`;
 const tone = (n: number | null) => (n === null || n === 0 ? "" : n > 0 ? "up" : "down");
 
@@ -56,7 +55,7 @@ export default function HomeDashboard() {
 
   const key = attempt;
   useEffect(() => {
-    const from = kstDate(REPORT_DAYS - 1);
+    const from = `${kstDate().slice(0, 7)}-01`;
     const to = kstDate();
     let cancelled = false;
     Promise.all([getPerformance(from, to), getPositions("CLOSED"), recentTrades(), brokerAccounts()])
@@ -80,7 +79,11 @@ export default function HomeDashboard() {
   }, []);
 
   // 종목 이름 (체결엔 코드만 있음)
-  const recent = useMemo(() => data?.trades.slice(0, 6) ?? [], [data]);
+  const recent = useMemo(() => data?.trades ?? [], [data]);
+  const currentWeek = weekDays(kstDate());
+  const weekNotes = [...records].filter((record) => record.date >= currentWeek[0] && record.date <= currentWeek[6]).sort((a, b) => `${b.date}${b.noteTime}`.localeCompare(`${a.date}${a.noteTime}`)).slice(0, 3);
+  const adherence = num(data?.report.performance.adherenceRate);
+  const adherencePercent = adherence === null ? null : Math.min(100, Math.max(0, adherence <= 1 ? adherence * 100 : adherence));
   useEffect(() => {
     const codes = [...new Set(recent.map((t) => t.symbol))].filter((c) => !names[c]);
     if (!codes.length) return;
@@ -90,72 +93,45 @@ export default function HomeDashboard() {
   }, [recent, names]);
 
   return (
-    <main className="home">
+    <main className="home home-redesign">
+      <div className="home-header-wrap">
       <SiteHeader active="home" />
+        <Image className="home-brand-icon" src="/home/brand.png" alt="" width={32} height={32} />
+      </div>
       <HomeBanner />
-      <section id="trader-board" className="trader-board section-wrap">
-        <div className="section-heading">
-          <h2>트레이더 보드</h2>
-          <Link className="heading-link" href="/marketplace">
-            전략 쇼핑 <span>→</span>
-          </Link>
-        </div>
-        <TraderCarousel />
-      </section>
-      <section className="report section-wrap">
-        <div className="section-heading">
-          <h2>트레이딩 성과 리포트</h2>
-          <Link className="heading-link" href="/mypage/activity/trades">
-            성과 리포트 <span>→</span>
-          </Link>
-        </div>
-        {error ? (
-          <div className="home-state">
-            <p>{error}</p>
-            <button type="button" onClick={load}>
-              다시 시도
-            </button>
+      <section className="home-overview home-container" aria-label="나의 투자 요약">
+        <ReturnChart data={data} failed={!!error} />
+        <div className="home-overview-side">
+          <div className="home-stat-row">
+            <Link className="home-stat-card" href="/mypage/activity/trades">
+              <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span>{data ? `${data.report.judgments.total}건 기준` : error ? "확인 불가" : "불러오는 중"}</span></div>
+              <div className="home-progress" role="progressbar" aria-label="전략 이행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={adherencePercent ?? undefined}><span style={{ width: `${adherencePercent ?? 0}%` }} /></div>
+            </Link>
+            <Link className="home-stat-card" href="/mypage/sales/settlements">
+              <h2>판매 등급</h2><div className="home-stat-value"><strong>—</strong><span>판매 관리에서 확인</span></div><div className="home-progress" aria-hidden="true"><span style={{ width: 0 }} /></div>
+            </Link>
           </div>
-        ) : (
-          <div className="report-grid">
-            <ReturnChart data={data} />
-            <div className="metric-grid">
-              <Metric label="평균 수익" value={data ? fmtOr(num(data.report.performance.avgRealizedPnl), (n) => won(n, true)) : null} tone={tone(num(data?.report.performance.avgRealizedPnl))} />
-              <Metric label="거래 횟수" value={data ? `${data.report.performance.tradeCount.toLocaleString("ko-KR")}건` : null} />
-              <Metric label="평균 손익비" value={data ? fmtOr(num(data.report.performance.profitLossRatio), (n) => `${n.toFixed(2)} : 1`) : null} />
-              <Metric label="최대 낙폭" value={data ? fmtOr(num(data.report.performance.maxDrawdownPnl), (n) => (n === 0 ? "₩0" : won(-n))) : null} tone={num(data?.report.performance.maxDrawdownPnl) ? "down" : ""} />
-            </div>
+          <div className="home-week-memos">
+            <h2>이번 주 메모</h2>
+            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={workshopLink(record.symbol, record.symbolName, record.date)}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 메모가 없습니다.</p>}
           </div>
-        )}
-      </section>
-      <section id="trading-log" className="trades section-wrap">
-        <div className="section-heading">
-          <h2>최근 거래 기록과 매매일지</h2>
-          <Link className="heading-link" href="/workshop">
-            작업실 열기 <span>→</span>
-          </Link>
         </div>
-        <TradeTable rows={recent} loading={!data && !error} names={names} records={records} accounts={data?.accounts ?? []} onSynced={load} />
       </section>
+      {error && <div className="home-data-notice home-container" role="status"><span>{error}</span><button type="button" onClick={load}>다시 시도</button></div>}
+      <section id="trader-board" className="home-leaderboard">
+        <div className="home-container">
+          <div className="home-section-heading"><h2>트레이더 리더보드</h2><Link className="home-action" href="/marketplace">전략 쇼핑 <span aria-hidden="true">→</span></Link></div>
+          <TraderCarousel />
+        </div>
+      </section>
+      <HomeWeeklyRecords trades={recent} records={records} names={names} loading={!data && !error} failed={!!error} />
+      {!!data?.accounts.length && <div className="home-container"><SyncBar accounts={data.accounts} onSynced={load} compact /></div>}
     </main>
   );
 }
 
-function fmtOr(n: number | null, f: (n: number) => string) {
-  return n === null ? "—" : f(n);
-}
-
-function Metric({ label, value, tone: t = "" }: { label: string; value: string | null; tone?: string }) {
-  return (
-    <div className="metric">
-      <p>{label}</p>
-      {value === null ? <strong className="skel-line" aria-busy="true" /> : <strong className={t}>{value}</strong>}
-    </div>
-  );
-}
-
 /** 누적 수익률: 청산 포지션을 청산 시각 순으로 쌓아 (누적 손익 ÷ 누적 매수 원가) */
-function ReturnChart({ data }: { data: Loaded | null }) {
+function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: boolean }) {
   const series = useMemo(() => {
     if (!data) return null;
     const list = [...data.closed].sort((a, b) => (a.closedAt ?? "").localeCompare(b.closedAt ?? ""));
@@ -194,10 +170,10 @@ function ReturnChart({ data }: { data: Loaded | null }) {
   }, [series]);
 
   return (
-    <div className="chart-card">
-      <p>누적 수익률 추이</p>
+    <div className="chart-card home-month-chart">
+      <div className="home-chart-heading"><p>{Number(kstDate().slice(5, 7))}월 수익률</p><span>이번 달 청산 기준</span></div>
       {data === null ? (
-        <strong className="skel-line" aria-busy="true" />
+        failed ? <strong>—</strong> : <strong className="skel-line" aria-busy="true" />
       ) : (
         <strong className={tone(last)}>{last === null ? "—" : pct(last)}</strong>
       )}
@@ -222,92 +198,8 @@ function ReturnChart({ data }: { data: Loaded | null }) {
           </div>
         </div>
       ) : (
-        <div className="chart chart-empty">{data === null ? "" : series && series.length === 1 ? "청산한 거래가 하나뿐이에요" : "이 기간에 청산한 거래가 없어요"}</div>
+        <div className="chart chart-empty">{failed ? "수익률을 불러오지 못했습니다." : data === null ? "불러오는 중…" : series && series.length === 1 ? "청산한 거래가 하나뿐이에요" : "이 기간에 청산한 거래가 없어요"}</div>
       )}
-    </div>
-  );
-}
-
-/** 최근 체결 + 그 체결에 남긴 매매일지(확정 노트). 노트는 같은 종목·같은 날·같은 분의 체결에 연결된 것 */
-function TradeTable({
-  rows,
-  loading,
-  names,
-  records,
-  accounts,
-  onSynced,
-}: {
-  rows: (Trade & { journalTitle: string | null })[];
-  loading: boolean;
-  names: Record<string, string>;
-  records: TradeRecord[];
-  accounts: BrokerAccount[];
-  onSynced: () => void;
-}) {
-  if (loading)
-    return (
-      <div className="trade-table">
-        <div className="trade-head">
-          <span>일시</span>
-          <span>종목</span>
-          <span>체결</span>
-          <span>체결 금액</span>
-          <span>매매일지</span>
-          <span />
-        </div>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="trade-row skel-row">
-            <span className="skel-line" />
-          </div>
-        ))}
-      </div>
-    );
-  if (rows.length === 0)
-    return accounts.length ? (
-      <div className="home-state">
-        <p>증권사 체결이 아직 반영되지 않았어요</p>
-        <SyncBar accounts={accounts} onSynced={onSynced} />
-      </div>
-    ) : (
-      <div className="home-state">
-        <p>아직 체결된 거래가 없어요</p>
-        <Link href="/mypage/account">증권사 계좌 연결하기</Link>
-      </div>
-    );
-  return (
-    <div className="trade-table">
-      <div className="trade-head">
-        <span>일시</span>
-        <span>종목</span>
-        <span>체결</span>
-        <span>체결 금액</span>
-        <span>매매일지</span>
-        <span />
-      </div>
-      {rows.map((t) => {
-        const when = kst(t.executedAt);
-        const side = t.side === "BUY" ? "매수" : "매도";
-        const memo = records.find((r) => r.symbol === t.symbol && r.date === when.date && r.executionTime?.slice(0, 5) === when.time);
-        const name = names[t.symbol] ?? t.symbol;
-        const href = `/workshop?symbol=${t.symbol}&name=${encodeURIComponent(name)}&market=${encodeURIComponent(t.market)}`;
-        return (
-          <div className="trade-row" key={t.id}>
-            <span className="num">
-              {when.date.slice(5).replace("-", ".")}  {when.time}
-            </span>
-            <span>{name}</span>
-            <span>
-              <em className={t.side === "BUY" ? "up" : "down"}>{side}</em> · {Number(t.quantity).toLocaleString("ko-KR")}주
-            </span>
-            <span className="num">{won(Number(t.quantity) * Number(t.price))}</span>
-            <span className={memo ? "memo" : "memo empty"}>{memo ? memo.text : "작성 전"}</span>
-            <Link href={href}>
-              {memo ? "일지 보기" : "일지 작성"} <span>→</span>
-            </Link>
-          </div>
-        );
-      })}
-      {accounts.length > 0 && <SyncBar accounts={accounts} onSynced={onSynced} compact />}
     </div>
   );
 }
