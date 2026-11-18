@@ -48,7 +48,7 @@ export default function SignupCompletePage() {
 
   return (
     <main className="auth-page">
-      <SiteHeader />
+      <SiteHeader title="회원가입" right={<Link className="gnb-login" href="/login">로그인</Link>} />
       <section className="signup-complete">
         {user === undefined ? (
           <p className="mp-muted">불러오는 중…</p>

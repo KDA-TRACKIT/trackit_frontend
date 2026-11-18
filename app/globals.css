@@ -328,3 +328,39 @@ html[data-theme="dark"] .login-signup a { color:var(--c-accent); }
 .login-panel .login-eye:hover { background:#f0f3f8; }
 html[data-theme="dark"] .login-panel .login-eye { color:var(--c-ink); }
 html[data-theme="dark"] .login-panel .login-eye:hover { background:var(--c-subtle); }
+
+/* ===== 로그인 · 회원가입 시안 (2026-11-18 2차) ===== */
+/* 상단 바: 메뉴 대신 "TRACKIT | 화면 이름", 오른쪽 로그인 */
+.gnb.gnb-auth { grid-template-columns:auto minmax(0,1fr) auto !important; column-gap:0; }
+.gnb-title { display:flex; align-items:center; height:36px; margin-left:28px; padding-left:28px; border-left:1px solid #d6dbe4; color:#141414; font-size:17px; font-weight:700; white-space:nowrap; }
+.gnb-login { color:#141414; font-size:15px; font-weight:600; }
+.gnb-login:hover { text-decoration:underline; }
+/* 진한 남색 #0F2367 (시안): 로그인 · 가입 버튼, 달력 고른 날 */
+.login-submit, .signup-submit, .auth-button.primary, .af-primary, .af-cal-actions button.primary, .af-cal-grid button.on, .af-cal-pick button.on { background:#0f2367 !important; border-color:#0f2367 !important; }
+.login-submit:hover:not(:disabled), .signup-submit:hover:not(:disabled), .auth-button.primary:hover { background:#0b1b52 !important; }
+.signup-submit { height:46px; border-radius:6px; font-size:14px; }
+/* 가입 완료 */
+.signup-done { display:flex; justify-content:center; padding:120px 20px 80px; }
+.signup-done-card { display:flex; flex-direction:column; align-items:center; gap:14px; width:432px; max-width:100%; padding:34px 32px 32px; border:1px solid #e4e7ec; border-radius:14px; background:#fff; text-align:center; }
+.signup-done-check { display:grid; place-items:center; width:58px; height:58px; border-radius:50%; background:#e8f5ec; color:#1f8a4c; }
+.signup-done-card h1 { margin:4px 0 0; color:#141414; font-size:26px; font-weight:800; letter-spacing:-.5px; }
+.signup-done-card p { margin:0; color:#6b7584; font-size:13px; line-height:1.6; }
+.signup-done-btn { display:grid; place-items:center; width:100%; height:48px; margin-top:6px; border-radius:6px; background:#0f2367; color:#fff; font-size:14px; font-weight:700; text-decoration:none; }
+.signup-done-btn:hover { background:#0b1b52; }
+html[data-theme="dark"] .gnb-title, html[data-theme="dark"] .gnb-login, html[data-theme="dark"] .signup-done-card h1 { color:var(--c-ink); }
+html[data-theme="dark"] .signup-done-card { background:var(--c-surface); border-color:var(--c-line); }
+/* 회원가입: 칸 아래 안내(조건 · 일치)가 있어도 이름표는 입력칸 높이 가운데에, 눈 버튼은 입력칸 가운데에 */
+.signup-row { align-items:start; }
+.signup-row > span:first-child { display:flex; align-items:center; min-height:38px; }
+.signup-field { display:flex; flex-direction:column; gap:5px; }
+.signup-field .signup-hint { margin:0; padding-left:2px; font-size:11px; line-height:1.3; }
+.signup-row .signup-radios { min-height:38px; align-items:center; }
+/* 칸 아래 안내가 떠도 줄 간격은 그대로: 안내는 칸 아래 빈 공간에 겹쳐 띄움 */
+.signup-field { position:relative; display:block; }
+.signup-field .signup-hint { position:absolute; left:0; top:calc(100% + 3px); white-space:nowrap; }
+.signup-form form { gap:22px; }
+/* 계정 메뉴: 화면마다 메뉴를 담는 칸 폭이 달라 "화면 / 시스템 · 라이트 · 다크" 가 세로로 꺾이던 것 → 내용 폭 그대로, 줄바꿈 없이 */
+.gnb-menu { width:max-content; min-width:240px; }
+.gnb-menu-theme, .gnb-menu-theme > span, .gnb-menu .theme-seg, .gnb-menu .theme-seg button, .gnb-menu-head, .gnb-menu > a { white-space:nowrap; }
+.gnb-menu .gnb-noti a { white-space:normal; }
+.gnb-menu:has(.gnb-noti) { width:340px; max-width:calc(100vw - 32px); }

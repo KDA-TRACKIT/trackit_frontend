@@ -35,15 +35,18 @@ const MENU: Menu[] = [
  * 스타일은 globals.css 의 .gnb
  * - tone="dark": 랜딩처럼 검은 바탕 위 (위치·크기는 같고 색만 다름)
  * - right: 오른쪽 칸을 바꿀 때 (기본은 알림·닉네임·사진 / 로그인)
+ * - title: 로그인 · 회원가입처럼 메뉴 대신 로고 옆에 화면 이름 (시안: "TRACKIT | 회원가입"). 주면 메뉴는 안 보임
  * - menu={false}: 가운데 메뉴를 숨긴다 (칸은 남겨서 로고·오른쪽 위치는 그대로)
  */
-export default function SiteHeader({ active = null, tone, right, menu = true }: { active?: Active; tone?: "dark"; right?: React.ReactNode; menu?: boolean }) {
+export default function SiteHeader({ active = null, tone, right, menu = true, title }: { active?: Active; tone?: "dark"; right?: React.ReactNode; menu?: boolean; title?: string }) {
   return (
-    <header className={tone === "dark" ? "gnb gnb-dark" : "gnb"}>
+    <header className={`gnb${tone === "dark" ? " gnb-dark" : ""}${title !== undefined || !menu ? " gnb-auth" : ""}`}>
       <Link className="gnb-brand" href="/" aria-label="TRACKIT 홈">
         TRACKIT
       </Link>
-      {menu ? (
+      {title !== undefined ? (
+        <span className="gnb-title">{title}</span>
+      ) : menu ? (
         <nav className="gnb-main" aria-label="주요 메뉴">
           {MENU.map((m) =>
             m.sub ? (

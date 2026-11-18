@@ -80,6 +80,30 @@ export default function WalletPage() {
     return s + v.value + v.cash;
   }, 0);
 
+  const connectFlow = connecting && (
+    <ConnectFlow
+      onClose={(changed) => {
+        setConnecting(false);
+        if (changed) load();
+      }}
+    />
+  );
+
+  // 시안: 연결한 계좌가 없으면 안내 카드 하나만 ("연결된 계좌가 없습니다." + 계좌 연결하기)
+  if (accounts?.length === 0 && !error)
+    return (
+      <>
+        <PageHead title="내 계좌" desc="연결된 증권 계좌의 자산과 투자 성과, 거래 내역을 확인하세요." />
+        <Card className="mp-wallet-none">
+          <strong>연결된 계좌가 없습니다.</strong>
+          <button type="button" className="mp-btn primary" onClick={() => setConnecting(true)}>
+            계좌 연결하기
+          </button>
+        </Card>
+        {connectFlow}
+      </>
+    );
+
   return (
     <>
       <PageHead title="내 계좌" desc="연결된 증권 계좌의 자산과 투자 성과, 거래 내역을 확인하세요." />
@@ -135,14 +159,7 @@ export default function WalletPage() {
 
       <TradesCard />
 
-      {connecting && (
-        <ConnectFlow
-          onClose={(changed) => {
-            setConnecting(false);
-            if (changed) load();
-          }}
-        />
-      )}
+      {connectFlow}
     </>
   );
 }
@@ -299,7 +316,6 @@ function HoldingsCard({
 /** 전체 거래 기록: 내 체결 + 매매일지(일지에 묶였으면 보기) */
 function TradesCard() {
   const [trades, setTrades] = useState<(Trade & { journalTitle: string | null })[] | null>(null);
-  const [period, setPeriod] = useState<Period>({ kind: "all" });
   const [side, setSide] = useState<"all" | "BUY" | "SELL">("all");
   const [symbol, setSymbol] = useState("all");
   useEffect(() => {
@@ -310,14 +326,13 @@ function TradesCard() {
   const codes = useMemo(() => [...new Set((trades ?? []).map((t) => t.symbol))].sort(), [trades]);
   const { quotes } = useQuotes(codes);
   const name = (c: string) => quotes[c]?.name ?? c;
-  const list = (trades ?? []).filter((t) => inPeriod(t.executedAt, period) && (side === "all" || t.side === side) && (symbol === "all" || t.symbol === symbol));
+  const list = (trades ?? []).filter((t) => (side === "all" || t.side === side) && (symbol === "all" || t.symbol === symbol));
   const kst = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(0, 10).replaceAll("-", ".");
 
   return (
     <Card>
       <div className="mp-perf-head">
         <h2>전체 거래 기록</h2>
-        <PeriodTabs value={period} onChange={setPeriod} />
       </div>
       <div className="mp-grid-table" style={{ ["--cols" as string]: "1fr 0.8fr 1.3fr 0.7fr 1fr 1.1fr 0.9fr" }}>
         <div className="th">

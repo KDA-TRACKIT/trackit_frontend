@@ -22,7 +22,7 @@ export default function SignupChoicePage() {
 
   return (
     <main className="auth-page">
-      <SiteHeader />
+      <SiteHeader title="회원가입" right={<Link className="gnb-login" href="/login">로그인</Link>} />
       <section className="auth-panel signup-choice">
         <h1>회원가입</h1>
         <p>원하는 방법으로 TRACKIT에 가입하세요.</p>

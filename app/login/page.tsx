@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      <SiteHeader right={false} />
+      <SiteHeader menu={false} right={false} />
       <section className="login-panel">
         <div className="login-wordmark brand">TRACKIT</div>
         <form onSubmit={handleLogin} className={error ? "has-error" : undefined}>
