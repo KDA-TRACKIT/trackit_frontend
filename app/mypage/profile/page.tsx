@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { metaText, useMypage } from "../context";
 import { Card, Notice, PageHead } from "../ui";
 import { ProfileAvatar, setLocalAvatar, shrinkImage, useLocalAvatar } from "./ProfileAvatar";
+import { saveAccountAvatar } from "../../../lib/api/avatar";
 
 export default function ProfilePage() {
   const { user, profile, meta, saveMeta } = useMypage();
@@ -38,7 +39,11 @@ export default function ProfilePage() {
     setNote(null);
     try {
       await saveMeta({ nickname: nickname.trim(), bio: bio.trim() });
-      if (photo !== undefined) setLocalAvatar(user.id, photo);
+      // 계정 사진으로 저장 (상단 사진 · 다른 기기에도 같은 사진), 이 브라우저에만 있던 예전 사진은 지움
+      if (photo !== undefined) {
+        await saveAccountAvatar(photo);
+        setLocalAvatar(user.id, null);
+      }
       setPhoto(undefined);
       setNote({ ok: true, msg: "저장했어요" });
     } catch (err) {

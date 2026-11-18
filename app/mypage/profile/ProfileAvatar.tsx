@@ -1,28 +1,10 @@
 "use client";
 // 프로필 사진: 직접 올린 사진(이 브라우저에만 저장) → 소셜 프로필 사진 → 닉네임 첫 글자
 // 사진 저장소(Storage) API 가 생기기 전까지는 서버로 보내지 않는다. user_metadata 는 토큰에 실려서 이미지를 넣지 않는다
-import { useSyncExternalStore } from "react";
+import { useLocalAvatar } from "../../../lib/local-avatar";
 import { useMypage } from "../context";
-
-const key = (userId: string) => `trackit:avatar:${userId}`;
-const listeners = new Set<() => void>();
-
-export function setLocalAvatar(userId: string, dataUrl: string | null) {
-  if (dataUrl) localStorage.setItem(key(userId), dataUrl);
-  else localStorage.removeItem(key(userId));
-  listeners.forEach((l) => l());
-}
-
-export function useLocalAvatar(userId: string) {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    () => localStorage.getItem(key(userId)),
-    () => null,
-  );
-}
+// 저장 · 읽기는 lib/local-avatar (상단 계정 칩과 같이 씀)
+export { setLocalAvatar, useLocalAvatar } from "../../../lib/local-avatar";
 
 /** 고른 이미지를 정사각형 256px JPEG 로 줄인다 */
 export function shrinkImage(file: File): Promise<string> {

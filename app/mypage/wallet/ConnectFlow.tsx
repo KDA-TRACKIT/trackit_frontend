@@ -213,7 +213,7 @@ export default function ConnectFlow({ onClose }: { onClose: (changed: boolean) =
                         <small>지금</small>
                       </div>
                       <p>
-                        [Trackit] 본인확인 인증번호 <strong>{sent.code}</strong>를 입력해 주세요. (3분 안에)
+                        [TRACKIT] 본인확인 인증번호 <strong>{sent.code}</strong>를 입력해 주세요. (3분 안에)
                       </p>
                       <div className="mp-cf-sms-actions">
                         <button

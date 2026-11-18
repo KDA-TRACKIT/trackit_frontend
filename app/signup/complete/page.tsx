@@ -1,6 +1,7 @@
 "use client";
 // Google 가입 마무리: 처음 Google 로 들어온 사용자에게 닉네임 · 생년월일 · 성별과 필수 약관 동의를 받는다
 // Google 에서 받은 이메일·이름은 다시 묻지 않는다. 값은 Supabase user_metadata 에 본인 세션으로 저장
+import { apiRequest } from "../../../lib/api/client";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -26,7 +27,11 @@ export default function SignupCompletePage() {
         const u = data.session?.user ?? null;
         setUser(u);
         const meta = (u?.user_metadata ?? {}) as Record<string, unknown>;
-        if (typeof meta.nickname === "string") setNickname(meta.nickname);
+        // 다시 들어온 경우(닉네임 · 생년월일 · 성별 중 빠진 게 있을 때) 이미 있는 값은 채워 둠
+        if (typeof meta.nickname === "string") setNickname(meta.nickname.slice(0, 8));
+        if (typeof meta.birthdate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(meta.birthdate)) setBirthdate(meta.birthdate);
+        if (meta.gender === "male" || meta.gender === "female") setGender(meta.gender);
+        if (meta.terms_version === TERMS_VERSION) setTerms({ service: true, privacy: true });
       });
   }, []);
 
@@ -40,11 +45,17 @@ export default function SignupCompletePage() {
     try {
       const supabase = getSupabaseBrowser();
       if (!supabase || !user) throw new Error("Google 계정을 먼저 연결해 주세요.");
+      const returning = user.user_metadata?.signup_completed === true;
       const { error: err } = await supabase.auth.updateUser({
         data: { nickname: nickname.trim(), birthdate, gender, signup_completed: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
       });
       if (err) throw err;
-      window.location.replace("/onboarding");
+      // DB(User)에도 이름 · 닉네임 · 성별 · 생년월일 (예전엔 로그인 정보에만 들어가 DB 이름이 비었음). 이름은 Google 계정 이름
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const name = [meta.full_name, meta.name].find((v): v is string => typeof v === "string" && v.trim() !== "");
+      await apiRequest("/me", { method: "PATCH", body: JSON.stringify({ nickname: nickname.trim(), gender, birthDate: birthdate, ...(name ? { name: name.trim().slice(0, 50) } : {}) }) });
+      // 처음 가입이면 투자 정보 설정으로, 빠진 값만 다시 받은 거면 원래 쓰던 화면(홈)으로
+      window.location.replace(returning ? "/" : "/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : "가입 정보를 저장하지 못했습니다.");
       setLoading(false);
@@ -77,14 +88,14 @@ export default function SignupCompletePage() {
                 <small>{user.email}</small>
               </div>
             </div>
-            <h1>TRAKIT 가입 마무리</h1>
+            <h1>TRACKIT 가입 마무리</h1>
             <p>처음 방문하셨군요. 서비스에서 사용할 정보를 입력해주세요.</p>
             <form onSubmit={submit} className="signup-complete-form">
               <label className="signup-row">
                 <span>
                   닉네임 <i>*</i>
                 </span>
-                <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임을 입력하세요." maxLength={20} required />
+                <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임을 입력하세요. (8자 이내)" maxLength={8} required />
               </label>
               <div className="signup-row">
                 <span>
