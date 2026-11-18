@@ -56,7 +56,7 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      <SiteHeader />
+      <SiteHeader right={false} />
       <section className="login-panel">
         <div className="login-wordmark brand">TRACKIT</div>
         <form onSubmit={handleLogin}>
