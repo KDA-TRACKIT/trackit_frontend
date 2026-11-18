@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SiteHeader from "./SiteHeader";
 import HomeBanner from "./HomeBanner";
+import HomePolicies from "./HomePolicies";
 import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
@@ -136,6 +137,7 @@ export default function HomeDashboard() {
           </Link>
         </div>
         <TradeTable rows={recent} loading={!data && !error} names={names} records={records} accounts={data?.accounts ?? []} onSynced={load} />
+        <HomePolicies />
       </section>
     </main>
   );
