@@ -42,11 +42,17 @@ const signed = (n: number, unit?: IndexCard["unit"]) => {
 };
 const hhmmss = (ms: number) => new Date(ms + KST * 1000).toISOString().slice(11, 19);
 
+/** 한국 시각 "11.17 15:30" — 오늘이어도 날짜까지 (카드마다 같은 모양) */
+function kstTime(ms: number) {
+  const s = new Date(ms + KST * 1000).toISOString();
+  return `${s.slice(5, 7)}.${s.slice(8, 10)} ${s.slice(11, 16)}`;
+}
+/** 카드 옆 시각: 아는 시각은 그대로(한국 시각), 모르는 하루 단위 자료(환율 · 금리 · 유가)는 날짜만 */
 function statusText(c: IndexCard) {
-  if (c.status === "open") return "장중";
-  if (c.status === "live") return "실시간";
-  if (c.status === "closed") return "장마감";
-  return `${c.asOf.slice(5).replace("-", ".")} 종가`;
+  const when = c.at ? kstTime(c.at) : `${c.asOf.slice(5, 7)}.${c.asOf.slice(8, 10)} 기준`;
+  if (c.status === "open" || c.status === "live") return `실시간 ${when}`;
+  if (c.status === "closed") return `장마감 ${when}`;
+  return when;
 }
 
 /** 카드 작은 그래프: 전일 종가 점선 + 선 아래 옅은 칠 */
@@ -322,12 +328,12 @@ function Stats({ d }: { d: IndexDetail }) {
       {d.mode === "daily" && (
         <dl className="ins-mk-grid two sep">
           <div>
-            <dt>전일 종가</dt>
+            <dt>전일</dt>
             <dd>{fmt(d.prevClose, d.unit)}</dd>
           </div>
           <div>
-            <dt>기준일</dt>
-            <dd>{d.asOf.replace(/-/g, ".")}</dd>
+            <dt>기준 시각</dt>
+            <dd>{d.at ? kstTime(d.at) : d.asOf.replace(/-/g, ".")}</dd>
           </div>
         </dl>
       )}
@@ -394,7 +400,7 @@ export default function Market() {
             <IndexChart d={d} kind={kind} />
           )}
           <p className="ins-meta ins-mk-meta">
-            {d?.mode === "intraday" ? "5분 간격 · 점선은 전일 종가 · 회색은 전일" : d ? "최근 3개월 일별 · 첫날보다 위는 초록, 아래는 빨강 · 점선은 전일 종가" : ""}
+            {d?.mode === "intraday" ? "5분 간격 · 점선은 전일 값 · 회색은 전일" : d ? "최근 3개월 일별 · 첫날보다 위는 초록, 아래는 빨강 · 점선은 전일 값" : ""}
             {cards.updatedAt && ` · ${hhmmss(cards.updatedAt)} 기준, ${live ? "장중 10초마다 새로" : "장 마감 · 2분마다 확인"}`}
           </p>
         </div>

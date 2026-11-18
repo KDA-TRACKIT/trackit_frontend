@@ -144,8 +144,10 @@ function subscribe(listener: () => void) {
  * 새 기록. 같은 메모·체결 조합이 이미 있으면 그대로 둔다.
  * 로그인했으면 서버에 확정 노트로 저장 (drawings 는 서버에만 같이 남김). 실패하면 error 를 돌려준다
  */
-export async function addRecord(input: Omit<TradeRecord, "id" | "drawings"> & { drawings?: unknown }): Promise<{ ok: boolean; error?: string }> {
-  const { drawings, ...record } = input;
+export async function addRecord(
+  input: Omit<TradeRecord, "id" | "drawings"> & { drawings?: unknown; plan?: Parameters<typeof saveNote>[0]["plan"] },
+): Promise<{ ok: boolean; error?: string }> {
+  const { drawings, plan, ...record } = input;
   const list = read();
   if (list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
   if (source === "server") {
@@ -158,6 +160,7 @@ export async function addRecord(input: Omit<TradeRecord, "id" | "drawings"> & { 
         topic: record.topic,
         execution: record.executionTime ? { time: record.executionTime, side: record.side ?? "", quantity: record.quantity ?? 0 } : null,
         drawings,
+        plan,
       });
       await refreshServerRecords();
       return { ok: true };

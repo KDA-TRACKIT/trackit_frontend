@@ -8,6 +8,14 @@ import { useEffect, useState } from "react";
 
 export type UsSession = "daytime" | "pre" | "regular" | "after" | "closed";
 
+/** "프리마켓" → "프리마켓으로", "주간거래" → "주간거래로" (받침이 있으면 으로, 없거나 ㄹ 받침이면 로) */
+export function withRo(word: string) {
+  const c = word.charCodeAt(word.length - 1) - 0xac00;
+  if (c < 0 || c > 11171) return `${word}로`;
+  const jong = c % 28;
+  return jong === 0 || jong === 8 ? `${word}로` : `${word}으로`;
+}
+
 export const US_SESSION_LABEL: Record<UsSession, string> = {
   daytime: "주간거래",
   pre: "프리마켓",

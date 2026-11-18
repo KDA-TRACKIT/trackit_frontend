@@ -44,73 +44,88 @@ type Tip = { x: number; y: number; stock: SectorStock; sector: string } | null;
 export default function SectorMap({ onData, onOpenUs }: { onData?: (data: SectorMapData | null) => void; onOpenUs?: (t: UsChartTarget) => void }) {
   const [market, setMarket] = useState<SectorMarket>("kospi");
   const [attempt, setAttempt] = useState(0);
-  const [result, setResult] = useState<{ key: string; error?: string } | null>(null);
   const [zoom, setZoom] = useState<string | null>(null);
   const [tip, setTip] = useState<Tip>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
-  /** 지금 보이는 지도 (처음엔 전체, 그 뒤엔 바뀐 업종만 받아 합침) */
-  const [live, setLive] = useState<SectorMapData | null>(null);
-  const liveRef = useRef<SectorMapData | null>(null);
+  /** 시장별 지도 (처음 들어오면 한국 · 미국 다섯 개를 한꺼번에 받아 두고, 그 뒤엔 보고 있는 시장만 바뀐 업종을 받아 합침) */
+  const [maps, setMaps] = useState<Partial<Record<SectorMarket, SectorMapData>>>({});
+  const [errors, setErrors] = useState<Partial<Record<SectorMarket, string>>>({});
+  const mapsRef = useRef(maps);
   const zoomRef = useRef<string | null>(null);
   useEffect(() => {
-    liveRef.current = live;
+    mapsRef.current = maps;
     zoomRef.current = zoom;
-  }, [live, zoom]);
+  }, [maps, zoom]);
 
-  // 처음 · 시장을 바꿀 때 · 다시 시도: 전체를 받는다
-  const key = `${market}:${attempt}`;
+  // 처음 · 다시 시도: 다섯 시장을 동시에 (고른 시장을 먼저 요청). 시장을 바꿀 땐 이미 받은 걸 바로 보여 준다
   useEffect(() => {
     let cancelled = false;
-    getSectorMap(market)
-      .then((data) => {
-        if (cancelled) return;
-        setResult({ key });
-        setLive(data);
-      })
-      .catch((e) => !cancelled && setResult({ key, error: errorMessage(e) }));
+    const first = attempt === 0 ? MARKETS : [market];
+    for (const m of first) {
+      getSectorMap(m)
+        .then((data) => {
+          if (cancelled) return;
+          setMaps((prev) => ({ ...prev, [m]: data }));
+          setErrors((prev) => ({ ...prev, [m]: undefined }));
+        })
+        .catch((e) => !cancelled && setErrors((prev) => ({ ...prev, [m]: errorMessage(e) })));
+    }
     return () => {
       cancelled = true;
     };
-  }, [key, market]);
+    // 시장을 바꿀 때는 다시 받지 않음 (다시 시도 버튼만 attempt 를 올림)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt]);
 
-  // 장중엔 5초마다 "바뀐 것만" 물어본다. 서버는 메모리에서 바로 답하고(키움 호출 없음), 바뀐 업종만 돌려준다
+  // 장중엔 5초마다 보고 있는 시장의 "바뀐 것만" 물어본다. 서버는 메모리에서 바로 답하고(키움 호출 없음), 바뀐 업종만 돌려준다
   // 크게 본 업종은 focus 로 알려서 서버가 다음 차례에 먼저 갱신
-  const open = live?.market === market && live.marketOpen;
+  const open = !!maps[market]?.marketOpen;
   useEffect(() => {
     if (!open) return;
     let stopped = false;
-    const t = setInterval(() => {
-      const cur = liveRef.current;
-      if (!cur || cur.market !== market || document.hidden) return; // 다른 탭을 보고 있으면 쉰다
+    const poll = () => {
+      const cur = mapsRef.current[market];
+      if (!cur || document.hidden) return; // 다른 탭을 보고 있으면 쉰다
       getSectorMap(market, { since: cur.version, focus: zoomRef.current ?? undefined })
         .then((next) => {
           if (stopped) return;
-          setLive((prev) => {
-            if (!prev || prev.market !== next.market) return prev;
-            if (next.full) return next;
-            if (!next.sectors.length && next.version === prev.version) return prev; // 그대로면 다시 그리지 않음
+          setMaps((all) => {
+            const prev = all[market];
+            if (!prev || prev.market !== next.market) return all;
+            if (next.full) return { ...all, [market]: next };
+            if (!next.sectors.length && next.version === prev.version) return all; // 그대로면 다시 그리지 않음
             const changed = new Map(next.sectors.map((s) => [s.code, s]));
             const sectors = prev.sectors.map((s) => changed.get(s.code) ?? s).sort((a, b) => b.marketCap - a.marketCap);
-            return { ...prev, version: next.version, asOf: next.asOf, marketOpen: next.marketOpen, sectors };
+            return { ...all, [market]: { ...prev, version: next.version, asOf: next.asOf, marketOpen: next.marketOpen, sectors } };
           });
         })
         .catch(() => {
           // 한 번 못 받아도 다음 차례에 다시 (화면은 마지막 값 그대로)
         });
-    }, 5_000);
+    };
+    // 시장을 바꾸거나 탭으로 돌아오면 다음 차례를 기다리지 않고 바로 (처음 접속 때 받아 둔 값이 오래돼 보이던 것)
+    poll();
+    const t = setInterval(poll, 3_000); // 바뀐 업종만 받아 가벼움 (변화 없으면 약 120바이트)
+    const onVisible = () => !document.hidden && poll();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       stopped = true;
       clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [open, market]);
+  // 받은 시각이 1분 넘게 지났으면 "실시간" 대신 "갱신 중" (서버 갱신이 멈췄다 다시 도는 동안 등)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(t);
+  }, []);
 
-  const current = result?.key === key ? result : null;
-  // 시장을 바꾸는 동안엔 이전 지도를 흐리게 남겨 두면 덜 깜빡인다
-  const data = live?.market === market ? live : null;
-  const loading = !current;
-  const error = current?.error ?? null;
+  const data = maps[market] ?? null;
+  const error = data ? null : (errors[market] ?? null);
+  const loading = !data && !error;
   useEffect(() => {
     onData?.(data);
   }, [data, onData]);
@@ -184,7 +199,10 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
           ) : null}
           {data && (
             <span className="ins-meta">
-              {data.marketOpen ? (us ? "정규장 · 실시간" : data.session === "pre" ? "프리마켓(NXT) · 실시간" : data.session === "after" ? "애프터마켓(NXT) · 실시간" : "정규장 · 실시간") : "장 마감"} · {stamp(data.asOf)} 기준
+              {data.marketOpen
+                ? `${us ? "정규장" : data.session === "pre" ? "프리마켓(NXT)" : data.session === "after" ? "애프터마켓(NXT)" : "정규장"} · ${now - Date.parse(data.asOf) > 60_000 ? "갱신 중" : "실시간"}`
+                : "장 마감"}{" "}
+              · {stamp(data.asOf)} 기준
             </span>
           )}
         </div>
@@ -210,7 +228,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
         {error ? (
           <div className="ins-state">
             <p>{error}</p>
-            <button type="button" onClick={() => setAttempt((n) => n + 1)}>
+            <button type="button" onClick={() => (setErrors((e) => ({ ...e, [market]: undefined })), setAttempt((n) => n + 1))}>
               다시 시도
             </button>
           </div>

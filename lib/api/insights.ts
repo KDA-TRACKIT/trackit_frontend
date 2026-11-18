@@ -135,6 +135,8 @@ export type IndexCard = {
   /** open = 장중 · closed = 장 마감 · daily = 하루 단위 자료 (asOf 날짜 종가) · live = 24시간 (코인) */
   status: "open" | "closed" | "daily" | "live";
   asOf: string;
+  /** 값이 나온 시각 (ms). 모르면(환율 · 금리 · 유가) 없음 */
+  at?: number;
   spark: number[];
   prevClose: number;
   unit: "pt" | "원" | "%" | "$";

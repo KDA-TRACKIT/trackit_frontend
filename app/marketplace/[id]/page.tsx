@@ -5,12 +5,20 @@ import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
-import { TRADERS, monthLabel, oneStock, pct, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
+import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
+import { GradeBadge } from "../GradeParts";
 import { unusedPasses, usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Reviews } from "../feedback";
 import "../marketplace.css";
+
+/** 채널나스닥 → "채널나스닥"과, 원트로그 → "원트로그"와 (따옴표로 감싸고, 마지막 글자가 한글이 아니면 와(과)) */
+function withWa(name: string) {
+  const c = name.charCodeAt(name.length - 1) - 0xac00;
+  if (c < 0 || c > 11171) return `"${name}"와(과)`;
+  return `"${name}"${c % 28 ? "과" : "와"}`;
+}
 
 export default function TraderPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +47,7 @@ export default function TraderPage() {
   const total = Math.round(t.monthly.reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
   // 마지막으로 기록한 달 (성과 카드 설명: "2026년 · 11월까지")
   const [lastYear, lastMonth] = t.monthly[t.monthly.length - 1].month.split("-").map(Number);
-  const similar = TRADERS.filter((o) => o.id !== t.id && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
+  const similar = TRADERS.filter((o) => o.id !== t.id && listed(o) && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
 
   return (
     <main className="mk-page">
@@ -57,7 +65,7 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <span className="mk-like" title="전략을 산 사람들이 준 ♥ 합계">♥ {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> {t.name} <span className="mk-like" title="전략을 산 사람들이 준 ♥ 합계">♥ {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
               </div>
             </div>
@@ -79,7 +87,17 @@ export default function TraderPage() {
             <strong>
               {won(t.price)} <span>/ 1장 · 전략 1개</span>
             </strong>
-            <PassBuyBox trader={t} notify={notify} />
+            {sellable(t) ? (
+              <PassBuyBox trader={t} notify={notify} />
+            ) : (
+              <p className="mk-stopped">
+                {t.grade?.unrated
+                  ? "아직 판매 등급이 없어 열람권을 팔 수 없어요. 등급을 받으면 판매가 열려요."
+                  : !listed(t)
+                    ? "일반 계정으로 바뀌어 전략 쇼핑에서 내려간 트레이더예요. 이미 산 전략은 계속 볼 수 있어요."
+                    : `판매 등급이 ${t.grade?.grade}라 새 열람권 판매가 멈췄어요. 이미 산 전략은 계속 볼 수 있어요.`}
+              </p>
+            )}
             {passLeft > 0 && <p className="mk-pass-left">남은 열람권 {passLeft}장 · 아래 월별 전략에서 골라 여세요</p>}
             <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-ghost">
               첫 번째 전략 무료로 보기
@@ -88,14 +106,24 @@ export default function TraderPage() {
         </div>
 
         <div className="mk-card mk-kpis">
-          <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
-          <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
+          {/* 윗줄: 매매 · 승률 · 이행률 · 구매자 / 아랫줄: 누적 수익률 · 최대 낙폭 · 가장 큰 이익 · 손실 */}
+          {t.facts ? (
+            <>
+              <Kpi label="매매" value={`${t.facts.wins + t.facts.losses}건`} />
+              <Kpi label="승률" value={`${t.facts.wins + t.facts.losses ? Math.round((t.facts.wins / (t.facts.wins + t.facts.losses)) * 100) : 0}%`} />
+            </>
+          ) : (
+            <>
+              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
+              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
+            </>
+          )}
           <Kpi label="전략 이행률" value={`${t.follow}%`} />
           <Kpi label="구매자" value={`${t.buyers.toLocaleString("ko-KR")}명`} />
           {t.facts && (
             <>
-              <Kpi label="매매" value={`${t.facts.wins + t.facts.losses}건`} />
-              <Kpi label="승률" value={`${t.facts.wins + t.facts.losses ? Math.round((t.facts.wins / (t.facts.wins + t.facts.losses)) * 100) : 0}%`} />
+              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
+              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
               <Kpi label="가장 큰 이익" value={t.facts.best ? pct(t.facts.best.ret) : "-"} tone="gain" />
               <Kpi label="가장 큰 손실" value={t.facts.worst ? pct(t.facts.worst.ret) : "-"} tone="loss" />
             </>
@@ -140,11 +168,13 @@ export default function TraderPage() {
         <Reviews trader={t} fb={fb} notify={notify} />
 
         <section className="mk-section mk-similar">
-          <h2>비슷한 트레이더</h2>
+          <h2>{withWa(t.name)} 비슷한 트레이더</h2>
           <div className="mk-similar-grid">
             {similar.map((o) => (
               <Link key={o.id} href={`/marketplace/${o.id}`} className="mk-card mk-sim">
-                <strong>{o.name}</strong>
+                <strong>
+                  <GradeBadge grade={o.grade?.grade} unrated={o.grade?.unrated} small /> {o.name}
+                </strong>
                 <p>{o.tagline}</p>
                 <span className={oneStock(o, "3m") ? "" : tone(o.returns["3m"])}>3개월 {oneStock(o, "3m") ? "-" : pct(o.returns["3m"])}</span>
               </Link>

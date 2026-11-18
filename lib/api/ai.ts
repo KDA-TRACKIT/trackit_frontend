@@ -31,10 +31,18 @@ export type ChartMemoResult = {
   memo: string;
   /** AI 분석일 때만 (규칙 메모면 없음) */
   summary?: string;
+  /** 백엔드가 한국어로 줌 ("상승 관점" · "하락 관점" · "관망" · "판단 보류"). 예전 응답은 LONG 등 */
   direction?: "LONG" | "SHORT" | "WAIT" | "UNKNOWN" | string;
+  /** 지금 차트 구조 (추세 · 박스 등) */
+  marketStructure?: string;
+  /** 여러 작도가 겹치는 근거 */
+  confluence?: string[];
+  bullishScenario?: string;
+  bearishScenario?: string;
+  confidence?: "HIGH" | "MEDIUM" | "LOW";
   tools?: string[];
   risks?: string[];
-  /** 백엔드는 목록으로 줌 */
+  /** 백엔드는 한 줄 문자열로 줌 (예전 응답은 목록) */
   invalidation?: string | string[];
   model?: string;
   provider?: string;

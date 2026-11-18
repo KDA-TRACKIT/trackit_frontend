@@ -19,8 +19,9 @@ import RecordBoard from "./RecordBoard";
 import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
-import { addRecord, kstNow, linkPending } from "../../lib/records";
+import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
+import PlanCheck, { checkPlan, nums, type CheckContext } from "./PlanCheck";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -67,6 +68,8 @@ export default function WorkshopPage() {
   const money = moneyOf(us);
   const diff = diffOf(us);
   const [bars, setBars] = useState<Bar[]>([]);
+  /** 지금 종목·간격 봉을 받았는지. 받기 전 실시간 체결을 빈 차트에 붙이면 체결 몇 건짜리 봉(초봉처럼 보임)이 먼저 그려진다 */
+  const barsReadyRef = useRef(false);
   const [daily, setDaily] = useState<Bar[]>([]);
   /** live = 백엔드 시세, mock = 백엔드에 못 붙어서 예시 데이터 */
   const [source, setSource] = useState<"loading" | "live" | "mock">("loading");
@@ -85,10 +88,12 @@ export default function WorkshopPage() {
   useEffect(() => {
     const ac = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    barsReadyRef.current = false;
     // 초봉은 서버가 오늘 장 시작(09:00)까지 뒤에서 채우는 동안 complete=false → 몇 초마다 다시 받아 앞쪽을 늘린다
     const load = (first: boolean) =>
       fetchBars(symbol.code, interval, ac.signal, undefined, symbol.exchange)
         .then(({ symbol: info, bars: data, complete }) => {
+          barsReadyRef.current = true;
           setBars(data);
           setSource("live");
           if (first) setSymbol((cur) => (cur.code === info.code && (cur.name !== info.name || cur.market !== info.market) ? { ...info, exchange: cur.exchange } : cur));
@@ -96,6 +101,7 @@ export default function WorkshopPage() {
         })
         .catch(() => {
           if (ac.signal.aborted || !first) return;
+          barsReadyRef.current = true;
           setBars(symbol.code === STOCK.code ? makeBars(interval) : []);
           setSource("mock");
         });
@@ -135,6 +141,8 @@ export default function WorkshopPage() {
     const timer = setInterval(() => {
       if (queue.length === 0) return;
       const ticks = queue.splice(0);
+      // 봉을 받기 전 체결은 버린다 (받은 봉에 이미 들어 있음)
+      if (!barsReadyRef.current) return;
       // 미국: 분·시간·초봉은 프리·애프터·주간거래 체결까지, 일·주·연봉은 정규장 체결만 (저장된 일봉이 정규장 기준)
       const daily = exchange ? usDailyTicks(ticks) : ticks;
       setBars((list) => applyTicks(list, exchange && isDailyLike(intervalRef.current) ? daily : ticks, intervalRef.current));
@@ -167,6 +175,7 @@ export default function WorkshopPage() {
   function changeInterval(next: Interval) {
     if (next === interval) return;
     setSource("loading");
+    barsReadyRef.current = false;
     // 새 간격 봉이 올 때까지 이전 간격 봉을 지운다 (안 지우면 1분 버튼인데 1초봉이 그대로 보이고, 실시간 체결이 엉뚱하게 붙음)
     setBars([]);
     setChartInterval(next);
@@ -204,6 +213,8 @@ export default function WorkshopPage() {
   const [confirmed, setConfirmed] = useState(false);
   /** 투자자가 확인 · 수정하는 계획 (진입 근거 · 매수 조건 · 손절 기준 · 목표). AI 는 채우지 않고 되묻기만 */
   const [plan, setPlan] = useState<Plan>(EMPTY_PLAN);
+  /** 확정할 때 계획으로 남길지(필수 4가지 다 있음), 관찰 메모로 남길지 */
+  const [saveAs, setSaveAs] = useState<"plan" | "observe">("plan");
   /** 그은 선마다 투자자가 고른 의미 */
   const [lineMeaning, setLineMeaning] = useState<Record<string, string>>({});
   /** AI 노트 선 목록에서 마우스를 올린 드로잉 (차트에서 강조) */
@@ -252,6 +263,15 @@ export default function WorkshopPage() {
   const [avgRefresh, setAvgRefresh] = useState(0);
   const avgPrice = useAvgPrice(symbol.code, executions, avgRefresh);
   const linkedExecution = linkChoice === "auto" ? (linkSuggestion?.execution ?? null) : (executions.find((e) => e.id === linkChoice) ?? null);
+  // 노트 완성도 점검에 쓰는 것: 이 종목 지난 기록의 손절(보유 관리 '위험 확대') · 연결된 매매가 있는지(회고)
+  const allRecords = useRecords();
+  const symbolRecords = allRecords.filter((r) => r.symbol === symbol.code);
+  const lastStopText = symbolRecords.map((r) => r.text.match(/\[손절 기준\]\s*([^\n]+)/)?.[1]).find(Boolean);
+  const checkCtx: CheckContext = {
+    symbolName: symbol.name,
+    prevStop: lastStopText ? (nums(lastStopText)[0] ?? null) : null,
+    hasCycle: !!linkedExecution || symbolRecords.some((r) => !!r.executionTime),
+  };
   const [autoLinked, setAutoLinked] = useState<string | null>(null);
   /** 오른쪽 영역: 노트(기본) · 매매 */
   const [side, setSide] = useState<"notes" | "trade">("notes");
@@ -411,9 +431,27 @@ export default function WorkshopPage() {
       quantity: linkedExecution?.quantity,
       symbol: symbol.code,
       symbolName: symbol.name,
-      // 메모 + 투자자가 확인한 계획 (최초 확정본)
-      text: [noteText.trim(), planText(plan)].filter(Boolean).join("\n\n"),
+      // 메모 + 투자자가 확인한 계획 (최초 확정본). 관찰 메모는 앞에 표시 → 기록 보드 · 이행률에서 계획으로 안 침
+      text: [saveAs === "observe" ? "[관찰 메모]" : "", noteText.trim(), planText(plan)].filter(Boolean).join("\n\n"),
       drawings: drawings.map(drawingToAnnotation),
+      // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
+      plan: {
+        status: saveAs,
+        kind: plan.kind,
+        direction: checkPlan(plan, noteText, checkCtx).direction,
+        entry: plan.condition,
+        stop: plan.stop,
+        target: plan.target,
+        until: plan.until,
+        weight: plan.weight,
+        decision: plan.decision,
+        reason: plan.reason || plan.entry,
+        viewDir: plan.viewDir,
+        level: plan.level,
+        diff: plan.diff,
+        cause: plan.cause,
+        next: plan.next,
+      },
     });
     setConfirmBusy(false);
     if (!result.ok) {
@@ -576,6 +614,8 @@ export default function WorkshopPage() {
             currency={us ? "USD" : "KRW"}
             emptyMessage={emptyMessage}
             highlightId={hoverLine}
+            onQuoteNews={(t) => setNoteText((v) => (v.includes(t) ? v : v.trim() ? `${v.trim()}
+${t}` : t))}
           />
 
           <div className="ws-side">
@@ -589,7 +629,6 @@ export default function WorkshopPage() {
               <h2>
                 AI 노트 <span className="ws-tag">저장 전 검증</span>
               </h2>
-              <h3>AI가 정리한 차트 메모</h3>
               <div className="ws-memo">
                 <div className="ws-memo-head">
                   <small>
@@ -610,15 +649,44 @@ export default function WorkshopPage() {
               </div>
               {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
               {aiMemoResult?.summary && (
-                <div className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
+                <details className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
+                  <summary>AI 분석 보기</summary>
                   <div>
                     <strong>요약</strong>
                     <p>{aiMemoResult.summary}</p>
                   </div>
+                  {aiMemoResult.questions?.[0] && (
+                    <div>
+                      <strong>AI 질문</strong>
+                      <p>{aiMemoResult.questions[0]}</p>
+                    </div>
+                  )}
                   <div>
                     <strong>방향</strong>
-                    <p>{({ LONG: "상승", SHORT: "하락", WAIT: "관망", UNKNOWN: "판단 보류" } as Record<string, string>)[aiMemoResult.direction ?? "UNKNOWN"] ?? aiMemoResult.direction}</p>
+                    <p>
+                      {({ LONG: "상승 관점", SHORT: "하락 관점", WAIT: "관망", UNKNOWN: "판단 보류" } as Record<string, string>)[aiMemoResult.direction ?? "UNKNOWN"] ?? aiMemoResult.direction}
+                      {aiMemoResult.confidence && ` · 확신 ${({ HIGH: "높음", MEDIUM: "보통", LOW: "낮음" } as const)[aiMemoResult.confidence]}`}
+                    </p>
                   </div>
+                  {aiMemoResult.marketStructure && (
+                    <div>
+                      <strong>차트 구조</strong>
+                      <p>{aiMemoResult.marketStructure}</p>
+                    </div>
+                  )}
+                  {!!aiMemoResult.confluence?.length && (
+                    <div>
+                      <strong>겹치는 근거</strong>
+                      <p>{aiMemoResult.confluence.join(" · ")}</p>
+                    </div>
+                  )}
+                  {(aiMemoResult.bullishScenario || aiMemoResult.bearishScenario) && (
+                    <div>
+                      <strong>시나리오</strong>
+                      {aiMemoResult.bullishScenario && <p>▲ {aiMemoResult.bullishScenario}</p>}
+                      {aiMemoResult.bearishScenario && <p>▼ {aiMemoResult.bearishScenario}</p>}
+                    </div>
+                  )}
                   <div>
                     <strong>사용한 작도</strong>
                     <p>{aiMemoResult.tools?.length ? aiMemoResult.tools.join(" · ") : "없음"}</p>
@@ -632,7 +700,7 @@ export default function WorkshopPage() {
                     <p>{Array.isArray(aiMemoResult.invalidation) ? aiMemoResult.invalidation.join(" · ") || "없음" : aiMemoResult.invalidation || "없음"}</p>
                   </div>
                   {aiMemoResult.model && <small>{aiMemoResult.provider ? `${aiMemoResult.provider} · ` : ""}{aiMemoResult.model}</small>}
-                </div>
+                </details>
               )}
 
               {/* 투자자가 확인 · 수정해서 확정하는 계획 (AI 는 되묻기만) */}
@@ -673,7 +741,7 @@ export default function WorkshopPage() {
               {confirming ? (
                 <div className="ws-confirm">
                   <p>
-                    {linkedExecution ? "" : "연결된 체결이 없어 검증 대기로 저장돼요. "}확정하면 수정·삭제할 수 없습니다. 고칠 땐 새 버전으로 남습니다.
+                    {saveAs === "observe" ? "관찰 메모로 저장해요 (이행률의 '계획 있음'에 들어가지 않아요). " : linkedExecution ? "" : "연결된 체결이 없어 검증 대기로 저장돼요. "}확정하면 수정·삭제할 수 없습니다. 고칠 땐 새 버전으로 남습니다.
                   </p>
                   {confirmError && <p className="ws-confirm-error">{confirmError}</p>}
                   <div>
@@ -682,9 +750,29 @@ export default function WorkshopPage() {
                   </div>
                 </div>
               ) : (
-                <button className="ws-save" disabled={confirmed || (!noteText.trim() && !plan.entry.trim())} onClick={() => setConfirming(true)}>
-                  {confirmed ? "확정 완료" : "확인하고 확정"}
-                </button>
+                confirmed ? (
+                  <button className="ws-save" disabled>
+                    확정 완료
+                  </button>
+                ) : (
+                  <>
+                    {/* 계획 점검: 필수 4가지(방향 · 진입 · 손절 · 기한)를 다 채워야 '계획'으로 저장, 아니면 관찰 메모 */}
+                    <PlanCheck plan={plan} onPlan={setPlan} noteText={noteText} drawings={drawings} current={today?.close} nowTime={bars[bars.length - 1]?.time} money={money} ctx={checkCtx} />
+                    {/* 버튼 하나: 필수를 다 채우면 계획으로, 아니면 관찰 메모로 */}
+                    {checkPlan(plan, noteText, checkCtx).ok ? (
+                      <button className="ws-save" onClick={() => (setSaveAs("plan"), setConfirming(true))}>
+                        확인하고 저장
+                      </button>
+                    ) : (
+                      <>
+                        <button className="ws-save ghost" disabled={!noteText.trim() && !plan.entry.trim() && !plan.condition.trim()} onClick={() => (setSaveAs("observe"), setConfirming(true))}>
+                          관찰 메모로 저장
+                        </button>
+                        <p className="ws-save-hint">필수를 다 채우면 매매 계획으로 저장돼요</p>
+                      </>
+                    )}
+                  </>
+                )
               )}
               {confirmed && (
                 <div className="ws-after">

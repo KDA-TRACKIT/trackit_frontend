@@ -41,8 +41,8 @@ export default function OnboardingPage() {
       <SiteHeader />
       <div className="onboarding-body">
         <header className="mp-head">
-          <h1>투자 스타일을 알려 주세요</h1>
-          <p>프로필에 보여요. 건너뛰고 나중에 마이페이지에서 정해도 돼요.</p>
+          <h1>나만의 투자 정보 설정</h1>
+          <p>자주 사용하는 지표와 매매 스타일을 설정하면 전략 기록을 더 쉽게 정리할 수 있어요.</p>
         </header>
         {loggedIn === false ? (
           <Card>
@@ -52,18 +52,20 @@ export default function OnboardingPage() {
           </Card>
         ) : (
           <>
-            <Card>
+            <Card title="기본 프로필" desc="다른 사용자에게 보여질 정보를 작성해주세요.">
               <InvestmentFields value={value} onChange={setValue} showPeriod={false} variant="onboarding" />
               <Notice text={note} />
             </Card>
             <div className="onboarding-foot">
-              <span />
+              <span className="mp-muted" style={{ fontSize: 12 }}>
+                입력한 내용은 프로필에서 언제든 수정할 수 있습니다.
+              </span>
               <div className="mp-actions">
                 <Link className="mp-btn" style={{ width: 180 }} href="/">
-                  건너뛰기
+                  나중에 설정하기
                 </Link>
                 <button type="button" className="mp-btn primary" style={{ width: 180 }} onClick={() => void create()} disabled={busy || loggedIn === null}>
-                  {busy ? "저장 중…" : "완료"}
+                  {busy ? "저장 중…" : "프로필 생성하기"}
                 </button>
               </div>
             </div>

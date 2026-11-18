@@ -124,7 +124,9 @@ export default function RecordBoard(_props: { symbol: SymbolInfo; lastExecution:
                       ✕
                     </button>
                     <span className={`ws-badge ${kind}`}>{kind === "thought" ? "시장 전반" : KIND_LABEL[kind]}</span>
-                    <p>{r.text}</p>
+                    {/* 계획 점검에서 관찰 메모로 저장한 것: 이행률의 '계획 있음'에 안 들어감 */}
+                    {r.text.startsWith("[관찰 메모]") && <span className="ws-badge observe">관찰 메모</span>}
+                    <p>{r.text.replace(/^\[관찰 메모\]\s*/, "")}</p>
                     <small>{flow(r)}</small>
                     {r.symbol && (
                       <small>

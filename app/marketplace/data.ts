@@ -1,8 +1,10 @@
 // 전략 쇼핑 예시 데이터 (백엔드 API 가 생기기 전까지 화면만 먼저)
 //   수익률은 % 숫자, 가격은 원. 수익은 초록 · 손실은 빨강 (차트의 양봉 초록 · 음봉 빨강과 같게)
 //   월별 수익률 · 최대 낙폭 · 매매 수 · 이행률은 sim.json: 실제 일봉(키움, 2024-06~2026-11)에 트레이더마다 규칙을 돌려 만든 값
-//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 public/market-sim/{id}.json
+//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 열람권 확인 뒤 그 달만)
 import SIM from "./sim.json";
+import { gradeOfSim } from "./grades";
+import type { GradeResult } from "../../lib/grade";
 
 type SimTrader = {
   /** 작도(채널 · 피보나치 · 엘리어트)로 매매하는 트레이더면 소개를 규칙에 맞게 바꿈 */
@@ -103,6 +105,8 @@ export type Trader = {
   asOf?: string;
   /** 확인된 사실 */
   facts?: Facts;
+  /** 판매자 등급 · 열람권 가격 · 수수료 (lib/grade, 2026-11-17 회의 공식). F · 일반이면 신규 판매 안 함 */
+  grade?: GradeResult;
   /** 기간마다 매매한 종목 수 (0 · 1 종목이면 수익률 · 추이를 "-" 로) */
   stocks?: Record<Period, number>;
 };
@@ -224,8 +228,11 @@ function withSim(t: Trader): Trader {
   if (!s) return t;
   const p = s.persona;
   const live = s.eq?.length ? monthStartReturns(s.eq, s.mIdx) : null;
+  const grade = s.eq?.length ? gradeOfSim(s, t.market === "해외 주식" ? "US" : "KR") ?? undefined : undefined;
   return {
     ...t,
+    // 열람권 가격은 등급 공식대로 (판매 중지 등급이면 마지막 가격을 남겨 두되 팔지 않음)
+    ...(grade && { grade, price: grade.price ?? t.price }),
     ...(live && { curves: live.curves, asOf: s.asOf }),
     ...(p && {
       name: p.name ?? t.name,
@@ -332,6 +339,11 @@ export function screen(t: Trader): Screening {
   return { verified: checks.every((c) => c.ok), checks };
 }
 export const isVerified = (t: Trader) => screen(t).verified;
+/** 비즈니스 → 일반 계정으로 바뀐 트레이더(F 3개월)는 전략 쇼핑 목록 · 비슷한 트레이더 · 홈 보드에서 뺀다 (이미 산 전략은 계속 열람) */
+export const listed = (t: Trader) => !(t.grade && !t.grade.unrated && t.grade.grade === "일반");
+
+/** 등급이 F · 일반이면 신규 판매 안 함 (열람권 구매 불가) */
+export const sellable = (t: Trader) => !t.grade || (t.grade.grade !== "F" && t.grade.grade !== "일반");
 export const traderById = (id: string) => TRADERS.find((t) => t.id === id);
 
 const TITLES: [string, string][] = [

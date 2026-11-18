@@ -34,7 +34,7 @@ import ToolGlyph from "./ToolGlyph";
 import { buildScenariosFor, businessDaysBetween, lineValueAt, type Scenario, type ScenarioBase, type ScenarioName, type UserDrawing } from "../../lib/workspace/scenarios";
 import { type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import { PRESET_INTERVALS, UNIT_LABEL, UNIT_MAX, intervalLabel, isDailyLike, isSeconds, makeInterval, parseInterval, type IntervalUnit } from "../../lib/interval";
-import { fetchDailyNews, type NewsArticle } from "../../lib/api/news";
+import { fetchDailyNews, fetchNewsDays, newsDays, type NewsArticle } from "../../lib/api/news";
 import { fetchFlows, type FlowDay } from "../../lib/market-data";
 import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import { uuid } from "../../lib/uuid";
@@ -218,6 +218,8 @@ type Props = {
   /** 기록으로 저장: 드로잉·메모를 저장하고 AI 가 차트 메모로 정리 */
   onSave?: () => void;
   saving?: boolean;
+  /** 뉴스 창의 'AI 노트에 인용' (일봉에서 뉴스 있는 날을 축에 표시하고, 읽은 뉴스를 노트로) */
+  onQuoteNews?: (text: string) => void;
   /** 바깥(AI 노트의 선 목록)에서 마우스를 올린 드로잉 → 차트에서 강조 */
   highlightId?: string | null;
 };
@@ -369,7 +371,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -384,6 +386,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const activeToolRef = useRef<string | null>(null);
   const pendingRef = useRef<DrawingPoint[]>([]);
+  // 클릭 연결(useEffect [dataKey])에서 최신 봉 · 콜백을 읽기 위한 ref
+  const barsRef = useRef(bars);
+  barsRef.current = bars;
+  const onDrawingsChangeRef = useRef(onDrawingsChange);
+  onDrawingsChangeRef.current = onDrawingsChange;
   /** Shift + 클릭 빠른 측정: 시작점 · 고정 여부 (저장 안 함) */
   const measureRef = useRef<{ start: DrawingPoint; fixed: boolean; x: number; y: number } | null>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -576,7 +583,50 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [hovered, setHovered] = useState<Bar | null>(null);
   const [axisHover, setAxisHover] = useState<AxisHover | null>(null);
   const [news, setNews] = useState<NewsView | null>(null);
+  /** 날짜 축 위 '뉴스 있는 날' 점 (일봉만). 화면에 보이는 것만, 스크롤 · 확대하면 다시 계산 */
+  // 백엔드에 뉴스를 모아 둔 날 (등락 큰 날과 합쳐 점을 찍음)
+  const [storedNewsDays, setStoredNewsDays] = useState<Set<string>>(new Set());
+  // 실시간 시세로 마지막 봉만 바뀔 때는 다시 묻지 않게 (종목 · 주기 · 봉 개수가 바뀔 때만)
+  const newsBarsRef = useRef(bars);
+  newsBarsRef.current = bars;
+  const newsKey = interval === "1d" && bars.length >= 2 ? `${symbolCode}:${bars.length}:${bars[0].time}` : "";
+  useEffect(() => {
+    const bars = newsBarsRef.current;
+    if (!newsKey) return;
+    const ac = new AbortController();
+    const from = kstDay(bars[0].time);
+    const to = kstDay(bars[bars.length - 1].time);
+    // 1) 이미 모아 둔 날 바로 → 2) 등락 큰 날 · 최근 닷새 중 아직 안 모은 날을 백엔드가 찾아 본 뒤 다시
+    // 인터넷 기사 검색은 최근 1년 반 정도만 의미가 있어서 그 안에서만 후보를 고른다
+    const since = bars[bars.length - 1].time - 548 * 86_400; // 봉 time 은 초
+    const big = [...newsDays(bars)].filter((t) => t >= since).map((t) => {
+      const i = bars.findIndex((b) => b.time === t);
+      return { day: kstDay(t), move: i > 0 ? Math.abs(bars[i].close / bars[i - 1].close - 1) : 0 };
+    });
+    const check = [...new Set([...bars.slice(-5).map((b) => kstDay(b.time)), ...big.sort((a, b) => b.move - a.move).slice(0, 25).map((d) => d.day)])];
+    fetchNewsDays(symbolCode, from, to, ac.signal)
+      .then(setStoredNewsDays)
+      .then(() => fetchNewsDays(symbolCode, from, to, ac.signal, check, symbolName))
+      .then((days) => days && setStoredNewsDays(days))
+      .catch(() => {});
+    return () => ac.abort();
+  }, [newsKey, symbolCode, symbolName]);
+  const [newsMarks, setNewsMarks] = useState<{ x: number; bar: Bar; axis: number; width: number }[]>([]);
   const newsAbortRef = useRef<AbortController | null>(null);
+  // 뉴스 창이 떠 있을 때 바깥(뉴스 원 말고)을 누르면 닫는다
+  const newsPanelRef = useRef<HTMLElement | null>(null);
+  const newsOpen = !!news;
+  useEffect(() => {
+    if (!newsOpen) return;
+    const close = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (newsPanelRef.current?.contains(t as Node) || t?.closest?.(".ws-news-mark")) return;
+      newsAbortRef.current?.abort();
+      setNews(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [newsOpen]);
   /** 전체 화면: 차트가 브라우저 창을 덮는다 (가능하면 모니터 전체 화면도 같이) */
   const [fullscreen, setFullscreen] = useState(false);
   // 차트 노트 모드: 켜면 차트를 클릭한 지점에 메모 입력창이 뜬다
@@ -821,6 +871,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   }, []);
 
   // 클릭으로 점 찍기, 마우스 이동으로 미리보기·범례
+  //   실시간 시세로 봉이 바뀔 때마다 이 연결을 다시 하면, 누름과 놓음 사이에 시세가 들어온 경우 누른 자리(press)가 사라져
+  //   "한 번 클릭했는데 점이 안 찍히는" 일이 생겼다 → 종목 · 간격(dataKey)이 바뀔 때만 다시 연결하고, 봉은 ref 로 읽는다
   useEffect(() => {
     const chart = chartRef.current;
     const candle = candleRef.current;
@@ -890,8 +942,9 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return name;
     };
 
-    // 도구를 들고 있으면 누름은 항상 "그리기" (근처 드로잉을 고르느라 점이 안 찍히는 일이 없게). 고르기 · 옮기기는 도구를 내려놓고
-    const canPick = () => !noteModeRef.current && !activeToolRef.current;
+    // 기존 드로잉 고르기 · 옮기기: 도구가 없을 때, 또는 도구를 들고 있어도 아직 첫 점을 안 찍었을 때.
+    // 첫 점을 찍은 뒤엔 누름은 항상 "다음 점" (다른 드로잉 위를 눌러도 고르지 않고 점이 찍힌다)
+    const canPick = () => !noteModeRef.current && (!activeToolRef.current || pendingRef.current.length === 0);
     const handleCaptureDown = (event: PointerEvent) => {
       if (!canPick() || event.button !== 0) return;
       const layer = layerRef.current;
@@ -913,7 +966,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const orig = id ? drawingsRef.current.find((d) => d.id === id) : undefined;
       if (!id || !orig) return;
       event.stopPropagation();
-      if (activeToolRef.current) selectTool(null); // 도구를 내려놓고 그 드로잉 편집으로
+      // 도구는 그대로 들고 있는다 (빈 곳을 누르면 바로 새로 그림)
       selectDrawing(id);
       skipClick = true;
       drag = { id, handle, startX: x, startY: y, orig, moved: false };
@@ -978,7 +1031,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       chart.applyOptions({ handleScroll: true, handleScale: true });
       if (done.moved) {
         // 실행 취소로 옮기기 전 자리로 돌아가게
-        setPast((p) => [...p, drawingsRef.current.map((d) => (d.id === done.id ? done.orig : d))]);
+        const before = drawingsRef.current.map((d) => (d.id === done.id ? done.orig : d));
+        setPast((p) => [...p, before]);
         setFuture([]);
       }
     };
@@ -1138,6 +1192,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         const { x, y } = localXY(event);
         const point = pointAt(x, y);
         if (!point) return;
+        if (layerRef.current?.selected()) selectDrawing(null); // 새로 그리기 시작하면 고른 드로잉은 풀기
         press = { x, y, point, dragging: false };
         chart.applyOptions({ handleScroll: false });
         try {
@@ -1277,7 +1332,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     const handleMove = (param: MouseEventParams<Time>) => {
       const data = param.seriesData.get(candle) as CandlestickData<Time> | undefined;
-      setHovered(data ? barAt(bars, data.time as number) : null);
+      setHovered(data ? barAt(barsRef.current, data.time as number) : null);
       refreshPaneLegends(param.point ? param.seriesData : undefined);
 
       const tool = currentTool();
@@ -1374,7 +1429,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     };
     // commit은 ref만 쓰므로 의존성에서 뺀다
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars]);
+  }, [dataKey]);
 
   // Esc: 그리던 것 취소
   useEffect(() => {
@@ -1646,25 +1701,30 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     drawingsRef.current = next;
     setDrawings(next);
     layerRef.current?.setDrawings(next);
-    onDrawingsChange?.(next);
+    onDrawingsChangeRef.current?.(next); // 위 클릭 연결은 종목이 바뀔 때만 다시 하므로 최신 콜백을 ref 로
   }
 
   function commit(next: Drawing[]) {
-    setPast((p) => [...p, drawingsRef.current]);
+    // 바꾸기 전 상태를 지금 잡아 둔다. setPast 안에서 drawingsRef 를 읽으면 React 가 나중에(apply 뒤에) 계산해
+    // "바꾼 뒤" 상태가 쌓이고, 되돌리기가 한 칸씩 밀려 맨 처음 그린 드로잉이 안 지워졌다
+    const prev = drawingsRef.current;
+    setPast((p) => [...p, prev]);
     setFuture([]);
     apply(next);
   }
 
   function undo() {
     if (past.length === 0) return;
-    setFuture((f) => [drawingsRef.current, ...f]);
+    const cur = drawingsRef.current;
+    setFuture((f) => [cur, ...f]);
     apply(past[past.length - 1]);
     setPast((p) => p.slice(0, -1));
   }
 
   function redo() {
     if (future.length === 0) return;
-    setPast((p) => [...p, drawingsRef.current]);
+    const prev = drawingsRef.current; // commit 과 같은 이유로 미리 잡아 둔다
+    setPast((p) => [...p, prev]);
     apply(future[0]);
     setFuture((f) => f.slice(1));
   }
@@ -1730,11 +1790,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       return;
     }
     commit([...drawingsRef.current, drawing]);
-    // 트레이딩뷰처럼: 다 그리면 커서로 돌아가 방금 그린 것을 골라 둔다 → 바로 끌어 옮기거나 점을 고칠 수 있게 (펜 · 지우개는 계속 그리기)
-    if (!INK_TOOLS.has(tool.id)) {
-      selectTool(null);
-      selectDrawing(drawing.id);
-    }
+    // 다 그려도 도구는 그대로 → 이어서 또 그릴 수 있다. 첫 점 전에 기존 드로잉을 누르면 그 드로잉을 고르고,
+    //   첫 점을 찍은 뒤엔 다른 드로잉 위를 눌러도 고르지 않고 점이 찍힌다
   }
 
   /** 다점 툴(경로·폴리라인): 더블클릭·Enter 로 완성 */
@@ -1755,11 +1812,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     layerRef.current?.setPreview(null);
     if (!text) return;
     if (textDraft.editing) commit(drawingsRef.current.map((d) => (d.id === textDraft.drawing.id ? { ...d, text } : d)));
-    else {
-      commit([...drawingsRef.current, { ...textDraft.drawing, text }]);
-      selectTool(null);
-      selectDrawing(textDraft.drawing.id);
-    }
+    else commit([...drawingsRef.current, { ...textDraft.drawing, text }]); // 글 도구도 그대로 (이어서 또 쓰기)
   }
 
   function selectTool(toolId: string | null) {
@@ -1827,6 +1880,39 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     if (axisHover?.bar !== bar) setAxisHover({ x: bx, bar, axis: rect.height - axisTop, width: chart.paneSize().width });
   }
 
+  // 뉴스 있는 날 점: 일봉일 때만, 보이는 범위가 바뀌거나 창 크기가 바뀌면 다시 놓음
+  useEffect(() => {
+    const chart = chartRef.current;
+    const container = containerRef.current;
+    if (!chart || !container || interval !== "1d" || bars.length < 2) {
+      setNewsMarks([]);
+      return;
+    }
+    // 기사가 실제로 있는 날만 점을 찍는다
+    const days = new Set(bars.filter((b) => storedNewsDays.has(kstDay(b.time))).map((b) => b.time));
+    const place = () => {
+      const ts = chart.timeScale();
+      const width = chart.paneSize().width;
+      const axis = ts.height();
+      const marks: { x: number; bar: Bar; axis: number; width: number; move: number }[] = [];
+      bars.forEach((bar, i) => {
+        if (!days.has(bar.time) || i === 0) return;
+        const x = ts.timeToCoordinate(toChartTime(bar.time) as Time);
+        if (x !== null && x >= 0 && x <= width) marks.push({ x, bar, axis, width, move: Math.abs(bar.close / bars[i - 1].close - 1) });
+      });
+      // 점은 가장 최근 뉴스 하나만 그린다 (나머지 날은 날짜 축에 마우스를 올리면)
+      setNewsMarks(marks.sort((a, b) => b.bar.time - a.bar.time).slice(0, 1));
+    };
+    place();
+    chart.timeScale().subscribeVisibleLogicalRangeChange(place);
+    const ro = new ResizeObserver(place);
+    ro.observe(container);
+    return () => {
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(place);
+      ro.disconnect();
+    };
+  }, [bars, interval, storedNewsDays]);
+
   function openNews(target: AxisHover) {
     newsAbortRef.current?.abort();
     const ac = new AbortController();
@@ -1834,7 +1920,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const index = bars.indexOf(target.bar);
     setNews({ ...target, status: "loading", items: [] });
     setAxisHover(null);
-    fetchDailyNews(symbolCode, kstDay(target.bar.time), { close: target.bar.close, prevClose: bars[index - 1]?.close, isLast: index === bars.length - 1, time: target.bar.time }, ac.signal)
+    fetchDailyNews(symbolCode, kstDay(target.bar.time), { close: target.bar.close, prevClose: bars[index - 1]?.close, isLast: index === bars.length - 1, time: target.bar.time }, ac.signal, symbolName)
       .then((items) => setNews((cur) => (cur && cur.bar === target.bar ? { ...cur, status: "done", items } : cur)))
       .catch(() => {
         if (!ac.signal.aborted) setNews((cur) => (cur && cur.bar === target.bar ? { ...cur, status: "error" } : cur));
@@ -2172,7 +2258,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               · Esc 취소
             </div>
           )}
-          {selectedDrawing && !activeTool && (
+          {/* 도구를 들고 있어도, 아직 새 드로잉의 점을 안 찍었으면 고른 드로잉의 설정을 보여 준다 */}
+          {selectedDrawing && pendingCount === 0 && (
             <div className="ws-draw-edit" onClick={(e) => e.stopPropagation()} key={selectedDrawing.id}>
               <span className="ws-draw-edit-name">{getTool(selectedDrawing.toolId)?.label ?? "드로잉"}</span>
               <span className="ws-draw-edit-sep" />
@@ -2327,14 +2414,33 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             </div>
           )}
 
-          {axisHover && !news && (
-            <button className="ws-news-btn" style={{ left: axisHover.x, bottom: axisHover.axis + 4 }} onClick={() => openNews(axisHover)}>
-              {dayLabel(axisHover.bar)} 뉴스 보기
-            </button>
-          )}
+          {/* 트레이딩뷰처럼: 가장 최근 뉴스 날에 동그라미 하나, 다른 날은 날짜 축에 마우스를 올렸을 때 그날 뉴스가 있으면 동그라미 */}
+          {!news &&
+            [...newsMarks, ...(axisHover && storedNewsDays.has(kstDay(axisHover.bar.time)) && !newsMarks.some((m) => m.bar === axisHover.bar) ? [axisHover] : [])].map((m) => (
+              <button
+                key={m.bar.time}
+                className="ws-news-mark"
+                style={{ left: m.x, bottom: m.axis + 4 }}
+                onClick={() => openNews(m)}
+                aria-label={`${kstDay(m.bar.time)} 뉴스 보기`}
+                title={`${dayLabel(m.bar)} 뉴스 보기`}
+              >
+                {/* 홈 화면 꿀벌 얼굴 (남색 두건 · 노란 얼굴 · 더듬이) */}
+                <svg viewBox="0 0 20 20" aria-hidden>
+                  <path className="ant" d="M7.6 6.4 6 2.9M12.4 6.4 14 2.9" />
+                  <circle className="tip" cx="5.8" cy="2.6" r="1.5" />
+                  <circle className="tip" cx="14.2" cy="2.6" r="1.5" />
+                  <ellipse className="face" cx="10" cy="12.2" rx="6.1" ry="5" />
+                  <circle className="eye" cx="7.8" cy="11.8" r="1" />
+                  <circle className="eye" cx="12.2" cy="11.8" r="1" />
+                  <circle className="cheek" cx="6.3" cy="13.6" r=".9" />
+                  <circle className="cheek" cx="13.7" cy="13.6" r=".9" />
+                </svg>
+              </button>
+            ))}
 
           {news && (
-            <aside className="ws-news" style={{ left: Math.max(8, Math.min(news.x - 150, news.width - 308)), bottom: news.axis + 6 }} aria-live="polite">
+            <aside ref={newsPanelRef} className="ws-news" style={{ left: Math.max(8, Math.min(news.x - 150, news.width - 308)), bottom: news.axis + 6 }} aria-live="polite">
               <header>
                 <span className="ws-news-tag">AI 뉴스 · {kstDay(news.bar.time).replaceAll("-", ".")}</span>
                 <button onClick={() => setNews(null)} aria-label="뉴스 닫기">✕</button>
@@ -2344,9 +2450,34 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               {news.status === "done" && news.items.length === 0 && <p className="ws-muted">이 날짜의 뉴스가 없어요.</p>}
               {news.items.map((item) => (
                 <article key={item.title}>
-                  <strong>{item.title}</strong>
-                  <p>{item.summary}</p>
-                  <small>{item.source}</small>
+                  <strong>
+                    {item.kind === "sector" && <span className="ws-news-kind">섹터</span>}
+                    {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                        {item.title}
+                      </a>
+                    ) : (
+                      item.title
+                    )}
+                  </strong>
+                  {item.summary && <p>{item.summary}</p>}
+                  <small>
+                    {item.source}
+                    {/* 구글 뉴스의 지난 기사는 날짜만 있고 시각이 정각(:00:00)으로 와서 시각은 숨김 */}
+                    {item.publishedAt && !/T\d\d:00:00/.test(item.publishedAt) && ` · ${new Date(item.publishedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" })}`}
+                  </small>
+                  {onQuoteNews && (
+                    <button
+                      type="button"
+                      className="ws-news-quote"
+                      onClick={() => {
+                        onQuoteNews(`[인용 · ${kstDay(news.bar.time).slice(5).replace("-", ".")} 뉴스] ${item.title}`);
+                        setNews(null);
+                      }}
+                    >
+                      + AI 노트에 인용
+                    </button>
+                  )}
                 </article>
               ))}
             </aside>

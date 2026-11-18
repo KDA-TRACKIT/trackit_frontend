@@ -7,6 +7,7 @@ import SiteHeader from "../../SiteHeader";
 import { apiRequest } from "../../../lib/api/client";
 import { usePasses } from "../../../lib/purchases";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
+import { GradeBadge } from "../../marketplace/GradeParts";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
 
@@ -81,7 +82,7 @@ export default function PurchasesPage() {
                       <div>
                         <small>사용 가능</small>
                         <strong>
-                          {g.name} 열람권 {g.count}장
+                          <GradeBadge grade={traderById(g.traderId)?.grade?.grade} unrated={traderById(g.traderId)?.grade?.unrated} small /> {g.name} 열람권 {g.count}장
                         </strong>
                         <p>월별 전략 중 하나를 골라 열람권으로 바꾸세요.</p>
                       </div>
@@ -109,7 +110,7 @@ export default function PurchasesPage() {
                       <li key={p.id} className="mk-card ar-prow">
                         <div>
                           <strong>
-                            {p.traderName}의 {monthLabel(p.used!.month)} 전략
+                            <GradeBadge grade={t?.grade?.grade} unrated={t?.grade?.unrated} small /> {p.traderName}의 {monthLabel(p.used!.month)} 전략
                           </strong>
                           <p>{s?.title ?? p.used!.title}{t?.tagline ? ` · ${t.tagline}` : ""}</p>
                           <small>

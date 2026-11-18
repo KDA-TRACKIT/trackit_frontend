@@ -8,8 +8,9 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { rememberListUrl } from "../../lib/market-list";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
-import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, oneStock, pct, tone, won, type Period, type Trader } from "./data";
+import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
+import { GradeBadge } from "./GradeParts";
 import "./marketplace.css";
 import { useLikeTotals } from "../../lib/feedback";
 import { isFavorite, useFavorites } from "../../lib/favorites";
@@ -117,7 +118,7 @@ function MarketplaceList() {
       (!filter.types.length || filter.types.includes(t.type)) &&
       (!filter.markets.length || filter.markets.includes(t.market));
     // 판매 심사로 숨기지 않음 (거르는 장치는 팀에서 따로 만듦)
-    const out = TRADERS.filter(hit);
+    const out = TRADERS.filter(listed).filter(hit);
     const likes = (t: Trader) => likeTotals[t.id] ?? 0;
     const ret = (t: Trader) => (oneStock(t, period) ? -Infinity : t.returns[period]);
     const score = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
@@ -126,6 +127,8 @@ function MarketplaceList() {
     out.sort(
       (a, b) =>
         fav(b) - fav(a) ||
+        // 지금 살 수 있는(등급 D 이상) 트레이더 먼저
+        Number(sellable(b)) - Number(sellable(a)) ||
         (sort === "pop" ? b.buyers - a.buyers : sort === "like" ? likes(b) - likes(a) || b.buyers - a.buyers : sort === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sort === "price" ? a.price - b.price : score(b) - score(a)),
     );
     return out;
@@ -227,11 +230,11 @@ function MarketplaceList() {
                     </span>
                     <div className="mk-row-who">
                       <strong>
-                        {t.name} <FavButton id={t.id} name={t.name} />
+                        <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name} <FavButton id={t.id} name={t.name} />
                       </strong>
                       <p>{t.tagline}</p>
                     </div>
-                    <span className="mk-cell">{won(t.price)}</span>
+                    <span className="mk-cell">{sellable(t) ? won(t.price) : "판매 중지"}</span>
                     <span className="mk-cell">{t.follow}%</span>
                     {oneStock(t, period) ? (
                       <>

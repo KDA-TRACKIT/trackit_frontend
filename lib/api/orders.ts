@@ -81,6 +81,14 @@ export function connectBroker(input: { appKey: string; appSecret: string; mode: 
   return apiRequest("/brokers/connections", { method: "POST", body: JSON.stringify({ brokerCode: "KIWOOM", ...input }) });
 }
 
+/** 마이데이터식 한 번에 연결 (시연: 서버에 둔 증권사 키로 연결). auto=false 면 키움 앱키를 한 번 받아 connectBroker */
+export function mydataStatus(): Promise<{ auto: boolean; brokers: { code: string; name: string }[] }> {
+  return apiRequest("/brokers/mydata");
+}
+export function mydataConnect(): Promise<BrokerConnection[]> {
+  return apiRequest("/brokers/mydata", { method: "POST", body: JSON.stringify({ consent: true }) });
+}
+
 export function disconnectBroker(connectionId: string): Promise<unknown> {
   return apiRequest(`/brokers/connections/${encodeURIComponent(connectionId)}`, { method: "DELETE" });
 }

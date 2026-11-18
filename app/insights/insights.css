@@ -109,3 +109,58 @@
   .ins-mk-stats { padding:18px 0 0; border-left:0; border-top:1px solid var(--c-line); }
   .ins-mk-headline { display:none; }
 }
+
+/* 오늘의 종목 (MarketMovers.tsx): 순위 표 + 오른쪽 종목 요약 */
+.ins-mv { padding:18px 20px 16px; }
+.ins-mv-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+.ins-mv-head h2 { margin:0; font-size:20px; font-weight:800; }
+.ins-mv-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; }
+.ins-mv-tabs button { height:34px; padding:0 14px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink-2); font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+.ins-mv-tabs button:hover { border-color:var(--c-line-strong); }
+.ins-mv-tabs button[aria-selected="true"] { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); }
+.ins-mv-body { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:0; border-top:1px solid var(--c-line); }
+.ins-mv-table { min-width:0; padding-right:18px; }
+.ins-mv-table ol { margin:0; padding:0; list-style:none; }
+.ins-mv-row { display:grid; grid-template-columns:34px minmax(170px,1.6fr) minmax(90px,1fr) minmax(120px,1.1fr) minmax(90px,1fr) minmax(80px,.9fr) minmax(80px,.9fr); align-items:center; gap:8px; min-height:52px; padding:0 6px; border-bottom:1px solid var(--c-line); font-size:14.5px; }
+.ins-mv-th { min-height:40px; color:var(--c-sub); font-size:12.5px; }
+.ins-mv-th span:not(:nth-child(2)) { text-align:right; }
+li.ins-mv-row { cursor:pointer; }
+li.ins-mv-row:hover { background:var(--c-hover); }
+li.ins-mv-row.on { background:var(--c-subtle); }
+.ins-mv-row .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ins-mv-row .who { display:flex; min-width:0; align-items:center; gap:10px; }
+.ins-mv-row .who em { width:20px; flex:0 0 auto; color:var(--c-sub); font-style:normal; font-variant-numeric:tabular-nums; text-align:right; }
+.ins-mv-row .who b { min-width:0; overflow:hidden; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.ins-mv-avatar { display:inline-grid; flex:0 0 auto; place-items:center; border-radius:26%; color:#fff; font-weight:800; line-height:1; }
+.ins-mv .fav { display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:none; color:var(--c-line-strong); cursor:pointer; }
+.ins-mv .fav:hover { color:var(--c-sub); }
+.ins-mv .fav.on { color:#e5484d; }
+.ins-mv .fav.on svg { fill:currentColor; }
+.ins-mv-more { display:block; width:100%; height:40px; margin-top:6px; border:0; border-radius:8px; background:var(--c-subtle); color:var(--c-ink-2); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.ins-mv-detail { position:sticky; top:12px; align-self:start; display:flex; min-width:0; flex-direction:column; gap:10px; padding:16px 0 0 18px; border-left:1px solid var(--c-line); }
+.ins-mv-dhead { display:flex; align-items:center; gap:10px; }
+.ins-mv-dhead > div { display:flex; min-width:0; flex:1; flex-direction:column; }
+.ins-mv-dhead strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; white-space:nowrap; }
+.ins-mv-dhead small { color:var(--c-sub); font-size:12.5px; }
+.ins-mv-price { display:flex; align-items:baseline; gap:8px; margin:0; font-variant-numeric:tabular-nums; }
+.ins-mv-price b { font-size:24px; }
+.ins-mv-price span { font-size:15px; font-weight:700; }
+.ins-mv-sub { margin:4px 0 0; color:var(--c-faint); font-size:12px; }
+.ins-mv-chart { height:200px; }
+.ins-mv-facts { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:4px 0 0; padding-top:12px; border-top:1px solid var(--c-line); }
+.ins-mv-facts dt { color:var(--c-sub); font-size:12px; }
+.ins-mv-facts dd { margin:3px 0 0; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.ins-mv-go { display:grid; place-items:center; height:40px; margin-top:4px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; }
+.ins-mv-go:hover { background:var(--c-hover); }
+@media (max-width:1280px) { .ins-mv-row { grid-template-columns:34px minmax(150px,1.6fr) minmax(86px,1fr) minmax(116px,1.1fr) minmax(80px,.9fr); } .ins-mv-row .opt { display:none; } }
+@media (max-width:1000px) { .ins-mv-body { grid-template-columns:1fr; } .ins-mv-table { padding-right:0; } .ins-mv-detail { position:static; padding:16px 0 0; border-left:0; border-top:1px solid var(--c-line); } }
+.ins-mv-wait { margin:-200px 0 200px; text-align:center; }
+/* 미국 장이 닫혀 거래량이 없을 때: 거래량 · 거래대금 칸 없이 */
+.ins-mv-table.novol .ins-mv-row { grid-template-columns:34px minmax(170px,1.6fr) minmax(90px,1fr) minmax(120px,1.1fr) minmax(90px,1fr); }
+.ins-mv-table.novol .ins-mv-row .vol { display:none; }
+.ins-mv-table.novol .ins-mv-row .opt:not(.vol) { display:block; }
+.ins-mv-table.us .fav[hidden] { display:block; visibility:hidden; }
+.ins-mv-detail .fav[hidden] { display:none; }
+/* 종목 로고: 흰 동그라미 안에 맞춰 (다크 모드도 흰 바탕이라 로고 색이 그대로 보임) */
+.ins-mv-avatar.logo { overflow:hidden; border:1px solid var(--c-line); background:#fff; } /* 로고가 대부분 네모라 둥근 네모로 꽉 채움 */
+.ins-mv-avatar.logo img { display:block; width:100%; height:100%; object-fit:contain; }

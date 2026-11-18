@@ -1,68 +1,102 @@
 "use client";
-// 계정 설정: 기본 계정 정보 · 개인정보 및 공개 설정 요약 + 증권사 연결
+// 계정 설정 (시안 2026-11-18): 기본 계정 정보(이메일 · 비밀번호 · 계정 연동 → 모달) · 개인정보 및 공개 설정 + 화면 테마
+// 증권사 연결은 내 계좌 화면으로 옮김
 import Link from "next/link";
-import { useMypage } from "../context";
-import { Card, PageHead } from "../ui";
-import BrokerSection from "../BrokerSection";
-import { readPrivacy } from "./privacy/privacy";
+import { useState } from "react";
+import { metaText, useMypage } from "../context";
+import { Card, Notice, PageHead } from "../ui";
+import { readPrivacy, type Privacy } from "./privacy/privacy";
+import { EmailModal, LinkModal, PasswordModal } from "./AccountModals";
 import ThemeSwitch from "../../ThemeSwitch";
 
 export default function AccountPage() {
-  const { user, meta } = useMypage();
+  const { user, meta, saveMeta } = useMypage();
   const providers = (user.identities ?? []).map((i) => i.provider);
-  const privacy = readPrivacy(meta);
-  const setBtn = (href: string) => (
-    <Link className="mp-btn small" href={href}>
-      변경
-    </Link>
+  const [privacy, setPrivacy] = useState(() => readPrivacy(meta));
+  const [modal, setModal] = useState<"email" | "password" | "link" | null>(null);
+  const [note, setNote] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const handle = metaText(meta, "handle") || user.email?.split("@")[0] || "";
+
+  async function toggle(key: "trustConsent" | "notifications") {
+    const next: Privacy = { ...privacy, [key]: !privacy[key] };
+    setPrivacy(next);
+    setBusy(true);
+    try {
+      await saveMeta({ privacy: next });
+      setNote({ ok: true, msg: "저장했어요" });
+    } catch (err) {
+      setPrivacy(privacy);
+      setNote({ ok: false, msg: err instanceof Error ? err.message : "저장하지 못했어요." });
+    }
+    setBusy(false);
+  }
+
+  const btn = (label: string, onClick: () => void) => (
+    <button type="button" className="mp-btn outline small" onClick={onClick}>
+      {label}
+    </button>
   );
+  const linked = providers.includes("google") ? "Google 연결됨" : "Google 미연결";
+
   return (
     <>
-      <PageHead title="계정 설정" />
-      <Card title="기본 계정 정보" action={setBtn("/mypage/account/basic")}>
-        <div className="mp-list">
+      <PageHead title="계정 설정" desc="계정 정보와 개인정보 공개 범위를 관리하세요." />
+      <Card title="기본 계정 정보" desc="회원가입에 사용한 계정 정보와 보안 설정">
+        <div className="mp-set-list">
           <div>
             <strong>이메일</strong>
             <span>{user.email ?? "등록된 이메일 없음"}</span>
+            {btn("변경", () => setModal("email"))}
           </div>
           <div>
             <strong>비밀번호</strong>
-            <span>{providers.includes("email") ? "••••••••" : "없음 (소셜 로그인)"}</span>
+            <span>{providers.includes("email") ? "변경 가능" : "없음 (소셜 로그인)"}</span>
+            {btn("변경", () => setModal("password"))}
           </div>
           <div>
             <strong>계정 연동</strong>
-            <span>{providers.map((p) => (p === "email" ? "이메일" : p === "google" ? "Google" : p)).join(", ") || "—"}</span>
+            <span>
+              {providers.includes("email") ? "일반 계정" : "Google 계정"} · {linked}
+            </span>
+            {btn("관리", () => setModal("link"))}
           </div>
         </div>
       </Card>
-      <Card title="개인정보 및 공개 설정" action={setBtn("/mypage/account/privacy")}>
-        <div className="mp-list">
-          <div style={{ gridTemplateColumns: "256px 1fr" }}>
+      <Card title="개인정보 및 공개 설정" desc="프로필 노출, 전략 공개, 알림 설정을 관리합니다.">
+        <div className="mp-set-list">
+          <div>
             <strong>프로필 공개 범위</strong>
-            <span>{privacy.profilePublic ? "전체 공개" : "비공개"}</span>
+            <span>공개 정보 관리</span>
+            <Link className="mp-btn outline small" href="/mypage/account/privacy">
+              변경
+            </Link>
           </div>
-          <div style={{ gridTemplateColumns: "256px 1fr" }}>
+          <div>
             <strong>신뢰도 점수 활용 동의</strong>
-            <span>{privacy.trustConsent ? "동의함" : "동의 안 함"}</span>
+            <span>별도 동의 및 철회</span>
+            <button type="button" role="switch" className="mp-switch" aria-checked={privacy.trustConsent} aria-label="신뢰도 점수 활용 동의" disabled={busy} onClick={() => void toggle("trustConsent")} />
           </div>
-          <div style={{ gridTemplateColumns: "256px 1fr" }}>
+          <div>
             <strong>서비스 알림</strong>
-            <span>{privacy.notifications ? "받음" : "받지 않음"}</span>
+            <span>활동 및 판매 관련 알림</span>
+            <button type="button" role="switch" className="mp-switch" aria-checked={privacy.notifications} aria-label="서비스 알림" disabled={busy} onClick={() => void toggle("notifications")} />
           </div>
         </div>
+        <Notice text={note} />
       </Card>
-      <Card title="화면">
-        <div className="mp-list">
-          <div style={{ gridTemplateColumns: "200px 1fr auto" }}>
+      <Card title="화면" desc="라이트 · 다크 테마">
+        <div className="mp-set-list">
+          <div>
             <strong>테마</strong>
             <span />
             <ThemeSwitch className="mp-seg" />
           </div>
         </div>
       </Card>
-      <Card>
-        <BrokerSection />
-      </Card>
+      {modal === "email" && <EmailModal user={user} onClose={() => setModal(null)} />}
+      {modal === "password" && <PasswordModal user={user} onClose={() => setModal(null)} />}
+      {modal === "link" && <LinkModal user={user} handle={handle} onClose={() => setModal(null)} />}
     </>
   );
 }

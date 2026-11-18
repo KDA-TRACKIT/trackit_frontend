@@ -8,6 +8,7 @@ import SiteHeader from "../../../../SiteHeader";
 import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, strategiesOf, traderById } from "../../../../marketplace/data";
 import GuessFirst, { useDark, type SimDetail } from "../../../../marketplace/GuessFirst";
+import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import "../../../../marketplace/marketplace.css";
 import "../../../archive.css";
 
@@ -17,21 +18,22 @@ export default function PracticePage() {
   const passes = usePasses();
   const dark = useDark();
   const [detail, setDetail] = useState<{ id: string; data: SimDetail | null } | null>(null);
+  // 서버가 열람권을 확인하고 그 달 것만 줌. 열람권 목록이 늦게 와도 다시 받게 key 에 넣음
+  const key = `${id}/${month}/${!!t && opened(passes, t.id, month)}`;
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/market-sim/${id}.json`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: SimDetail | null) => !cancelled && setDetail({ id, data }))
-      .catch(() => !cancelled && setDetail({ id, data: null }));
+    fetchStrategyMonth(id, month)
+      .then((data) => !cancelled && setDetail({ id: key, data }))
+      .catch(() => !cancelled && setDetail({ id: key, data: null }));
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, month, key]);
 
   const s = t ? strategiesOf(t).find((x) => x.month === month) : undefined;
   const unlocked = !!t && !!s && (!!s.free || opened(passes, t.id, month));
-  const m = detail?.id === id ? detail.data?.months.find((x) => x.month === month) : undefined;
+  const m = detail?.id === key ? detail.data?.months.find((x) => x.month === month) : undefined;
   const market = detail?.data?.market;
   const cur = (n: number) => (market === "US" ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : `${n.toLocaleString("ko-KR")}원`);
   const canPlay = !!m && m.trades.some((tr) => tr.code === m.symbol.code);
@@ -51,7 +53,7 @@ export default function PracticePage() {
           <p className="mk-card mk-empty">
             열람권으로 연 전략만 연습할 수 있어요. <Link href={`/marketplace/${t.id}/strategies/${month}`}>전략 보러 가기 ›</Link>
           </p>
-        ) : detail?.id !== id ? (
+        ) : detail?.id !== key ? (
           <p className="mk-card mk-empty">불러오는 중…</p>
         ) : !canPlay ? (
           <p className="mk-card mk-empty">이 달 전략에는 연습할 매매가 없어요.</p>

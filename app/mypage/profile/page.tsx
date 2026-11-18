@@ -49,8 +49,8 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHead title="내 프로필" />
-      <Card title="프로필 정보">
+      <PageHead title="내 프로필" desc="프로필 이미지, 닉네임, 소개를 한곳에서 관리하세요." />
+      <Card title="프로필 정보" desc="닉네임과 프로필 소개는 다른 사용자에게 공개될 수 있습니다.">
         <div className="mp-form">
           <div className="mp-field">
             <span>프로필 이미지</span>
@@ -65,7 +65,7 @@ export default function ProfilePage() {
                     기본 이미지
                   </button>
                 </div>
-                <small className="mp-hint">JPG, PNG</small>
+                <small className="mp-hint">JPG, PNG 이미지 · 권장 1:1 비율</small>
               </div>
               <input ref={fileRef} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => void pick(e)} />
             </div>
@@ -74,18 +74,18 @@ export default function ProfilePage() {
           <div className="mp-row-2">
             <label className="mp-field">
               <span>닉네임</span>
-              <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} placeholder="2~20자" />
+              <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} placeholder="트레이더 닉네임" />
             </label>
             <label className="mp-field">
               <span>표시 아이디</span>
               <input value={`@${handle}`} readOnly />
-              <small>아이디는 바꿀 수 없어요</small>
+              <small>아이디 변경은 계정 설정에서 관리합니다.</small>
             </label>
           </div>
           <label className="mp-field">
             <span>프로필 소개</span>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 200))} placeholder="나를 소개해 주세요" />
-            <small className="mp-count">{bio.length}/200</small>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 200))} placeholder="나만의 매매 전략과 투자 기록을 공유합니다." />
+            <small className="mp-count-left">{bio.length}/200자 · 다른 사용자에게 공개되는 소개 문구입니다.</small>
           </label>
           <Notice text={note} />
         </div>
@@ -95,7 +95,7 @@ export default function ProfilePage() {
           취소
         </button>
         <button type="button" className="mp-btn primary" onClick={() => void save()} disabled={busy || !dirty}>
-          {busy ? "저장 중…" : "저장"}
+          {busy ? "저장 중…" : "변경사항 저장"}
         </button>
       </div>
     </>

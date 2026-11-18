@@ -511,3 +511,15 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-page p, .mk-page li, .mk-page dd, .mk-page small, .mk-page label, .mk-page blockquote { text-wrap:pretty; }
 .mk-page h1, .mk-page h2, .mk-page h3, .mk-page h4, .mk-page strong { text-wrap:balance; }
 .mk-page .gnb, .mk-page .gnb * { word-break:normal; overflow-wrap:normal; text-wrap:wrap; }
+
+/* 판매자 등급 (GradeParts.tsx) */
+.mk-grade { display:inline-grid; min-width:26px; height:20px; place-items:center; padding:0 5px; border-radius:5px; font-size:11.5px; font-weight:800; letter-spacing:0; vertical-align:2px; }
+.mk-grade.small { min-width:22px; height:18px; font-size:10.5px; }
+.mk-grade.g-VIP { background:#1b2a4a; color:#f6d98d; }
+.mk-grade.g-A { background:var(--c-accent); color:var(--c-on-accent); }
+.mk-grade.g-B { background:var(--c-accent-soft); color:var(--c-accent); }
+.mk-grade.g-C { background:var(--c-ok-soft); color:var(--c-ok); }
+.mk-grade.g-D { background:var(--c-subtle); color:var(--c-ink-2); }
+.mk-grade.g-F, .mk-grade.g-N { background:rgba(214,59,59,.1); color:var(--c-err); }
+.mk-stopped { margin:8px 0; padding:10px 12px; border-radius:8px; background:rgba(214,59,59,.08); color:var(--c-err); font-size:13px; line-height:1.5; }
+.mk-grade.g-U { background:var(--c-subtle); color:var(--c-faint); }

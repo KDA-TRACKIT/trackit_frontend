@@ -10,18 +10,69 @@ import { useMemo, useState } from "react";
 import type { Drawing } from "../../lib/drawing";
 import { buildLadder, nearest, type Rung } from "./lineLadder";
 
-export type Plan = { entry: string; condition: string; stop: string; target: string };
-export const EMPTY_PLAN: Plan = { entry: "", condition: "", stop: "", target: "" };
+/** 노트 종류 (2026-11-17 회의): 매매 계획 · 보유 관리 · 분석·전망 · 회고 — 종류마다 필수 항목이 다름 (PlanCheck) */
+export type NoteKind = "trade" | "hold" | "view" | "review";
+/**
+ * entry 진입 근거 · condition 진입 조건·가격 범위 · stop 손절 · target 목표·청산 · weight 비중 (매매 계획)
+ * decision 현재 판단 · reason 변경 사유 (보유 관리, 손절 · 목표 갱신값은 stop · target)
+ * viewDir 방향 · level 기준값 · until 기한 (분석·전망) / diff 계획 대비 차이 · cause 원인 · next 다음에 바꿀 점 (회고)
+ */
+export type Plan = {
+  kind: NoteKind;
+  entry: string;
+  condition: string;
+  stop: string;
+  target: string;
+  direction: "" | "매수" | "매도";
+  until: string;
+  weight: string;
+  decision: "" | "유지" | "추가" | "축소" | "청산";
+  reason: string;
+  viewDir: "" | "상승" | "하락" | "횡보";
+  level: string;
+  diff: string;
+  cause: string;
+  next: string;
+};
+export const EMPTY_PLAN: Plan = {
+  kind: "trade",
+  entry: "",
+  condition: "",
+  stop: "",
+  target: "",
+  direction: "",
+  until: "",
+  weight: "",
+  decision: "",
+  reason: "",
+  viewDir: "",
+  level: "",
+  diff: "",
+  cause: "",
+  next: "",
+};
+export const KIND_LABEL: Record<NoteKind, string> = { trade: "매매 계획", hold: "보유 관리", view: "분석·전망", review: "회고" };
 
 /** 확정할 때 메모 뒤에 붙는 구조화된 계획 (투자자가 확인한 것만) */
 export function planText(p: Plan) {
   const rows = [
+    ["노트 종류", KIND_LABEL[p.kind]],
+    ["방향", p.kind === "view" ? p.viewDir : p.direction],
     ["진입 근거", p.entry],
     ["매수 조건", p.condition],
+    ["현재 판단", p.decision],
+    ["변경 사유", p.reason],
     ["손절 기준", p.stop],
     ["목표", p.target],
+    ["비중", p.weight],
+    ["기준값", p.level],
+    ["기한", p.until],
+    ["계획 대비 차이", p.diff],
+    ["원인", p.cause],
+    ["다음에 바꿀 점", p.next],
   ].filter(([, v]) => v.trim());
-  return rows.length ? rows.map(([k, v]) => `[${k}] ${v.trim()}`).join("\n") : "";
+  // 종류만 있고 내용이 없으면 비움
+  return rows.length > 1 ? rows.map(([k, v]) => `[${k}] ${v.trim()}`).join("\n") : "";
 }
 
 /** 위(저항 후보) · 아래(지지 후보) · 구간에 따라 고를 수 있는 의미. 첫 칸은 점선으로 '제안'만 */
@@ -164,22 +215,18 @@ export default function PlanConfirm({
     if (g.kind === "fib") for (const l of g.levels) if (answers[l.key] && answers[l.key] !== "무시") picked.push(`[${answers[l.key]}] ${money(l.price)} (피보 ${l.lv})`);
   }
 
-  const input = (key: keyof Plan, label: string, ph: string) => (
-    <label className="ws-plan-in">
-      <span>{label}</span>
-      <input value={plan[key]} onChange={(e) => onPlan({ ...plan, [key]: e.target.value })} placeholder={ph} readOnly={locked} />
-    </label>
-  );
-
+  const lineCount = rungs.reduce((n, r) => n + r.ids.length, 0) + groups.length;
+  // 확정 뒤엔 사다리 대신 아무것도 (계획은 메모 뒤 [항목] 줄로 남음)
+  if (locked || lineCount === 0) return null;
   return (
     <div className="ws-plan">
-      {/* 그은 선: 현재가 기준 위 · 아래 가격순 사다리. 고르기만 (AI 는 정하지 않음) */}
-      {!locked && (rungs.length > 0 || groups.length > 0) && (
-        <div className="ws-ladder">
-          <div className="ws-ladder-head">
-            <strong>그은 선 {rungs.reduce((n, r) => n + r.ids.length, 0) + groups.length}개</strong>
-            <small>{current ? "현재가 기준 · 가까운 순" : "가격순"}</small>
-          </div>
+      {/* 그은 선: 접어 두고, 펼치면 현재가 기준 위 · 아래 사다리에서 지지/저항을 고름 (AI 는 정하지 않음) */}
+      {
+        <details className="ws-ladder">
+          <summary className="ws-ladder-head">
+            <strong>그은 선 {lineCount}개</strong>
+            <small>{picked.length ? `고른 것 ${picked.length}개` : "지지 · 저항 고르기"}</small>
+          </summary>
           {view.above.length > 0 && (
             <>
               <p className="ws-ladder-sec">위 · 저항 후보</p>
@@ -255,24 +302,9 @@ export default function PlanConfirm({
               ))}
             </div>
           )}
-        </div>
-      )}
-      {!locked && aiQuestions?.[0] && <p className="ws-plan-q">AI 질문 · {aiQuestions[0]}</p>}
+        </details>
+      }
 
-      <label className="ws-plan-in wide">
-        <span>진입 근거</span>
-        <textarea value={plan.entry} onChange={(e) => onPlan({ ...plan, entry: e.target.value })} placeholder="왜 이 자리를 보나요?" readOnly={locked} rows={2} />
-      </label>
-      {aiSummary && !locked && !plan.entry.includes(aiSummary) && (
-        <button type="button" className="ws-plan-suggest" onClick={() => onPlan({ ...plan, entry: plan.entry ? `${plan.entry} / ${aiSummary}` : aiSummary })}>
-          + AI 요약 넣기
-        </button>
-      )}
-      <div className="ws-plan-row">
-        {input("condition", "매수 조건", "70,000 지지 확인")}
-        {input("stop", "손절", "67,500 이탈")}
-        {input("target", "목표", "78,000")}
-      </div>
     </div>
   );
 }

@@ -4,15 +4,16 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import TraderAvatar from "./TraderAvatar";
+import { GradeBadge } from "./marketplace/GradeParts";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
-import { TRADERS, oneStock, pct, tone } from "./marketplace/data";
+import { TRADERS, listed, oneStock, pct, tone } from "./marketplace/data";
 
 
 export default function TraderCarousel() {
   const likeTotals = useLikeTotals();
   // ♥(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
-  const BOARD = [...TRADERS].sort((a, b) => (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || (oneStock(b, "3m") ? -1e9 : b.returns["3m"]) - (oneStock(a, "3m") ? -1e9 : a.returns["3m"])).slice(0, 10);
+  const BOARD = TRADERS.filter(listed).sort((a, b) => (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || (oneStock(b, "3m") ? -1e9 : b.returns["3m"]) - (oneStock(a, "3m") ? -1e9 : a.returns["3m"])).slice(0, 10);
   const track = useRef<HTMLUListElement>(null);
   const target = useRef<number | null>(null);
   const [edges, setEdges] = useState({ previous: false, next: true });
@@ -57,7 +58,9 @@ export default function TraderCarousel() {
             <Link href={`/marketplace/${t.id}`} className="trader-card">
               <h3>
                 <TraderAvatar seed={t.id} size={40} />
-                <span>{t.name}</span>
+                <span>
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name}
+                </span>
               </h3>
               <p className="trader-return">
                 수익률 {oneStock(t, "3m") ? <b>-</b> : <b className={tone(t.returns["3m"]) === "gain" ? "up" : tone(t.returns["3m"]) === "loss" ? "down" : ""}>{pct(t.returns["3m"]).replace("+", "")}</b>}

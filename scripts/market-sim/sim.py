@@ -4,7 +4,7 @@
   - 수익률은 실제 가격으로 계산 (수수료·세금 포함), 가짜 숫자 없음
 출력
   summary.json        → app/marketplace/sim.json (화면 목록·상세 숫자)
-  traders/{id}.json   → public/market-sim/{id}.json (월별 전략 내용: 규칙 · 매매 · 선 · 그 달 차트)
+  traders/{id}.json   → data/market-sim/{id}.json (월별 전략 내용: 규칙 · 매매 · 선 · 그 달 차트. 공개 폴더에 두지 않음)
 """
 import json, math, os, sys, random
 from datetime import date
@@ -27,6 +27,16 @@ for _ in range(24):
     m += 1
     if m > 12: y, m = y + 1, 1
 START = MONTHS[0] + "-01"
+
+# 쉬는 돈은 시장 지수에 넣어 둠 (국내 코스피 · 해외 나스닥 종합, app/marketplace/bench.json 과 같은 자료)
+#   그래서 '현금으로 쉬어서' 시장에 뒤처지는 게 아니라, 매매를 잘했는지가 시장 대비 성과(등급 R)를 가름
+BENCH = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "app", "marketplace", "bench.json"), encoding="utf-8"))
+def daily_returns(rows):
+    out = {}
+    for k in range(1, len(rows)):
+        out[rows[k][0]] = rows[k][1] / rows[k - 1][1] - 1
+    return out
+IDLE_RET = {"KR": daily_returns(BENCH["KR"]), "US": daily_returns(BENCH["US"])}
 
 # ── 지표 ──
 def sma(xs, n):
@@ -602,7 +612,10 @@ def simulate(tid, rule_key, pool, follow_p, seed):
     idx = {c: {x["d"]: k for k, x in enumerate(BARS[c])} for c in pool}
     slots = len(pool)
     cash, equity_hist, pos, trades = 1.0, [], {}, []
+    idle = IDLE_RET[mk]
     for d in dates:
+        # 쉬는 돈(현금)은 그날 지수만큼 (지수 ETF 처럼 · 거래 비용은 무시)
+        cash *= 1 + idle.get(d, 0.0)
         # 보유 관리 (청산)
         for c in list(pos):
             k = idx[c].get(d)

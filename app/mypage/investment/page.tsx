@@ -28,8 +28,8 @@ export default function InvestmentPage() {
 
   return (
     <>
-      <PageHead title="내 투자 정보" />
-      <Card title="투자 스타일">
+      <PageHead title="내 투자 정보" desc="나의 매매 방식과 자주 사용하는 지표를 관리하세요." />
+      <Card title="투자 스타일 설정" desc="사용하는 매매 방식과 지표를 기록하고 언제든 수정할 수 있습니다.">
         <InvestmentFields value={value} onChange={setValue} />
         <div style={{ marginTop: 16 }}>
           <Notice text={note} />
@@ -40,7 +40,7 @@ export default function InvestmentPage() {
           취소
         </button>
         <button type="button" className="mp-btn primary" onClick={() => void save()} disabled={busy || !dirty}>
-          {busy ? "저장 중…" : "저장"}
+          {busy ? "저장 중…" : "변경사항 저장"}
         </button>
       </div>
     </>

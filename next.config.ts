@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // 전략 내용(data/market-sim)은 공개 폴더가 아니라 서버 라우트(/strategy-data)만 읽음 → 빌드 결과에 같이 넣음
+  outputFileTracingIncludes: { "/strategy-data/[id]/[month]": ["./data/market-sim/**"] },
   // 같은 와이파이의 다른 PC가 http://<내 IP>:3001 로 개발 서버에 들어올 수 있게
   allowedDevOrigins: ["127.0.0.1", "192.168.*.*", "10.*.*.*", "172.*.*.*"],
   // 백엔드로 넘기는 요청 대기 시간 (기본 30초). 1초봉 첫 요청은 백엔드가 30초쯤 걸려 끊기고 500 이 났다

@@ -1,7 +1,7 @@
 "use client";
 // 월별 전략 보기: 매매 규칙 · 그 달 차트에 그은 선(지지선 · 채널 · 피보나치 · 엘리어트 파동 …) · 매수/매도 · 계획대로 했는지
 //   전략 하나에는 매매 기록 여러 건 + 매매가 아닌 증시 메모 · 종목 노트도 들어감 → 날짜순 한 줄 기록으로
-//   내용은 public/market-sim/{id}.json (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
+//   내용은 서버만 읽는 data/market-sim/{id}.json → /strategy-data/{id}/{달} 이 열람권을 확인하고 그 달 것만 보냄 (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
 //   열람권으로 연 달이나 무료 첫 전략만 내용을 보여 주고, 아니면 잠금 + 열람권 버튼
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -11,7 +11,9 @@ import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../../data";
 import { StrategyButton, useNotice } from "../../../parts";
 import StrategyChart from "../../../StrategyChart";
+import { GradeBadge } from "../../../GradeParts";
 import { useDark, type SimDetail } from "../../../GuessFirst";
+import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import "../../../marketplace.css";
 
 export default function StrategyView() {
@@ -21,17 +23,19 @@ export default function StrategyView() {
   const { notify, node } = useNotice();
   const dark = useDark();
   const [detail, setDetail] = useState<{ id: string; data: SimDetail | null } | null>(null);
+  // 열람권으로 이 달을 열면 다시 받음 (서버가 열람권을 확인하고 그 달 것만 줌)
+  const isOpen = !!t && opened(passes, t.id, month);
+  const key = `${id}/${month}/${isOpen}`;
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/market-sim/${id}.json`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: SimDetail | null) => !cancelled && setDetail({ id, data }))
-      .catch(() => !cancelled && setDetail({ id, data: null }));
+    fetchStrategyMonth(id, month)
+      .then((data) => !cancelled && setDetail({ id: key, data }))
+      .catch(() => !cancelled && setDetail({ id: key, data: null }));
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, month, key]);
 
   const list = t ? strategiesOf(t) : [];
   const s = list.find((x) => x.month === month);
@@ -48,8 +52,8 @@ export default function StrategyView() {
     );
   }
   const unlocked = !!s.free || opened(passes, t.id, month);
-  const m = detail?.id === id ? detail.data?.months.find((x) => x.month === month) : undefined;
-  const loading = detail?.id !== id;
+  const m = detail?.id === key ? detail.data?.months.find((x) => x.month === month) : undefined;
+  const loading = detail?.id !== key;
   const cur = (n: number) => (detail?.data?.market === "US" ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : `${n.toLocaleString("ko-KR")}원`);
 
   return (
@@ -57,7 +61,7 @@ export default function StrategyView() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-narrow">
         <Link href={`/marketplace/${t.id}`} className="mk-back">
-          ‹ {t.name}
+          ‹ <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name}
         </Link>
         <section className="mk-card mk-sim-head">
           <small>
@@ -72,9 +76,9 @@ export default function StrategyView() {
             <span>
               계획대로 한 비율 <b>{s.follow}%</b>
             </span>
-            {detail?.data && (
+            {(detail?.data?.rule.name ?? t.rule?.name) && (
               <span>
-                규칙 <b>{detail.data.rule.name}</b>
+                규칙 <b>{detail?.data?.rule.name ?? t.rule?.name}</b>
               </span>
             )}
           </div>
@@ -116,9 +120,6 @@ export default function StrategyView() {
               <h2>매매 규칙 · {detail.data.rule.name}</h2>
               <p>{detail.data.rule.desc}</p>
               <small>매매 종목: {detail.data.symbols.map((x) => x.name).join(" · ")}</small>
-              <Link href={`/workshop?rule=${encodeURIComponent(detail.data.rule.name)}`} className="mk-ghost mk-apply">
-                내 관심 · 보유 종목에 이 규칙으로 그어 보기 ›
-              </Link>
             </section>
 
             <section className="mk-card mk-sim-chart-card">
