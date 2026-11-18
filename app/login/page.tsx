@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser";
 import { API_URL } from "../../lib/api/client";
 import { GoogleIcon, applyStashedProfile, startGoogle } from "../auth-ui";
 import { FindModal } from "../auth-forms";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   /** 아이디 또는 이메일 */
@@ -20,15 +21,27 @@ export default function LoginPage() {
     if (f === "id" || f === "pw") setFind(f);
   }, []);
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const emptyMessage = (message: string) => (event: FormEvent<HTMLInputElement>) => {
+    event.currentTarget.setCustomValidity(event.currentTarget.value ? "" : message);
+  };
+  const clearMessage = (event: FormEvent<HTMLInputElement>) => {
+    event.currentTarget.setCustomValidity("");
+  };
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: email, password }) });
+      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: email, identifier: email, password }),
+      });
       const body = await response.json();
       if (!response.ok || !body?.data?.session) throw new Error(body?.error?.message ?? "로그인에 실패했습니다.");
       const supabase = getSupabaseBrowser();
@@ -59,15 +72,21 @@ export default function LoginPage() {
       <AuthHeader />
       <section className="login-panel">
         <h1 className="login-wordmark">TRACKIT</h1>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} className={error ? "has-error" : undefined}>
           <label>
             <span>ID</span>
-            <input suppressHydrationWarning type="text" placeholder=" " value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
+            <input suppressHydrationWarning type="text" placeholder=" " value={email} onChange={(e) => setEmail(e.target.value)} onInvalid={emptyMessage("아이디를 입력하세요.")} onInput={clearMessage} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
           </label>
           <label>
             <span>PASSWORD</span>
-            <input suppressHydrationWarning type="password" placeholder=" " value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            <input suppressHydrationWarning type={showPw ? "text" : "password"} placeholder=" " value={password} onChange={(e) => setPassword(e.target.value)} onInvalid={emptyMessage("비밀번호를 입력하세요.")} onInput={clearMessage} autoComplete="current-password" required aria-invalid={!!error} aria-describedby="login-error" />
+            {password && (
+              <button type="button" className="login-eye" onClick={() => setShowPw((value) => !value)} aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"} aria-pressed={showPw}>
+                {showPw ? <Eye size={22} strokeWidth={1.8} /> : <EyeOff size={22} strokeWidth={1.8} />}
+              </button>
+            )}
           </label>
+          <p id="login-error" className="login-error" role="alert">{error}</p>
           <button className="login-submit" disabled={loading}>
             {loading ? "처리 중..." : "로그인"}
           </button>
@@ -95,7 +114,6 @@ export default function LoginPage() {
         <p className="login-signup">
           계정이 없으신가요? <Link href="/signup">회원가입</Link>
         </p>
-        {error && <p className="auth-error">{error}</p>}
       </section>
       {find && <FindModal key={find} kind={find} onKind={setFind} onClose={() => setFind(null)} />}
     </main>
