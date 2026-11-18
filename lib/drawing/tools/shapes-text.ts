@@ -1,6 +1,6 @@
 // 브러시 · 도형 · 화살표 · 글(텍스트·노트·말풍선·가격 라벨 등)
 import type { DrawingTool, PixelPoint } from "../types";
-import { FILL, anchor, dots, fillPoly, label, line, poly, priceOf, stroke, textBox, won } from "./draw-utils";
+import { anchor, dots, fillPoly, label, line, poly, priceOf, stroke, textBox, won, tint } from "./draw-utils";
 
 /** 점을 부드럽게 잇는 선 (중점을 지나는 2차 곡선) */
 function smooth(ctx: CanvasRenderingContext2D, pts: PixelPoint[]) {
@@ -29,6 +29,44 @@ export const brush: DrawingTool = {
     smooth(ctx, px);
   },
 };
+
+/**
+ * 펜: 손으로 그린 그대로 (브러시처럼 곧은 획을 직선으로 바꾸거나 둥글게 다듬지 않음).
+ *   꺾인 곳이 뾰족하게 남아서 기영이 머리 같은 모양도 그릴 수 있음
+ */
+export const pen: DrawingTool = {
+  id: "pen",
+  label: "펜",
+  group: "brush",
+  mode: "free",
+  pointCount: 2,
+  schemaVersion: 1,
+  draw(ctx, px, d) {
+    if (px.length < 2) return;
+    stroke(ctx, d.style.color, 2);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "miter";
+    ctx.miterLimit = 6;
+    ctx.beginPath();
+    ctx.moveTo(px[0].x, px[0].y);
+    for (let i = 1; i < px.length; i++) ctx.lineTo(px[i].x, px[i].y);
+    ctx.stroke();
+  },
+};
+
+/** 지우개: 끄는 자리의 펜 잉크를 지움 (그리는 것은 없음, 지우는 일은 차트 쪽에서) */
+export const eraser: DrawingTool = {
+  id: "eraser",
+  label: "지우개",
+  group: "brush",
+  mode: "free",
+  pointCount: 2,
+  schemaVersion: 1,
+  draw() {},
+};
+
+/** 손으로 그린 잉크 (선택 · 손잡이 없이 그림처럼, 지우개로만 지움) */
+export const INK_TOOLS = new Set(["pen", "brush", "highlighter"]);
 
 export const highlighterFree: DrawingTool = {
   id: "highlighter",
@@ -104,7 +142,7 @@ export const rotatedRect: DrawingTool = {
       const ny = (b.x - a.x) / len;
       const dist = (c.x - a.x) * nx + (c.y - a.y) * ny;
       const rect = [a, b, { x: b.x + nx * dist, y: b.y + ny * dist }, { x: a.x + nx * dist, y: a.y + ny * dist }];
-      fillPoly(ctx, rect, FILL);
+      fillPoly(ctx, rect, tint(d.style.color, 0.12));
       poly(ctx, rect, true);
     }
     dots(ctx, px, d.style.color);
@@ -134,7 +172,7 @@ export const polyline: DrawingTool = {
   schemaVersion: 1,
   draw(ctx, px, d) {
     stroke(ctx, d.style.color, d.style.width);
-    if (px.length >= 3) fillPoly(ctx, px, FILL);
+    if (px.length >= 3) fillPoly(ctx, px, tint(d.style.color, 0.12));
     poly(ctx, px);
     dots(ctx, px, d.style.color);
   },
@@ -152,7 +190,7 @@ export const circle: DrawingTool = {
     stroke(ctx, d.style.color, d.style.width);
     ctx.beginPath();
     ctx.arc(a.x, a.y, Math.hypot(b.x - a.x, b.y - a.y), 0, Math.PI * 2);
-    ctx.fillStyle = FILL;
+    ctx.fillStyle = tint(d.style.color, 0.12);
     ctx.fill();
     ctx.stroke();
   },

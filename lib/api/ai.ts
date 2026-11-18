@@ -23,12 +23,39 @@ export type ChartMemoRequest = {
   price: number;
   drawings: { toolId: string; label: string; points: { time: number; price: number }[]; text?: string }[];
   notes: { time: number; price: number; text: string }[];
+  mode: "ai";
   /** 미국 종목은 USD (메모 금액을 $로) */
   currency?: "KRW" | "USD";
 };
-export type ChartMemoResult = { memo: string; suggestion: string; items: string[]; model: string };
+export type ChartMemoResult = {
+  memo: string;
+  /** AI 분석일 때만 (규칙 메모면 없음) */
+  summary?: string;
+  /** 백엔드가 한국어로 줌 ("상승 관점" · "하락 관점" · "관망" · "판단 보류"). 예전 응답은 LONG 등 */
+  direction?: "LONG" | "SHORT" | "WAIT" | "UNKNOWN" | string;
+  /** 지금 차트 구조 (추세 · 박스 등) */
+  marketStructure?: string;
+  /** 여러 작도가 겹치는 근거 */
+  confluence?: string[];
+  bullishScenario?: string;
+  bearishScenario?: string;
+  confidence?: "HIGH" | "MEDIUM" | "LOW";
+  tools?: string[];
+  risks?: string[];
+  /** 백엔드는 한 줄 문자열로 줌 (예전 응답은 목록) */
+  invalidation?: string | string[];
+  model?: string;
+  provider?: string;
+  suggestion?: string;
+  items?: string[];
+  /** AI 가 투자자에게 되묻는 질문 (빈칸을 임의로 채우지 않고) */
+  questions?: string[];
+  /** AI 를 못 써서(꺼짐 · 키 없음 · 오류) 규칙 메모로 대신 정리했을 때 그 이유 */
+  aiFallback?: string;
+};
 
 export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
   // 차트 메모도 저장된 일지·주석과 같은 사용자 데이터이므로 인증 토큰을 보낸다.
-  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body) });
+  // 프론트 주소로 보내 next.config rewrite 가 AI 백엔드(AI_API_URL, Gemini 키가 있는 곳)로 넘기게
+  return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), sameOrigin: true });
 }

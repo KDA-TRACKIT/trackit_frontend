@@ -1,15 +1,19 @@
 "use client";
 // 홈 "트레이더 보드": 전략 쇼핑 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
-//   카드는 전략 쇼핑 데이터(예시)로: 3개월 수익률(+ 초록 · − 빨강) · 전략 이행률 · 좋아요, 누르면 트레이더 상세
+//   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · ♡ 좋아요, 누르면 트레이더 상세
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import TraderAvatar from "./TraderAvatar";
+import { GradeBadge } from "./marketplace/GradeParts";
+import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
-import { TRADERS, pct, tone } from "./marketplace/data";
+import { TRADERS, listed, oneStock, pct, tone } from "./marketplace/data";
 
-// 좋아요 많은 순 10명
-const BOARD = [...TRADERS].sort((a, b) => b.likes - a.likes).slice(0, 10);
 
 export default function TraderCarousel() {
+  const likeTotals = useLikeTotals();
+  // ♥(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
+  const BOARD = TRADERS.filter(listed).sort((a, b) => (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || (oneStock(b, "3m") ? -1e9 : b.returns["3m"]) - (oneStock(a, "3m") ? -1e9 : a.returns["3m"])).slice(0, 10);
   const track = useRef<HTMLUListElement>(null);
   const target = useRef<number | null>(null);
   const [edges, setEdges] = useState({ previous: false, next: true });
@@ -53,22 +57,17 @@ export default function TraderCarousel() {
           <li key={t.id}>
             <Link href={`/marketplace/${t.id}`} className="trader-card">
               <h3>
-                <span className="trader-avatar" aria-hidden="true">
-                  {t.name[0]}
+                <TraderAvatar seed={t.id} size={40} />
+                <span>
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name}
                 </span>
-                {t.name}
               </h3>
-              <p>
-                3개월 수익률 <b className={tone(t.returns["3m"]) === "gain" ? "up" : tone(t.returns["3m"]) === "loss" ? "down" : ""}>{pct(t.returns["3m"])}</b>
+              <p className="trader-return">
+                수익률 {oneStock(t, "3m") ? <b>-</b> : <b className={tone(t.returns["3m"]) === "gain" ? "up" : tone(t.returns["3m"]) === "loss" ? "down" : ""}>{pct(t.returns["3m"]).replace("+", "")}</b>}
               </p>
-              <p>
-                전략 이행률 <b>{t.follow}%</b>
-              </p>
-              <p>
-                <span className="trader-heart" aria-label="좋아요">
-                  ♥
-                </span>{" "}
-                {t.likes}
+              <p>전략이행률 {t.follow}%</p>
+              <p className="trader-likes">
+                <Heart size={15} aria-label="좋아요" /> + {likeTotals[t.id] ?? 0}
               </p>
             </Link>
           </li>
@@ -76,12 +75,12 @@ export default function TraderCarousel() {
       </ul>
       <div className="trader-edge trader-edge-prev" hidden={!edges.previous}>
         <button type="button" aria-controls="trader-cards" aria-label="이전 트레이더" onClick={() => move(-1)}>
-          <ChevronLeft size={20} aria-hidden="true" />
+          <ChevronLeft size={22} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </div>
       <div className="trader-edge trader-edge-next" hidden={!edges.next}>
         <button type="button" aria-controls="trader-cards" aria-label="다음 트레이더" onClick={() => move(1)}>
-          <ChevronRight size={20} aria-hidden="true" />
+          <ChevronRight size={22} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </div>
     </div>

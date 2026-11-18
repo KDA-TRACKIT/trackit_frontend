@@ -6,7 +6,7 @@ import { trendLine } from "./tools/trendline";
 import { horizontalLine } from "./tools/horizontal-line";
 import { fibRetracement } from "./tools/fib-retracement";
 import { arrow, marker, rectangle, verticalLine } from "./tools/shapes";
-import { priceRange } from "./tools/measure";
+import { priceRange, quickMeasure } from "./tools/measure";
 import { abcd, arrowDown, arrowUp, ellipse, extendedLine, fibExtension, horizontalRay, parallelChannel, ray, triangle } from "./tools/more";
 import { andrewsPitchfork, crossLine, flatTopBottom, infoLine, modifiedSchiff, regression, schiffPitchfork, trendAngle } from "./tools/lines";
 import { fibChannel, fibCircles, fibSpeedArcs, fibSpeedFan, fibTimeZone, fibTrendTime, gannBox, gannFan, gannSquare } from "./tools/fib-gann";
@@ -37,6 +37,8 @@ import {
   flagTool,
   highlighterFree,
   noteTool,
+  pen,
+  eraser,
   path,
   pinTool,
   polyline,
@@ -110,11 +112,14 @@ const TOOLS: [DrawingTool, Partial<DrawingTool>?][] = [
   [priceRangeOnly],
   [dateRange],
   [priceRange, { label: "날짜·가격 범위", section: "측정" }],
+  [quickMeasure],
   [anchoredVwap],
   [volumeProfile],
-  // 브러시
-  [brush],
-  [highlighterFree],
+  // 펜 · 지우개 (브러시 · 형광펜은 메뉴에서 빼고 예전 드로잉만 그림)
+  [pen],
+  [eraser],
+  [brush, { group: "hidden" }],
+  [highlighterFree, { group: "hidden" }],
   // 화살표
   [arrowMarker],
   [arrow],

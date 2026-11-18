@@ -1,24 +1,23 @@
 "use client";
-// 증시 캘린더 (상단 FOR TRADE 메뉴 안. ?tab=market|news|economy|disclosures|mine 으로 바로 열림)
-//   시장: 전광판 · 관심 종목 · 섹터맵 · 오늘의 종목(상승·하락·거래대금) · 외국인·기관
+// 증시 캘린더 (상단 FOR TRADE 메뉴 안. ?tab=market|news|economy|disclosures 로 바로 열림)
+//   시장: 지수 카드 · 차트 · 시장 현황(Market) · 관심 종목 · 섹터맵 · 오늘의 종목(MarketMovers: 순위 표 + 종목 요약, 외국인·기관 포함)
 //   뉴스: 경제·증권 뉴스 제목 (종목 태그 · 관심 종목만)
 //   경제: 경제 캘린더(지난·이번 주·다가오는 지표, 실제·예상·이전) · 기준금리(미국·한국·유로·일본)
 //   공시: DART 최근 공시 (보유 종목만 보기)
-//   매매 캘린더: 청산 손익 캘린더
+//   매매 캘린더(청산 손익)는 여기서 뺌 — 나중에 아카이브로 옮길 예정 (컴포넌트는 Mine.tsx 의 PnlCalendar 그대로)
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteHeader from "../SiteHeader";
 import QuickMemo from "../QuickMemo";
-import type { SectorMap as SectorMapData } from "../../lib/api/insights";
-import Board from "./Board";
+import Market from "./Market";
 import News from "./News";
 import Watchlist from "./Watchlist";
 import UsChart, { type UsChartTarget } from "./UsChart";
 import SectorMap from "./SectorMap";
-import { Flows, Rankings } from "./Movers";
+import MarketMovers from "./MarketMovers";
 import { EconCalendar } from "./Calendar";
 import { PolicyRates } from "./Economy";
-import { DisclosureList, PnlCalendar } from "./Mine";
+import { DisclosureList } from "./Mine";
 import "./insights.css";
 import "./sections.css";
 
@@ -27,7 +26,6 @@ const TABS = [
   ["news", "뉴스"],
   ["economy", "경제"],
   ["disclosures", "공시"],
-  ["mine", "매매 캘린더"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -47,7 +45,6 @@ function Insights() {
   const q = params.get("tab");
   const tab: Tab = isTab(q) ? q : "market";
   const setTab = (t: Tab) => router.replace(t === "market" ? "/insights" : `/insights?tab=${t}`, { scroll: false });
-  const [sectors, setSectors] = useState<SectorMapData | null>(null);
   /** 미국 종목 차트 창 (관심 종목 · 지수 맵 · 순위에서 누르면) */
   const [usChart, setUsChart] = useState<UsChartTarget | null>(null);
   return (
@@ -66,13 +63,10 @@ function Insights() {
         </div>
         {tab === "market" && (
           <>
-            <Board />
+            <Market />
             <Watchlist onOpenUs={setUsChart} />
-            <SectorMap onData={setSectors} onOpenUs={setUsChart} />
-            <div className="ins-grid-2">
-              <Rankings data={sectors} onOpenUs={setUsChart} />
-              <Flows />
-            </div>
+            <SectorMap onOpenUs={setUsChart} />
+            <MarketMovers onOpenUs={setUsChart} />
           </>
         )}
         {tab === "news" && <News />}
@@ -83,7 +77,6 @@ function Insights() {
           </>
         )}
         {tab === "disclosures" && <DisclosureList />}
-        {tab === "mine" && <PnlCalendar />}
       </div>
       {usChart && <UsChart target={usChart} onClose={() => setUsChart(null)} />}
       <QuickMemo pickable />

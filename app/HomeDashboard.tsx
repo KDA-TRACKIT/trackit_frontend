@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SiteHeader from "./SiteHeader";
+import HomeBanner from "./HomeBanner";
 import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
@@ -91,7 +92,7 @@ export default function HomeDashboard() {
   return (
     <main className="home">
       <SiteHeader active="home" />
-      <section className="hero" aria-label="배너 공간" />
+      <HomeBanner />
       <section id="trader-board" className="trader-board section-wrap">
         <div className="section-heading">
           <h2>트레이더 보드</h2>

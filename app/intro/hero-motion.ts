@@ -57,25 +57,51 @@ function puzzleBeat(from:Position[], seed:number, exchange=false) {
   }
   throw new Error("No collision-free mixed-axis beat available");
 }
+function exchangeBeat(from: Position[], seed: number, incomingId: number) {
+  const occupied = new Set(from.map(tile => cell(tile.x, tile.y)));
+  const lanes = [0, 90, 180].map(y => from.filter(tile => tile.y === y).sort((a, b) => a.x - b.x));
+  const candidates = lanes.flatMap((entryLane, entryRow) =>
+    lanes.flatMap((exitLane, exitRow) => {
+      if (Math.abs(entryRow - exitRow) !== 1) return [];
+      const entryEdge = entryLane[entryLane.length - 1];
+      const exit = exitLane[0];
+      return entryLane.slice(0, -1)
+        .filter(tile => tile.x > exit.x && !occupied.has(cell(tile.x, exit.y)))
+        .map(transfer => ({ entryLane, entryEdge, exit, transfer }));
+    }),
+  ).sort((a, b) => noise(seed + a.transfer.id * 17 + a.exit.y) - noise(seed + b.transfer.id * 17 + b.exit.y));
+
+  for (const { entryLane, entryEdge, exit, transfer } of candidates) {
+    const incoming = { id: incomingId, x: 2000, y: entryEdge.y };
+    const transferIndex = entryLane.indexOf(transfer);
+    const exchangeFrom: HeroTile[] = from.map(tile => ({
+      ...tile,
+      foreground: tile.id === exit.id,
+      role: tile.id === exit.id ? "outgoing" : "resident",
+    }));
+    exchangeFrom.push({ ...incoming, foreground: true, role: "incoming" });
+    const exchangeTo = exchangeFrom.map(tile => {
+      if (tile.id === exit.id) return { ...tile, x: -2000 };
+      if (tile.id === transfer.id) return { ...tile, y: exit.y };
+      if (tile.id === incomingId) return { ...tile, x: entryEdge.x };
+      const index = entryLane.findIndex(item => item.id === tile.id);
+      return index > transferIndex ? { ...tile, x: entryLane[index - 1].x } : tile;
+    });
+    const afterExchange = exchangeTo.filter(tile => tile.role !== "outgoing");
+    if (verticalPairs(afterExchange).length) return { exchangeFrom, exchangeTo, afterExchange };
+  }
+  throw new Error("No collision-free exchange between rows available");
+}
 function planCycle(roster:number[][],cycle:number) {
   const compact=packed(roster),open=expanded(roster,cycle);
   const first=puzzleBeat(open,cycle*101+1).to;
-  const second=puzzleBeat(first,cycle*101+2).to;
-  const third=puzzleBeat(second,cycle*101+3).to;
-  const last=puzzleBeat(third,cycle*101+4,true);
-  const lane=third.filter(t=>t.y===last.exchangeY).sort((a,b)=>a.x-b.x);
-  const incoming={id:24+cycle,x:2000,y:last.exchangeY};
-  const exchangeFrom:HeroTile[]=third.map(t=>({...t,foreground:t.id===lane[0].id,role:t.id===lane[0].id?"outgoing":"resident"}));
-  exchangeFrom.push({...incoming,foreground:true,role:"incoming"});
-  const exchangeTo:HeroTile[]=last.to.map(t=>{
-    const index=lane.findIndex(l=>l.id===t.id);
-    return {...t,x:index===0?-2000:index>0?lane[index-1].x:t.x,foreground:index===0,role:index===0?"outgoing":"resident"};
-  });
-  exchangeTo.push({...incoming,x:lane[lane.length-1].x,foreground:true,role:"incoming"});
-  const afterExchange=exchangeTo.filter(t=>t.role!=="outgoing").map(({id,x,y})=>({id,x,y}));
+  const second=exchangeBeat(first,cycle*101+2,24+cycle*2);
+  const third=puzzleBeat(second.afterExchange,cycle*101+3).to;
+  const fourth=exchangeBeat(third,cycle*101+4,25+cycle*2);
+  const {afterExchange}=fourth;
   const nextRoster=[0,90,180].map(y=>afterExchange.filter(t=>t.y===y).sort((a,b)=>a.x-b.x).map(t=>t.id));
   const finish=packed(nextRoster);
-  return {compact,open,first,second,third,exchangeFrom,exchangeTo,afterExchange,finish,nextRoster};
+  return {compact,open,first,second,third,fourth,afterExchange,finish,nextRoster};
 }
 const plans = [planCycle(initialRoster, 0)];
 function planFor(cycle:number) {
@@ -90,6 +116,14 @@ function interpolate(from: Position[], to: Position[], p: number): HeroTile[] {
     return {...tile, x:mix(tile.x,target.x,eased), y:mix(tile.y,target.y,eased), foreground:false, role:"resident"};
   });
 }
+function interpolateExchange(exchange: ReturnType<typeof exchangeBeat>, progress: number): HeroTile[] {
+  return exchange.exchangeFrom.map((tile, index) => {
+    const target = exchange.exchangeTo[index];
+    const phase = tile.y !== target.y ? progress * 3 : tile.role === "outgoing" ? progress : (progress - 1 / 3) * 1.5;
+    const p = ease(phase);
+    return { ...tile, x: mix(tile.x, target.x, p), y: mix(tile.y, target.y, p) };
+  });
+}
 export function sampleHero(elapsed: number) {
   const cycle = Math.floor(Math.max(0, elapsed) / CYCLE_MS);
   const t = Math.max(0, elapsed) % CYCLE_MS;
@@ -100,11 +134,11 @@ export function sampleHero(elapsed: number) {
   if(t<800){stage="assembled";tiles=interpolate(plan.compact,plan.compact,0);}
   else if(t<1900){stage="expand";tiles=interpolate(plan.compact,plan.open,(t-800)/1100);}
   else if(t<3100){stage="move-1";tiles=interpolate(plan.open,plan.first,(t-1900)/850);}
-  else if(t<4300){stage="move-2";tiles=interpolate(plan.first,plan.second,(t-3100)/850);}
-  else if(t<5500){stage="move-3";tiles=interpolate(plan.second,plan.third,(t-4300)/850);}
+  else if(t<4300){stage="move-2";tiles=interpolateExchange(plan.second,(t-3100)/850);}
+  else if(t<5500){stage="move-3";tiles=interpolate(plan.second.afterExchange,plan.third,(t-4300)/850);}
   else if(t<6700){
     stage="move-4";
-    tiles=interpolate(plan.exchangeFrom,plan.exchangeTo,(t-5500)/850).map((tile,i)=>({...tile,foreground:plan.exchangeFrom[i].foreground,role:plan.exchangeFrom[i].role}));
+    tiles=interpolateExchange(plan.fourth,(t-5500)/850);
   }
   else if(t<7900){stage="pack";tiles=interpolate(plan.afterExchange,plan.finish,(t-6700)/1200);}
   else{stage="assembled";tiles=interpolate(plan.finish,plan.finish,0);}

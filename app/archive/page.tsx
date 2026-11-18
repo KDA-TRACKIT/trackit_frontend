@@ -1,15 +1,13 @@
-import SiteHeader from "../SiteHeader";
+import { Suspense } from "react";
+import ArchiveHub from "./ArchiveHub";
+import "../marketplace/marketplace.css";
+import "./archive.css";
 
-// 아카이브: 메뉴 자리만 먼저 둠 (지난 매매 기록·전략을 모아 볼 화면)
-// 트레이더 화면(투자 정보 /insights)은 상단 FOR TRADE 메뉴로 옮김
+// 아카이브 첫 화면 = 모든 기록 (목록 · 보드 · 차트). 내 전략 · 구매한 전략 · 전략 분석은 상단 메뉴에서
 export default function ArchivePage() {
   return (
-    <main className="placeholder-page">
-      <SiteHeader active="archive" />
-      <section className="placeholder-card">
-        <h1>아카이브</h1>
-        <p>준비 중이에요</p>
-      </section>
-    </main>
+    <Suspense>
+      <ArchiveHub />
+    </Suspense>
   );
 }

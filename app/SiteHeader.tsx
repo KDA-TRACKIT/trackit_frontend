@@ -3,7 +3,7 @@ import AccountChip from "./AccountChip";
 
 type Active = "home" | "fortrade" | "archive" | "marketplace" | null;
 
-type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href?: string; desc: string }[] };
+type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href?: string; desc?: string }[] };
 const MENU: Menu[] = [
   { key: "home", label: "홈", href: "/" },
   {
@@ -13,7 +13,7 @@ const MENU: Menu[] = [
     // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
     sub: [
       { label: "트레이딩 로그", href: "/workshop", desc: "차트 분석 · 매매 기록" },
-      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시 · 매매 캘린더" },
+      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시" },
     ],
   },
   { key: "marketplace", label: "전략 쇼핑", href: "/marketplace" },
@@ -21,10 +21,11 @@ const MENU: Menu[] = [
     key: "archive",
     label: "아카이브",
     href: "/archive",
-    // Yoonsojj 님 상단바(3e67f87)의 아카이브 드롭다운: 구매한 전략(준비 중) · 나의 기록(홈의 최근 거래 기록)
+    // 아카이브 드롭다운: 내 전략 · 구매한 전략 · 전략 분석 (전체 기록 · AI 전략 만들기는 아카이브 첫 화면에서)
     sub: [
-      { label: "구매한 전략", desc: "준비 중" },
-      { label: "나의 기록", href: "/#trading-log", desc: "최근 거래 기록과 매매일지" },
+      { label: "내 전략", href: "/archive/mine", desc: "만들고 판매하는 전략" },
+      { label: "구매한 전략", href: "/archive/purchases", desc: "결제한 전략" },
+      { label: "전략 분석", href: "/archive/analysis", desc: "연 전략의 트레이더 비교" },
     ],
   },
 ];
@@ -55,12 +56,12 @@ export default function SiteHeader({ active = null, tone, right, menu = true }: 
                     s.href ? (
                       <Link key={s.label} href={s.href} role="menuitem">
                         <b>{s.label}</b>
-                        <small>{s.desc}</small>
+                        {s.desc && <small>{s.desc}</small>}
                       </Link>
                     ) : (
                       <span key={s.label} role="menuitem" aria-disabled="true" className="soon">
                         <b>{s.label}</b>
-                        <small>{s.desc}</small>
+                        {s.desc && <small>{s.desc}</small>}
                       </span>
                     ),
                   )}

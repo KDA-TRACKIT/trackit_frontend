@@ -11,6 +11,7 @@ import type {
   UTCTimestamp,
 } from "lightweight-charts";
 import { getTool } from "../registry";
+import { INK_TOOLS } from "../tools/shapes-text";
 import type { Drawing, PixelPoint, ViewBar, ViewInfo } from "../types";
 
 // 차트는 KST 벽시계 기준 시각(UTC+9 만큼 민 값)으로 그린다 (lightweight-charts 공식 권장 방식).
@@ -117,6 +118,8 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     const cursor = { x, y };
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
+      // 펜 잉크는 누르거나 옮길 수 없음 (그림처럼, 지우개로만 지움)
+      if (INK_TOOLS.has(d.toolId)) continue;
       const tool = getTool(d.toolId);
       const px = this.toPixels(d);
       if (!tool || !px) continue;
@@ -187,6 +190,20 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     return i > last ? this.bars[last].time + (i - last) * this.step() : this.bars[0].time + i * this.step();
   }
 
+  /** x → 실제 시각 (봉에 맞추지 않고 봉 사이도 그대로). 펜 · 지우개처럼 손 위치를 그대로 남길 때 */
+  xToTimeExact(x: number): number | null {
+    if (!this.param || !this.bars.length) return null;
+    const logical = this.param.chart.timeScale().coordinateToLogical(x);
+    if (logical === null) return null;
+    const b = this.bars;
+    const last = b.length - 1;
+    const l = Number(logical);
+    if (l >= last) return b[last].time + (l - last) * this.step();
+    if (l <= 0) return b[0].time + l * this.step();
+    const i = Math.floor(l);
+    return b[i].time + (l - i) * (b[i + 1].time - b[i].time);
+  }
+
   priceToY(price: number) {
     return this.param?.series.priceToCoordinate(price) ?? null;
   }
@@ -253,6 +270,8 @@ class DrawingRenderer implements IPrimitivePaneRenderer {
           // 툴 하나가 잘못 그려도 나머지 드로잉은 계속 그린다
         }
         context.restore();
+        // 잉크(펜)는 점마다 손잡이를 그리지 않음
+        if (INK_TOOLS.has(drawing.toolId)) continue;
         if (drawing.id === "preview" || (drawing.id === hovered && drawing.id !== selected)) {
           // 마우스를 올리면 점마다 옅은 손잡이 → 누를 수 있다는 표시
           context.save();

@@ -40,8 +40,18 @@ export function useProfile() {
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setProfile(data.session ? profileOf(data.session.user) : null);
+    supabase.auth.getSession().then(async ({ data }) => {
+      let session = data.session;
+      // 브라우저에 남은 세션이 Supabase 에서도 살아 있는지 확인 (다른 곳에서 로그아웃하면 토큰은 남아도 서버가 401)
+      if (session) {
+        const { error } = await supabase.auth.getUser();
+        if (error && (error.status === 401 || error.status === 403 || /session/i.test(error.message))) {
+          const refreshed = await supabase.auth.refreshSession();
+          session = refreshed.data.session;
+          if (!session) await supabase.auth.signOut({ scope: "local" });
+        }
+      }
+      setProfile(session ? profileOf(session.user) : null);
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) =>
@@ -90,7 +100,7 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [prevSeen, setPrevSeen] = useState("");
   const ref = useRef<HTMLDivElement>(null);
-  const { items, unread, markSeen, favorites } = useNotifications(true);
+  const { items, unread, markSeen } = useNotifications(true);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -130,7 +140,6 @@ function NotificationBell() {
         <div className="gnb-menu gnb-bell-menu" role="menu" aria-label="알림">
           <div className="gnb-bell-head">
             <strong>알림</strong>
-            <small>판매 · 즐겨찾기한 트레이더의 새 전략</small>
           </div>
           {items.length ? (
             <ul className="gnb-noti">
@@ -146,11 +155,7 @@ function NotificationBell() {
               ))}
             </ul>
           ) : (
-            <p className="gnb-noti-empty">
-              새 알림이 없어요.
-              <br />
-              {favorites ? "즐겨찾기한 트레이더가 전략을 올리거나 내 전략이 팔리면 알려 드려요." : "전략 쇼핑에서 트레이더를 ☆ 즐겨찾기하면 새 전략을 알려 드려요."}
-            </p>
+            <p className="gnb-noti-empty">새 알림이 없어요.</p>
           )}
         </div>
       )}
@@ -167,6 +172,13 @@ function ago(iso: string) {
   if (m < 1440 * 7) return `${Math.floor(m / 1440)}일 전`;
   const d = new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString();
   return `${d.slice(5, 7)}.${d.slice(8, 10)}`;
+}
+
+/** 닉네임이 4글자를 넘으면 앞 3글자 + "..." (한글 · 이모지도 한 글자로 셈) — intro 브랜치 a78ff9a */
+const nicknameSegmenter = new Intl.Segmenter("ko", { granularity: "grapheme" });
+function shortName(name: string) {
+  const chars = Array.from(nicknameSegmenter.segment(name), ({ segment }) => segment);
+  return chars.length > 4 ? `${chars.slice(0, 3).join("")}...` : name;
 }
 
 export default function AccountChip() {
@@ -203,8 +215,10 @@ export default function AccountChip() {
           aria-expanded={open}
           aria-label={`${profile.name} 계정 메뉴`}
         >
-          <span className="gnb-name">{profile.name}</span>
           <Avatar profile={profile} size={34} />
+          <span className="gnb-name" title={profile.name}>
+            {shortName(profile.name)}
+          </span>
         </button>
         {open && (
           <div className="gnb-menu" role="menu">

@@ -6,7 +6,7 @@ import { apiRequest } from "./client";
 type Session = { access_token: string; refresh_token: string };
 
 /** 가입. 메일 확인을 켜 둔 프로젝트면 session 이 없고 확인 메일이 간다 */
-export async function signUp(input: { email: string; password: string; nickname: string }) {
+export async function signUp(input: { email: string; password: string; nickname: string; username?: string }) {
   const data = await apiRequest<{ session: Session | null; requiresEmailConfirmation: boolean }>("/auth/signup", {
     method: "POST",
     auth: false,
@@ -19,15 +19,19 @@ export async function signUp(input: { email: string; password: string; nickname:
   return { loggedIn: !!data.session, requiresEmailConfirmation: data.requiresEmailConfirmation };
 }
 
-/** 닉네임으로 아이디(가린 이메일) 찾기 */
-export async function findId(nickname: string) {
-  const data = await apiRequest<{ emails: string[] }>("/auth/find-id", { method: "POST", auth: false, body: JSON.stringify({ nickname }) });
-  return data.emails;
+/** 아이디 찾기: 가입 때 적은 이름 + 이메일 → 가운데를 가린 아이디 (맞는 계정이 없으면 found=false) */
+export async function findId(name: string, email: string) {
+  return apiRequest<{ found: boolean; username?: string | null; google?: boolean }>("/auth/find-id", { method: "POST", auth: false, body: JSON.stringify({ name, email }) });
 }
 
-/** 비밀번호 재설정 메일 요청 (가입 안 된 이메일이어도 같은 응답) */
-export async function requestPasswordReset(email: string) {
-  await apiRequest<{ sent: boolean }>("/auth/password/reset", { method: "POST", auth: false, body: JSON.stringify({ email }) });
+/** 아이디를 쓸 수 있는지 (형식 · 중복) */
+export async function checkUsername(u: string) {
+  return apiRequest<{ valid: boolean; available: boolean }>(`/auth/username?u=${encodeURIComponent(u)}`, { auth: false });
+}
+
+/** 비밀번호 재설정 메일 요청. 아이디를 함께 주면 그 아이디의 이메일일 때만 (어느 경우든 같은 응답) */
+export async function requestPasswordReset(email: string, username?: string) {
+  await apiRequest<{ sent: boolean }>("/auth/password/reset", { method: "POST", auth: false, body: JSON.stringify({ email, ...(username ? { username } : {}) }) });
 }
 
 /**

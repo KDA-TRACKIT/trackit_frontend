@@ -1,24 +1,42 @@
 "use client";
-// 트레이더 상세: 소개 · 이번 달 전략 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략 · 비슷한 트레이더
+// 트레이더 상세: 소개 · 열람권 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(♥) · 구매자 후기(익명) · 비슷한 트레이더
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
-import { TRADERS, monthLabel, pct, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
-import { FavButton, useNotice } from "../parts";
+import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
+import { FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
+import { GradeBadge } from "../GradeParts";
+import { unusedPasses, usePasses } from "../../../lib/purchases";
+import { useFeedback } from "../../../lib/feedback";
+import { LikeButton, Reviews } from "../feedback";
 import "../marketplace.css";
+
+/** 채널나스닥 → "채널나스닥"과, 원트로그 → "원트로그"와 (따옴표로 감싸고, 마지막 글자가 한글이 아니면 와(과)) */
+function withWa(name: string) {
+  const c = name.charCodeAt(name.length - 1) - 0xac00;
+  if (c < 0 || c > 11171) return `"${name}"와(과)`;
+  return `"${name}"${c % 28 ? "과" : "와"}`;
+}
 
 export default function TraderPage() {
   const { id } = useParams<{ id: string }>();
   const t = traderById(id);
   const { notify, node } = useNotice();
+  const passLeft = unusedPasses(usePasses(), id).length;
+  const fb = useFeedback(id);
+  const router = useRouter();
   if (!t) {
     return (
       <main className="mk-page">
         <SiteHeader active="marketplace" />
         <div className="mk-wrap">
           <p className="mk-card mk-empty">
-            트레이더를 찾을 수 없어요. <Link href="/marketplace">목록으로</Link>
+            트레이더를 찾을 수 없어요.{" "}
+            <Link href="/marketplace" onClick={(e) => backToList(e, router.push)}>
+              목록으로
+            </Link>
           </p>
         </div>
       </main>
@@ -27,14 +45,15 @@ export default function TraderPage() {
   const list = strategiesOf(t);
   const first = list[list.length - 1];
   const total = Math.round(t.monthly.reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
-  const similar = TRADERS.filter((o) => o.id !== t.id && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
-  const buy = () => notify("결제는 준비 중이에요");
+  // 마지막으로 기록한 달 (성과 카드 설명: "2026년 · 11월까지")
+  const [lastYear, lastMonth] = t.monthly[t.monthly.length - 1].month.split("-").map(Number);
+  const similar = TRADERS.filter((o) => o.id !== t.id && listed(o) && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
 
   return (
     <main className="mk-page">
       <SiteHeader active="marketplace" />
       <div className="mk-wrap">
-        <Link href="/marketplace" className="mk-back">
+        <Link href="/marketplace" className="mk-back" onClick={(e) => backToList(e, router.push)}>
           ‹ 트레이더 목록
         </Link>
 
@@ -46,9 +65,8 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <span className="mk-like">♥ {t.likes}</span> <FavButton id={t.id} name={t.name} label />
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> {t.name} <span className="mk-like" title="전략을 산 사람들이 준 ♥ 합계">♥ {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
-                <small>{monthLabel(t.since)}부터 전략을 공유하고 있어요</small>
               </div>
             </div>
             <blockquote>“{t.quote}”</blockquote>
@@ -64,26 +82,52 @@ export default function TraderPage() {
 
           <aside className="mk-card mk-buy">
             <small>
-              <b>{t.name}</b>의 이번 달 전략
+              <b>{t.name}</b>의 전략 열람권
             </small>
             <strong>
-              {won(t.price)} <span>/ 월 전략 1개</span>
+              {won(t.price)} <span>/ 1장 · 전략 1개</span>
             </strong>
-            <p>지금까지 {t.buyers}명이 전략을 구매했어요</p>
-            <button type="button" className="mk-primary" onClick={buy}>
-              이번 달 전략 구매하기
-            </button>
-            <button type="button" className="mk-ghost" onClick={() => notify(`${monthLabel(first.month)} 전략은 곧 무료로 열려요`)}>
+            {sellable(t) ? (
+              <PassBuyBox trader={t} notify={notify} />
+            ) : (
+              <p className="mk-stopped">
+                {t.grade?.unrated
+                  ? "아직 판매 등급이 없어 열람권을 팔 수 없어요. 등급을 받으면 판매가 열려요."
+                  : !listed(t)
+                    ? "일반 계정으로 바뀌어 전략 쇼핑에서 내려간 트레이더예요. 이미 산 전략은 계속 볼 수 있어요."
+                    : `판매 등급이 ${t.grade?.grade}라 새 열람권 판매가 멈췄어요. 이미 산 전략은 계속 볼 수 있어요.`}
+              </p>
+            )}
+            {passLeft > 0 && <p className="mk-pass-left">남은 열람권 {passLeft}장 · 아래 월별 전략에서 골라 여세요</p>}
+            <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-ghost">
               첫 번째 전략 무료로 보기
-            </button>
+            </Link>
           </aside>
         </div>
 
-        <div className="mk-stats">
-          <Stat label="누적 수익률" value={pct(total)} cls={tone(total)} note={`${monthLabel(t.monthly[0].month)} 이후`} />
-          <Stat label="전략 이행률" value={`${t.follow}%`} note="계획한 매매 중 실제로 지킨 비율" />
-          <Stat label="최대 낙폭" value={pct(t.mdd)} cls="loss" note="가장 크게 떨어진 구간" />
-          <Stat label="구매한 사람" value={`${t.buyers}명`} note="누적 구매자 수" />
+        <div className="mk-card mk-kpis">
+          {/* 윗줄: 매매 · 승률 · 이행률 · 구매자 / 아랫줄: 누적 수익률 · 최대 낙폭 · 가장 큰 이익 · 손실 */}
+          {t.facts ? (
+            <>
+              <Kpi label="매매" value={`${t.facts.wins + t.facts.losses}건`} />
+              <Kpi label="승률" value={`${t.facts.wins + t.facts.losses ? Math.round((t.facts.wins / (t.facts.wins + t.facts.losses)) * 100) : 0}%`} />
+            </>
+          ) : (
+            <>
+              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
+              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
+            </>
+          )}
+          <Kpi label="전략 이행률" value={`${t.follow}%`} />
+          <Kpi label="구매자" value={`${t.buyers.toLocaleString("ko-KR")}명`} />
+          {t.facts && (
+            <>
+              <Kpi label="누적 수익률" value={pct(total)} tone={tone(total)} />
+              <Kpi label="최대 낙폭" value={pct(t.mdd)} tone="loss" />
+              <Kpi label="가장 큰 이익" value={t.facts.best ? pct(t.facts.best.ret) : "-"} tone="gain" />
+              <Kpi label="가장 큰 손실" value={t.facts.worst ? pct(t.facts.worst.ret) : "-"} tone="loss" />
+            </>
+          )}
         </div>
 
         <MonthlyChart t={t} />
@@ -91,10 +135,7 @@ export default function TraderPage() {
         <section className="mk-section">
           <div className="mk-section-head">
             <div>
-              <h2>
-                <b>{t.name}</b>의 월별 전략
-              </h2>
-              <p>한 달의 매매 기준, 진입 · 청산 기록, 원칙을 지켰는지 회고를 함께 담았어요.</p>
+              <h2>월별 전략</h2>
             </div>
             <Link href={`/marketplace/${t.id}/strategies`}>더보기 ›</Link>
           </div>
@@ -103,40 +144,39 @@ export default function TraderPage() {
               <article key={s.id} className="mk-card mk-strat">
                 <small>{monthLabel(s.month)}</small>
                 <h3>{s.title}</h3>
-                <p>{s.summary}</p>
+                <p>{s.summary.replace(/\s*\([^)]*\)/g, "")}</p>
                 <div className="mk-strat-num">
                   <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
                   <span>이행률 {s.follow}%</span>
+                  <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
                 </div>
                 <strong>{won(s.price)}</strong>
-                <button type="button" className="mk-soft" onClick={buy}>
-                  구매하기
-                </button>
+                <StrategyButton trader={t} strategy={s} className="mk-soft" notify={notify} />
               </article>
             ))}
           </div>
           <div className="mk-card mk-free">
             <div>
-              <strong>{monthLabel(first.month)} · 첫 번째 전략</strong>
-              <p>처음 공개한 전략은 무료예요. 어떤 기준으로 매매하는지 먼저 확인해 보세요.</p>
+              <strong>첫 번째 전략({monthLabel(first.month)})은 무료로 볼 수 있어요</strong>
             </div>
-            <button type="button" className="mk-primary" onClick={() => notify(`${monthLabel(first.month)} 전략은 곧 무료로 열려요`)}>
-              첫 번째 전략 무료로 보기
-            </button>
+            <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-primary">
+              무료로 보기
+            </Link>
           </div>
         </section>
 
+        <Reviews trader={t} fb={fb} notify={notify} />
+
         <section className="mk-section mk-similar">
-          <h2>
-            <b className="mk-quote">“{t.name}”</b>
-            {wa(t.name)} 비슷한 트레이더
-          </h2>
+          <h2>{withWa(t.name)} 비슷한 트레이더</h2>
           <div className="mk-similar-grid">
             {similar.map((o) => (
               <Link key={o.id} href={`/marketplace/${o.id}`} className="mk-card mk-sim">
-                <strong>{o.name}</strong>
-                <small>{o.tagline}</small>
-                <span className={tone(o.returns["3m"])}>3개월 {pct(o.returns["3m"])}</span>
+                <strong>
+                  <GradeBadge grade={o.grade?.grade} unrated={o.grade?.unrated} small /> {o.name}
+                </strong>
+                <p>{o.tagline}</p>
+                <span className={oneStock(o, "3m") ? "" : tone(o.returns["3m"])}>3개월 {oneStock(o, "3m") ? "-" : pct(o.returns["3m"])}</span>
               </Link>
             ))}
           </div>
@@ -147,12 +187,11 @@ export default function TraderPage() {
   );
 }
 
-function Stat({ label, value, note, cls = "" }: { label: string; value: string; note: string; cls?: string }) {
+function Kpi({ label, value, tone: t = "" }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="mk-card mk-stat">
-      <small>{label}</small>
-      <strong className={cls}>{value}</strong>
-      <p>{note}</p>
+    <div className="mk-kpi">
+      <span>{label}</span>
+      <strong className={t}>{value}</strong>
     </div>
   );
 }
@@ -221,7 +260,8 @@ function MonthlyChart({ t }: { t: Trader }) {
           </div>
         )}
       </div>
-      <p className="mk-chart-note">전략 수익률은 그 달 공개한 전략대로 매매했을 때의 결과예요. 실제 구매자의 수익과 다를 수 있어요.</p>
     </section>
   );
 }
+
+

@@ -2,7 +2,7 @@
 // 상승·하락 표시 / 타원
 // 미리보기 중에는 px 가 pointCount 보다 적게 올 수 있으니 있는 점까지만 그린다
 import type { DrawingTool, PixelPoint, ViewInfo } from "../types";
-import { anchor, dots } from "./draw-utils";
+import { anchor, dots, fibColor, label, lvText, tint } from "./draw-utils";
 
 function stroke(ctx: CanvasRenderingContext2D, color: string, width: number) {
   ctx.strokeStyle = color;
@@ -89,7 +89,7 @@ export const parallelChannel: DrawingTool = {
       const a2 = { x: a.x, y: a.y + off };
       const b2 = { x: b.x, y: b.y + off };
       line(ctx, a2, b2);
-      ctx.fillStyle = "rgba(41,98,255,0.07)";
+      ctx.fillStyle = tint(d.style.color, 0.12);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -105,7 +105,7 @@ export const parallelChannel: DrawingTool = {
   },
 };
 
-const EXT_LEVELS = [0, 0.618, 1, 1.618, 2.618];
+const EXT_LEVELS = [0, 0.382, 0.618, 1, 1.272, 1.618, 2, 2.618];
 
 export const fibExtension: DrawingTool = {
   id: "fib-extension",
@@ -114,26 +114,31 @@ export const fibExtension: DrawingTool = {
   pointCount: 3,
   schemaVersion: 1,
   draw(ctx, px, d, view) {
-    stroke(ctx, d.style.color, d.style.width);
+    stroke(ctx, tint(d.style.color, 0.8), 1);
+    ctx.setLineDash([4, 4]);
     const [a, b, c] = px;
     if (b) line(ctx, a, b);
     if (b && c) {
       line(ctx, b, c);
-      // A→B 움직임을 C에서 다시 투영
+      // A→B 움직임을 C에서 다시 투영 (레벨마다 색 + 레벨 사이 반투명 띠)
       const pa = Number(d.points[0].price);
       const pb = Number(d.points[1].price);
       const pc = Number(d.points[2].price);
       const pxPerWon = (b.y - a.y) / (pb - pa || 1);
-      ctx.font = "11px Pretendard, sans-serif";
-      ctx.textBaseline = "bottom";
+      const yOf = (lv: number) => c.y + (pb - pa) * lv * pxPerWon;
+      const right = Math.max(c.x + 80, Math.min(view.width, c.x + Math.abs(b.x - a.x) * 1.5));
+      for (let i = 0; i < EXT_LEVELS.length - 1; i++) {
+        const y1 = yOf(EXT_LEVELS[i]);
+        const y2 = yOf(EXT_LEVELS[i + 1]);
+        ctx.fillStyle = tint(fibColor(EXT_LEVELS[i + 1]), 0.1);
+        ctx.fillRect(c.x, Math.min(y1, y2), right - c.x, Math.abs(y2 - y1));
+      }
+      ctx.setLineDash([]);
       for (const lv of EXT_LEVELS) {
-        const price = pc + (pb - pa) * lv;
-        const y = c.y + (price - pc) * pxPerWon;
-        ctx.globalAlpha = lv === 0 || lv === 1 ? 1 : 0.6;
-        line(ctx, { x: c.x, y }, { x: view.width, y });
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = d.style.color;
-        ctx.fillText(`${lv} (${won(price)})`, c.x + 4, y - 2);
+        const y = yOf(lv);
+        stroke(ctx, fibColor(lv), 1);
+        line(ctx, { x: c.x, y }, { x: right, y });
+        label(ctx, `${lvText(lv)} (${won(pc + (pb - pa) * lv)})`, c.x - 6, y, { align: "right", color: fibColor(lv) });
       }
     }
     dots(ctx, px);
@@ -152,7 +157,7 @@ export const triangle: DrawingTool = {
     px.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
     if (px.length === 3) {
       ctx.closePath();
-      ctx.fillStyle = "rgba(41,98,255,0.08)";
+      ctx.fillStyle = tint(d.style.color, 0.12);
       ctx.fill();
     }
     ctx.stroke();
@@ -223,7 +228,7 @@ export const ellipse: DrawingTool = {
     stroke(ctx, d.style.color, d.style.width);
     ctx.beginPath();
     ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.abs(b.x - a.x) / 2, Math.abs(b.y - a.y) / 2, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(41,98,255,0.08)";
+    ctx.fillStyle = tint(d.style.color, 0.12);
     ctx.fill();
     ctx.stroke();
   },

@@ -1,11 +1,14 @@
 "use client";
-// 트레이더의 월별 전략 전체 (최근 것부터, 쪽 나눔). 버튼은 바로 구매하기
+// 트레이더의 월별 전략 전체 (최근 것부터, 쪽 나눔). 열람권을 사서 그 열람권으로 전략 하나를 골라 엶
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
-import { Pager, useNotice } from "../../parts";
+import { Pager, PassBuyBox, StrategyButton, useNotice } from "../../parts";
+import { unusedPasses, usePasses } from "../../../../lib/purchases";
+import { useFeedback } from "../../../../lib/feedback";
+import { LikeButton } from "../../feedback";
 import "../../marketplace.css";
 
 const PER_PAGE = 6;
@@ -15,6 +18,8 @@ export default function StrategiesPage() {
   const t = traderById(id);
   const [page, setPage] = useState(1);
   const { notify, node } = useNotice();
+  const passLeft = unusedPasses(usePasses(), id).length;
+  const fb = useFeedback(id);
   if (!t) {
     return (
       <main className="mk-page">
@@ -43,6 +48,14 @@ export default function StrategiesPage() {
           <b>{t.name}</b>의 월별 전략
         </h1>
         <p className="mk-sub-desc">한 달의 매매 기준, 진입 · 청산 기록, 원칙을 지켰는지 회고를 함께 담았어요.</p>
+        {passLeft > 0 && (
+          <p className="mk-pass-bar on">
+            남은 열람권 <b>{passLeft}장</b> · 열어 볼 전략의 &quot;열람권으로 열기&quot;를 누르세요
+          </p>
+        )}
+        <div className="mk-passbox-row">
+          <PassBuyBox trader={t} notify={notify} />
+        </div>
         <ul className="mk-slist">
           {shown.map((s) => (
             <li key={s.id} className="mk-card mk-srow">
@@ -54,12 +67,11 @@ export default function StrategiesPage() {
               <div className="mk-srow-num">
                 <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
                 <small>이행률 {s.follow}%</small>
+                <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
               </div>
               <div className="mk-srow-buy">
                 <strong>{won(s.price)}</strong>
-                <button type="button" className="mk-primary" onClick={() => notify("결제는 준비 중이에요")}>
-                  구매하기
-                </button>
+                <StrategyButton trader={t} strategy={s} notify={notify} />
               </div>
             </li>
           ))}

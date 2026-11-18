@@ -149,3 +149,45 @@ export const FILL = "rgba(41,98,255,0.08)";
 /** 오름 초록 · 내림 빨강 (차트 캔들 색과 같게) */
 export const UP = "#089981";
 export const DOWN = "#f23645";
+
+/** 선 색을 반투명 채우기 색으로 (#rgb · #rrggbb · rgb()) — 채우기는 선과 같은 색으로 (트레이딩뷰처럼) */
+export function tint(color: string, alpha: number) {
+  const c = color.trim();
+  let r = 41,
+    g = 98,
+    b = 255;
+  if (c.startsWith("#")) {
+    const h = c.length === 4 ? c.slice(1).split("").map((x) => x + x).join("") : c.slice(1, 7);
+    r = parseInt(h.slice(0, 2), 16);
+    g = parseInt(h.slice(2, 4), 16);
+    b = parseInt(h.slice(4, 6), 16);
+  } else {
+    const m = c.match(/\d+(\.\d+)?/g);
+    if (m && m.length >= 3) [r, g, b] = m.slice(0, 3).map(Number);
+  }
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/** 피보나치 레벨 색 (트레이딩뷰 기본값과 같은 계열) */
+const FIB_COLORS: Record<string, string> = {
+  "0": "#787b86",
+  "0.236": "#f23645",
+  "0.25": "#f23645",
+  "0.382": "#ff9800",
+  "0.5": "#4caf50",
+  "0.618": "#089981",
+  "0.65": "#089981",
+  "0.75": "#00bcd4",
+  "0.786": "#00bcd4",
+  "1": "#787b86",
+  "1.272": "#2962ff",
+  "1.382": "#2962ff",
+  "1.618": "#2962ff",
+  "2": "#9c27b0",
+  "2.618": "#f23645",
+  "3.618": "#9c27b0",
+  "4.236": "#e91e63",
+};
+export const fibColor = (lv: number) => FIB_COLORS[String(Number(lv.toFixed(3)))] ?? "#787b86";
+/** 레벨 숫자 표시 (0.618 · 1 · 1.618) */
+export const lvText = (lv: number) => String(Number(lv.toFixed(3)));

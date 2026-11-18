@@ -3,7 +3,9 @@
 import { useSyncExternalStore } from "react";
 
 export const SELLER_TERMS_VERSION = "2026-11-draft";
-export type BusinessState = { termsVersion: string; acceptedAt: string };
+/** 정산 계좌: 계좌번호 전체는 저장하지 않고 끝 4자리만 (실제 지급 정보는 판매자 API 가 생기면 서버로) */
+export type Settlement = { bank: string; accountLast4: string; holder: string; businessNo?: string };
+export type BusinessState = { termsVersion: string; acceptedAt: string; settlement?: Settlement; publicConsentAt?: string };
 
 const key = (userId: string) => `trackit:business:${userId}`;
 const listeners = new Set<() => void>();

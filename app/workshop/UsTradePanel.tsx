@@ -18,7 +18,7 @@ import {
   type UsOrderRequest,
   type UsTodayOrder,
 } from "../../lib/api/orders";
-import { US_SESSION_LABEL, usDst, usHoursKst, usOrderTypes, useUsSession } from "../../lib/us-session";
+import { US_SESSION_LABEL, usDst, usHoursKst, usOrderTypes, useUsSession, withRo } from "../../lib/us-session";
 
 const EX_NAME: Record<UsExchange, string> = { ND: "나스닥", NY: "뉴욕", NA: "아멕스" };
 /** $1 이상은 센트(0.01), 그 아래는 0.0001 단위 */
@@ -291,7 +291,7 @@ export default function UsTradePanel({ code, symbolName, exchange, price, prevCl
                   {symbolName} {review.symbol} · {EX_NAME[review.exchange]}
                 </dd>
                 <dt>시간대</dt>
-                <dd>{US_SESSION_LABEL[session]}로 들어가요</dd>
+                <dd>{withRo(US_SESSION_LABEL[session])} 들어가요</dd>
                 <dt>주문</dt>
                 <dd className={review.side === "BUY" ? "up" : "down"}>
                   {review.side === "BUY" ? "매수" : "매도"} {int(review.quantity)}주 · {review.orderType === "MARKET" ? "시장가" : `지정가 ${usd(review.price ?? 0)}`}

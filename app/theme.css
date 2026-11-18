@@ -138,6 +138,7 @@ html[data-theme="dark"] .mypage-conn { border-top-color:var(--c-line); }
 html[data-theme="dark"] :is(.mypage-muted, .mypage-conn small) { color:var(--c-sub); }
 html[data-theme="dark"] .mypage-conn-form { border-color:var(--c-line); background:var(--c-subtle); }
 html[data-theme="dark"] :is(.mypage-conn-form input, .mypage-conn-form select) { border-color:var(--c-line-strong); background:var(--c-surface); color:var(--c-ink); }
-html[data-theme="dark"] .mypage-conn em.mock { background:rgba(92,157,255,.16); color:#5c9dff; }
-html[data-theme="dark"] .mypage-conn em.real { background:rgba(255,107,107,.14); color:#ff6b6b; }
 html[data-theme="dark"] .mypage-conn button { color:var(--c-err); }
+
+/* 로그인 확인 중 빈 화면 (AuthGate) */
+.auth-gate { min-height:100vh; background:var(--c-bg); }

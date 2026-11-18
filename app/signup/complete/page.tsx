@@ -6,13 +6,12 @@ import { FormEvent, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import SiteHeader from "../../SiteHeader";
 import { getSupabaseBrowser } from "../../../lib/supabase-browser";
-
-const TERMS_VERSION = "2026-11";
+import { DateField, TERMS_VERSION, TermsChecks } from "../../auth-forms";
 
 export default function SignupCompletePage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [nickname, setNickname] = useState("");
-  const [birth, setBirth] = useState({ y: "", m: "", d: "" });
+  const [birthdate, setBirthdate] = useState("");
   const [gender, setGender] = useState<"" | "male" | "female">("");
   const [terms, setTerms] = useState({ service: false, privacy: false });
   const [loading, setLoading] = useState(false);
@@ -31,16 +30,11 @@ export default function SignupCompletePage() {
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const y = Number(birth.y);
-    const m = Number(birth.m);
-    const d = Number(birth.d);
-    const date = new Date(Date.UTC(y, m - 1, d));
-    if (!(y > 1900 && date.getUTCMonth() === m - 1 && date.getUTCDate() === d && date.getTime() < Date.now())) return setError("생년월일을 확인해 주세요.");
+    if (!birthdate) return setError("생년월일을 골라 주세요.");
     if (!gender) return setError("성별을 선택해 주세요.");
     if (!terms.service || !terms.privacy) return setError("필수 약관에 동의해 주세요.");
     setLoading(true);
     setError("");
-    const birthdate = date.toISOString().slice(0, 10);
     const { error: err } = (await getSupabaseBrowser()?.auth.updateUser({
       data: { nickname: nickname.trim(), birthdate, gender, signup_completed: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
     })) ?? { error: null };
@@ -51,8 +45,6 @@ export default function SignupCompletePage() {
     }
     window.location.replace("/onboarding");
   }
-
-  const digits = (v: string, n: number) => v.replace(/\D/g, "").slice(0, n);
 
   return (
     <main className="auth-page">
@@ -75,39 +67,34 @@ export default function SignupCompletePage() {
             </div>
             <h1>TRAKIT 가입 마무리</h1>
             <p>처음 방문하셨군요. 서비스에서 사용할 정보를 입력해주세요.</p>
-            <form onSubmit={submit}>
-              <label className="field">
-                <span>닉네임 *</span>
-                <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="사용할 닉네임을 입력해주세요" maxLength={20} required />
+            <form onSubmit={submit} className="signup-complete-form">
+              <label className="signup-row">
+                <span>
+                  닉네임 <i>*</i>
+                </span>
+                <input suppressHydrationWarning value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임을 입력하세요." maxLength={20} required />
               </label>
-              <div className="field">
-                <span>생년월일 *</span>
-                <div className="birth">
-                  <input suppressHydrationWarning inputMode="numeric" value={birth.y} onChange={(e) => setBirth({ ...birth, y: digits(e.target.value, 4) })} placeholder="YYYY" aria-label="태어난 해" required />/
-                  <input suppressHydrationWarning inputMode="numeric" value={birth.m} onChange={(e) => setBirth({ ...birth, m: digits(e.target.value, 2) })} placeholder="MM" aria-label="태어난 달" required />/
-                  <input suppressHydrationWarning inputMode="numeric" value={birth.d} onChange={(e) => setBirth({ ...birth, d: digits(e.target.value, 2) })} placeholder="DD" aria-label="태어난 날" required />
-                </div>
+              <div className="signup-row">
+                <span>
+                  생년월일 <i>*</i>
+                </span>
+                <DateField value={birthdate} onChange={setBirthdate} />
               </div>
-              <div className="gender" role="radiogroup" aria-label="성별">
+              <div className="signup-row">
                 <span>
                   성별 <i>*</i>
                 </span>
-                <label>
-                  <input type="radio" name="gender" checked={gender === "male"} onChange={() => setGender("male")} /> 남성
-                </label>
-                <label>
-                  <input type="radio" name="gender" checked={gender === "female"} onChange={() => setGender("female")} /> 여성
-                </label>
+                <div className="signup-radios" role="radiogroup" aria-label="성별">
+                  <label>
+                    <input type="radio" name="gender" checked={gender === "male"} onChange={() => setGender("male")} /> 남성
+                  </label>
+                  <label>
+                    <input type="radio" name="gender" checked={gender === "female"} onChange={() => setGender("female")} /> 여성
+                  </label>
+                </div>
               </div>
-              <div className="terms">
-                <label>
-                  <input type="checkbox" checked={terms.service} onChange={(e) => setTerms({ ...terms, service: e.target.checked })} /> [필수] 서비스 이용약관에 동의합니다.
-                </label>
-                <label>
-                  <input type="checkbox" checked={terms.privacy} onChange={(e) => setTerms({ ...terms, privacy: e.target.checked })} /> [필수] 개인정보 수집 및 이용에 동의합니다.
-                </label>
-                <small>Google에서 받은 이메일·이름은 다시 입력할 필요가 없습니다.</small>
-              </div>
+              <TermsChecks value={terms} onChange={setTerms} />
+              <p className="signup-note">Google에서 받은 이메일·이름은 다시 입력할 필요가 없습니다.</p>
               <button className="signup-submit big" disabled={loading}>
                 {loading ? "처리 중..." : "가입 완료하고 프로필 설정하기 →"}
               </button>

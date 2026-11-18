@@ -25,7 +25,13 @@ export function useWatchlist() {
   useEffect(() => {
     // 로그인 안 한 경우에만 브라우저 목록을 읽는다 (첫 그림은 서버와 같게 비워 두고)
     const t = setTimeout(() => setLocal(readLocal()), 0);
-    return () => clearTimeout(t);
+    // 같은 화면의 다른 칸(오늘의 종목 ♥ 등)이 바꾸면 다시 읽음
+    const sync = () => setLocal(readLocal());
+    window.addEventListener("trackit:watchlist", sync);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("trackit:watchlist", sync);
+    };
   }, []);
   const fromUser = user?.user_metadata?.watchlist;
   const items: WatchItem[] = user ? (Array.isArray(fromUser) ? (fromUser as WatchItem[]) : []) : (local ?? []);
@@ -44,6 +50,7 @@ export function useWatchlist() {
       } else {
         localStorage.setItem(STORE, JSON.stringify(next));
         setLocal(next);
+        window.dispatchEvent(new Event("trackit:watchlist"));
       }
     },
     [user, setUser],

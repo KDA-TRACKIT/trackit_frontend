@@ -1,6 +1,6 @@
 // 라인·채널·피치포크
 import type { DrawingTool, PixelPoint } from "../types";
-import { FILL, barsBetween, changeText, dots, extendTo, fillPoly, label, line, spanText, stroke } from "./draw-utils";
+import { barsBetween, changeText, dots, extendTo, fillPoly, label, line, spanText, stroke, tint } from "./draw-utils";
 
 export const infoLine: DrawingTool = {
   id: "info-line",
@@ -90,7 +90,7 @@ export const regression: DrawingTool = {
     const pt = (i: number, off: number) => ({ x: view.timeToX(bars[i].time) ?? 0, y: view.priceToY(at(i) + off) ?? 0 });
     const upper = [pt(0, 2 * sd), pt(n - 1, 2 * sd)];
     const lower = [pt(0, -2 * sd), pt(n - 1, -2 * sd)];
-    fillPoly(ctx, [upper[0], upper[1], lower[1], lower[0]], FILL);
+    fillPoly(ctx, [upper[0], upper[1], lower[1], lower[0]], tint(d.style.color, 0.12));
     stroke(ctx, d.style.color, d.style.width);
     line(ctx, pt(0, 0), pt(n - 1, 0));
     stroke(ctx, d.style.color, 1, [5, 4]);
@@ -113,7 +113,7 @@ export const flatTopBottom: DrawingTool = {
     if (b && c) {
       const flatA = { x: a.x, y: c.y };
       const flatB = { x: b.x, y: c.y };
-      fillPoly(ctx, [a, b, flatB, flatA], FILL);
+      fillPoly(ctx, [a, b, flatB, flatA], tint(d.style.color, 0.12));
       line(ctx, flatA, flatB);
     }
     dots(ctx, px, d.style.color);
@@ -138,7 +138,7 @@ function pitchfork(id: string, labelText: string, handle: (a: PixelPoint, b: Pix
         const m = { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 };
         const dir = { x: m.x - h.x, y: m.y - h.y };
         const far = (p: PixelPoint) => extendTo(p, { x: p.x + dir.x, y: p.y + dir.y }, view);
-        fillPoly(ctx, [b, far(b), far(c), c], FILL);
+        fillPoly(ctx, [b, far(b), far(c), c], tint(d.style.color, 0.12));
         line(ctx, h, far(h));
         line(ctx, b, far(b));
         line(ctx, c, far(c));

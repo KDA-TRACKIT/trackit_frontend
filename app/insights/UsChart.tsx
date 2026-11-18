@@ -2,7 +2,7 @@
 // 미국 종목 차트 창 (관심 종목 · 지수 맵 · 순위에서 미국 종목을 누르면)
 //   네이버·트레이딩뷰처럼: 처음엔 최근 300봉만 받아 바로 그리고, 왼쪽 끝 가까이 스크롤하면 그 앞을 이어 받는다
 //   지수 구성·인기 종목은 서버에 10년치가 저장돼 있어 0.1초 안, 그 밖은 키움에서 최근 100봉 먼저(1~2초)
-//   일 · 주 · 월 (주·월은 일봉을 묶음), 오르면 빨강 · 내리면 파랑, 가격은 달러(수정주가)
+//   일 · 주 · 월 (주·월은 일봉을 묶음), 오르면 초록(--c-up) · 내리면 빨강(--c-down), 가격은 달러(수정주가)
 import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChartApi, type ISeriesApi, type Time, type UTCTimestamp } from "lightweight-charts";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
