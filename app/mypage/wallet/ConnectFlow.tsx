@@ -21,6 +21,8 @@ export default function ConnectFlow({ onClose }: { onClose: (changed: boolean) =
   const [form, setForm] = useState({ name: profile.name ?? "", birth: "", gender: "", carrier: "SKT", phone: "" });
   const [sent, setSent] = useState<{ code: string; until: number } | null>(null);
   const [code, setCode] = useState("");
+  /** 시연: 문자 대신 띄우는 인증번호 팝업 */
+  const [smsOpen, setSmsOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -45,6 +47,7 @@ export default function ConnectFlow({ onClose }: { onClose: (changed: boolean) =
     setCode("");
     setSent({ code: String(Math.floor(100000 + Math.random() * 900000)), until: Date.now() + 180_000 });
     setNow(Date.now());
+    setSmsOpen(true);
   }
 
   async function verify() {
@@ -197,9 +200,38 @@ export default function ConnectFlow({ onClose }: { onClose: (changed: boolean) =
                       </em>
                     </div>
                   </label>
-                  <p className="mp-cf-demo">
-                    시연 모드 · 문자 대신 여기에 인증번호를 보여 드려요: <b>{sent.code}</b>
-                  </p>
+                  {!smsOpen && (
+                    <button type="button" className="mp-cf-sms-again" onClick={() => setSmsOpen(true)}>
+                      인증번호 문자 다시 보기
+                    </button>
+                  )}
+                  {smsOpen && (
+                    // 시연: 휴대폰 문자 대신 화면 위에 띄우는 인증번호 팝업
+                    <div className="mp-cf-sms" role="alertdialog" aria-label="인증번호 문자">
+                      <div className="mp-cf-sms-head">
+                        <b>메시지</b>
+                        <small>지금</small>
+                      </div>
+                      <p>
+                        [Trackit] 본인확인 인증번호 <strong>{sent.code}</strong>를 입력해 주세요. (3분 안에)
+                      </p>
+                      <div className="mp-cf-sms-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCode(sent.code);
+                            setSmsOpen(false);
+                          }}
+                        >
+                          입력하기
+                        </button>
+                        <button type="button" className="ghost" onClick={() => setSmsOpen(false)}>
+                          닫기
+                        </button>
+                      </div>
+                      <em>시연 모드 · 실제 문자는 보내지 않아요</em>
+                    </div>
+                  )}
                 </>
               )}
             </div>
