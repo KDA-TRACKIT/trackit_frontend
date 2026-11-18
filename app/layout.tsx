@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./theme.css";
 import "./consistency.css";
+import "./auth-design.css";
 import { THEME_INIT_SCRIPT } from "../lib/theme-script";
 import { FIT_INIT_SCRIPT } from "../lib/fit-script";
 import ThemeSync from "./ThemeSync";

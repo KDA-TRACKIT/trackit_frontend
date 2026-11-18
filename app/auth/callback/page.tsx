@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "../../../lib/supabase-browser";
+import { applyStashedProfile } from "../../auth-ui";
 
 export default function AuthCallbackPage() {
   const [message, setMessage] = useState("로그인 처리 중입니다...");
@@ -24,9 +25,13 @@ export default function AuthCallbackPage() {
       // 방금 Google 로 처음 가입한 계정이면 가입 마무리(닉네임·생년월일·약관)로. 예전 계정은 그대로 홈으로
       const { data } = await supabase.auth.getUser();
       const user = data.user;
-      const isNew = !!user && Date.now() - new Date(user.created_at).getTime() < 10 * 60 * 1000;
-      if (user && isNew && user.app_metadata?.provider === "google" && user.user_metadata?.signup_completed !== true) {
+      if (user && user.app_metadata?.provider === "google" && user.user_metadata?.signup_completed !== true) {
         window.location.replace("/signup/complete");
+        return;
+      }
+      if (user && user.app_metadata?.provider !== "google" && user.user_metadata?.signup_completed !== true) {
+        await applyStashedProfile(user.email ?? "");
+        window.location.replace("/onboarding");
         return;
       }
       window.location.replace("/");

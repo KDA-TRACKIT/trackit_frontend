@@ -22,8 +22,15 @@ export function DateField({ value, onChange, label = "생년월일" }: { value: 
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        box.current?.querySelector<HTMLButtonElement>(".af-date-input")?.focus();
+      }
+    };
     document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", onKey); };
   }, [open]);
   const show = () => {
     const v = value || "2000-01-01";
@@ -134,14 +141,34 @@ export function DateField({ value, onChange, label = "생년월일" }: { value: 
 }
 
 function Dialog({ title, sub, onClose, children, wide }: { title: string; sub?: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+  const dialog = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  useEffect(() => { close.current = onClose; }, [onClose]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = () => Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href], [tabindex="0"]') ?? []);
+    focusable()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close.current();
+      if (e.key !== "Tab") return;
+      const elements = focusable();
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
+  }, []);
   return (
     <div className="af-overlay" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`af-dialog${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={dialog} className={`af-dialog${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="af-dialog-head">
           <div>
             {sub && <small>{sub}</small>}
@@ -276,7 +303,7 @@ export function FindModal({ kind, onKind, onClose }: { kind: "id" | "pw"; onKind
   const google = (
     <div className="af-note">
       <strong>Google 계정으로 가입하셨나요?</strong>
-      <button type="button" onClick={() => void startGoogle()}>
+      <button type="button" onClick={async () => { try { await startGoogle(); } catch (err) { setError(errorMessage(err)); } }}>
         Google 계정으로 로그인하기 →
       </button>
     </div>

@@ -1,0 +1,26 @@
+.home-investment-prompt {
+  position:fixed;
+  inset:0;
+  width:min(480px,calc(100% - 40px));
+  max-height:calc(100dvh - 40px);
+  margin:auto;
+  padding:40px 36px 36px;
+  overflow:auto;
+  border:0;
+  border-radius:12px;
+  background:var(--c-surface,#fff);
+  color:var(--c-ink,#1b2a44);
+  box-shadow:0 20px 60px #0002;
+}
+.home-investment-prompt::backdrop { background:rgb(0 0 0 / 55%); }
+.home-investment-prompt h2 { margin:0; font-size:22px; line-height:1.5; font-weight:700; text-align:center; word-break:keep-all; }
+.home-investment-prompt-actions { display:flex; gap:12px; margin-top:32px; }
+.home-investment-prompt-actions :is(a,button) { display:flex; flex:1; min-height:48px; align-items:center; justify-content:center; padding:12px 10px; border:0; border-radius:12px; background:var(--c-subtle,#f0f2f5); color:var(--c-ink,#1b2a44); font:inherit; font-size:14px; font-weight:600; text-align:center; cursor:pointer; }
+.home-investment-prompt-actions .primary { background:#0f2367; color:#fff; }
+.home-investment-prompt-actions .primary:hover { background:#203777; }
+.home-investment-prompt-actions :is(a,button):focus-visible { outline:2px solid #557ab5; outline-offset:3px; }
+@media (max-width:480px) {
+  .home-investment-prompt { padding:32px 24px 24px; }
+  .home-investment-prompt h2 { font-size:20px; }
+  .home-investment-prompt-actions { flex-direction:column; gap:10px; margin-top:24px; }
+}
