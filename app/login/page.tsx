@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser";
 import { API_URL } from "../../lib/api/client";
 import { GoogleIcon, applyStashedProfile, startGoogle } from "../auth-ui";
 import { FindModal } from "../auth-forms";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   /** 아이디 또는 이메일 */
@@ -20,8 +21,14 @@ export default function LoginPage() {
     if (f === "id" || f === "pw") setFind(f);
   }, []);
   const [password, setPassword] = useState("");
+  /** 비밀번호 보기 (눈 버튼) */
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // 빈 칸으로 로그인을 누르면 뜨는 브라우저 말풍선 문구 ("이 입력란을 작성하세요." 대신)
+  const emptyMessage = (message: string) => (e: FormEvent<HTMLInputElement>) => e.currentTarget.setCustomValidity(e.currentTarget.value ? "" : message);
+  const clearMessage = (e: FormEvent<HTMLInputElement>) => e.currentTarget.setCustomValidity("");
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,15 +66,24 @@ export default function LoginPage() {
       <SiteHeader right={false} />
       <section className="login-panel">
         <div className="login-wordmark brand">TRACKIT</div>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} className={error ? "has-error" : undefined}>
           <label>
             <span>ID</span>
-            <input suppressHydrationWarning type="text" placeholder=" " value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
+            <input suppressHydrationWarning type="text" placeholder=" " value={email} onChange={(e) => setEmail(e.target.value)} onInvalid={emptyMessage("아이디를 입력하세요.")} onInput={clearMessage} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
           </label>
           <label>
             <span>PASSWORD</span>
-            <input suppressHydrationWarning type="password" placeholder=" " value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            <input suppressHydrationWarning type={showPw ? "text" : "password"} placeholder=" " value={password} onChange={(e) => setPassword(e.target.value)} onInvalid={emptyMessage("비밀번호를 입력하세요.")} onInput={clearMessage} autoComplete="current-password" required aria-invalid={!!error} aria-describedby="login-error" />
+            {password && (
+              <button type="button" className="login-eye" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"} aria-pressed={showPw}>
+                {showPw ? <Eye size={22} strokeWidth={1.8} /> : <EyeOff size={22} strokeWidth={1.8} />}
+              </button>
+            )}
           </label>
+          {/* 비밀번호 아래 칸은 늘 비워 두고(로그인 버튼이 안 밀리게), 틀리면 여기에 한 줄로 */}
+          <p id="login-error" className="login-error" role="alert">
+            {error}
+          </p>
           <button className="login-submit" disabled={loading}>
             {loading ? "처리 중..." : "로그인"}
           </button>
@@ -95,7 +111,6 @@ export default function LoginPage() {
         <p className="login-signup">
           계정이 없으신가요? <Link href="/signup">회원가입</Link>
         </p>
-        {error && <p className="auth-error">{error}</p>}
         {find && <FindModal kind={find} onKind={setFind} onClose={() => setFind(null)} />}
       </section>
     </main>

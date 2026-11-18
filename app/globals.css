@@ -323,3 +323,13 @@ html[data-theme="dark"] .af-terms-body, html[data-theme="dark"] .af-dialog-text,
 .login-signup a { margin-left:6px; color:#344d7d; font-weight:700; }
 html[data-theme="dark"] .login-links button { border-color:var(--c-line-strong); }
 html[data-theme="dark"] .login-signup a { color:var(--c-accent); }
+
+/* 로그인: 비밀번호 아래 안내 한 줄 (칸은 늘 잡아 두어 로그인 버튼이 밀리지 않게), 틀리면 비밀번호 밑줄 빨강 */
+.login-panel .login-error { min-height:20px; margin:12px 0 0; overflow:hidden; color:#e03131; font-size:13px; line-height:20px; white-space:nowrap; text-overflow:ellipsis; }
+.login-panel .login-submit { margin-top:24px; }
+.login-panel form.has-error label:has(input[autocomplete="current-password"]) { border-bottom:2px solid #e03131; }
+/* 비밀번호 보기 버튼 (입력했을 때만) */
+.login-panel .login-eye { flex:none; display:grid; place-items:center; width:36px; height:36px; margin:0 0 4px 6px; padding:0; border:0; border-radius:8px; background:none; color:#1b2a44; cursor:pointer; }
+.login-panel .login-eye:hover { background:#f0f3f8; }
+html[data-theme="dark"] .login-panel .login-eye { color:var(--c-ink); }
+html[data-theme="dark"] .login-panel .login-eye:hover { background:var(--c-subtle); }
