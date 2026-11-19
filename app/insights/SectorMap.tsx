@@ -126,6 +126,18 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
   const data = maps[market] ?? null;
   const error = data ? null : (errors[market] ?? null);
   const loading = !data && !error;
+  /** 서버가 아직 시세를 못 받아 업종이 하나도 없는 지도 (예전엔 칸 없이 빈 상자만 보였다) */
+  const empty = !!data && !data.sectors.length;
+  const retry = () => {
+    setMaps((prev) => ({ ...prev, [market]: undefined }));
+    setAttempt((n) => n + 1);
+  };
+  // 빈 지도면 30초마다 다시 물어본다 (서버는 실패하면 1분 쉬었다가 다시 받는다)
+  useEffect(() => {
+    if (!empty) return;
+    const t = setInterval(() => !document.hidden && setAttempt((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, [empty, market]);
   useEffect(() => {
     onData?.(data);
   }, [data, onData]);
@@ -197,7 +209,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
               ← 전체 업종
             </button>
           ) : null}
-          {data && (
+          {data && !empty && (
             <span className="ins-meta">
               {data.marketOpen
                 ? `${us ? "정규장" : data.session === "pre" ? "프리마켓(NXT)" : data.session === "after" ? "애프터마켓(NXT)" : "정규장"} · ${now - Date.parse(data.asOf) > 60_000 ? "갱신 중" : "실시간"}`
@@ -236,6 +248,14 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
           <div className="ins-state">
             <span className="ins-spinner" aria-hidden />
             <p>{us ? "미국 시세를 처음 불러오는 중 (1분쯤)" : "업종 시세를 불러오는 중"}</p>
+          </div>
+        ) : empty ? (
+          <div className="ins-state" role="status">
+            <p>{us ? "미국 시세를 아직 받지 못했어요" : "업종 시세를 아직 받지 못했어요"}</p>
+            <p className="ins-state-sub">잠시 뒤 저절로 다시 불러와요</p>
+            <button type="button" onClick={retry}>
+              다시 시도
+            </button>
           </div>
         ) : (
           layout.map(({ sector, rect, cells, groups }) => (
