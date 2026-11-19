@@ -9,7 +9,7 @@ import { rememberListUrl } from "../../lib/market-list";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
-import { FavButton, Pager, Range2, Spark } from "./parts";
+import { CartLink, FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
@@ -26,10 +26,11 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "ret", label: "수익률순" },
   { key: "price", label: "가격순" },
 ];
-const SORT_ALL: Sort[] = SORTS.flatMap((s) => [s.key, `${s.key}-asc` as Sort]);
+// 추천 · 인기 · 수익률은 높은 순만 (뒤집어 볼 일이 거의 없음), 가격만 낮은 순 · 높은 순 둘 다
+const SORT_ALL: Sort[] = ["rec", "pop", "ret", "price-asc", "price"];
 const sortKey = (s: Sort) => s.replace(/-asc$/, "") as SortKey;
 const sortAsc = (s: Sort) => s.endsWith("-asc");
-const sortLabel = (s: Sort) => `${SORTS.find((x) => x.key === sortKey(s))!.label} ${sortAsc(s) ? "↑" : "↓"}`;
+const sortLabel = (s: Sort) => (s === "price-asc" ? "가격 낮은 순" : s === "price" ? "가격 높은 순" : SORTS.find((x) => x.key === sortKey(s))!.label);
 type Filter = { mdd: [number, number]; ret: [number, number]; price: [number, number]; types: string[]; markets: string[] };
 const NO_FILTER: Filter = { mdd: [0, 100], ret: [-100, 100], price: [0, 50000], types: [], markets: [] };
 const PER_PAGE = 8;
@@ -53,7 +54,7 @@ function readState(sp: URLSearchParams): ListState {
   return {
     query: sp.get("q") ?? "",
     period: period && PERIODS.some((p) => p.key === period) ? period : "3m",
-    sort: sort && SORT_ALL.includes(sort) ? sort : (sort as string | null) === "like" ? "pop" : "rec",
+    sort: sort && SORT_ALL.includes(sort) ? sort : sort && SORT_ALL.includes(sortKey(sort)) ? sortKey(sort) : (sort as string | null) === "like" ? "pop" : "rec",
     filter: {
       mdd: range(sp.get("mdd"), NO_FILTER.mdd),
       ret: range(sp.get("ret"), NO_FILTER.ret),
@@ -188,13 +189,13 @@ function MarketplaceList() {
           <div className="mk-periods" role="radiogroup" aria-label="수익률 기간">
             <span>수익률(%)</span>
             {PERIODS.map((p) => (
-              <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })}>
+              <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })} title={p.key === "all" ? "트레이더마다 첫 기록 달부터 지금까지" : undefined}>
                 {p.label}
               </button>
             ))}
           </div>
           <div className="mk-tools">
-            {/* 정렬: 드롭다운 (4가지 × 높은순 ↓ · 낮은순 ↑) */}
+            {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 가격 낮은/높은 순) */}
             <div className="mk-sortdd" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSortOpen(false)}>
               <button type="button" className="mk-sortdd-btn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
                 {sortLabel(sort)} ▾
@@ -202,7 +203,7 @@ function MarketplaceList() {
               {sortOpen && (
                 <ul className="mk-sortdd-list" role="listbox" aria-label="정렬">
                   {SORT_ALL.map((k, i) => (
-                    <li key={k} className={i % 2 === 0 && i > 0 ? "sep" : ""}>
+                    <li key={k} className={i === 3 ? "sep" : ""}>
                       <button type="button" role="option" aria-selected={sort === k} className={sort === k ? "on" : ""} onClick={() => (update({ sort: k, page: 1 }), setSortOpen(false))}>
                         {sortLabel(k)} {sort === k && <span aria-hidden>✓</span>}
                       </button>
@@ -211,6 +212,7 @@ function MarketplaceList() {
                 </ul>
               )}
             </div>
+            <CartLink />
             <button type="button" className={`mk-filter-btn${nFilter ? " on" : ""}`} onClick={() => setOpen(true)} aria-label={nFilter ? `필터 ${nFilter}개 적용됨` : "필터"}>
               <SlidersHorizontal size={15} aria-hidden />
               필터
@@ -218,6 +220,7 @@ function MarketplaceList() {
             </button>
           </div>
         </div>
+        {period === "all" && <p className="mk-period-hint">전체 = 트레이더마다 첫 기록 달부터 {asOf}까지. 카드에 각 트레이더의 기간을 적어 뒀어요.</p>}
 
         {!shown.length ? (
           <p className="mk-card mk-empty">조건에 맞는 트레이더가 없어요. 검색어나 필터를 바꿔 보세요.</p>
@@ -229,7 +232,7 @@ function MarketplaceList() {
                   <div className="mk-tcard-who">
                     <small>{t.tagline}</small>
                     <strong>
-                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart">♥ {likeTotals[t.id] ?? t.likes}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart">♥ {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
                     </strong>
                     <p>{t.intro}</p>
                   </div>
@@ -242,7 +245,10 @@ function MarketplaceList() {
                     <b>{t.follow}%</b>
                   </div>
                   <div className="mk-tcard-stat">
-                    <small>{periodLabel} 수익률</small>
+                    <small>
+                      {periodLabel} 수익률
+                      {period === "all" && t.monthly.length > 0 && <em className="mk-span">{spanOf(t)}</em>}
+                    </small>
                     {oneStock(t, period) ? (
                       <b title="이 기간엔 매매가 없거나 한 종목만 매매해 수익률을 비교하지 않아요">-</b>
                     ) : (
@@ -293,9 +299,9 @@ function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; i
         </div>
         <span className="mk-range-label">정렬</span>
         <div className="mk-seg">
-          {SORTS.map((s) => (
-            <button key={s.key} type="button" className={sortKey(sort) === s.key ? "on" : ""} onClick={() => setSort(s.key)}>
-              {s.label}
+          {SORT_ALL.map((k) => (
+            <button key={k} type="button" className={sort === k ? "on" : ""} onClick={() => setSort(k)}>
+              {sortLabel(k)}
             </button>
           ))}
         </div>
@@ -355,4 +361,10 @@ function similarity(me: Investment, t: Trader) {
   const marketHit = (me.market.includes("국내") && t.market === "국내 주식") || ((me.market.includes("미국") || me.market.includes("해외")) && t.market === "해외 주식") ? 1 : 0;
   const periodHit = (me.period.includes("단기") && t.type === "단기 매매") || (me.period.includes("중기") && t.type === "스윙") || (me.period.includes("장기") && t.type === "추세 추종") ? 1 : 0;
   return common(me.styles, t.styles) * 2 + common(me.indicators, t.indicators) + marketHit * 2 + periodHit;
+}
+
+/** 전체 기간: 첫 기록 달 ~ 마지막 달 (예: 24.12 ~ 26.11) */
+function spanOf(t: Trader) {
+  const ym = (m: string) => `${m.slice(2, 4)}.${m.slice(5, 7)}`;
+  return `${ym(t.monthly[0].month)} ~ ${ym(t.monthly[t.monthly.length - 1].month)}`;
 }

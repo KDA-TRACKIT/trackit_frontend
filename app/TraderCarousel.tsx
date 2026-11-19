@@ -16,7 +16,7 @@ export default function TraderCarousel() {
   const BOARD = TRADERS.filter(listed).sort((a, b) => {
     if (order === "이행률 높은 순") return b.follow - a.follow || b.returns["1m"] - a.returns["1m"];
     if (order === "최근 활동") return (strategiesOf(b)[0]?.month ?? "").localeCompare(strategiesOf(a)[0]?.month ?? "") || b.returns["1m"] - a.returns["1m"];
-    return (likeTotals[b.id] ?? b.likes) - (likeTotals[a.id] ?? a.likes) || b.returns["1m"] - a.returns["1m"];
+    return (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || b.returns["1m"] - a.returns["1m"];
   }).slice(0, 10);
   const track = useRef<HTMLUListElement>(null);
   const target = useRef<number | null>(null);
@@ -72,7 +72,7 @@ export default function TraderCarousel() {
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <p className="home-trader-return-label">한 달 수익률</p>
               <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
-              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><Heart size={11} fill="currentColor" aria-label="좋아요" /> {likeTotals[t.id] ?? t.likes}</span></div>
+              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><Heart size={11} fill="currentColor" aria-label="좋아요" /> {likeTotals[t.id] ?? 0}</span></div>
             </Link>
           </li>
         ))}

@@ -6,7 +6,7 @@ import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
-import { FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
+import { CartButton, FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
 import { GradeBadge } from "../GradeParts";
 import { unusedPasses, usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
@@ -91,8 +91,8 @@ export default function TraderPage() {
               <PassBuyBox trader={t} notify={notify} />
             ) : (
               <p className="mk-stopped">
-                {t.grade?.unrated
-                  ? "아직 판매 등급이 없어 열람권을 팔 수 없어요. 등급을 받으면 판매가 열려요."
+                {!t.grade || t.grade.unrated
+                  ? "아직 판매 등급이 없어 전략 쇼핑에 올라가지 않았어요. 가입 3개월 뒤 비즈니스 계정으로 바꾸고 등급을 받으면 판매가 열려요."
                   : !listed(t)
                     ? "일반 계정으로 바뀌어 전략 쇼핑에서 내려간 트레이더예요. 이미 산 전략은 계속 볼 수 있어요."
                     : `판매 등급이 ${t.grade?.grade}라 새 열람권 판매가 멈췄어요. 이미 산 전략은 계속 볼 수 있어요.`}
@@ -150,7 +150,10 @@ export default function TraderPage() {
                   <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
                 </div>
                 <strong>{won(s.price)}</strong>
-                <StrategyButton trader={t} strategy={s} className="mk-soft" notify={notify} />
+                <div className="mk-buyrow">
+                  <CartButton trader={t} strategy={s} />
+                  <StrategyButton trader={t} strategy={s} className="mk-soft" notify={notify} />
+                </div>
               </article>
             ))}
           </div>

@@ -88,7 +88,8 @@ export default function WorkshopPage() {
   const watch = useWatchlist();
   const typed = query.trim() !== "";
   /** 검색칸이 비었으면 관심 종목, 아니면 검색 결과 (관심 종목이 없으면 검색 결과 그대로) */
-  const shownResults: SymbolInfo[] = !typed && watch.items.length ? watch.items.map((w) => ({ code: w.code, name: w.name, market: w.market, exchange: w.exchange })) : results;
+  // 검색어가 없으면 관심 종목만 (없으면 아무것도 안 보임), 입력하면 검색 결과
+  const shownResults: SymbolInfo[] = !typed ? watch.items.map((w) => ({ code: w.code, name: w.name, market: w.market, exchange: w.exchange })) : results;
   const toggleWatch = (item: SymbolInfo) =>
     void (watch.has(item.code) ? watch.remove(item.code) : watch.add({ code: item.code, name: item.name, market: item.market, ...(item.exchange ? { exchange: item.exchange } : {}) }));
 

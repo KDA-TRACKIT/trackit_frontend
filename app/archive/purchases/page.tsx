@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { apiRequest } from "../../../lib/api/client";
 import { usePasses } from "../../../lib/purchases";
+import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
 import "../../marketplace/marketplace.css";
@@ -28,6 +29,7 @@ const STATUS: Record<string, string> = { PAID: "결제 완료", PENDING: "결제
 
 export default function PurchasesPage() {
   const passes = usePasses();
+  const likeTotals = useLikeTotals();
   const [server, setServer] = useState<ServerPurchase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +91,7 @@ export default function PurchasesPage() {
                       <div className="ar-trader-who">
                         <small>{g.t?.tagline}</small>
                         <strong>
-                          {g.name} {g.t && <span className="ar-heart">♥ {g.t.likes}</span>}
+                          {g.name} {g.t && <span className="ar-heart">♥ {likeTotals[g.t.id] ?? 0}</span>}
                         </strong>
                         <p>{g.t?.intro}</p>
                       </div>

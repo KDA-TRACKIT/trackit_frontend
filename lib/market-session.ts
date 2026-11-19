@@ -3,7 +3,9 @@
 //   08:00~08:50 프리마켓 · 08:50~09:00 시가 동시호가 · 09:00~15:20 장 열림
 //   15:20~15:30 종가 동시호가 · 15:30~20:00 애프터마켓 · 그 밖 장 마감 · 주말 휴장
 // 공휴일은 모른다 (그날은 시세가 안 바뀌므로 화면엔 큰 문제 없음)
+// 수능일 · 새해 첫 거래일처럼 늦게 여는 날은 lib/krx-hours 표대로 (수능일은 프리마켓부터 전부 1시간 밀림)
 import { useEffect, useState } from "react";
+import { krxHours } from "./krx-hours";
 
 export type MarketPhase = "pre" | "auction-open" | "open" | "auction-close" | "after" | "closed" | "holiday";
 
@@ -25,11 +27,12 @@ export function marketPhase(now = new Date()): MarketPhase {
   const dow = kst.getUTCDay();
   if (dow === 0 || dow === 6) return "holiday";
   const m = kst.getUTCHours() * 60 + kst.getUTCMinutes();
-  if (m < 8 * 60) return "closed";
-  if (m < 8 * 60 + 50) return "pre";
-  if (m < 9 * 60) return "auction-open";
-  if (m < 15 * 60 + 20) return "open";
-  if (m < 15 * 60 + 30) return "auction-close";
+  const h = krxHours(now);
+  if (m < 8 * 60 + h.shift) return "closed";
+  if (m < h.open - 10) return "pre";
+  if (m < h.open) return "auction-open";
+  if (m < h.close - 10) return "open";
+  if (m < h.close) return "auction-close";
   if (m < 20 * 60) return "after";
   return "closed";
 }

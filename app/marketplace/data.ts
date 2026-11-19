@@ -339,11 +339,15 @@ export function screen(t: Trader): Screening {
   return { verified: checks.every((c) => c.ok), checks };
 }
 export const isVerified = (t: Trader) => screen(t).verified;
-/** 비즈니스 → 일반 계정으로 바뀐 트레이더(F 3개월)는 전략 쇼핑 목록 · 비슷한 트레이더 · 홈 보드에서 뺀다 (이미 산 전략은 계속 열람) */
-export const listed = (t: Trader) => !(t.grade && !t.grade.unrated && t.grade.grade === "일반");
+/**
+ * 전략 쇼핑 목록 · 비슷한 트레이더 · 홈 보드에 보이는 트레이더 (주소로 들어오면 상세는 열림, 이미 산 전략은 계속 열람)
+ *   - 판매 등급을 아직 못 받았으면 안 보임: 가입 후 3개월이 지나야 비즈니스 계정으로 바꿀 수 있고, 등급(D 이상)을 받아야 판매가 열림
+ *   - 비즈니스 → 일반 계정으로 바뀐 트레이더(F 3개월)도 안 보임
+ */
+export const listed = (t: Trader) => !!t.grade && !t.grade.unrated && t.grade.grade !== "일반";
 
-/** 등급이 F · 일반이면 신규 판매 안 함 (열람권 구매 불가) */
-export const sellable = (t: Trader) => !t.grade || (t.grade.grade !== "F" && t.grade.grade !== "일반");
+/** 등급을 받았고 F · 일반이 아니어야 신규 판매 (열람권 구매 가능) */
+export const sellable = (t: Trader) => !!t.grade && !t.grade.unrated && t.grade.grade !== "F" && t.grade.grade !== "일반";
 export const traderById = (id: string) => TRADERS.find((t) => t.id === id);
 
 const TITLES: [string, string][] = [

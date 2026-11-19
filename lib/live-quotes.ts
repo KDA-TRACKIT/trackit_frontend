@@ -7,6 +7,7 @@
 //   - 탭이 안 보이면 멈추고, 다시 보이면 바로 받음
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { getQuotes, type Quote } from "./api/insights";
+import { krxHours } from "./krx-hours";
 
 type Entry = Quote & { at: number };
 
@@ -29,7 +30,8 @@ const kstMinutes = (offsetH: number) => {
 /** 한국 정규장 */
 export function krOpen() {
   const { dow, m } = kstMinutes(9);
-  return dow >= 1 && dow <= 5 && m >= 9 * 60 && m < 15 * 60 + 30;
+  const h = krxHours(); // 수능일 등 늦게 여는 날
+  return dow >= 1 && dow <= 5 && m >= h.open && m < h.close;
 }
 /** 미국 정규장 (뉴욕 09:30~16:00, 서머타임은 대략 3~11월로) */
 export function usOpen() {

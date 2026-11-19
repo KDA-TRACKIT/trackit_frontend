@@ -1199,8 +1199,9 @@ details.ws-ladder { padding:10px 12px; }
 .algo-signals li.algo-note { display:block; white-space:nowrap; }
 /* 종목 검색: 맨 앞 ☆ 로 관심 종목 넣고 빼기 (증시 캘린더 관심 종목과 같은 목록), 빈 칸이면 관심 종목 먼저 */
 .ws-search-list .ws-search-item { display:flex; align-items:center; }
-.ws-search-list .ws-search-item > button[role="option"] { flex:1; padding-left:4px; }
-.ws-search-list button.ws-search-star { display:grid; flex:none; width:34px; height:34px; padding:0; place-items:center; color:#b3bac6; font-size:16px; line-height:1; }
+.ws-search-list .ws-search-item > button[role="option"] { flex:1; padding-left:6px; }
+/* 별: 줄 버튼의 3칸 grid(64px 1fr auto)를 물려받지 않게 한 칸으로, 왼쪽 여백 · 코드와 간격 */
+.ws-search-list button.ws-search-star { display:grid; grid-template-columns:none; flex:none; width:32px; height:32px; margin-left:8px; padding:0; place-items:center; border-radius:6px; color:#b3bac6; font-size:16px; line-height:1; }
 .ws-search-list button.ws-search-star.on { color:#f2b01e; }
 .ws-search-list button.ws-search-star:hover { background:var(--ws-active); color:#f2b01e; }
 .ws-search-head { padding:8px 14px 4px; color:var(--ws-muted); font-size:11px; font-weight:700; }
