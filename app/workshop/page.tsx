@@ -25,7 +25,7 @@ import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanCo
 import { autoFillPlan, consolidateStrategy, strategyKind } from "../../lib/strategyText";
 import { buildLadder, noteLines, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
-import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
+import { accumulate, currentRecords, lineChange, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -353,6 +353,17 @@ export default function WorkshopPage() {
   // 종목 전략 정리본: 쌓인 전략(투자자가 쓴 문장만) + 이번 Memo. 다시 쓴 칸만 바꾸고 나머지는 이어받음 (규칙, AI 가 말을 바꾸지 않게)
   const merged = consolidateStrategy(strategyRecords.map((r) => memoText(r.text)), noteText);
   const consolidating = strategyRecords.length > 0 && !!merged.text;
+  /**
+   * 바뀐 게 없는지: 정리본 문장(매수 · 매도 · 손절 · 목표 · 메모)이 지금까지와 같고, 그은 선도 새로 긋거나 옮긴 게 없으면
+   *   현재가 · AI 분석만 다른 것 → 새 종목 전략 버전을 쌓지 않음 (2026-11-19)
+   */
+  const unchanged = (lines: NoteLine[]) => {
+    if (!strategyRecords.length) return false;
+    const before = consolidateStrategy(strategyRecords.map((r) => memoText(r.text)), "").text;
+    if (merged.text.replace(/\s/g, "") !== before.replace(/\s/g, "")) return false;
+    const prev = new Map(accumulate(strategyRecords).map((l) => [l.key, l]));
+    return lines.every((l) => lineChange(prev.get(l.key), l) === "same");
+  };
   /** 매매 계획: 그은 선에서 고른 매매 + Memo 문장, 빈 칸(손절 · 목표 · 매도)은 정한 가격 기준으로 그은 선에서 채움 */
   const fullPlan = () => {
     const { rungs, groups } = buildLadder(drawings, bars[bars.length - 1]?.time, bars);
@@ -852,6 +863,7 @@ ${t}` : t))}
                   ai={aiMemoResult}
                   records={strategyRecords}
                   consolidating={consolidating}
+                  unchanged={unchanged(review.lines)}
                   planRows={planRows()}
                   current={today?.close ? money(today.close) : undefined}
                   dropped={consolidating ? merged.dropped : []}

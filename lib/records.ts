@@ -33,6 +33,8 @@ export type TradeRecord = {
   replaces?: string;
   /** 종목 전략 정리본이면 합친 예전 메모 id 들 (화면엔 정리본 하나만 보임) */
   consolidates?: string[];
+  /** 노트 종류: 일반 · 전략(아직 매매 없음) · 매매 노트 (이후 관련 매매가 생긴 전략 노트) */
+  noteType?: "general" | "strategy" | "trade";
 };
 
 /** 종목 없는 메모의 주제 */
@@ -96,6 +98,7 @@ function fromServer(): Promise<TradeRecord[]> {
           ...(Array.isArray(s.lines) ? { lines: s.lines } : {}),
           ...(s.target ? { target: s.target } : {}),
           ...(s.replaces ? { replaces: s.replaces } : {}),
+          ...(n.noteType ? { noteType: n.noteType } : {}),
           ...(Array.isArray(s.consolidates) ? { consolidates: s.consolidates.filter((x: unknown): x is string => typeof x === "string") } : {}),
         } satisfies TradeRecord;
       }),
@@ -271,4 +274,6 @@ export function dateLabel(date: string) {
  *   - 빠른 메모로 종목을 골랐을 때 붙던 출처 · 등락 ([전기/전자 0.00%] · [오늘의 종목 · …] · [뉴스]) — 지금은 안 붙임
  */
 // 예전에 저장된 메모의 '[AI 정리]' 머리표는 보여 줄 때 뺌
-export const memoText = (t: string) => t.replace(/^\[관찰 메모\]\s*/, "").replace(/^\[AI 정리\]\s*/gm, "").replace(/^\[(?:[^\]]*?[+\-−]?\d+(?:\.\d+)?%|오늘의 종목[^\]]*|뉴스)\]\s*/, "");
+// 예전 노트에 자동으로 붙던 계획 줄([노트 종류] 매매 계획 · [매수 조건] … · [목표] …)은 투자자가 적은 게 아니라 보여 줄 때 뺌 (2026-11-19)
+const AUTO_PLAN_LINE = /^\[(?:노트 종류|방향|진입 근거|매수 조건|현재 판단|변경 사유|손절 기준|목표|비중|기준값|기한|계획 대비 차이|원인|다음에 바꿀 점)\][^\n]*(?:\n|$)/gm;
+export const memoText = (t: string) => t.replace(AUTO_PLAN_LINE, "").replace(/\n{3,}/g, "\n\n").trim().replace(/^\[관찰 메모\]\s*/, "").replace(/^\[AI 정리\]\s*/gm, "").replace(/^\[(?:[^\]]*?[+\-−]?\d+(?:\.\d+)?%|오늘의 종목[^\]]*|뉴스)\]\s*/, "");

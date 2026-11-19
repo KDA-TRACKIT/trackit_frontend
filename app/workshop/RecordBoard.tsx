@@ -91,6 +91,8 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
             <div key={r.id} className="ws-strat-row">
               <time>
                 {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
+                {/* 전략 노트 뒤에 관련 매매가 생겨 매매 노트가 된 것만 표시 */}
+                {r.noteType === "trade" && <em className="ws-strat-trade" title="이 전략대로 매매가 있었어요 (같은 종목 · 같은 방향 · 노트 뒤 매매)">매매 노트</em>}
               </time>
               {editing?.id === r.id ? (
                 <div className="ws-strat-edit">

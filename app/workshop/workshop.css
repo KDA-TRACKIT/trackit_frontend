@@ -1388,3 +1388,6 @@ details.ws-ladder { padding:10px 12px; }
 .ws-review-plan li { grid-template-columns:44px minmax(0,1fr) auto; align-items:center; }
 .ws-review-plan-x { width:22px; height:22px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-faint); font-size:12px; cursor:pointer; }
 .ws-review-plan-x:hover { background:var(--c-hover, rgba(0,0,0,.05)); color:var(--c-down, #e03131); }
+
+/* 종목 전략: 매매 노트 표시 (전략 노트 뒤 관련 매매가 생긴 것) */
+.ws-strat-trade { display:block; width:fit-content; margin-top:3px; padding:1px 7px; border-radius:6px; background:var(--c-ok-soft); color:var(--c-ok); font-size:11.5px; font-style:normal; font-weight:700; }

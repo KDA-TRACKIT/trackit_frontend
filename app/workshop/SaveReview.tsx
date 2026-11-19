@@ -58,6 +58,7 @@ export default function SaveReview({
   ai,
   records,
   consolidating = false,
+  unchanged = false,
   planRows = [],
   current,
   dropped = [],
@@ -79,6 +80,8 @@ export default function SaveReview({
   records: TradeRecord[];
   /** 이번 저장이 AI 가 쌓인 전략과 합친 정리본 → 예전 메모는 따로 안 보이고 정리본 하나로 */
   consolidating?: boolean;
+  /** 지금까지 종목 전략과 문장 · 선이 그대로 (현재가 · AI 분석만 다름) → 확정 막음. 창에서 고치면 풀림 */
+  unchanged?: boolean;
   /** 매매 계획 4칸 (매수 · 매도 · 손절 · 목표). 빈 칸을 그은 선으로 채운 건 '(자동 …)' 표시 */
   planRows?: { label: string; text: string }[];
   /** 저장할 때의 현재가 (글로) */
@@ -101,6 +104,8 @@ export default function SaveReview({
   // 매매 계획 4칸 (자동으로 채운 칸도 눌러서 고침). 고치면 아래 종목 전략의 '- 매수: …' 줄도 같이 바뀜
   const [plan, setPlan] = useState(planRows);
   const [planEditing, setPlanEditing] = useState<string | null>(null);
+  // 창에서 종목 전략 · 계획을 고쳤는지 (고쳤으면 '바뀐 게 없음' 이어도 저장 가능)
+  const [initialPending] = useState(() => planRows.reduce((t, r) => withPlanLine(t, r.label, r.text), pending.text));
   const textOf = (id: string, original: string) => (id === PENDING ? pendingText : (recEdits[id] ?? original));
   const setText = (id: string, original: string, t: string) =>
     id === PENDING
@@ -288,12 +293,15 @@ export default function SaveReview({
             <b>확정하면 DB에 저장되고, 이 버전은 수정 · 삭제할 수 없어요.</b> 고칠 땐 새 버전으로 남고 예전 버전도 그대로 기록돼요.
             {!linked && " 연결된 체결이 없어 검증 대기로 저장돼요."}
           </p>
-          {error && <p className="ws-review-error">{error}</p>}
+          {unchanged && pendingText === initialPending && !Object.keys(recEdits).length && (
+            <p className="ws-review-error">종목 전략이 바뀌지 않았어요 (현재가 · AI 분석만 달라짐). 매수 · 손절 · 목표나 선을 바꿨을 때 저장돼요.</p>
+          )}
+                    {error && <p className="ws-review-error">{error}</p>}
           <div>
             <button type="button" onClick={onCancel} disabled={busy}>
               취소
             </button>
-            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: pendingText.trim(), records: recEdits, plan })} disabled={busy}>
+            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: pendingText.trim(), records: recEdits, plan })} disabled={busy || (unchanged && pendingText === initialPending && !Object.keys(recEdits).length)}>
               {busy ? "저장 중…" : "확정"}
             </button>
           </div>
