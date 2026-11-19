@@ -47,7 +47,7 @@ export function checkPlan(plan: Plan, text: string, ctx: CheckContext = {}) {
 
   if (plan.kind === "trade") {
     items = [
-      { key: "entry", label: "진입 근거", ok: t(plan.entry) || t(text), value: plan.entry || (t(text) ? "메모에 있음" : "") },
+      { key: "entry", label: "진입 근거", ok: t(plan.entry) || t(text), value: plan.entry || (t(text) ? "노트에 있음" : "") },
       { key: "condition", label: "진입 조건 · 가격", ok: t(plan.condition), value: plan.condition },
       { key: "stop", label: "손절", ok: t(plan.stop), value: plan.stop },
       { key: "target", label: "목표 · 청산", ok: t(plan.target), value: plan.target },

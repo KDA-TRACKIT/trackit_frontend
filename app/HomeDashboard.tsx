@@ -111,8 +111,8 @@ export default function HomeDashboard() {
             </Link>
           </div>
           <div className="home-week-memos">
-            <h2>이번 주 메모</h2>
-            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={workshopLink(record.symbol, record.symbolName, record.date)}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 메모가 없습니다.</p>}
+            <h2>이번 주 노트</h2>
+            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={workshopLink(record.symbol, record.symbolName, record.date)}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 노트가 없습니다.</p>}
           </div>
         </div>
       </section>

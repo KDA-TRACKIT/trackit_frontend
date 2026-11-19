@@ -133,7 +133,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
 
   if (pos.hidden) {
     return (
-      <button type="button" className="qm-restore" onClick={() => save({ ...pos, hidden: false })} aria-label="빠른 메모 다시 꺼내기" title="빠른 메모 다시 꺼내기">
+      <button type="button" className="qm-restore" onClick={() => save({ ...pos, hidden: false })} aria-label="빠른 노트 다시 꺼내기" title="빠른 노트 다시 꺼내기">
         <Pencil size={15} aria-hidden />
       </button>
     );
@@ -179,7 +179,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
       ? {
           ...(stock.code !== memoSymbol ? { target: { code: stock.code, name: stock.name } } : {}),
           ...(p > 0
-            ? { lines: [{ key: `memo:${uuid()}`, price: p, label: side ? `메모 ${side}` : "메모 가격", role: side === "매수" ? ("SUPPORT" as const) : side === "매도" ? ("RESISTANCE" as const) : null, auto: false, trade: side }] }
+            ? { lines: [{ key: `memo:${uuid()}`, price: p, label: side ? `노트 ${side}` : "노트 가격", role: side === "매수" ? ("SUPPORT" as const) : side === "매도" ? ("RESISTANCE" as const) : null, auto: false, trade: side }] }
             : {}),
         }
       : {};
@@ -218,9 +218,9 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
           onPointerMove={onMove}
           onPointerUp={onUp}
           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setOpen((o) => !o))}
-          aria-label={open ? "빠른 메모 닫기" : "빠른 메모 열기"}
+          aria-label={open ? "빠른 노트 닫기" : "빠른 노트 열기"}
           aria-expanded={open}
-          title="빠른 메모 (끌어서 옮기기)"
+          title="빠른 노트 (끌어서 옮기기)"
         >
           {open ? (
             <X size={22} aria-hidden />
@@ -230,29 +230,29 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
           )}
         </button>
         {!open && (
-          <button type="button" className="qm-hide" onClick={() => save({ ...pos, hidden: true })} aria-label="빠른 메모 숨기기" title="숨기기 (오른쪽 끝 탭으로 다시 꺼내요)">
+          <button type="button" className="qm-hide" onClick={() => save({ ...pos, hidden: true })} aria-label="빠른 노트 숨기기" title="숨기기 (오른쪽 끝 탭으로 다시 꺼내요)">
             ×
           </button>
         )}
       </div>
 
       {open && (
-        <div ref={panelRef} className="qm-panel" style={panelStyle} role="dialog" aria-label="빠른 메모">
+        <div ref={panelRef} className="qm-panel" style={panelStyle} role="dialog" aria-label="빠른 노트">
           <div className="qm-head">
-            <strong>빠른 메모</strong>
-            <Link href="/archive/memos">기록 보기 ›</Link>
+            <strong>빠른 노트</strong>
+            <Link href="/archive/notes">기록 보기 ›</Link>
           </div>
 
           <div className="qm-target">
             {target ? (
               <span className="qm-chip">
                 {targetLabel(target)}
-                <button type="button" onClick={() => setTarget(base?.kind === "stock" && target.kind !== "stock" ? base : null)} aria-label="메모 대상 지우기">
+                <button type="button" onClick={() => setTarget(base?.kind === "stock" && target.kind !== "stock" ? base : null)} aria-label="노트 대상 지우기">
                   ×
                 </button>
               </span>
             ) : (
-              <div className="qm-topics" role="radiogroup" aria-label="메모 주제">
+              <div className="qm-topics" role="radiogroup" aria-label="노트 주제">
                 {TOPICS.map((t) => (
                   <button key={t} type="button" role="radio" aria-checked={topic === t} className={topic === t ? "on" : ""} onClick={() => setTopic(t)}>
                     {t}
@@ -260,7 +260,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
                 ))}
               </div>
             )}
-            {pickable && <p className="qm-hint">화면에서 지수 · 종목 · 업종 · 뉴스 · 경제 지표 · 공시를 누르면 그 항목에 대한 메모가 돼요</p>}
+            {pickable && <p className="qm-hint">화면에서 지수 · 종목 · 업종 · 뉴스 · 경제 지표 · 공시를 누르면 그 항목에 대한 노트가 돼요</p>}
           </div>
 
           <textarea
@@ -271,7 +271,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
             rows={4}
             autoFocus
             placeholder={target ? `${target.kind === "stock" ? target.name : target.label}에 대한 생각` : "지금 든 생각을 남겨 두세요"}
-            aria-label="메모"
+            aria-label="노트"
           />
           <div className="qm-quant" aria-label="정량 전략">
             {stock ? (

@@ -49,7 +49,7 @@ function recordItem(r: TradeRecord): Item {
   const kind: ItemKind = k === "thought" ? (r.topic === "뉴스" ? "news" : "note") : r.drawings ? "chart" : "journal";
   const lines = r.text.trim().split(/\n+/);
   const first = (lines[0] ?? "").replace(/^\[[^\]]+\]\s*/, "");
-  const title = first.length > 34 ? `${first.slice(0, 34)}…` : first || (r.symbolName ?? r.topic ?? "메모");
+  const title = first.length > 34 ? `${first.slice(0, 34)}…` : first || (r.symbolName ?? r.topic ?? "노트");
   const side = sideOf(r.side);
   const sub =
     kind === "journal" || kind === "chart"

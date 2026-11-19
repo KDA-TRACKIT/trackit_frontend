@@ -1,6 +1,6 @@
 "use client";
-// 내 메모 상세의 '메모 그림': 그 종목 일봉(메모 날 앞 40 · 뒤 20 거래일) 위에
-//   메모 날 점 · 이어진 체결 화살표 · 메모에 그은 가격선(지지 초록 · 저항 빨강 · 나머지 보라)을 그림
+// 내 노트 상세의 '노트 그림': 그 종목 일봉(노트 날 앞 40 · 뒤 20 거래일) 위에
+//   노트 날 점 · 이어진 체결 화살표 · 노트에 그은 가격선(지지 초록 · 저항 빨강 · 나머지 보라)을 그림
 //   (Figma 시안은 분봉 + 작도 모양이지만, 기록에는 작도 모양 대신 가격선만 남아 있어 일봉 + 가격선으로 보여 줌)
 import { useEffect, useRef, useState } from "react";
 import { CandlestickSeries, ColorType, HistogramSeries, LineStyle, createChart, createSeriesMarkers, type SeriesMarker, type Time } from "lightweight-charts";
@@ -60,7 +60,7 @@ export default function MemoChart({ code, date, lines, side, color }: { code: st
 
     const markers: SeriesMarker<Time>[] = [];
     if (side) markers.push({ time: memoDay as Time, position: side === "매수" ? "belowBar" : "aboveBar", shape: side === "매수" ? "arrowUp" : "arrowDown", color: side === "매수" ? up : down, text: `${side} 체결` });
-    markers.push({ time: memoDay as Time, position: "inBar", shape: "circle", color, size: 1.3, text: "메모" });
+    markers.push({ time: memoDay as Time, position: "inBar", shape: "circle", color, size: 1.3, text: "노트" });
     createSeriesMarkers(candle, markers);
 
     for (const l of lines ?? []) {
@@ -75,7 +75,7 @@ export default function MemoChart({ code, date, lines, side, color }: { code: st
         title: l.label,
       });
     }
-    // 오른쪽에 봉 3개만큼 띄워 마지막 날(오늘) 메모 표시 · 글자가 잘리지 않게
+    // 오른쪽에 봉 3개만큼 띄워 마지막 날(오늘) 노트 표시 · 글자가 잘리지 않게
     chart.timeScale().setVisibleLogicalRange({ from: -0.5, to: view.length + 2.5 });
     return () => {
       unfixZoom();
@@ -86,5 +86,5 @@ export default function MemoChart({ code, date, lines, side, color }: { code: st
   if (!supported) return null;
   if (!bars) return <div className="mm-chart is-loading" aria-label="차트 불러오는 중" />;
   if (!bars.length) return <div className="mm-chart is-empty">이 종목은 지금 차트를 불러올 수 없어요.</div>;
-  return <div ref={el} className="mm-chart" role="img" aria-label="메모한 날 앞뒤 일봉과 메모에 그은 가격선" />;
+  return <div ref={el} className="mm-chart" role="img" aria-label="노트를 쓴 날 앞뒤 일봉과 노트에 그은 가격선" />;
 }

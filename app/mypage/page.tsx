@@ -57,7 +57,7 @@ export default function MyPage() {
               {num(trades.length, "회")}
             </div>
             <div>
-              <span>메모 개수</span>
+              <span>노트 개수</span>
               {num(records.length, "건")}
             </div>
             <div>
