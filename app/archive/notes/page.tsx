@@ -289,7 +289,7 @@ function SortSelect({ sort, onSort }: { sort: Sort; onSort: (s: Sort) => void })
     <span className="mm-sort">
       <select value={sort} onChange={(e) => onSort(e.target.value as Sort)} aria-label="정렬">
         <option value="new">최신순</option>
-        <option value="old">오래된순</option>
+        <option value="old">과거순</option>
       </select>
       <ChevronDown size={12} aria-hidden="true" />
     </span>
