@@ -3,7 +3,7 @@
 //   트레이더마다 평균 월 수익률 · 수익 난 달 비율 · 가장 좋았던/나빴던 달 · 최대 낙폭 · 이행률, 연 달의 수익률은 평균과 비교
 //   월별 수익률은 전략 마켓 데이터(예시) 기준
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import SiteHeader from "../../SiteHeader";
 import { usePasses } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
@@ -22,16 +22,12 @@ type Row = {
   recent: { month: string; ret: number }[];
 };
 
-const WINDOWS = [
-  { key: 6, label: "최근 6개월" },
-  { key: 12, label: "최근 1년" },
-  { key: 24, label: "2년" },
-];
+/** 비교 기간: 최근 1년 고정 (기간 고르기는 뺌) */
+const MONTHS = 12;
 
 export default function AnalysisPage() {
   const passes = usePasses();
   const freeViews = useFreeViews();
-  const [months, setMonths] = useState(12);
 
   const rows: Row[] = useMemo(() => {
     const byTrader = new Map<string, { month: string; title: string }[]>();
@@ -41,7 +37,7 @@ export default function AnalysisPage() {
     return [...byTrader.entries()].flatMap(([id, opened]) => {
       const t = traderById(id);
       if (!t) return [];
-      const recent = t.monthly.slice(-months);
+      const recent = t.monthly.slice(-MONTHS);
       const rets = recent.map((m) => m.ret);
       const sorted = [...recent].sort((a, b) => b.ret - a.ret);
       return [
@@ -56,7 +52,7 @@ export default function AnalysisPage() {
         },
       ];
     });
-  }, [passes, freeViews, months]);
+  }, [passes, freeViews]);
 
   const maxAbs = Math.max(4, ...rows.flatMap((r) => r.recent.map((m) => Math.abs(m.ret))));
 
@@ -66,13 +62,6 @@ export default function AnalysisPage() {
       <div className="mk-wrap ar-wrap">
         <div className="ar-head">
           <h1 className="mk-title">전략 분석</h1>
-          <div className="mk-periods" role="radiogroup" aria-label="기간">
-            {WINDOWS.map((w) => (
-              <button key={w.key} type="button" role="radio" aria-checked={months === w.key} className={months === w.key ? "on" : ""} onClick={() => setMonths(w.key)}>
-                {w.label}
-              </button>
-            ))}
-          </div>
         </div>
         <p className="ar-summary">열람권으로 연 전략의 트레이더를 나란히 비교해요.</p>
 
@@ -128,7 +117,7 @@ export default function AnalysisPage() {
               <section key={r.t.id} className="mk-card an-card">
                 <div className="an-card-head">
                   <strong><GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /> {r.t.name}</strong>
-                  <small>월별 수익률 · {WINDOWS.find((w) => w.key === months)?.label}</small>
+                  <small>월별 수익률 · 최근 1년</small>
                 </div>
                 <div className="an-bars" role="img" aria-label={`${r.t.name} 월별 수익률`}>
                   {r.recent.map((m) => {

@@ -3,7 +3,7 @@
 //   - 끌어서 옮길 수 있고(위치는 이 브라우저에 기억), × 로 숨기면 화면 오른쪽 끝의 작은 탭으로 다시 꺼냄
 //   - 누르면 메모 창. 저장하면 트레이딩 로그의 기록(lib/records)으로 들어감 (로그인했으면 서버)
 //   - pickable: 창이 열려 있을 때 화면에서 data-memo 가 달린 항목(종목 · 지수 · 업종 · 뉴스 · 경제 지표 · 공시 …)을 누르면
-//     그 항목에 대한 메모가 됨 (그때는 원래 동작 — 차트 열기 · 링크 이동 — 대신 고르기만)
+//     그 항목에 대한 메모가 됨. 차트가 바뀌는 등 화면 안 동작은 같이 일어나고, 다른 화면으로 가는 링크만 막음
 //   - 종목 없는 메모(뉴스 · 경제 지표 · 공시 · 시장)는 정량 전략 칸(선택): 종목 · 매수/매도 · 가격 (2026-11-19 회의)
 //     예) 삼성전자 210,000원에 매도 → 그 종목 전략에 매도 가격선(저항)으로 쌓여 이행률 · 일관성 계산에 들어감
 import Link from "next/link";
@@ -16,7 +16,7 @@ import { uuid } from "../lib/uuid";
 import "./quick-memo.css";
 
 const KEY = "trackit:quick-memo";
-const TOPICS = ["시장 흐름", "거시경제", "공시", "뉴스", "업종·테마", "기타"];
+const TOPICS = ["시장 흐름", "거시경제", "공시", "뉴스", "업종·테마"];
 const SIZE = 56;
 const MARGIN = 16;
 type Saved = { x: number; y: number; hidden: boolean }; // x · y = 오른쪽 · 아래에서 떨어진 거리
@@ -38,10 +38,11 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   // 정량 전략 (종목 없는 메모만): 종목 · 매수/매도 · 가격
-  const [stock, setStock] = useState<SymbolInfo | null>(null);
+  // 정량 전략의 종목: 화면에서 종목을 고르면(메모 대상) 자동으로 채움. 직접 바꾸거나 지우면 그 대상에서만 그 값
+  const [stockPick, setStockPick] = useState<{ for: string; s: SymbolInfo | null } | null>(null);
   const [q, setQ] = useState("");
   const [found, setFound] = useState<SymbolInfo[]>([]);
-  const [side, setSide] = useState<"매수" | "매도">("매수");
+  const [side, setSide] = useState<"매수" | "매도" | null>(null);
   const [price, setPrice] = useState("");
   const drag = useRef<{ sx: number; sy: number; x: number; y: number; moved: boolean } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -81,8 +82,12 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
       if (!el || panelRef.current?.contains(el) || (e.target as HTMLElement).closest("[data-memo-skip]")) return;
       const t = parseMemo(el.dataset.memo);
       if (!t) return;
-      e.preventDefault();
-      e.stopPropagation();
+      // 화면 안에서 바뀌는 동작(지표 · 종목을 누르면 차트가 바뀌는 것)은 그대로 두고 메모 대상만 같이 바꿈
+      // 다른 화면으로 넘어가는 링크만 막음 (메모 쓰던 창이 사라지지 않게)
+      if ((e.target as HTMLElement).closest("a[href]")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       setTarget(t);
       setMsg(null);
       textRef.current?.focus();
@@ -93,6 +98,13 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
       document.removeEventListener("click", onClick, true);
     };
   }, [open, pickable]);
+
+  const targetKey = target ? JSON.stringify(target) : "";
+  const stock: SymbolInfo | null =
+    stockPick && stockPick.for === targetKey ? stockPick.s : target?.kind === "stock" ? { code: target.code, name: target.name, market: "" } : null;
+  const setStock = (s: SymbolInfo | null) => setStockPick({ for: targetKey, s });
+  /** 글 없이 종목 + 가격만으로도 저장할 수 있음 */
+  const priceOnly = !!stock && Number(price.replace(/[^\d.]/g, "")) > 0;
 
   // 종목 검색 (잠깐 멈추면)
   useEffect(() => {
@@ -153,32 +165,39 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
 
   async function submit() {
     const body = text.trim();
-    if (!body || busy) return;
+    // 글이 없어도 종목 + 가격만 적으면 저장 (정량 전략만 남기는 메모)
+    if ((!body && !priceOnly) || busy) return;
     setBusy(true);
     setMsg(null);
     const now = kstNow();
-    // 정량 전략: 종목 · 가격을 다 적었을 때만 (매수 = 지지 가격선, 매도 = 저항 가격선)
+    // 정량 전략: 종목은 고른 종목(자동), 가격 · 매수/매도는 선택
+    //   가격을 적으면 그 종목 전략에 가격선으로 쌓임 (매수 = 지지, 매도 = 저항, 안 고르면 지지 · 저항 미분류 → 이행률에서 빠짐)
+    //   메모 대상과 다른 종목이면 그 종목 전략에도 같이 보임(target)
     const p = Number(price.replace(/[^\d.]/g, ""));
-    const quant =
-      target?.kind !== "stock" && stock && p > 0
-        ? {
-            target: { code: stock.code, name: stock.name },
-            lines: [{ key: `memo:${uuid()}`, price: p, label: `메모 ${side}`, role: side === "매수" ? ("SUPPORT" as const) : ("RESISTANCE" as const), auto: false, trade: side }],
-          }
-        : {};
-    const tail = "target" in quant ? `\n[전략] ${stock!.name} ${p.toLocaleString("ko-KR")}원에 ${side}` : "";
+    const memoSymbol = target?.kind === "stock" ? target.code : null;
+    const quant = stock
+      ? {
+          ...(stock.code !== memoSymbol ? { target: { code: stock.code, name: stock.name } } : {}),
+          ...(p > 0
+            ? { lines: [{ key: `memo:${uuid()}`, price: p, label: side ? `메모 ${side}` : "메모 가격", role: side === "매수" ? ("SUPPORT" as const) : side === "매도" ? ("RESISTANCE" as const) : null, auto: false, trade: side }] }
+            : {}),
+        }
+      : {};
+    const plan = [p > 0 ? `${p.toLocaleString("ko-KR")}원` : "", side ?? ""].filter(Boolean).join("에 ");
+    const tail = stock && (plan || stock.code !== memoSymbol) ? `\n[전략] ${stock.name}${plan ? ` ${plan}` : ""}` : "";
     const common = { date: now.date, noteTime: now.time, executionTime: null, ...quant };
     const result =
       target?.kind === "stock"
-        ? await addRecord({ ...common, symbol: target.code, symbolName: target.name, text: body })
+        ? await addRecord({ ...common, symbol: target.code, symbolName: target.name, text: `${body}${tail}`.trim() })
         : target?.kind === "topic"
-          ? await addRecord({ ...common, symbol: null, symbolName: null, topic: target.topic, text: `[${target.label}] ${body}${tail}` })
-          : await addRecord({ ...common, symbol: null, symbolName: null, topic, text: `${body}${tail}` });
+          ? await addRecord({ ...common, symbol: null, symbolName: null, topic: target.topic, text: `[${target.label}] ${body}${tail}`.trim() })
+          : await addRecord({ ...common, symbol: null, symbolName: null, topic, text: `${body}${tail}`.trim() });
     setBusy(false);
     if (!result.ok) return setMsg({ ok: false, text: result.error ?? "저장하지 못했어요." });
     setText("");
-    setStock(null);
+    setStockPick(null);
     setPrice("");
+    setSide(null);
     setMsg({ ok: true, text: recordSource() === "server" ? "저장했어요" : "이 브라우저에 저장했어요 (로그인하면 계정에 저장)" });
   }
 
@@ -254,60 +273,58 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
             placeholder={target ? `${target.kind === "stock" ? target.name : target.label}에 대한 생각` : "지금 든 생각을 남겨 두세요"}
             aria-label="메모"
           />
-          {target?.kind !== "stock" && (
-            <div className="qm-quant" aria-label="정량 전략">
-              {stock ? (
-                <span className="qm-chip">
-                  {stock.name}
-                  <button type="button" onClick={() => setStock(null)} aria-label="종목 지우기">
-                    ×
-                  </button>
-                </span>
-              ) : (
-                <div className="qm-quant-search">
-                  <input
-                    value={q}
-                    onChange={(e) => {
-                      setQ(e.target.value);
-                      if (!e.target.value.trim()) setFound([]);
-                    }}
-                    placeholder="종목"
-                    aria-label="전략 종목"
-                  />
-                  {q.trim() && found.length > 0 && (
-                    <ul>
-                      {found.map((f) => (
-                        <li key={`${f.code}${f.exchange ?? ""}`}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setStock(f);
-                              setQ("");
-                              setFound([]);
-                            }}
-                          >
-                            {f.name} <small>{f.code}</small>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-              <input className="qm-quant-price" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="가격" aria-label="전략 가격" />
-              <span className="qm-quant-side" role="radiogroup" aria-label="매수 · 매도">
-                {(["매수", "매도"] as const).map((s) => (
-                  <button key={s} type="button" role="radio" aria-checked={side === s} className={side === s ? `on ${s === "매수" ? "buy" : "sell"}` : ""} onClick={() => setSide(s)}>
-                    {s}
-                  </button>
-                ))}
+          <div className="qm-quant" aria-label="정량 전략">
+            {stock ? (
+              <span className="qm-chip">
+                {stock.name}
+                <button type="button" onClick={() => setStock(null)} aria-label="종목 지우기">
+                  ×
+                </button>
               </span>
-            </div>
-          )}
+            ) : (
+              <div className="qm-quant-search">
+                <input
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    if (!e.target.value.trim()) setFound([]);
+                  }}
+                  placeholder="종목"
+                  aria-label="전략 종목"
+                />
+                {q.trim() && found.length > 0 && (
+                  <ul>
+                    {found.map((f) => (
+                      <li key={`${f.code}${f.exchange ?? ""}`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStock(f);
+                            setQ("");
+                            setFound([]);
+                          }}
+                        >
+                          {f.name} <small>{f.code}</small>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            <input className="qm-quant-price" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="가격" aria-label="전략 가격" />
+            <span className="qm-quant-side" role="radiogroup" aria-label="매수 · 매도">
+              {(["매수", "매도"] as const).map((s) => (
+                <button key={s} type="button" role="radio" aria-checked={side === s} className={side === s ? `on ${s === "매수" ? "buy" : "sell"}` : ""} onClick={() => setSide(side === s ? null : s)}>
+                  {s}
+                </button>
+              ))}
+            </span>
+          </div>
 
           <div className="qm-foot">
-            {msg ? <small className={msg.ok ? "ok" : "err"}>{msg.text}</small> : <small>Ctrl + Enter 로 저장</small>}
-            <button type="button" className="qm-save" onClick={() => void submit()} disabled={!text.trim() || busy}>
+            {msg ? <small className={msg.ok ? "ok" : "err"}>{msg.text}</small> : <small />}
+            <button type="button" className="qm-save" onClick={() => void submit()} disabled={(!text.trim() && !priceOnly) || busy}>
               {busy ? "저장 중…" : "저장"}
             </button>
           </div>

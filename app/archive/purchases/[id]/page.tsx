@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import SiteHeader from "../../../SiteHeader";
+import MonthPicker from "./MonthPicker";
 import { usePasses } from "../../../../lib/purchases";
 import { fetchStrategyMonth } from "../../../../lib/strategy-data";
 import { fetchBars } from "../../../../lib/market-data";
@@ -105,13 +106,7 @@ export default function PurchasedTraderPage() {
           <h1>
             {t?.name ?? id}의{" "}
             {months.length > 1 ? (
-              <select value={month ?? ""} onChange={(e) => (setPick(e.target.value), setCode(null))} aria-label="달">
-                {months.map((x) => (
-                  <option key={x} value={x}>
-                    {Number(x.slice(5))}월
-                  </option>
-                ))}
-              </select>
+              <MonthPicker months={months} value={month ?? months[0]} onChange={(m) => (setPick(m), setCode(null))} />
             ) : (
               <span>{month ? `${Number(month.slice(5))}월` : ""}</span>
             )}{" "}

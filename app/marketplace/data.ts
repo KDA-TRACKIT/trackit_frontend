@@ -4,7 +4,7 @@
 //     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 열람권 확인 뒤 그 달만)
 import SIM from "./sim.json";
 import { gradeOfSim } from "./grades";
-import type { GradeResult } from "../../lib/grade";
+import { formulaPrice, roundPrice, type GradeResult } from "../../lib/grade";
 
 type SimTrader = {
   /** 작도(채널 · 피보나치 · 엘리어트)로 매매하는 트레이더면 소개를 규칙에 맞게 바꿈 */
@@ -27,13 +27,13 @@ type SimTrader = {
 };
 const sim = (id: string) => (SIM as Record<string, SimTrader>)[id];
 
-export type Period = "1m" | "3m" | "6m" | "1y" | "3y" | "all";
+export type Period = "1m" | "3m" | "6m" | "1y" | "2y" | "all";
 export const PERIODS: { key: Period; label: string }[] = [
   { key: "1m", label: "이번 달" },
   { key: "3m", label: "3개월" },
   { key: "6m", label: "6개월" },
   { key: "1y", label: "1년" },
-  { key: "3y", label: "3년" },
+  { key: "2y", label: "2년" },
   { key: "all", label: "전체" },
 ];
 
@@ -112,7 +112,7 @@ export type Trader = {
 };
 
 /** 기간이 몇 달인지 (그 달 월초부터 셈). 이번 달 = 이번 달 1일부터 */
-export const PERIOD_MONTHS: Record<Period, number> = { "1m": 1, "3m": 3, "6m": 6, "1y": 12, "3y": 36, all: 0 };
+export const PERIOD_MONTHS: Record<Period, number> = { "1m": 1, "3m": 3, "6m": 6, "1y": 12, "2y": 24, all: 0 };
 
 /**
  * 월초 기준 수익률: 시작 달 첫 거래일 바로 전 종가 → 마지막 종가.
@@ -216,7 +216,7 @@ function makeTrader(i: number): Trader {
     indicators,
     type: TYPES[i % TYPES.length].key,
     market: i % 4 === 3 || i === 12 ? "해외 주식" : "국내 주식",
-    returns: { "1m": sum(1), "3m": sum(3), "6m": sum(6), "1y": sum(12), "3y": sum(24), all: sum(24) },
+    returns: { "1m": sum(1), "3m": sum(3), "6m": sum(6), "1y": sum(12), "2y": sum(24), all: sum(24) },
     monthly,
     verify: { months: 24, trades: 0, preRate: 0 },
   };
@@ -231,8 +231,9 @@ function withSim(t: Trader): Trader {
   const grade = s.eq?.length ? gradeOfSim(s, t.market === "해외 주식" ? "US" : "KR") ?? undefined : undefined;
   return {
     ...t,
-    // 열람권 가격은 등급 공식대로 (판매 중지 등급이면 마지막 가격을 남겨 두되 팔지 않음)
-    ...(grade && { grade, price: grade.price ?? t.price }),
+    // 열람권 가격은 등급 공식대로 (docs/formulas-2026-11-19.md 2장)
+    //   판매 중지(F · 일반) · 등급 전이면 공식가(성적 점수 E 보간)만 보여 주고 팔지 않음 — 예전엔 견본 가격(9,900 · 100,900원 …)이 남아 있었음
+    ...(grade && { grade, price: grade.price ?? roundPrice(formulaPrice(grade.E)) }),
     ...(live && { curves: live.curves, asOf: s.asOf }),
     ...(p && {
       name: p.name ?? t.name,
@@ -245,7 +246,8 @@ function withSim(t: Trader): Trader {
     monthly: s.monthly,
     returns: live?.returns ?? returnsOf(s.monthly),
     mdd: s.mdd,
-    follow: s.follow,
+    // 전략 이행률 = 공식의 보정 이행률 A_adj (건수가 적으면 0.5 쪽으로, 등급 · 가격에 쓰는 값과 같음). 달별 전략의 이행률은 그 달 그대로
+    follow: grade ? Math.round(grade.metrics.A * 100) : s.follow,
     verify: { months: s.monthly.length, trades: s.trades, preRate: 100 },
     rule: { name: s.rule, desc: s.ruleDesc, symbols: s.symbols },
     facts: s.facts,
@@ -279,7 +281,7 @@ function sumOf(monthly: { ret: number }[], n: number) {
   return Math.round(monthly.slice(-n).reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
 }
 function returnsOf(monthly: { ret: number }[]): Record<Period, number> {
-  return { "1m": sumOf(monthly, 1), "3m": sumOf(monthly, 3), "6m": sumOf(monthly, 6), "1y": sumOf(monthly, 12), "3y": sumOf(monthly, 24), all: sumOf(monthly, 24) };
+  return { "1m": sumOf(monthly, 1), "3m": sumOf(monthly, 3), "6m": sumOf(monthly, 6), "1y": sumOf(monthly, 12), "2y": sumOf(monthly, 24), all: sumOf(monthly, 24) };
 }
 
 /**
