@@ -205,6 +205,7 @@ export default function WorkshopPage() {
     setUsSession(null);
     setSaveMessage(null);
     setAiMemoResult(null);
+    setAnalyzedKey(null);
     setExecutions([]);
     setLinkChoice("auto");
     setNotes([]);
@@ -220,6 +221,8 @@ export default function WorkshopPage() {
   const [noteTime, setNoteTime] = useState("");
   const [suggestion, setSuggestion] = useState("");
   const [aiMemoResult, setAiMemoResult] = useState<ChartMemoResult | null>(null);
+  /** AI 분석에 보낸 내용(Memo + 그은 선). 지금 내용과 같아야 '확인하고 저장' (분석 뒤 바꾸면 다시 분석) */
+  const [analyzedKey, setAnalyzedKey] = useState<string | null>(null);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -341,8 +344,12 @@ export default function WorkshopPage() {
 
   /** 기록으로 저장: 드로잉·노트를 일지에 저장하고, AI 정리 결과를 AI 노트 메모 칸에 넣는다 (확정은 사용자가 따로) */
   const [memoBusy, setMemoBusy] = useState(false);
+  /** AI 분석 대상: Memo + 그은 선 (이게 바뀌면 다시 분석해야 저장) */
+  const inputKey = JSON.stringify([noteText.trim(), drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
+  const analyzed = !!aiMemoResult && analyzedKey === inputKey;
   async function saveToRecord() {
     if (memoBusy) return;
+    const key = inputKey;
     setMemoBusy(true);
     setSaveMessage("저장 중…");
     try {
@@ -374,6 +381,7 @@ export default function WorkshopPage() {
         currency: us ? "USD" : "KRW",
       });
       setAiMemoResult(result);
+      setAnalyzedKey(key);
       // 필수 항목을 따로 채우지 않아도 되게: AI 방향 + 그은 선으로 진입 조건 · 손절 · 목표를 미리 채움
       setPlan(autoPlan(EMPTY_PLAN, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction, bars));
       setLineMeaning({});
@@ -830,10 +838,26 @@ ${t}` : t))}
                   확정 완료
                 </button>
               ) : (
-                // 매매 계획 필수 없음: 선을 긋거나 근거를 적으면 저장. 누르면 큰 확인 창 (저장될 차트 · 선 · 종목 전략 · AI 분석 · Memo)
-                <button className="ws-save" disabled={!noteText.trim() && !drawings.length} onClick={openReview}>
-                  확인하고 저장
-                </button>
+                // 순서: 그은 선 + Memo 를 AI 가 종합 분석 → 그다음 확인하고 저장 (분석 뒤 Memo · 선을 바꾸면 다시 분석)
+                //   누르면 큰 확인 창 (저장될 차트 · AI 분석 · 종목 전략)
+                analyzed ? (
+                  <button className="ws-save" onClick={openReview}>
+                    확인하고 저장
+                  </button>
+                ) : (
+                  <>
+                    <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void saveToRecord()}>
+                      {memoBusy ? "AI 분석 중…" : aiMemoResult ? "바뀐 내용 다시 AI 분석" : "AI 분석"}
+                    </button>
+                    <p className="ws-save-hint">
+                      {!noteText.trim() && !drawings.length
+                        ? "선을 긋거나 Memo 를 적으면 AI 분석을 할 수 있어요."
+                        : aiMemoResult
+                          ? "분석 뒤 Memo · 선이 바뀌었어요. 다시 분석하면 저장할 수 있어요."
+                          : "그은 선과 Memo 를 AI 가 함께 분석한 뒤 확인하고 저장할 수 있어요."}
+                    </p>
+                  </>
+                )
               )}
               {confirming && review && (
                 <SaveReview
