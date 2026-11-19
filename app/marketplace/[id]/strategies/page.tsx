@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
-import { CartButton, Pager, PassBuyBox, StrategyButton, useNotice } from "../../parts";
+import { Pager, PassBuyBox, StrategyButton, useNotice } from "../../parts";
 import { unusedPasses, usePasses } from "../../../../lib/purchases";
 import { useFeedback } from "../../../../lib/feedback";
 import { LikeButton } from "../../feedback";
@@ -72,7 +72,6 @@ export default function StrategiesPage() {
               <div className="mk-srow-buy">
                 <strong>{won(s.price)}</strong>
                 <div className="mk-buyrow">
-                  <CartButton trader={t} strategy={s} />
                   <StrategyButton trader={t} strategy={s} notify={notify} />
                 </div>
               </div>
