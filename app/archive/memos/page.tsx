@@ -7,7 +7,7 @@
 //   제목 줄은 전략보관함 다른 화면(구매한 전략 · 전략 분석)과 같은 자리 · 크기(ar-title-row), 설명 줄은 다른 화면처럼 없음
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, List, PenLine, Pin, Search, Star, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, List, PenLine, Pin, Search, X } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
 import { initRecordSource, useRecords } from "../../../lib/records";
 import { getPositions, type Position } from "../../../lib/api/performance";
@@ -301,12 +301,12 @@ function KindBadge({ kind }: { kind: MemoKind }) {
 function PinButton({ id, pinned }: { id: string; pinned: boolean }) {
   return (
     <button type="button" className={`mm-pin${pinned ? " on" : ""}`} aria-pressed={pinned} aria-label={pinned ? "메모 고정 풀기" : "메모 고정"} title={pinned ? "고정 풀기" : "고정"} onClick={() => togglePin(id)}>
-      <Star size={16} aria-hidden="true" />
+      <Pin size={16} aria-hidden="true" />
     </button>
   );
 }
 
-/** 목록 한 줄. 줄 전체가 '상세 보기' 버튼(뒤에 깔림)이고, 고정 별만 따로 눌림 */
+/** 목록 한 줄. 줄 전체가 '상세 보기' 버튼(뒤에 깔림)이고, 고정 압정만 따로 눌림 */
 function MemoRow({ m, pinned, on, onSelect, mode = "time" }: { m: Memo; pinned: boolean; on: boolean; onSelect: (id: string) => void; mode?: "time" | "date" }) {
   const ex = execInfo(m);
   return (

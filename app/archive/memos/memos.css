@@ -137,8 +137,8 @@
 .mm-ret-pill.down { background:#fecdcc; color:#9a1e2e; }
 .mm-page .mm-today { height:29px; padding:0 11px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); color:#1c212b; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
 .mm-page .mm-today:hover { background:#f4f7fb; }
-/* 주말(일 · 토) 칸은 상자 없이 날짜만이라 좁게, 평일 칸을 넓혀 칩 글자('10:18 삼성전자')가 들어가게 */
-.mm-week, .mm-grid-row { display:grid; grid-template-columns:minmax(0, .45fr) repeat(5, minmax(0, 1fr)) minmax(0, .45fr); gap:4px; }
+/* 요일 제목과 날짜 칸은 주말을 포함해 같은 너비로 정렬 */
+.mm-week, .mm-grid-row { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:4px; }
 .mm-week { margin:14px 0 8px; }
 .mm-week span { padding-left:8px; color:#8791a3; font-size:12px; }
 .mm-grid { display:flex; flex-direction:column; gap:4px; }
