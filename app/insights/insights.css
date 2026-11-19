@@ -117,7 +117,7 @@
 .ins-mv-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; }
 .ins-mv-tabs button { height:34px; padding:0 14px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink-2); font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
 .ins-mv-tabs button:hover { border-color:var(--c-line-strong); }
-.ins-mv-tabs button[aria-selected="true"] { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); }
+.ins-mv-tabs button[aria-selected="true"] { border-color:#0f2367; background:#0f2367; color:#fff; }
 .ins-mv-body { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:0; border-top:1px solid var(--c-line); }
 .ins-mv-table { min-width:0; padding-right:18px; }
 .ins-mv-table ol { margin:0; padding:0; list-style:none; }
