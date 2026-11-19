@@ -65,7 +65,7 @@ export default function TradesPage() {
           </button>
         </div>
         {list.length > 0 && (
-        <Table cols={["거래일", "구분", "종목", "수량", "체결 시각", "메모", "매매일지"]}>
+        <Table cols={["거래일", "구분", "종목", "수량", "체결 시각", "노트", "매매일지"]}>
           {list.map((r) => (
             <div className="mp-tr" key={r.id}>
               <span className="num">{r.date.replaceAll("-", ".")}</span>

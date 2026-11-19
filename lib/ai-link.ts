@@ -15,12 +15,12 @@ export function suggestLink(noteTime: string, executions: Execution[]): LinkSugg
   const after = executions.filter((e) => e.time >= noteTime).sort((a, b) => a.time.localeCompare(b.time));
   if (after[0]) {
     const gap = Math.round(minutes(after[0].time) - minutes(noteTime));
-    return { execution: after[0], kind: "pre", confidence: "high", reason: `메모 ${gap}분 뒤 첫 체결이에요.` };
+    return { execution: after[0], kind: "pre", confidence: "high", reason: `노트 ${gap}분 뒤 첫 체결이에요.` };
   }
   const before = executions.filter((e) => e.time < noteTime).sort((a, b) => b.time.localeCompare(a.time));
   if (before[0]) {
     const gap = Math.round(minutes(noteTime) - minutes(before[0].time));
-    return { execution: before[0], kind: "post", confidence: "low", reason: `체결 ${gap}분 뒤에 쓴 메모예요. 같은 매매를 돌아본 건지 확인해 주세요.` };
+    return { execution: before[0], kind: "post", confidence: "low", reason: `체결 ${gap}분 뒤에 쓴 노트예요. 같은 매매를 돌아본 건지 확인해 주세요.` };
   }
   return null;
 }

@@ -112,7 +112,7 @@ export default function ListView({ items, q, loading }: { items: Item[]; q: stri
         {loading && !items.length ? (
           <div className="mk-card mk-empty">불러오는 중…</div>
         ) : !shown.length ? (
-          <div className="mk-card mk-empty">{items.length ? "이 조건에 맞는 기록이 없어요." : "아직 남긴 기록이 없어요. 트레이딩 로그나 오른쪽 아래 메모 버튼으로 남겨 보세요."}</div>
+          <div className="mk-card mk-empty">{items.length ? "이 조건에 맞는 기록이 없어요." : "아직 남긴 기록이 없어요. 트레이딩 로그나 오른쪽 아래 노트 버튼으로 남겨 보세요."}</div>
         ) : (
           <div className="ar-grid">
             {shown.map((i) => (

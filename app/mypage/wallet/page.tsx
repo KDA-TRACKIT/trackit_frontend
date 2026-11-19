@@ -379,7 +379,7 @@ function TradesCard() {
                     보기
                   </Link>
                 ) : (
-                  <small className="mp-muted">연결된 메모 없음</small>
+                  <small className="mp-muted">연결된 노트 없음</small>
                 )}
               </span>
             </div>

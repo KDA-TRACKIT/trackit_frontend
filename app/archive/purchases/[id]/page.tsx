@@ -197,9 +197,9 @@ export default function PurchasedTraderPage() {
                 )}
               </div>
               <aside className="ar-pt-memos">
-                <h3>차트 메모</h3>
+                <h3>차트 노트</h3>
                 <small>
-                  {curName} · 메모 {shownMemos.length}건
+                  {curName} · 노트 {shownMemos.length}건
                 </small>
                 <ul>
                   {shownMemos.map((x, i) => (
@@ -211,7 +211,7 @@ export default function PurchasedTraderPage() {
                       <p>{x.text}</p>
                     </li>
                   ))}
-                  {!shownMemos.length && <li className="empty">메모가 없어요.</li>}
+                  {!shownMemos.length && <li className="empty">노트가 없어요.</li>}
                 </ul>
               </aside>
             </section>
@@ -219,7 +219,7 @@ export default function PurchasedTraderPage() {
             <h2 className="ar-pt-etc-title">기타 정보</h2>
             <div className="ar-pt-etc">
               <div>
-                <small>열람 가능한 메모</small>
+                <small>열람 가능한 노트</small>
                 <b>{allNotes}건</b>
               </div>
               <div>

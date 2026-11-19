@@ -22,12 +22,12 @@ export default function CalendarMemos({ records, onPick, disabled, isImported }:
   return (
     <div className="ws-cal-memos" ref={ref}>
       <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled} aria-expanded={open}>
-        캘린더 메모 가져오기
+        캘린더 노트 가져오기
       </button>
       {open && (
-        <div className="ws-cal-memos-list" role="listbox" aria-label="증시 캘린더 메모">
+        <div className="ws-cal-memos-list" role="listbox" aria-label="증시 캘린더 노트">
           {memos.length === 0 ? (
-            <p>증시 캘린더에서 쓴 메모가 없어요.</p>
+            <p>증시 캘린더에서 쓴 노트가 없어요.</p>
           ) : (
             memos.map((r) => (
               <button
@@ -36,7 +36,7 @@ export default function CalendarMemos({ records, onPick, disabled, isImported }:
                 role="option"
                 aria-selected={false}
                 disabled={isImported?.(r)}
-                title={isImported?.(r) ? "이미 가져온 메모예요" : undefined}
+                title={isImported?.(r) ? "이미 가져온 노트예요" : undefined}
                 onClick={() => {
                   onPick(r);
                   setOpen(false);

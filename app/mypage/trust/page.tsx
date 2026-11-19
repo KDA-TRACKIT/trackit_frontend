@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, PageHead } from "../ui";
 
 const PARTS = [
-  ["사전·사후 기록 비율", "체결 전후에 남긴 메모 비율"],
+  ["사전·사후 기록 비율", "체결 전후에 남긴 노트 비율"],
   ["저장 이력", "기록을 고치지 않고 남긴 기간"],
   ["전략 평가", "공개 전략의 사후 성과"],
 ] as const;

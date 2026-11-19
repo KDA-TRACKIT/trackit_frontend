@@ -187,7 +187,7 @@ export default function BusinessPage() {
               {check?.error
                 ? check.error
                 : check?.data
-                  ? `${check.data.typeLabel} 기준 · ${check.data.firstNoteAt ? `첫 메모 ${ymd(check.data.firstNoteAt)}` : "아직 메모가 없어요"}${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` · ${ymd(check.data.eligibleAt)}부터 기간 충족` : ""}`
+                  ? `${check.data.typeLabel} 기준 · ${check.data.firstNoteAt ? `첫 노트 ${ymd(check.data.firstNoteAt)}` : "아직 노트가 없어요"}${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` · ${ymd(check.data.eligibleAt)}부터 기간 충족` : ""}`
                   : "비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요."}
             </p>
           </div>

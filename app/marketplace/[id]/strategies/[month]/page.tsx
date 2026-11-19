@@ -104,7 +104,7 @@ export default function StrategyView() {
               </li>
               <li>
                 <span>다룬 종목</span>
-                <b>{s.symbols?.length ? s.symbols.join(", ") : "매매 없음 (관찰 · 메모)"}</b>
+                <b>{s.symbols?.length ? s.symbols.join(", ") : "매매 없음 (관찰 · 노트)"}</b>
               </li>
               {s.sample && (
                 <li className="wide">
@@ -141,7 +141,7 @@ export default function StrategyView() {
               <h2>
                 이 달의 기록{" "}
                 <small>
-                  매매 {m.trades.length}건 · 종목 노트 {(m.notes ?? []).filter((n) => n.type === "stock").length}개 · 증시 메모 {(m.notes ?? []).filter((n) => n.type === "market").length}개
+                  매매 {m.trades.length}건 · 종목 노트 {(m.notes ?? []).filter((n) => n.type === "stock").length}개 · 증시 노트 {(m.notes ?? []).filter((n) => n.type === "market").length}개
                 </small>
               </h2>
               <ul>
@@ -170,7 +170,7 @@ export default function StrategyView() {
                     ) : "n" in row && row.n ? (
                       <li key={row.k} className={`note ${row.n.type}`}>
                         <div className="who">
-                          <i className={`kind ${row.n.type}`}>{row.n.type === "market" ? "증시 메모" : row.n.type === "carry" ? "이어진 보유" : "종목 노트"}</i>
+                          <i className={`kind ${row.n.type}`}>{row.n.type === "market" ? "증시 노트" : row.n.type === "carry" ? "이어진 보유" : "종목 노트"}</i>
                           {row.n.name && <b>{row.n.name}</b>}
                           <time>{row.n.d}</time>
                         </div>

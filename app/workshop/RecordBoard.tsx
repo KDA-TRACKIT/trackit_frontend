@@ -30,12 +30,14 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
   const [msg, setMsg] = useState<string | null>(null);
 
   /** 캘린더 메모 → 이 종목 메모로 남길 글 (같은 메모는 같은 글이 되어 중복을 알아봄) */
-  const importText = (m: TradeRecord) => `[캘린더 메모${m.topic ? ` · ${m.topic}` : ""} · ${m.date.slice(5).replace("-", ".")}] ${m.text}`;
+  //   용어를 '메모' → '노트'로 바꿈: 새로 가져오면 '[캘린더 노트 …]', 예전에 '[캘린더 메모 …]'로 가져온 것도 이미 가져온 것으로 봄
+  const importText = (m: TradeRecord, word = "노트") => `[캘린더 ${word}${m.topic ? ` · ${m.topic}` : ""} · ${m.date.slice(5).replace("-", ".")}] ${m.text}`;
   // 이 종목에 이미 가져온 캘린더 메모 (지운 건 다시 가져올 수 있음)
   const imported = useMemo(() => new Set(symbolRecords(all, symbol.code).map((r) => r.text)), [all, symbol.code]);
+  const isImported = (m: TradeRecord) => imported.has(importText(m)) || imported.has(importText(m, "메모"));
   /** 캘린더 메모 → 이 종목 메모로 (원래 메모는 그대로, 이미 가져온 건 다시 안 가져옴) */
   async function importMemo(m: TradeRecord) {
-    if (imported.has(importText(m))) return setMsg("이미 가져온 메모예요.");
+    if (isImported(m)) return setMsg("이미 가져온 노트예요.");
     const now = kstNow();
     const r = await addRecord({
       date: now.date,
@@ -78,7 +80,7 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
         <h2>
           종목 전략 <span>{symbol.name}</span>
         </h2>
-        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={(m) => imported.has(importText(m))} />
+        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={isImported} />
       </header>
       {msg && <p className="ws-rec-error">{msg}</p>}
       <div className="ws-memo ws-strat-memo">
@@ -101,7 +103,7 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
                       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void saveEdit(r);
                     }}
                     rows={Math.min(8, Math.max(2, editing.text.split("\n").length))}
-                    aria-label="메모 고치기"
+                    aria-label="노트 고치기"
                   />
                   <div>
                     <button type="button" onClick={() => setEditing(null)} disabled={busy}>
@@ -113,7 +115,7 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
                   </div>
                 </div>
               ) : (
-                <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 메모로 남아요)" onClick={() => setEditing({ id: r.id, text: shown(r.text) })} onKeyDown={(e) => e.key === "Enter" && setEditing({ id: r.id, text: shown(r.text) })}>
+                <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 노트로 남아요)" onClick={() => setEditing({ id: r.id, text: shown(r.text) })} onKeyDown={(e) => e.key === "Enter" && setEditing({ id: r.id, text: shown(r.text) })}>
                   {shown(r.text)}
                 </p>
               )}

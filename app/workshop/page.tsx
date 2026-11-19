@@ -386,7 +386,7 @@ export default function WorkshopPage() {
       setConfirmed(false);
       setLinkChoice("auto");
       setSaveMessage("자동 저장됨");
-      setSaveDetail("AI가 차트 메모를 정리했어요");
+      setSaveDetail("AI가 차트 노트를 정리했어요");
     } catch (error) {
       setSaveMessage("저장 실패");
       setSaveDetail(`AI 정리 실패: ${errorMessage(error)}`);
@@ -430,7 +430,7 @@ export default function WorkshopPage() {
     setTimeout(() => setAvgRefresh((v) => v + 1), 3000);
     // 오늘 이 종목의 검증 대기 메모(체결 전에 쓴 것)는 이 체결로 자동 연결 = 사전 기록
     const linked = linkPending(symbol.code, now.date, execution);
-    setAutoLinked(linked ? `검증 대기 메모 ${linked}건을 이 체결에 연결했어요 (사전 기록).` : null);
+    setAutoLinked(linked ? `검증 대기 노트 ${linked}건을 이 체결에 연결했어요 (사전 기록).` : null);
   }
 
   /** 확인하고 저장 → 기록 (로그인했으면 서버 확정 노트로, 지금 차트 드로잉도 같이) */
@@ -489,7 +489,7 @@ export default function WorkshopPage() {
       void _id;
       void _drawings;
       const res = await addRecord({ ...rest, date: now.date, noteTime: now.time, text: text.trim(), replaces: id });
-      if (!res.ok) failed.push(res.error ?? "고친 메모를 저장하지 못했어요.");
+      if (!res.ok) failed.push(res.error ?? "고친 노트를 저장하지 못했어요.");
     }
     setConfirmBusy(false);
     if (failed.length) {
@@ -822,7 +822,7 @@ ${t}` : t))}
                   onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
                   placeholder="선만 그어도 AI가 판단해요. 판단 근거를 더 적으면 AI 분석 때 같이 분석해요."
-                  aria-label="차트 메모"
+                  aria-label="차트 노트"
                 />
               </div>
               {confirmed ? (

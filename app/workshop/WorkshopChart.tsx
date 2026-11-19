@@ -2112,7 +2112,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                   aria-label="차트 노트 설명"
                   onMouseEnter={(e) => {
                     const r = e.currentTarget.getBoundingClientRect();
-                    setToolTip({ text: "차트를 클릭한 지점에 메모를 남깁니다. 저장을 누르면 이 메모와 그린 드로잉 전체가 AI 차트 메모로 정리돼요.", x: r.right + 8, y: r.top + r.height / 2 });
+                    setToolTip({ text: "차트를 클릭한 지점에 노트를 남깁니다. 저장을 누르면 이 노트와 그린 드로잉 전체가 AI 차트 노트로 정리돼요.", x: r.right + 8, y: r.top + r.height / 2 });
                   }}
                   onMouseLeave={() => setToolTip(null)}
                 >
@@ -2336,7 +2336,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           {bars.length === 0 && emptyMessage && <div className="ws-empty">{emptyMessage}</div>}
           <div ref={containerRef} className={`ws-canvas${activeToolId || noteMode ? " drawing" : ""}`} />
 
-          {noteMode && !noteDraft && <div className="ws-note-hint">메모를 남길 지점을 클릭하세요 · Esc 취소</div>}
+          {noteMode && !noteDraft && <div className="ws-note-hint">노트를 남길 지점을 클릭하세요 · Esc 취소</div>}
           {activeTool && !textDraft && (
             <div className="ws-note-hint">
               <b>{activeTool.label}</b> ·{" "}

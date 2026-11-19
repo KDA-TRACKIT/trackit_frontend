@@ -1,8 +1,8 @@
 "use client";
-// 내 메모 화면용: 매매 기록(lib/records 의 TradeRecord)을 '메모 한 장'으로 바꾸고, 고정 · 그날 수익률을 계산
-//   종류(참고 자료) 5가지는 Figma '메모 종류별 색 · 최종'(1935:55)과 같은 색 — 차트 · 시장 · 뉴스 · 경제 · 공시
-//   - 종목을 고른 메모(트레이딩 로그 · 빠른 메모 종목) = 차트
-//   - 증시 캘린더에서 남긴 메모는 주제로: 뉴스 · 거시경제(경제) · 공시, 그 밖(시장 흐름 · 업종·테마 · 시장 전반 · 기타) = 시장
+// 내 노트 화면용: 매매 기록(lib/records 의 TradeRecord)을 '노트 한 장'으로 바꾸고, 고정 · 그날 수익률을 계산
+//   종류(참고 자료) 5가지는 Figma '노트 종류별 색 · 최종'(1935:55)과 같은 색 — 차트 · 시장 · 뉴스 · 경제 · 공시
+//   - 종목을 고른 노트(트레이딩 로그 · 빠른 노트 종목) = 차트
+//   - 증시 캘린더에서 남긴 노트는 주제로: 뉴스 · 거시경제(경제) · 공시, 그 밖(시장 흐름 · 업종·테마 · 시장 전반 · 기타) = 시장
 import { useSyncExternalStore } from "react";
 import { classify, memoText, type TradeRecord } from "../../../lib/records";
 import type { Position } from "../../../lib/api/performance";
@@ -21,9 +21,9 @@ export type Memo = {
   id: string;
   rec: TradeRecord;
   kind: MemoKind;
-  /** 무엇에 대한 메모: 종목 이름, 없으면 '시장 전반' */
+  /** 무엇에 대한 노트: 종목 이름, 없으면 '시장 전반' */
   subject: string;
-  /** 종목 코드 (종목 메모만) */
+  /** 종목 코드 (종목 노트만) */
   code: string | null;
   /** 연결된 참고 자료 한 줄 (증시 캘린더 항목 이름 · 종목 차트) */
   ref: string | null;
@@ -54,20 +54,20 @@ export function toMemo(r: TradeRecord): Memo {
   const kind = kindOf(r);
   let body = memoText(r.text ?? "");
   let ref: string | null = null;
-  // 빠른 메모로 증시 캘린더 항목을 골라 남긴 메모는 '[항목 이름] 내용' → 항목 이름이 참고 자료
+  // 빠른 노트로 증시 캘린더 항목을 골라 남긴 노트는 '[항목 이름] 내용' → 항목 이름이 참고 자료
   const tag = !r.symbol ? /^\[([^\]\n]{1,80})\]\s*/.exec(body) : null;
   if (tag) {
     ref = tag[1];
     body = body.slice(tag[0].length);
   }
   if (r.symbol) ref = `${r.symbolName ?? r.symbol} · 가격 및 거래량 차트`;
-  // 공시 메모의 항목 이름은 '회사 제목' → 앞 낱말이 회사
+  // 공시 노트의 항목 이름은 '회사 제목' → 앞 낱말이 회사
   const company = kind === "disclosure" && ref ? ref.split(" ")[0] : null;
   const subject = r.symbolName ?? r.target?.name ?? company ?? "시장 전반";
   return { id: r.id, rec: r, kind, subject, code: r.symbol, ref, body: body.trim(), date: r.date, time: r.noteTime.slice(0, 5), at: `${r.date} ${r.noteTime}` };
 }
 
-/** 메모 시각과 체결 시각 (체결이 이어진 종목 메모만) */
+/** 노트 시각과 체결 시각 (체결이 이어진 종목 노트만) */
 export function execInfo(m: Memo) {
   const r = m.rec;
   if (!r.symbol || !r.executionTime) return null;
@@ -118,7 +118,7 @@ export function monthGrid(ym: string): (string | null)[][] {
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 }
 
-// ── 고정한 메모 (이 브라우저) ──
+// ── 고정한 노트 (이 브라우저) ──
 const PIN_KEY = "trackit:memo-pins";
 const NO_PINS: ReadonlySet<string> = new Set();
 let pinRaw: string | null = null;

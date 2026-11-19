@@ -136,7 +136,7 @@ export default function SaveReview({
                 <div key={r.id} className={recEdits[r.id] !== undefined ? "edited" : undefined}>
                   <time>
                     {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
-                    {recEdits[r.id] !== undefined && <em>고침 · 새 메모로</em>}
+                    {recEdits[r.id] !== undefined && <em>고침 · 새 노트로</em>}
                   </time>
                   {editable(r.id, memoText(r.text))}
                 </div>

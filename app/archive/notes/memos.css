@@ -1,7 +1,7 @@
-/* 전략보관함 · 내 메모 (Figma Trackit 2182:6164 리스트형 · 종목형, 1876:5541 달력형). 색 · 크기는 Figma 값 그대로 */
+/* 전략보관함 · 내 노트 (Figma Trackit 2182:6164 리스트형 · 종목형, 1876:5541 달력형). 색 · 크기는 Figma 값 그대로 */
 /* 버튼 규칙은 앞에 .mm-page — 전략 마켓 공통 .mk-page button { font:inherit } 보다 세게 (안 그러면 글자 크기가 16px 로 덮임) */
 
-/* ── 종류(참고 자료) 색: Figma '메모 종류별 색 · 최종'(1935:55) ── */
+/* ── 종류(참고 자료) 색: Figma '노트 종류별 색 · 최종'(1935:55) ── */
 .mm-dot { display:inline-block; flex:none; width:7px; height:7px; border-radius:50%; }
 .mm-dot.k-chart { background:#6e56cf; } .mm-dot.k-market { background:#66768c; } .mm-dot.k-news { background:#1f8fd6; } .mm-dot.k-economy { background:#c08a00; } .mm-dot.k-disclosure { background:#8c5a2e; }
 .mm-badge, .mm-kind-chip { display:inline-flex; align-items:center; gap:4px; flex:none; height:19px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:500; white-space:nowrap; }
@@ -192,7 +192,7 @@
 .mm-legend-ret > b { padding-top:1px; color:#1c212b; font-size:12px; font-weight:600; }
 .mm-grad { display:block; width:260px; height:10px; border-radius:5px; background:linear-gradient(90deg, #fec2c0, #f5fcf9 50%, #9ae3b9); }
 .mm-legend-ret span { display:flex; justify-content:space-between; width:260px; margin-top:3px; color:#8791a3; font-size:11px; }
-/* 오른쪽 1/3: 고른 날 메모 */
+/* 오른쪽 1/3: 고른 날 노트 */
 .mm-side { overflow:hidden; }
 .mm-count { margin-left:6px; padding:1px 8px; border-radius:999px; background:#eef1f6; color:#5c6678; font-size:12px; font-weight:500; }
 .mm-page .mm-side-row { display:flex; flex-direction:column; gap:6px; width:100%; padding:14px 20px; border:0; border-bottom:1px solid #eef2f6; background:none; font:inherit; text-align:left; cursor:pointer; }
