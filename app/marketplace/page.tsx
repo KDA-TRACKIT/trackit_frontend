@@ -234,7 +234,6 @@ function MarketplaceList() {
                     <strong>
                       <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[t.id] ?? 0} /> {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
                     </strong>
-                    <p>{t.intro}</p>
                   </div>
                   <div className="mk-tcard-stat">
                     <small>가격</small>
