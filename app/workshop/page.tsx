@@ -758,8 +758,8 @@ ${t}` : t))}
               {/* 판단 근거: 아래로 (투자자가 더 적은 건 AI 가 분석해 반영) */}
               <div className="ws-memo">
                 <div className="ws-memo-head">
-                  {/* 판단 근거 칸 = AI 노트 (적은 내용을 AI 가 같이 분석) */}
-                  <strong className="ws-memo-title">AI 노트</strong>
+                  {/* 판단 근거 칸 = Memo (적은 내용을 AI 가 같이 분석) */}
+                  <strong className="ws-memo-title">Memo</strong>
                   <small>
                     {symbol.name}
                     {noteTime && ` · ${hhmm(noteTime)}`}

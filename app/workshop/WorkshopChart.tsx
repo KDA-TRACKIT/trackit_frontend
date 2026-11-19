@@ -2489,7 +2489,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                         setNews(null);
                       }}
                     >
-                      + AI 노트에 인용
+                      + Memo에 인용
                     </button>
                   )}
                 </article>

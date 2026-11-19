@@ -1283,3 +1283,19 @@ details.ws-ladder { padding:10px 12px; }
 .ws-strat-edit button.primary { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); font-weight:700; }
 @media (max-width:640px) { .ws-strat-row { grid-template-columns:minmax(0,1fr) 20px; } .ws-strat-row > time { grid-column:1 / -1; } }
 .ws-cal-memos-list button:disabled { opacity:.45; cursor:default; } .ws-cal-memos-list button:disabled:hover { background:none; }
+
+/* 차트 노트 안 소제목 크기 맞춤 (그은 선 N개 · AI 분석 보기 · Memo 모두 같은 크기 · 굵기 · 색) */
+.ws-note-panel .ws-plan .ws-ladder-head strong,
+.ws-note-panel details.ws-ai-breakdown > summary,
+.ws-note-panel .ws-memo-head .ws-memo-title { color:var(--c-ink); font-size:15px; font-weight:800; line-height:20px; }
+.ws-note-panel details.ws-ai-breakdown > summary::after { color:var(--c-sub); }
+
+/* 차트 노트 버튼 잘 보이게: 매매 고르기 칩 · 지지/저항 고르기 · 확인하고 저장 */
+.ws-plan .ws-ladder-chips button { height:26px; padding:0 9px; border:1px solid var(--c-line-strong); border-radius:7px; background:var(--c-subtle); color:var(--c-ink); font-size:12px; font-weight:600; }
+.ws-plan .ws-ladder-chips button:hover { border-color:var(--c-accent); color:var(--c-accent); }
+.ws-plan .ws-ladder-chips button.on { border-color:var(--c-accent); background:var(--c-accent); color:var(--c-on-accent); font-weight:700; }
+.ws-plan .ws-ladder-chips button.sug { border-style:dashed; border-color:var(--c-accent); background:transparent; color:var(--c-accent); }
+.ws-plan .ws-ladder-role { height:24px; padding:0 9px; border-radius:7px; font-size:12px; }
+.ws-note-panel .ws-save:not(.ghost) { height:44px; border:0; border-radius:10px; background:var(--c-accent); color:var(--c-on-accent); font-size:14px; font-weight:800; }
+.ws-note-panel .ws-save:not(.ghost):hover:not(:disabled) { filter:brightness(1.08); }
+.ws-note-panel .ws-save:disabled { background:var(--c-disabled, #e9edf3); color:var(--c-faint); }
