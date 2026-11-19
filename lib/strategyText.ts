@@ -61,9 +61,10 @@ export function ownItems(text: string): StrategyItem[] {
       if (AUTO_LINE.test(line) || /^(상승|하락) 시나리오\s*:/.test(line)) continue;
       line = line.replace(/^\[[^\]]*\]\s*/, "");
       if (!line) continue;
-      const labeled = line.match(/^-\s*(매수|매도|손절|목표|메모)\s*:\s*(.+)$/);
+      if (/^-\s*(지지|저항)\s*:/.test(line)) continue;
+      const labeled = line.match(/^-\s*(매수|매도|손절|목표|메모)\s*:\s*(.*)$/);
       if (labeled) {
-        out.push({ kind: BY_LABEL.get(labeled[1])!, text: labeled[2].trim() });
+        if (labeled[2].trim()) out.push({ kind: BY_LABEL.get(labeled[1])!, text: labeled[2].trim() });
         continue;
       }
       for (const raw of line.replace(/^-\s*/, "").split(/(?<=[.!?。])\s+/)) {

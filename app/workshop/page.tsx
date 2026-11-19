@@ -872,6 +872,10 @@ ${t}` : t))}
                   consolidating={consolidating}
                   unchanged={unchanged(review.lines)}
                   planRows={planRows()}
+                  levels={[
+                    { label: "지지", text: review.lines.filter((l) => l.role === "SUPPORT").map((l) => (l.price !== undefined ? money(Math.round(l.price)) : `${money(Math.round(l.low ?? 0))}~${money(Math.round(l.high ?? 0))}`)).join(" · ") },
+                    { label: "저항", text: review.lines.filter((l) => l.role === "RESISTANCE").map((l) => (l.price !== undefined ? money(Math.round(l.price)) : `${money(Math.round(l.low ?? 0))}~${money(Math.round(l.high ?? 0))}`)).join(" · ") },
+                  ]}
                   current={today?.close ? money(today.close) : undefined}
                   dropped={consolidating ? merged.dropped : []}
                   linked={!!linkedExecution}

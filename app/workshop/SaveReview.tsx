@@ -10,44 +10,43 @@ import { dateLabel, memoText, type TradeRecord } from "../../lib/records";
 const DIR: Record<string, string> = { LONG: "상승 관점", SHORT: "하락 관점", WAIT: "관망", UNKNOWN: "판단 보류" };
 
 /**
- * 종목 전략 글에서 '- 매수: …' 같은 계획 줄을 바꾸기 (없으면 다른 계획 줄 뒤 · 현재가 줄 뒤에 넣고, 빈 값이면 뺌)
- *   같은 칸 줄이 여러 개면 하나로 합침
+ * 종목 전략 글의 칸 줄('- 지지: …' · '- 매수: …' …)을 바꾸기 (2026-11-19)
+ *   칸은 늘 있음: 정하지 않았으면 '- 손절:' 처럼 빈 칸으로. 같은 칸 줄이 여러 개면 하나로
+ *   없으면 순서(지지 · 저항 · 매수 · 매도 · 손절 · 목표)대로, 첫 칸은 현재가 줄 뒤에
  */
-const PLAN_ORDER = ["매수", "매도", "손절", "목표"];
+const PLAN_ORDER = ["지지", "저항", "매수", "매도", "손절", "목표"];
+const LABEL_LINE = /^-\s*(지지|저항|매수|매도|손절|목표)\s*:/;
 function withPlanLine(text: string, label: string, value: string) {
+  const line = `- ${label}:${value.trim() ? ` ${value.trim()}` : ""}`;
   const lines = text.split("\n");
   const re = new RegExp(`^-\\s*${label}\\s*:`);
   const at = lines.findIndex((l) => re.test(l));
   const rest = lines.filter((l, i) => !re.test(l) || i === at);
-  const v = value.trim();
   if (at >= 0) {
-    const idx = rest.findIndex((l) => re.test(l));
-    if (v) rest[idx] = `- ${label}: ${v}`;
-    else rest.splice(idx, 1);
+    rest[rest.findIndex((l) => re.test(l))] = line;
     return rest.join("\n");
   }
-  if (!v) return text;
-  // 넣을 자리: 순서상 앞 칸 줄 뒤 → 다른 '- X:' 줄 앞 → 현재가 줄 뒤 → 맨 앞
   const order = PLAN_ORDER.indexOf(label);
   let pos = -1;
   rest.forEach((l, i) => {
-    const m = l.match(/^-\s*(매수|매도|손절|목표)\s*:/);
+    const m = l.match(LABEL_LINE);
     if (m && PLAN_ORDER.indexOf(m[1]) < order) pos = i;
   });
-  if (pos < 0) {
-    const firstPlan = rest.findIndex((l) => /^-\s*(매수|매도|손절|목표|메모)\s*:/.test(l));
-    if (firstPlan >= 0) pos = firstPlan - 1;
-    else {
-      const cur = rest.findIndex((l) => /^\[현재가\]/.test(l));
-      if (cur >= 0) {
-        rest.splice(cur + 1, 0, "", `- ${label}: ${v}`);
-        return rest.join("\n");
-      }
-      return [`- ${label}: ${v}`, "", ...rest].join("\n");
-    }
+  if (pos >= 0) {
+    rest.splice(pos + 1, 0, line);
+    return rest.join("\n");
   }
-  rest.splice(pos + 1, 0, `- ${label}: ${v}`);
-  return rest.join("\n");
+  const next = rest.findIndex((l) => LABEL_LINE.test(l) || /^-\s*메모\s*:/.test(l));
+  if (next >= 0) {
+    rest.splice(next, 0, line);
+    return rest.join("\n");
+  }
+  const cur = rest.findIndex((l) => /^\[현재가\]/.test(l));
+  if (cur >= 0) {
+    rest.splice(cur + 1, 0, "", line);
+    return rest.join("\n");
+  }
+  return [line, "", ...rest].join("\n");
 }
 
 export default function SaveReview({
@@ -60,6 +59,7 @@ export default function SaveReview({
   consolidating = false,
   unchanged = false,
   planRows = [],
+  levels = [],
   current,
   dropped = [],
   linked,
@@ -84,6 +84,8 @@ export default function SaveReview({
   unchanged?: boolean;
   /** 매매 계획 4칸 (매수 · 매도 · 손절 · 목표). 빈 칸을 그은 선으로 채운 건 '(자동 …)' 표시 */
   planRows?: { label: string; text: string }[];
+  /** 그은 선의 지지 · 저항 가격 (종목 전략의 '- 지지:' · '- 저항:' 줄) */
+  levels?: { label: string; text: string }[];
   /** 저장할 때의 현재가 (글로) */
   current?: string;
   /** 이번 Memo 로 바뀌어 정리본에서 뺀 예전 전략 문장 */
@@ -97,7 +99,9 @@ export default function SaveReview({
   onConfirm: (edits: { pendingText: string; records: Record<string, string>; plan: { label: string; text: string }[] }) => void;
 }) {
   // 종목 전략 고치기: 확정 전까지는 여기에만 (취소하면 버림)
-  const [pendingText, setPendingText] = useState(() => planRows.reduce((t, r) => withPlanLine(t, r.label, r.text), pending.text));
+  // 종목 전략 글: 지지 · 저항(그은 선) + 매매 계획 4칸을 칸 줄로 (빈 칸도 줄은 남김)
+  const withRows = (t: string) => [...levels, ...planRows].reduce((acc, r) => withPlanLine(acc, r.label, r.text), t);
+  const [pendingText, setPendingText] = useState(() => withRows(pending.text));
   const [recEdits, setRecEdits] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const PENDING = "__pending__";
@@ -105,7 +109,7 @@ export default function SaveReview({
   const [plan, setPlan] = useState(planRows);
   const [planEditing, setPlanEditing] = useState<string | null>(null);
   // 창에서 종목 전략 · 계획을 고쳤는지 (고쳤으면 '바뀐 게 없음' 이어도 저장 가능)
-  const [initialPending] = useState(() => planRows.reduce((t, r) => withPlanLine(t, r.label, r.text), pending.text));
+  const [initialPending] = useState(() => withRows(pending.text));
   const textOf = (id: string, original: string) => (id === PENDING ? pendingText : (recEdits[id] ?? original));
   const setText = (id: string, original: string, t: string) =>
     id === PENDING
@@ -256,7 +260,7 @@ export default function SaveReview({
           {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분(AI 가 쌓인 전략과 합친 정리본)을 합친 모습 */}
           <section>
             <h3>
-              종목 전략 <span>{consolidating ? 1 : records.length + (pendingText.trim() ? 1 : 0)}개 · 저장 후 · 눌러서 고치기</span>
+              종목 전략 <span>이번 저장 · 눌러서 고치기</span>
             </h3>
             {/* AI 가 쌓인 전략과 합치며 뺀 예전 항목 (이번 Memo 로 관점이 바뀐 것) */}
             {dropped.length ? (
@@ -268,15 +272,6 @@ export default function SaveReview({
               <p className="ws-review-merged">예전 종목 전략 {records.length}개를 이 정리본 하나로 합쳐요. 예전 것은 기록에 그대로 남아요.</p>
             )}
             <div className="ws-review-records">
-              {!consolidating && records.map((r) => (
-                <div key={r.id} className={recEdits[r.id] !== undefined ? "edited" : undefined}>
-                  <time>
-                    {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
-                    {recEdits[r.id] !== undefined && <em>고침 · 새 노트로</em>}
-                  </time>
-                  {editable(r.id, memoText(r.text))}
-                </div>
-              ))}
               <div className="new">
                 <time>
                   {dateLabel(pending.date)} {pending.time.slice(0, 5)}
