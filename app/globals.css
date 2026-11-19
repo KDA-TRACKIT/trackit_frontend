@@ -338,9 +338,9 @@ html[data-theme="dark"] .login-panel .login-eye:hover { background:var(--c-subtl
 .gnb-title { display:flex; align-items:center; height:36px; margin-left:28px; padding-left:28px; border-left:1px solid #d6dbe4; color:#141414; font-size:17px; font-weight:700; white-space:nowrap; }
 .gnb-login { color:#141414; font-size:15px; font-weight:600; }
 .gnb-login:hover { text-decoration:underline; }
-/* 진한 남색 #0F2367 (시안): 로그인 · 가입 버튼, 달력 고른 날 */
-.login-submit, .signup-submit, .auth-button.primary, .af-primary, .af-cal-actions button.primary, .af-cal-grid button.on, .af-cal-pick button.on { background:#0f2367 !important; border-color:#0f2367 !important; }
-.login-submit:hover:not(:disabled), .signup-submit:hover:not(:disabled), .auth-button.primary:hover { background:#0b1b52 !important; }
+/* 진한 남색 #0F2367 (시안): 로그인 · 가입 버튼, 달력 고른 날 — 라이트 모드만 (다크는 auth-design.css 끝의 다크 블록) */
+html:not([data-theme="dark"]) :is(.login-submit, .signup-submit, .auth-button.primary, .af-primary, .af-cal-actions button.primary, .af-cal-grid button.on, .af-cal-pick button.on) { background:#0f2367 !important; border-color:#0f2367 !important; }
+html:not([data-theme="dark"]) :is(.login-submit:hover:not(:disabled), .signup-submit:hover:not(:disabled), .auth-button.primary:hover) { background:#0b1b52 !important; }
 .signup-submit { height:46px; border-radius:6px; font-size:14px; }
 /* 가입 완료 */
 .signup-done { display:flex; justify-content:center; padding:120px 20px 80px; }

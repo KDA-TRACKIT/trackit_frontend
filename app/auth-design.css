@@ -165,3 +165,98 @@ html:has(.auth-design) { scrollbar-gutter:auto; }
 /* 로그인 · 회원가입 위쪽 바 = 로그인 전 첫 화면 위쪽 바 (소개 intro.css 와 같은 너비에서 바뀜) */
 @media (max-width:800px) { .auth-design-header .gnb-brand { font-size:26px; line-height:26px; } }
 @media (max-width:759px) { .auth-design-header .gnb { height:80px; padding:0 16px; } .auth-design-header .gnb-brand { margin-left:20px; } }
+
+/* ───────── 다크 모드 (로그인 · 회원가입 · 아이디/비밀번호 찾기) ─────────
+   .auth-design 이 라이트 색 변수를 직접 박아 둬서 다크 테마 변수가 안 닿았음 → 다크일 때 여기서 다시 정함 */
+html[data-theme="dark"] .auth-design {
+  --auth-primary:#7c9be0;
+  --auth-ink:#e8ebf0;
+  --auth-line:#272d38;
+  --c-bg:#0e1116;
+  --c-surface:#161a21;
+  --c-subtle:#1c212a;
+  --c-ink:#e8ebf0;
+  --c-ink-2:#c4cad4;
+  --c-brand:#e1e8f7;
+  --c-sub:#9098a7;
+  --c-faint:#687183;
+  --c-line:#272d38;
+  --c-line-strong:#353c4a;
+  --c-accent:#7c9be0;
+  --c-on-accent:#0e1116;
+  --c-ok-soft:rgba(95,207,143,.12);
+  background:#0e1116;
+  color:#e8ebf0;
+  color-scheme:dark;
+}
+/* 위쪽 바 */
+html[data-theme="dark"] .auth-design-header .gnb { background:#0e1116; border-bottom-color:#272d38; }
+html[data-theme="dark"] .auth-design-header .gnb-brand { color:#e1e8f7; }
+html[data-theme="dark"] .auth-header-title { border-left-color:#353c4a; color:#e8ebf0; }
+html[data-theme="dark"] .auth-header-login { color:#c4cad4; }
+/* 로그인 */
+html[data-theme="dark"] .auth-design .login-wordmark { color:#e1e8f7; }
+html[data-theme="dark"] .auth-design .login-panel > form > label { border-bottom-color:#353c4a; }
+html[data-theme="dark"] .auth-design .login-panel > form > label:focus-within { border-bottom-color:#7c9be0; }
+html[data-theme="dark"] .auth-design .login-panel > form > label > span { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .login-panel > form > label > input { color:#e8ebf0; background:transparent; }
+html[data-theme="dark"] .auth-design .login-panel > form > label > input::placeholder { color:#687183; }
+html[data-theme="dark"] .auth-design .login-panel > form > label > .login-eye { color:#9098a7; }
+html[data-theme="dark"] .auth-design .login-panel > form > .login-error { color:#ff7d7d; }
+html[data-theme="dark"] .auth-design .login-panel > form.has-error > label:has(input[aria-invalid="true"]) { border-bottom-color:#ff7d7d; }
+html[data-theme="dark"] .auth-design .or-divider { color:#9098a7; }
+html[data-theme="dark"] .auth-design .or-divider span { background:#272d38; }
+html[data-theme="dark"] .auth-design .google-login { border-color:#353c4a; background:#161a21; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .login-links button { border-color:#353c4a; background:transparent; color:#c4cad4; }
+html[data-theme="dark"] .auth-design .login-signup { color:#9098a7; }
+html[data-theme="dark"] .auth-design .login-signup a { color:#93ade9; }
+html[data-theme="dark"] .auth-design .login-arrow, html[data-theme="dark"] .auth-design .auth-button:not(.primary) .arrow { filter:brightness(0) invert(.85); }
+/* 주 버튼 (로그인 · 가입 · 완료): 밝은 파랑 바탕 + 어두운 글자 */
+html[data-theme="dark"] .auth-design :is(.login-submit, .signup-submit, .auth-button.primary, .signup-success-action, .af-primary) { border-color:#7c9be0; background:#7c9be0; color:#0e1116; }
+html[data-theme="dark"] .auth-design :is(.login-submit, .signup-submit, .auth-button.primary, .signup-success-action, .af-primary):hover { background:#93ade9; }
+html[data-theme="dark"] .auth-design :is(.login-submit, .signup-submit, .auth-button.primary):disabled { background:#252d3b; border-color:#252d3b; color:#687183; }
+html[data-theme="dark"] .auth-design .auth-button.primary .arrow { filter:brightness(0); }
+html[data-theme="dark"] .auth-design :is(button, a):focus-visible { outline-color:#93b2f5; }
+/* 회원가입 고르기 · 입력 */
+html[data-theme="dark"] .auth-design .signup-choice h1, html[data-theme="dark"] .auth-design .signup-form h1 { color:#e8ebf0; border-bottom-color:#272d38; }
+html[data-theme="dark"] .auth-design .signup-choice > p, html[data-theme="dark"] .auth-design .signup-choice .existing-account, html[data-theme="dark"] .auth-design .signup-note { color:#9098a7; }
+html[data-theme="dark"] .auth-design .auth-button:not(.primary) { border-color:#353c4a; background:#161a21; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .signup-person img { filter:brightness(0) invert(.85); }
+html[data-theme="dark"] .auth-design .signup-row > span:first-child, html[data-theme="dark"] .auth-design .signup-radios label { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .signup-row input:not([type=radio]), html[data-theme="dark"] .auth-design .af-date-input { border-color:#353c4a; background:#161a21; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .signup-row input::placeholder, html[data-theme="dark"] .auth-design .af-date-input.empty { color:#687183; }
+html[data-theme="dark"] .auth-design .signup-row input:focus { border-color:#7c9be0; outline-color:rgba(124,155,224,.25); }
+html[data-theme="dark"] .auth-design .signup-radios input { border-color:#4a5468; background:#161a21; }
+html[data-theme="dark"] .auth-design .signup-radios input:checked { border-color:#7c9be0; }
+html[data-theme="dark"] .auth-design .af-date-input svg { color:#93ade9; }
+html[data-theme="dark"] .auth-design .af-terms { border-top-color:#272d38; }
+html[data-theme="dark"] .auth-design .af-term { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .af-term input { border-color:#7c9be0; background:#161a21; }
+html[data-theme="dark"] .auth-design .af-term input:checked { accent-color:#7c9be0; }
+html[data-theme="dark"] .auth-design .google-connect { border-color:#353c4a; background:#161a21; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .google-linked { background:rgba(95,207,143,.12); }
+html[data-theme="dark"] .auth-design .google-linked strong { color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .google-linked small { color:#9098a7; }
+html[data-theme="dark"] .auth-design .signup-complete h1 { color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .signup-complete > p { color:#9098a7; }
+html[data-theme="dark"] .signup-success { border-color:#272d38; }
+html[data-theme="dark"] .signup-success-icon { background:rgba(95,207,143,.14); }
+html[data-theme="dark"] .signup-success h1 { color:#e8ebf0; }
+html[data-theme="dark"] .signup-success p { color:#9098a7; }
+/* 아이디 · 비밀번호 찾기 · 약관 · 달력 창 */
+html[data-theme="dark"] .auth-design .af-dialog { border-color:#272d38; background:#161a21; color:#e8ebf0; box-shadow:0 18px 48px rgba(0,0,0,.5); }
+html[data-theme="dark"] .auth-design .af-x { color:#9098a7; }
+html[data-theme="dark"] .auth-design :is(.af-dialog-sub, .af-dialog-text, .af-find-links button) { color:#9098a7; }
+html[data-theme="dark"] .auth-design .af-find label { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .af-find input { border-color:#353c4a; background:#0e1116; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design :is(.af-note, .af-soft, .af-mail) { background:#1c212a; }
+html[data-theme="dark"] .auth-design .af-note strong { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .af-note :is(button, p) { color:#9098a7; }
+html[data-theme="dark"] .auth-design .af-terms-body { color:#c4cad4; }
+html[data-theme="dark"] .auth-design .af-cal { border-color:#272d38; background:#161a21; color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .af-cal-head > .af-cal-title { color:#e8ebf0; }
+html[data-theme="dark"] .auth-design .af-cal button.on { background:#7c9be0; color:#0e1116; }
+html[data-theme="dark"] :is(.af-cal-actions button.primary, .af-cal-grid button.on, .af-cal-pick button.on) { border-color:#7c9be0; background:#7c9be0; color:#0e1116; }
+/* 비밀번호 보기 버튼: 숨김 아이콘 그림(흰 바탕 png)을 뒤집어 어두운 입력칸에 맞춤 */
+html[data-theme="dark"] .auth-design .with-icon button { background:transparent; color:#9098a7; }
+html[data-theme="dark"] .auth-design .with-icon button img { filter:invert(.9) hue-rotate(180deg); }
