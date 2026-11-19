@@ -1391,3 +1391,10 @@ details.ws-ladder { padding:10px 12px; }
 
 /* 종목 전략: 매매 노트 표시 (전략 노트 뒤 관련 매매가 생긴 것) */
 .ws-strat-trade { display:block; width:fit-content; margin-top:3px; padding:1px 7px; border-radius:6px; background:var(--c-ok-soft); color:var(--c-ok); font-size:11.5px; font-style:normal; font-weight:700; }
+
+/* 종목 전략: 정리본 하나 + 지난 기록 접기 */
+.ws-strat-merged-tag { display:block; width:fit-content; margin-top:3px; padding:1px 7px; border-radius:6px; background:var(--c-accent-soft); color:var(--c-accent); font-size:11.5px; font-style:normal; font-weight:700; }
+.ws-strat-merged p { white-space:pre-wrap; }
+.ws-strat-history { margin-top:10px; }
+.ws-strat-history > summary { cursor:pointer; color:var(--c-sub); font-size:13px; font-weight:600; padding:4px 2px; }
+.ws-strat-history[open] > summary { margin-bottom:8px; }

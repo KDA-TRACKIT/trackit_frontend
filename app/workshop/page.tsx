@@ -547,18 +547,25 @@ export default function WorkshopPage() {
       if (!res.ok) failed.push(res.error ?? "고친 노트를 저장하지 못했어요.");
     }
     setConfirmBusy(false);
-    if (failed.length) {
-      // 이번 노트는 이미 저장됨 → 창은 닫고 고친 메모만 못 남겼다고 알림
-      setConfirming(false);
-      setConfirmed(true);
-      setConfirmedAt(nowKst());
-      setConfirmError(null);
-      window.alert(`노트는 저장됐지만 고친 종목 전략 ${failed.length}개를 저장하지 못했어요. 아래 종목 전략에서 다시 고쳐 주세요.`);
-      return;
-    }
+    // 확정하면 차트 노트를 처음 상태로 (빈 Memo · AI 분석 후 저장). 저장한 내용은 아래 종목 전략에 정리본으로 (2026-11-19)
+    resetNote();
+    setSaveMessage("저장됨");
+    setSaveDetail("종목 전략에 저장했어요");
+    if (failed.length) window.alert(`노트는 저장됐지만 고친 종목 전략 ${failed.length}개를 저장하지 못했어요. 아래 종목 전략에서 다시 고쳐 주세요.`);
+  }
+
+  /** 차트 노트를 처음 상태로 (빈 Memo, 분석 · 계획 · 고른 매매 비움) */
+  function resetNote() {
     setConfirming(false);
-    setConfirmed(true);
-    setConfirmedAt(nowKst());
+    setConfirmed(false);
+    setConfirmError(null);
+    setReview(null);
+    setNoteText("");
+    setNoteTime("");
+    setAiMemoResult(null);
+    setAnalyzedKey(null);
+    setPlan(EMPTY_PLAN);
+    setLineMeaning({});
   }
 
   /** AI 분석 후 저장: Memo + 그은 선을 AI 가 분석하고 → 바로 저장 확인 창 (Memo 와 분석을 합친 글). 이미 같은 내용으로 분석했으면 바로 창 */
@@ -876,20 +883,6 @@ ${t}` : t))}
                   }}
                   onConfirm={(edits) => void confirmNote(edits)}
                 />
-              )}
-              {confirmed && (
-                <div className="ws-after">
-                  <p className="ws-after-origin">✓ 최초 확정본{confirmedAt ? ` · ${hhmm(confirmedAt)}` : ""} — 구매자에겐 이 원본이 그대로 보여요</p>
-                  {afterNotes.map((n) => (
-                    <p key={n.at} className="ws-after-note">
-                      <b>사후 해설 · {hhmm(n.at)}</b> {n.text}
-                    </p>
-                  ))}
-                  <textarea value={afterText} onChange={(e) => setAfterText(e.target.value)} placeholder="결과를 보고 덧붙일 해설 (원본과 따로 날짜 · 시각과 함께 남아요)" rows={2} />
-                  <button type="button" onClick={() => void saveAfterNote()} disabled={!afterText.trim() || afterBusy}>
-                    {afterBusy ? "저장 중…" : "사후 해설 남기기"}
-                  </button>
-                </div>
               )}
             </section>
 

@@ -48,14 +48,19 @@ export type StrategyItem = { kind: StrategyKind; text: string };
  *   빼는 것: AI 분석 문단('○○ 196,900원 기준.' 으로 시작 · '[AI 정리]'), 시나리오 줄, 자동 계획 줄([노트 종류] · [매수 조건] …)
  *   정리본 줄('- 매수: …')은 그 칸 그대로
  */
+const AUTO_LINE = /^\[(?:현재가|AI 정리|노트 종류|방향|진입 근거|매수 조건|현재 판단|변경 사유|손절 기준|목표|비중|기준값|기한|계획 대비 차이|원인|다음에 바꿀 점)\]/;
+
 export function ownItems(text: string): StrategyItem[] {
   const out: StrategyItem[] = [];
   for (const para of text.split(/\n\s*\n/)) {
     const lines = para.split("\n").map((l) => l.trim()).filter(Boolean);
     if (!lines.length) continue;
     if (/^\[AI 정리\]/.test(lines[0]) || /^\S.{0,40}\s[\d,.$]+원?\s*기준\.?$/.test(lines[0])) continue;
-    for (const line of lines) {
-      if (/^\[[^\]]+\]/.test(line) || /^(상승|하락) 시나리오\s*:/.test(line)) continue;
+    for (let line of lines) {
+      // 자동으로 붙는 줄(현재가 · 계획 칸 · AI 정리)과 시나리오 줄은 빼고, 다른 머리표([캘린더 노트 …] 등)는 떼고 문장으로
+      if (AUTO_LINE.test(line) || /^(상승|하락) 시나리오\s*:/.test(line)) continue;
+      line = line.replace(/^\[[^\]]*\]\s*/, "");
+      if (!line) continue;
       const labeled = line.match(/^-\s*(매수|매도|손절|목표|메모)\s*:\s*(.+)$/);
       if (labeled) {
         out.push({ kind: BY_LABEL.get(labeled[1])!, text: labeled[2].trim() });

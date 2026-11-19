@@ -36,8 +36,10 @@ export type NoteVersion = {
   aiModel: string | null;
   confirmedAt: string;
   contentHash: string;
-  /** 노트 종류 (서버 판정): general 일반 · strategy 전략(아직 매매 없음) · trade 매매 노트 (2026-11-19) */
-  noteType?: "general" | "strategy" | "trade";
+  /** 노트 종류 (서버 판정): general 일반 노트 · trade 매매 노트(실제 관련 매매가 생긴 노트) (2026-11-19) */
+  noteType?: "general" | "trade";
+  /** 매매 노트가 될 수 있는 노트인지 (이 종목에 무엇을 하겠다가 실행 가능하게 적힘) */
+  eligible?: boolean;
 };
 
 /** 종목(또는 MARKET) 일지를 찾고, 없으면 만든다 */

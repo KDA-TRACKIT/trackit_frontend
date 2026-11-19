@@ -33,8 +33,8 @@ export type TradeRecord = {
   replaces?: string;
   /** 종목 전략 정리본이면 합친 예전 메모 id 들 (화면엔 정리본 하나만 보임) */
   consolidates?: string[];
-  /** 노트 종류: 일반 · 전략(아직 매매 없음) · 매매 노트 (이후 관련 매매가 생긴 전략 노트) */
-  noteType?: "general" | "strategy" | "trade";
+  /** 노트 종류: 일반 노트 · 매매 노트 (실제 관련 매매가 생긴 노트) */
+  noteType?: "general" | "trade";
 };
 
 /** 종목 없는 메모의 주제 */

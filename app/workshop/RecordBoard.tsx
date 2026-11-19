@@ -10,6 +10,7 @@ import type { SymbolInfo } from "../../lib/market-data";
 import { addRecord, dateLabel, initRecordSource, kstNow, memoText, removeRecord, useRecords, type TradeRecord } from "../../lib/records";
 import CalendarMemos from "./CalendarMemos";
 import { currentRecords, symbolRecords } from "../../lib/strategy";
+import { consolidateStrategy } from "../../lib/strategyText";
 
 const shown = memoText;
 
@@ -24,6 +25,23 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
     [all, symbol.code],
   );
 
+  // 정리본: 쌓인 노트에서 투자자가 쓴 매수 · 매도 · 손절 · 목표 · 메모만 합친 하나 (AI 분석 글 · 자동 계획 줄 빼고)
+  const merged = useMemo(() => consolidateStrategy(notes.map((r) => memoText(r.text)), "").text, [notes]);
+  const latest = notes[notes.length - 1];
+  const [mergedEdit, setMergedEdit] = useState<string | null>(null);
+  /** 정리본 고치기 = 지금 보이는 노트를 다 합친 새 정리본으로 저장 (예전 것은 기록에 그대로) */
+  async function saveMerged() {
+    const text = mergedEdit?.trim() ?? "";
+    if (busy || !text || text === merged.trim() || !latest) return setMergedEdit(null);
+    setBusy(true);
+    const now = kstNow();
+    const res = await addRecord({ date: now.date, noteTime: now.time, executionTime: null, symbol: symbol.code, symbolName: symbol.name, text, consolidates: notes.map((r) => r.id) });
+    setBusy(false);
+    if (res.ok) {
+      setMergedEdit(null);
+      setMsg(null);
+    } else setMsg(res.error ?? "고치지 못했어요.");
+  }
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -83,6 +101,45 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
         <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={isImported} />
       </header>
       {msg && <p className="ws-rec-error">{msg}</p>}
+      {/* 정리본 하나 (저장 확인 창과 같음). 눌러서 고치면 새 정리본으로 */}
+      {notes.length > 0 && (
+        <div className="ws-memo ws-strat-memo ws-strat-merged">
+          <div className="ws-strat-row">
+            <time>
+              {dateLabel(latest.date)} {latest.noteTime.slice(0, 5)}
+              <em className="ws-strat-merged-tag">정리본</em>
+            </time>
+            {mergedEdit !== null ? (
+              <div className="ws-strat-edit">
+                <textarea
+                  autoFocus
+                  value={mergedEdit}
+                  onChange={(e) => setMergedEdit(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setMergedEdit(null);
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void saveMerged();
+                  }}
+                  rows={Math.min(10, Math.max(3, mergedEdit.split(/\n/).length + 1))}
+                  aria-label="종목 전략 정리본 고치기"
+                />
+                <div>
+                  <button type="button" onClick={() => setMergedEdit(null)} disabled={busy}>
+                    취소
+                  </button>
+                  <button type="button" className="primary" onClick={() => void saveMerged()} disabled={busy || !mergedEdit.trim()}>
+                    {busy ? "저장 중…" : "저장"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 정리본으로 남아요)" onClick={() => setMergedEdit(merged)} onKeyDown={(e) => e.key === "Enter" && setMergedEdit(merged)}>
+                {merged || "아직 정한 매수 · 매도 · 손절 · 목표가 없어요. 눌러서 적거나 차트 노트에서 저장하세요."}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      {notes.length > 0 && <details className="ws-strat-history"><summary>지난 기록 {notes.length}개</summary>
       <div className="ws-memo ws-strat-memo">
         {notes.length === 0 ? (
           <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>
@@ -139,6 +196,8 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
           ))
         )}
       </div>
+      </details>}
+      {notes.length === 0 && <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>}
     </section>
   );
 }
