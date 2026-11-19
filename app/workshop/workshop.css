@@ -1352,3 +1352,5 @@ details.ws-ladder { padding:10px 12px; }
 .ws-review-records .ws-review-editable:hover, .ws-review-records .ws-review-editable:focus-visible { background:var(--c-hover, rgba(0,0,0,.04)); outline:1px dashed var(--c-line-strong); }
 .ws-review-records textarea { width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--c-accent); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:21px; resize:vertical; }
 .ws-review-records > div.edited time em { color:var(--c-warn, #d97706); }
+/* AI 분석 전: 저장 버튼 아래 안내 */
+.ws-save-hint { margin:6px 2px 0; color:var(--c-sub); font-size:12px; line-height:17px; text-align:center; }
