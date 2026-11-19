@@ -50,8 +50,8 @@
 .mm-tool:disabled { opacity:.4; cursor:default; }
 .mm-pin { display:grid; place-items:center; flex:none; width:20px; height:20px; padding:0; border:0; border-radius:5px; background:none; color:#b4bcc8; cursor:pointer; }
 .mm-pin:hover { background:#eef1f6; color:#8791a3; }
-.mm-pin.on, .mm-pin.on:hover { color:#f5b400; }
-.mm-pin.on svg { fill:#f5b400; }
+.mm-pin.on, .mm-pin.on:hover { color:#0f2367; }
+.mm-pin.on svg { fill:currentColor; }
 .mm-tools { display:flex; gap:8px; }
 .mm-tools .mm-pin { width:34px; height:34px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); }
 
