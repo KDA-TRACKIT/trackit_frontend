@@ -136,11 +136,17 @@ export default function SaveReview({
             </section>
           )}
 
-          {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분을 합친 모습 (저장 뒤 아래 종목 전략에 이렇게 쌓임) */}
+          {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분(AI 가 쌓인 전략과 합친 정리본)을 합친 모습 */}
           <section>
             <h3>
               종목 전략 <span>{records.length + (pendingText.trim() ? 1 : 0)}개 · 저장 후 · 눌러서 고치기</span>
             </h3>
+            {/* AI 가 쌓인 전략과 합치며 뺀 예전 항목 (이번 Memo 로 관점이 바뀐 것) */}
+            {ai?.strategy && ai.dropped?.length ? (
+              <p className="ws-review-dropped">
+                <b>이번에 바뀌어 뺀 예전 전략</b> {ai.dropped.join(" · ")}
+              </p>
+            ) : null}
             <div className="ws-review-records">
               {records.map((r) => (
                 <div key={r.id} className={recEdits[r.id] !== undefined ? "edited" : undefined}>

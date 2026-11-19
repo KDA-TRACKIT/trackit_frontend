@@ -20,7 +20,7 @@ import RecordBoard from "./RecordBoard";
 import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
-import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
+import { addRecord, kstNow, linkPending, memoText, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanConfirm";
 import { noteLines, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
@@ -376,6 +376,12 @@ export default function WorkshopPage() {
             ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자 판단 근거] ${noteText.trim()}` }]
             : []),
         ],
+        // 이 종목에 쌓인 종목 전략 → AI 가 이번 노트와 합쳐 하나로 정리 (바뀐 관점만 빼고 이어받음)
+        previousStrategy: currentRecords(recordsOfSymbol(allRecords, symbol.code))
+          .sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`))
+          .slice(-60)
+          .map((r) => ({ at: `${r.date} ${r.noteTime.slice(0, 5)}`, text: memoText(r.text).slice(0, 4000) }))
+          .filter((r) => r.text.trim()),
         mode: "ai",
         provider: "openai",
         currency: us ? "USD" : "KRW",
@@ -527,7 +533,12 @@ export default function WorkshopPage() {
 
   /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 분석 정리(머리표 없이) + 고른 매매 */
   //   매매 계획 줄([노트 종류] · [매수 조건] …)은 체결과 연결됐을 때만 (연결 안 되면 매매 계획으로 치지 않음)
-  const savedText = () => [noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : "", linkedExecution ? planText(withMemo(plan, noteText)) : ""].filter(Boolean).join("\n\n");
+  const savedText = () =>
+    // AI 가 쌓인 전략과 합친 정리본이 있으면 그게 이번 종목 전략 (예전 전략 + 이번 Memo, 바뀐 관점만 뺌). 없으면 Memo + AI 정리
+    (aiMemoResult?.strategy?.trim()
+      ? [aiMemoResult.strategy.trim()]
+      : [noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""]
+    ).concat(linkedExecution ? planText(withMemo(plan, noteText)) : "").filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {

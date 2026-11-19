@@ -28,6 +28,8 @@ export type ChartMemoRequest = {
   provider?: "gemini" | "openai";
   /** 미국 종목은 USD (메모 금액을 $로) */
   currency?: "KRW" | "USD";
+  /** 이 종목에 쌓인 종목 전략 (오래된 것부터) → AI 가 이번 노트와 합쳐 정리본(strategy)을 돌려줌 */
+  previousStrategy?: { at: string; text: string }[];
 };
 export type ChartMemoResult = {
   memo: string;
@@ -54,6 +56,10 @@ export type ChartMemoResult = {
   questions?: string[];
   /** AI 를 못 써서(꺼짐 · 키 없음 · 오류) 규칙 메모로 대신 정리했을 때 그 이유 */
   aiFallback?: string;
+  /** 종목 전략 정리본: 쌓인 전략에서 이번 노트로 관점이 바뀐 부분만 빼고 이어받아 새 내용과 합친 것 */
+  strategy?: string;
+  /** 정리하며 뺀 예전 항목 */
+  dropped?: string[];
 };
 
 export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResult> {
