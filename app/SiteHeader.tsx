@@ -16,7 +16,7 @@ const MENU: Menu[] = [
       { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시" },
     ],
   },
-  { key: "marketplace", label: "전략 마켓", href: "/marketplace" },
+  { key: "marketplace", label: "전략마켓", href: "/marketplace" },
   {
     key: "archive",
     label: "전략보관함",
