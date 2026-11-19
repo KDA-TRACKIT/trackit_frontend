@@ -375,10 +375,10 @@ html[data-theme="dark"] .mk-sim-trades .who i.kind.stock { color:#b794f6; }
 .mk-asof { margin:-6px 0 12px; color:var(--c-faint); font-size:12px; }
 /* 매수 · 매도 가격 글씨 (화살표 옆, 봉 · 선을 피해 자리 잡음) */
 .mk-sim-chart-wrap { position:relative; }
-.mk-sim-tags { position:absolute; inset:0; z-index:5; pointer-events:none; }
+.mk-sim-tags { position:absolute; inset:0; z-index:5; overflow:hidden; pointer-events:none; }
 .mk-sim-tag { position:absolute; padding:1px 6px; border-radius:4px; background:var(--tag); color:#fff; font-size:11px; font-weight:700; line-height:16px; white-space:nowrap; font-variant-numeric:tabular-nums; box-shadow:0 1px 2px rgba(0,0,0,.25); }
 /* 손그림 (기영이 얼굴 · 빛의 검): 펜으로 그린 느낌 */
-.mk-sim-doodle { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.mk-sim-doodle { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
 .mk-sim-doodle polyline { fill:none; stroke:#c8925a; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
 html[data-theme="dark"] .mk-sim-doodle polyline { stroke:#f1f3f7; }
 .mk-sim-doodle polyline.sword { stroke:#eabc68; stroke-width:3; }

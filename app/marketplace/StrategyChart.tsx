@@ -275,8 +275,16 @@ export default function StrategyChart({
     const hit = (a: Box, b: Box) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
     const placeLabels = () => {
       if (!layer) return;
+      const pane0 = chart.panes()[0];
+      if (!pane0) return;
       layer.replaceChildren();
       const ts = chart.timeScale();
+      // 손그림 · 가격 글씨 층을 가격 창(오른쪽 가격 축 · 아래 창 제외)에 맞추고 밖은 잘라냄
+      //   → 차트를 끌어 옮겨도 그림 · 글씨가 차트 밖으로 삐져나오지 않음
+      layer.style.right = "auto";
+      layer.style.bottom = "auto";
+      layer.style.width = `${ts.width()}px`;
+      layer.style.height = `${pane0.getHeight()}px`;
       // 손그림: 봉 위치(+소수) → 화면 좌표, 펜으로 그린 것처럼 둥근 선
       const doodleDots: { x: number; y: number }[] = [];
       if (doodles.length) {
@@ -314,7 +322,7 @@ export default function StrategyChart({
       const spacing = ok.length > 1 ? (ok[ok.length - 1] - ok[0]) / (ok.length - 1) : 8;
       const hw = Math.max(2, spacing * 0.4);
       const W = ts.width();
-      const H = chart.panes()[0].getHeight();
+      const H = pane0.getHeight();
       const py = (v: number) => candle.priceToCoordinate(v);
       // 피할 것: 봉 몸통 + 꼬리, 그은 선 (선은 3px 간격 점으로)
       const boxes: Box[] = [];
