@@ -260,8 +260,8 @@ export default function MemosPage() {
               ) : (
                 byDay(listed).map((g) => (
                   <div key={g.date} className="mm-group">
-                    <div className="mm-day">
-                      {shortDate(g.date)} <small>{weekdayOf(g.date)}요일</small>
+                    <div className="mm-day mm-band">
+                      {shortDate(g.date)} <small>{weekdayOf(g.date)}요일 · 노트 {g.items.length}개</small>
                     </div>
                     {g.items.map((m) => (
                       <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={setSel} />
@@ -346,7 +346,7 @@ function StockGroups({ memos, pins, sel, onSelect }: { memos: Memo[]; pins: Read
     <>
       {shown.map((g) => (
         <div key={g.subject} className="mm-group">
-          <div className="mm-day mm-stock-head">
+          <div className="mm-day mm-band">
             {g.subject} <small>노트 {g.items.length}개</small>
           </div>
           {g.items.map((m) => (
@@ -544,8 +544,12 @@ function CalendarView({
   const scale = retScale([...returns].filter(([k]) => k.length === 10 && k.startsWith(month) && !["토", "일"].includes(weekdayOf(k))).map(([, v]) => v));
   const ticks = retTicks(scale);
   const dayItems = [...(byDate.get(day) ?? [])].sort(sort === "new" ? byNew : byOld);
-  // 오른쪽 목록: 고른 날 다음에 그 달의 앞선 날들 (최근 날부터)
-  const earlier = [...byDate.keys()].filter((d) => d < day).sort().reverse();
+  // 오른쪽 목록: 고른 날 다음에 그 달의 앞선 날들 (최근 날부터). 고른 날이 없으면(같은 날을 한 번 더 누름) 그 달 전체를 날짜별로
+  const earlier = day ? [...byDate.keys()].filter((d) => d < day).sort().reverse() : [];
+  const monthDays = [...byDate.keys()].sort();
+  if (sort === "new") monthDays.reverse();
+  // 날 칸 누르기: 고른 날을 한 번 더 누르면 고르기 풀림 → 달 전체 노트
+  const toggleDay = (d: string) => onDay(d === day ? "" : d);
   const navList = sel ? [...(byDate.get(sel.date) ?? [])].sort(sort === "new" ? byNew : byOld) : [];
   const navAt = sel ? navList.findIndex((m) => m.id === sel.id) : -1;
 
@@ -595,9 +599,16 @@ function CalendarView({
                     aria-selected={isSel}
                     className={`mm-cell${weekend ? " is-weekend" : ""}${isSel ? " is-sel" : ""}${d === today ? " is-today" : ""}${d > today ? " is-future" : ""}`}
                     style={ret !== undefined && !weekend ? { background: retColor(ret, scale) } : undefined}
-                    onClick={() => onDay(d)}
+                    onClick={() => toggleDay(d)}
                   >
-                    <button type="button" className="mm-cell-day" aria-label={`${longDate(d)}${items.length ? ` 노트 ${items.length}개` : ""}`} onClick={(e) => (e.stopPropagation(), onDay(d))}>
+                    <button
+                      type="button"
+                      className="mm-cell-day"
+                      aria-pressed={isSel}
+                      aria-label={`${longDate(d)}${items.length ? ` 노트 ${items.length}개` : ""}`}
+                      title={isSel ? "한 번 더 누르면 이 달 전체 노트" : undefined}
+                      onClick={(e) => (e.stopPropagation(), toggleDay(d))}
+                    >
                       <b>{Number(d.slice(8))}</b>
                       {d === today && <em>오늘</em>}
                       {ret !== undefined && <span className={ret >= 0 ? "up" : "down"}>{pctText(ret)}</span>}
@@ -666,6 +677,20 @@ function CalendarView({
             next: navAt >= 0 && navAt < navList.length - 1 ? () => onSelect(navList[navAt + 1]) : null,
           }}
         />
+      ) : !day ? (
+        // 고른 날 없음: 이 달 전체 노트를 날짜별로 (정렬 = 최신순이면 최근 날부터)
+        <section className="mm-card mm-side" aria-label={`${monthLabel(month)} 전체 노트`}>
+          <header className="mm-list-head">
+            <b>
+              {monthLabel(month)} 전체 <span className="mm-count">노트 {inMonth.length}</span>
+            </b>
+            <SortSelect sort={sort} onSort={onSort} />
+          </header>
+          {!monthDays.length && <p className="mm-side-none">이 달에 남긴 노트가 없어요.</p>}
+          {monthDays.map((d) => (
+            <SideDayGroup key={d} d={d} items={[...(byDate.get(d) ?? [])].sort(sort === "new" ? byNew : byOld)} ret={returns.get(d)} pins={pins} onSelect={onSelect} />
+          ))}
+        </section>
       ) : (
         <section className="mm-card mm-side" aria-label={`${longDate(day)} 노트`}>
           <header className="mm-list-head">
@@ -679,25 +704,28 @@ function CalendarView({
           ) : (
             <p className="mm-side-none">이 날 남긴 노트가 없어요.</p>
           )}
-          {earlier.map((d) => {
-            const items = [...(byDate.get(d) ?? [])].sort(sort === "new" ? byNew : byOld);
-            const ret = returns.get(d);
-            return (
-              <div key={d} className="mm-group">
-                <div className="mm-side-day">
-                  <b>
-                    {longDate(d)} <small>노트 {items.length}</small>
-                  </b>
-                  {ret !== undefined && <span className={ret >= 0 ? "up" : "down"}>{pctText(ret)}</span>}
-                </div>
-                {items.map((m) => (
-                  <SideRow key={m.id} m={m} pinned={pins.has(m.id)} onSelect={onSelect} />
-                ))}
-              </div>
-            );
-          })}
+          {earlier.map((d) => (
+            <SideDayGroup key={d} d={d} items={[...(byDate.get(d) ?? [])].sort(sort === "new" ? byNew : byOld)} ret={returns.get(d)} pins={pins} onSelect={onSelect} />
+          ))}
         </section>
       )}
+    </div>
+  );
+}
+
+/** 오른쪽 목록의 하루 묶음: 날짜 · 노트 수 · 그날 수익률 + 노트들 */
+function SideDayGroup({ d, items, ret, pins, onSelect }: { d: string; items: Memo[]; ret: number | undefined; pins: ReadonlySet<string>; onSelect: (m: Memo) => void }) {
+  return (
+    <div className="mm-group">
+      <div className="mm-side-day">
+        <b>
+          {longDate(d)} <small>노트 {items.length}</small>
+        </b>
+        {ret !== undefined && <span className={ret >= 0 ? "up" : "down"}>{pctText(ret)}</span>}
+      </div>
+      {items.map((m) => (
+        <SideRow key={m.id} m={m} pinned={pins.has(m.id)} onSelect={onSelect} />
+      ))}
     </div>
   );
 }
