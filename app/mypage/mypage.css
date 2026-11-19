@@ -651,3 +651,11 @@ html:not([data-theme="dark"]) :is(.mp, .mp-modal, .mp-cf) { --c-accent:#0f2367; 
 
 /* 판매 관리 4칸 (시안 2026-11-19): 좁으면 2칸 × 2줄, 둘째 줄 첫 칸은 왼쪽 선 없음 */
 @media (max-width:900px) { .mp-home-sales { grid-template-columns:1fr 1fr; gap:20px 0; } .mp-home-sales > div:nth-child(3) { border-left:0; padding-left:0; } }
+
+/* 비즈니스 전환 자동 판정 조건 목록 */
+.mp-elig { display:flex; flex-direction:column; gap:6px; margin:14px 0 0; padding:0; list-style:none; }
+.mp-elig li { display:grid; grid-template-columns:18px 1fr auto; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); font-size:14px; }
+.mp-elig li > span { color:var(--c-faint); font-weight:800; text-align:center; }
+.mp-elig li > b { color:var(--c-ink); font-weight:600; }
+.mp-elig li > em { color:var(--c-sub); font-style:normal; font-variant-numeric:tabular-nums; }
+.mp-elig li.ok > span, .mp-elig li.ok > em { color:var(--c-ok, #1f8a4c); font-weight:700; }

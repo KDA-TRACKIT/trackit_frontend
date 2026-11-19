@@ -205,6 +205,8 @@ type Props = {
   onDrawingsChange?: (drawings: Drawing[]) => void;
   /** 밖(차트 노트의 선 목록)에서 선을 지울 수 있게 지우기 함수를 넘겨 줌 */
   registerRemove?: (remove: (ids: string[]) => void) => void;
+  /** 저장 확인 창에 보여 줄 차트 그림: 지금 차트(드로잉 포함)를 찍고 선 가격마다 지지 · 저항 라벨을 얹어 PNG 로 */
+  registerSnapshot?: (snap: (marks: { price: number; text: string; color: string }[]) => Promise<string | null>) => void;
   /** 저장본에서 불러온 드로잉. key가 바뀔 때만 차트에 넣는다 (실행 취소 기록도 비움) */
   loadedDrawings?: { key: string; drawings: Drawing[] };
   notes: ChartNote[];
@@ -374,7 +376,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -1719,6 +1721,72 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     apply(next);
   }
 
+  // 저장 확인 창용 차트 그림
+  //   그은 선이 모두 들어가게 잠깐 시간 · 가격 범위를 드로잉에 맞춰 넓혀 찍고 원래대로 되돌림
+  //   드로잉 층은 위 캔버스라 addTopLayer 로 같이 찍음 (십자선은 빼고), 선 가격마다 지지 · 저항 라벨을 얹음
+  useEffect(() => {
+    registerSnapshot?.(async (marks) => {
+      const chart = chartRef.current;
+      const series = candleRef.current;
+      const host = containerRef.current;
+      const layer = layerRef.current;
+      if (!chart || !series || !host) return null;
+      const ts = chart.timeScale();
+      const prevRange = ts.getVisibleLogicalRange();
+      const pts = drawingsRef.current.flatMap((d) => d.points);
+      const prices = [...pts.map((p) => Number(p.price)), ...marks.map((m) => m.price)].filter((n) => Number.isFinite(n) && n > 0);
+      const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      try {
+        if (layer && pts.length) {
+          const ls = pts.map((p) => layer.timeToLogical(p.time)).filter((n): n is number => n !== null && Number.isFinite(n));
+          const last = Math.max(0, (barsRef.current?.length ?? 1) - 1);
+          const from = Math.min(...ls, prevRange?.from ?? last);
+          const to = Math.max(...ls, prevRange?.to ?? last);
+          ts.setVisibleLogicalRange({ from: from - 3, to: to + 3 });
+        }
+        if (prices.length) {
+          const lo = Math.min(...prices);
+          const hi = Math.max(...prices);
+          series.applyOptions({
+            autoscaleInfoProvider: (base: () => { priceRange: { minValue: number; maxValue: number } | null } | null) => {
+              const r = base();
+              return { priceRange: { minValue: Math.min(r?.priceRange?.minValue ?? lo, lo), maxValue: Math.max(r?.priceRange?.maxValue ?? hi, hi) } };
+            },
+          });
+        }
+        await frame();
+        const shot = chart.takeScreenshot(true, false);
+        const ctx = shot.getContext("2d");
+        if (ctx) {
+          const scale = shot.width / Math.max(1, host.clientWidth);
+          const right = shot.width - chart.priceScale("right").width() * scale - 6 * scale;
+          ctx.font = `700 ${12 * scale}px Pretendard, sans-serif`;
+          ctx.textBaseline = "middle";
+          for (const m of marks) {
+            const y = series.priceToCoordinate(m.price);
+            if (y === null || y < 0 || y * scale > shot.height) continue;
+            const w = ctx.measureText(m.text).width + 12 * scale;
+            const h = 18 * scale;
+            const x = right - w;
+            ctx.fillStyle = m.color;
+            ctx.beginPath();
+            ctx.roundRect(x, y * scale - h / 2, w, h, 9 * scale);
+            ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.fillText(m.text, x + 6 * scale, y * scale);
+          }
+        }
+        return shot.toDataURL("image/png");
+      } catch {
+        return null;
+      } finally {
+        // 보던 화면 그대로 되돌림
+        series.applyOptions({ autoscaleInfoProvider: undefined });
+        if (prevRange) ts.setVisibleLogicalRange(prevRange);
+      }
+    });
+  });
+
   // 차트 노트 선 목록에서 지우기 → 되돌리기(↶)로 살릴 수 있게 commit
   useEffect(() => {
     registerRemove?.((ids) => {
@@ -2091,8 +2159,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         </button>
         {/* 차트 박스 오른쪽 끝: 기록으로 저장 + AI 차트 메모 정리 */}
         {onSave && (
-          <button className="ws-tool-text ws-chart-save" onClick={onSave} disabled={saving} title="모든 드로잉(선·채널·박스·포지션·피보나치·글 등)과 차트 노트를 기록으로 저장하고, AI 가 오른쪽 차트 메모로 정리해요">
-            {saving ? "정리 중…" : "저장"}
+          <button className="ws-tool-text ws-chart-save" onClick={onSave} disabled={saving} title="그은 선(채널·박스·피보나치 등)과 Memo 를 AI 가 분석해 오른쪽 차트 노트에 정리해요 (드로잉은 자동 저장)">
+            {saving ? "분석 중…" : "AI 분석"}
           </button>
         )}
       </div>

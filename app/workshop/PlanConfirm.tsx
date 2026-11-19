@@ -160,11 +160,14 @@ export default function PlanConfirm({
   /** 그은 선 지우기 (차트에서도 지워짐, 차트의 되돌리기로 살릴 수 있음) */
   onDelete?: (drawingIds: string[]) => void;
 }) {
-  const { rungs, groups } = useMemo(() => buildLadder(drawings, nowTime, bars), [drawings, nowTime, bars]);
+  const { rungs, groups, skipped } = useMemo(() => buildLadder(drawings, nowTime, bars), [drawings, nowTime, bars]);
+  // 도구가 미리 정한 매매(롱 · 숏 포지션의 진입 · 목표 · 손절): 투자자가 고르거나 취소하기 전까지는 그 값
+  const presets = new Map(rungs.flatMap((r) => (r.preset ? [[r.key, r.preset] as const] : [])));
+  const tradeOf = (key: string) => (key in answers ? answers[key] : presets.get(key)) || "";
 
   /** 고르기 · 같은 걸 다시 누르면 취소 (계획 칸의 그 문장도 같이 빠짐) */
   const choose = (key: string, m: string, p: string) => {
-    const prev = answers[key];
+    const prev = tradeOf(key);
     let next = plan;
     if (prev) {
       const old = phrase(prev, p);
@@ -183,14 +186,14 @@ export default function PlanConfirm({
 
   /** 나눌 수 없는 선: 투자자가 지지 · 저항을 고름 (바꾸면 그 선에서 고른 매매는 취소) */
   const setRole = (key: string, r: Role | "", p: string) => {
-    if (answers[key]) choose(key, answers[key], p);
+    if (tradeOf(key)) choose(key, tradeOf(key), p);
     onAnswer(roleKey(key), r);
   };
 
   /** 역할 표시 + 매매 고르기 */
   const lineChips = (key: string, low: number, high: number, p: string, zone = false, slant = false) => {
     const { role, auto } = roleOf(key, low, high, current, answers, slant ? lastBar : undefined);
-    const picked = answers[key];
+    const picked = tradeOf(key);
     return (
       <div className="ws-ladder-chips">
         {auto ? (
@@ -285,7 +288,7 @@ export default function PlanConfirm({
     </li>
   );
 
-  const tradeCount = rows.filter((r) => answers[r.key]).length;
+  const tradeCount = rows.filter((r) => tradeOf(r.key)).length;
   const unset = rows.filter((r) => !roleRow(r)).length;
 
   // 확정 뒤엔 사다리 대신 아무것도 (계획은 메모 뒤 [항목] 줄로 남음)
@@ -299,6 +302,7 @@ export default function PlanConfirm({
           <small>
             {tradeCount ? `매매 ${tradeCount}개` : "지지 · 저항 자동 분류"}
             {unset ? ` · 미분류 ${unset}개` : ""}
+            {skipped.length ? <span title={`지지 · 저항이 아닌 드로잉이라 빠짐: ${[...new Set(skipped.map((x) => x.label))].join(", ")}`}> · 제외 {skipped.length}개</span> : null}
           </small>
         </div>
         {above.length > 0 && <ul>{above.map(row)}</ul>}

@@ -1299,3 +1299,56 @@ details.ws-ladder { padding:10px 12px; }
 .ws-note-panel .ws-save:not(.ghost) { height:44px; border:0; border-radius:10px; background:var(--c-accent); color:var(--c-on-accent); font-size:14px; font-weight:800; }
 .ws-note-panel .ws-save:not(.ghost):hover:not(:disabled) { filter:brightness(1.08); }
 .ws-note-panel .ws-save:disabled { background:var(--c-disabled, #e9edf3); color:var(--c-faint); }
+
+/* 저장할 내용 확인 (큰 창) */
+.ws-review-backdrop { position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:24px; background:rgba(10,16,30,.55); }
+.ws-review { display:flex; flex-direction:column; width:min(1120px, 100%); max-height:calc(100vh - 48px); border-radius:16px; background:var(--c-surface); color:var(--c-ink); box-shadow:0 24px 64px rgba(0,0,0,.3); overflow:hidden; }
+.ws-review-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 16px; border-bottom:1px solid var(--c-line); }
+.ws-review-head h2 { margin:0; font-size:20px; font-weight:800; }
+.ws-review-head p { margin:4px 0 0; color:var(--c-sub); font-size:13px; }
+.ws-review-x { width:32px; height:32px; border:0; border-radius:8px; background:none; color:var(--c-sub); font-size:16px; cursor:pointer; }
+.ws-review-x:hover { background:var(--c-subtle); }
+.ws-review-body { display:flex; flex-direction:column; gap:22px; padding:20px 28px; overflow-y:auto; }
+.ws-review-body h3 { display:flex; align-items:baseline; gap:6px; margin:0 0 10px; font-size:15px; font-weight:800; }
+.ws-review-body h3 span { color:var(--c-sub); font-size:12.5px; font-weight:600; }
+.ws-review-chart img { display:block; width:100%; height:auto; border:1px solid var(--c-line); border-radius:10px; }
+.ws-review-cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:24px; }
+.ws-review-cols > section > h3 + * + h3 { margin-top:18px; }
+.ws-review-lines { display:flex; flex-direction:column; margin:0; padding:0; list-style:none; border:1px solid var(--c-line); border-radius:10px; }
+.ws-review-lines li { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13.5px; }
+.ws-review-lines li + li { border-top:1px solid var(--c-line); }
+.ws-review-lines b { min-width:84px; font-variant-numeric:tabular-nums; }
+.ws-review-lines span { flex:1; color:var(--c-sub); font-size:12.5px; }
+.ws-review-lines em { padding:2px 8px; border-radius:6px; font-size:12px; font-style:normal; font-weight:700; }
+.ws-review-lines em.sup { background:color-mix(in srgb, var(--c-up, #1f8a4c) 14%, transparent); color:var(--c-up, #1f8a4c); }
+.ws-review-lines em.res { background:color-mix(in srgb, var(--c-down, #d64545) 14%, transparent); color:var(--c-down, #d64545); }
+.ws-review-lines em.none { background:var(--c-subtle); color:var(--c-faint); }
+.ws-review-lines i { padding:2px 8px; border-radius:6px; background:var(--c-accent); color:var(--c-on-accent); font-size:12px; font-style:normal; font-weight:700; }
+.ws-review-text { margin:0; padding:12px 14px; border:1px solid var(--c-line); border-radius:10px; font-size:14px; line-height:22px; white-space:pre-wrap; word-break:keep-all; }
+.ws-review-ai { display:flex; flex-direction:column; gap:6px; padding:12px 14px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-subtle); font-size:13.5px; line-height:21px; }
+.ws-review-ai p { margin:0; word-break:keep-all; }
+.ws-review-ai b { margin-right:6px; }
+.ws-review-records { display:flex; flex-direction:column; max-height:220px; overflow-y:auto; padding:6px 14px; border:1px solid var(--c-line); border-radius:10px; }
+.ws-review-records > div { display:grid; grid-template-columns:132px minmax(0,1fr); gap:12px; padding:6px 0; }
+.ws-review-records time { color:var(--c-sub); font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; padding-top:2px; }
+.ws-review-records p { margin:0; font-size:13.5px; line-height:21px; white-space:pre-wrap; word-break:keep-all; }
+.ws-review-empty { margin:0; color:var(--c-faint); font-size:13px; }
+.ws-review-foot { padding:16px 28px 20px; border-top:1px solid var(--c-line); background:var(--c-surface); }
+.ws-review-foot > p { margin:0; color:var(--c-sub); font-size:13px; line-height:20px; }
+.ws-review-foot > p b { color:var(--c-ink); }
+.ws-review-error { margin-top:6px !important; color:var(--c-err, #d64545) !important; }
+.ws-review-foot > div { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+.ws-review-foot button { min-width:110px; height:42px; padding:0 18px; border:1px solid var(--c-line-strong); border-radius:10px; background:var(--c-surface); color:var(--c-ink); font-size:14px; font-weight:700; cursor:pointer; }
+.ws-review-foot button.primary { border-color:var(--c-accent); background:var(--c-accent); color:var(--c-on-accent); }
+.ws-review-foot button:disabled { opacity:.6; cursor:default; }
+@media (max-width:800px) { .ws-review-cols { grid-template-columns:1fr; } .ws-review-body, .ws-review-head, .ws-review-foot { padding-left:18px; padding-right:18px; } }
+.ws-review-records > div.new { margin:4px -10px 0; padding:8px 10px; border-radius:8px; background:var(--c-accent-soft, #e8edf6); }
+.ws-review-records time em { display:block; margin-top:3px; color:var(--c-accent); font-size:11.5px; font-style:normal; font-weight:800; }
+.ws-review-lines u { margin-left:auto; padding:2px 7px; border-radius:6px; font-size:11.5px; font-weight:700; text-decoration:none; }
+.ws-review-lines u.new { background:var(--c-accent-soft, #e8edf6); color:var(--c-accent); }
+.ws-review-lines u.moved { background:var(--c-warn-soft, #fff3e6); color:var(--c-warn, #d97706); }
+/* 저장 확인 창 · 종목 전략 눌러서 고치기 */
+.ws-review-records .ws-review-editable { margin:-3px -6px; padding:3px 6px; border-radius:6px; cursor:text; }
+.ws-review-records .ws-review-editable:hover, .ws-review-records .ws-review-editable:focus-visible { background:var(--c-hover, rgba(0,0,0,.04)); outline:1px dashed var(--c-line-strong); }
+.ws-review-records textarea { width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--c-accent); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:21px; resize:vertical; }
+.ws-review-records > div.edited time em { color:var(--c-warn, #d97706); }

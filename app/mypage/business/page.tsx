@@ -2,7 +2,11 @@
 // 비즈니스 프로필 전환 (시안 2026-11-18):
 //   전략 판매 시작하기 → 판매 약관 동의 → 정산 정보 입력 → 프로필 정보 공개 안내(동의) → 완료
 //   판매자 API 가 생기기 전까지 전환 상태는 이 브라우저에만. 정산 계좌는 끝 4자리만 저장 (전체 번호는 남기지 않음)
-import { useState } from "react";
+//   전환 자격은 사람이 심사하지 않고 서버가 처음 3개월 기록으로 자동 판정 (GET /me/business-eligibility, 2026-11-17 기준을 더미 데이터로 조정)
+//     조건을 다 채우면 '계정 전환'이 켜지고 약관 · 정산 · 공개 동의 뒤 바로 비즈니스 프로필. 못 채우면 남은 조건과 3개월 되는 날을 보여 줌
+import { useEffect, useState } from "react";
+import { apiRequest, errorMessage } from "../../../lib/api/client";
+import { readInvestment } from "../investment/InvestmentFields";
 import { useMypage } from "../context";
 import { Card, Modal, PageHead } from "../ui";
 import { SELLER_TERMS_VERSION, saveBusiness, useBusiness, type Settlement } from "./state";
@@ -23,10 +27,48 @@ const bizNo = (v: string) => {
 
 type Step = "none" | "terms" | "settle" | "public" | "done";
 
+type Eligibility = {
+  ok: boolean;
+  typeLabel: string;
+  eligibleAt: string | null;
+  firstNoteAt: string | null;
+  criteria: { key: string; label: string; value: number | string; need: number | string; ok: boolean }[];
+};
+/** '내 투자 정보'의 주요 투자 기간 → 판정 유형 (단기 · 스윙 · 중장기 · 분석형) */
+function traderType(period: string) {
+  if (/분석|전망|매크로/.test(period)) return "ANALYST";
+  if (/단기|데이|스캘/.test(period)) return "SHORT";
+  if (/장기/.test(period)) return "MID";
+  return "SWING";
+}
+/** 조건 한 줄의 값 · 기준 글자 */
+function amount(c: Eligibility["criteria"][number]) {
+  if (c.key === "period") return `${c.value}일 / ${c.need}일`;
+  if (c.key === "adherence") return `${c.value}${c.value === "—" ? "" : "%"} / ${c.need}% 이상`;
+  if (c.key === "gap") return `${c.value}개월 / ${c.need}개월 이하`;
+  const unit = c.key === "trades" ? "건" : c.key === "days" ? "일" : "개";
+  return `${c.value}${unit} / ${c.need}${unit}`;
+}
+const ymd = (iso: string) => iso.slice(0, 10).replaceAll("-", ".");
+
 export default function BusinessPage() {
   const { user, profile, meta, saveMeta } = useMypage();
-  const business = useBusiness(user.id);
-  const pending = business?.status === "pending";
+  const stored = useBusiness(user.id);
+  // 예전 '심사 중' 상태는 자동 판정으로 바뀌어 전환 전으로 봄 (조건을 채웠으면 다시 전환)
+  const business = stored?.status === "pending" ? null : stored;
+  const type = traderType(readInvestment(meta).period);
+  const [elig, setElig] = useState<{ type: string; data: Eligibility | null; error: string | null } | null>(null);
+  useEffect(() => {
+    if (business) return;
+    let alive = true;
+    apiRequest<Eligibility>(`/me/business-eligibility?type=${type}`)
+      .then((data) => alive && setElig({ type, data, error: null }))
+      .catch((e) => alive && setElig({ type, data: null, error: errorMessage(e) }));
+    return () => {
+      alive = false;
+    };
+  }, [business, type]);
+  const check = elig?.type === type ? elig : null;
   const [step, setStep] = useState<Step>("none");
   const [agreed, setAgreed] = useState<Record<string, boolean>>({});
   const all = TERMS.every((t) => agreed[t.key]);
@@ -53,7 +95,8 @@ export default function BusinessPage() {
       await saveMeta({ privacy: allPublic(readPrivacy(meta)) });
       const settlement: Settlement = { bank, accountLast4: account.slice(-4), holder: profile.name, ...(biz ? { businessNo: biz } : {}) };
       const now = new Date().toISOString();
-      saveBusiness(user.id, { status: "pending", termsVersion: SELLER_TERMS_VERSION, acceptedAt: now, settlement, publicConsentAt: now });
+      // 자격은 서버가 이미 판정 → 바로 비즈니스 프로필
+      saveBusiness(user.id, { status: "approved", termsVersion: SELLER_TERMS_VERSION, acceptedAt: now, settlement, publicConsentAt: now });
       setAccount(""); // 계좌번호는 바로 지운다
       setStep("done");
     } catch (err) {
@@ -103,8 +146,8 @@ export default function BusinessPage() {
 
   return (
     <>
-      <PageHead title={business && !pending ? "비즈니스 프로필 관리" : "비즈니스 프로필 전환"} desc={business && !pending ? undefined : "내 투자 전략을 판매하려면 비즈니스 프로필로 전환해 주세요."} />
-      {pending ? <Card className="mp-business-pending" title="전략 판매 시작하기"><div className="mp-biz-box"><strong>계정 전환 심사 중입니다.</strong><p>최대 영업일 기준 3~5일 소요됩니다.</p></div></Card> : business ? (
+      <PageHead title={business ? "비즈니스 프로필 관리" : "비즈니스 프로필 전환"} desc={business ? undefined : "내 투자 전략을 판매하려면 비즈니스 프로필로 전환해 주세요."} />
+      {business ? (
         <Card className="mp-business-management">
           <h2>정산 정보</h2>
           <p className="mp-card-desc">판매 수익은 매월 20일, 전월 확정 금액이 아래 계좌로 입금됩니다.</p>
@@ -135,19 +178,38 @@ export default function BusinessPage() {
           {error && <p className="mp-notice err" role="alert">{error}</p>}
           {saved && <p className="mp-notice ok">정산 계좌를 바꿨어요.</p>}
         </Card>
-      ) : <Card title="전략 판매 시작하기" desc="판매 조건을 확인하고 약관에 동의하면 비즈니스 프로필로 전환할 수 있어요.">
+      ) : <Card title="전략 판매 시작하기" desc="처음 3개월 동안의 기록으로 자동으로 판정해요. 조건을 모두 채우면 바로 전환할 수 있어요.">
           <div className="mp-biz-box">
-            <strong>개인 프로필 → 비즈니스 프로필</strong>
-            <p>비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요.</p>
+            <strong>
+              {!check ? "기록을 확인하고 있어요…" : check.error ? "판정 결과를 불러오지 못했어요" : check.data?.ok ? "조건을 모두 채웠어요. 지금 전환할 수 있어요." : `조건 ${check.data?.criteria.filter((c) => !c.ok).length ?? 0}개가 남았어요`}
+            </strong>
+            <p>
+              {check?.error
+                ? check.error
+                : check?.data
+                  ? `${check.data.typeLabel} 기준 · ${check.data.firstNoteAt ? `첫 메모 ${ymd(check.data.firstNoteAt)}` : "아직 메모가 없어요"}${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` · ${ymd(check.data.eligibleAt)}부터 기간 충족` : ""}`
+                  : "비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요."}
+            </p>
           </div>
+          {check?.data && (
+            <ul className="mp-elig">
+              {check.data.criteria.map((c) => (
+                <li key={c.key} className={c.ok ? "ok" : ""}>
+                  <span aria-hidden>{c.ok ? "✓" : "·"}</span>
+                  <b>{c.label}</b>
+                  <em>{amount(c)}</em>
+                </li>
+              ))}
+            </ul>
+          )}
       </Card>}
       <div className="mp-actions">
-        {pending ? <button type="button" className="mp-btn primary" disabled>계정 전환 취소</button> : business ? (
+        {business ? (
           <button type="button" className="mp-btn primary" disabled={!mOk} onClick={saveInline}>
             계좌 변경
           </button>
         ) : (
-          <button type="button" className="mp-btn primary" onClick={startConversion}>
+          <button type="button" className="mp-btn primary" onClick={startConversion} disabled={!check?.data?.ok} title={check?.data?.ok ? undefined : "판정 조건을 모두 채우면 전환할 수 있어요"}>
             계정 전환
           </button>
         )}
@@ -277,9 +339,9 @@ export default function BusinessPage() {
       )}
 
       {step === "done" && (
-        <Modal label="전환 신청 완료" onClose={close}>
-          <h2>비즈니스 프로필 전환 신청</h2>
-          <p className="mp-modal-desc">계정 전환 심사 중입니다. 최대 영업일 기준 3~5일 소요됩니다.</p>
+        <Modal label="전환 완료" onClose={close}>
+          <h2>비즈니스 프로필로 전환했어요</h2>
+          <p className="mp-modal-desc">이제 내 전략을 판매할 수 있어요. 판매 관리에서 열람권 가격을 정해 주세요.</p>
           <div className="mp-actions">
             <button type="button" className="mp-btn primary" style={{ minWidth: 88 }} onClick={close}>
               닫기

@@ -148,7 +148,7 @@ export default function PurchasedTraderPage() {
                       <small>연결된 매매가 없습니다.</small>
                     </button>
                   ))}
-                  {!trades.length && !carry.length && <p className="ar-note">이 달에는 매매가 없어요.</p>}
+                  {!trades.length && !carry.length && <p className="ar-pt-empty">이 달에는 매매가 없어요.</p>}
                 </div>
               </div>
             </section>

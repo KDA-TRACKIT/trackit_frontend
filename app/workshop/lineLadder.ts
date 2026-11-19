@@ -1,6 +1,17 @@
 // AI 노트 · 그은 선 정리: 현재가 기준 위(저항 후보) · 아래(지지 후보)로 가격순 사다리를 만든다
 //   - 수평선류: 그 가격 그대로
 //   - 추세선류: 오늘(마지막 봉) 시각에서의 값으로 (기울어진 선은 시간이 지나면 가격이 바뀌니까)
+//   - 평행 채널: 추세선과 같은 로직으로 위 · 아래 두 선을 따로 (각각 마지막 봉 기준 지지 · 저항)
+//   드로잉 도구별 (도구 75개 전부 확인, 2026-11-19):
+//     한 가격 선     수평선 · 수평 반직선 · 십자선 · 가격 라벨 · 가격 노트 · 핀
+//     기울어진 선    추세선 · 반직선 · 정보선 · 연장선 · 추세 각도 · 갠 팬(1x1 선) · 헤드 앤 숄더(넥라인) · 삼각형 패턴(두 변)
+//     채널(선 여러 개) 평행 채널(위 · 아래) · 평탄 상단/하단(기울어진 선 + 평평한 선) · 피치포크 3종(중앙선 + 양쪽 갈래)
+//                    회귀 추세 채널(종가 회귀 ±2σ 위 · 아래) · 피보나치 채널(0 · 0.382 · 0.618 · 1)
+//     레벨           피보나치 되돌림 · 추세 기반 피보나치 확장
+//     구간           사각형 · 회전 사각형 · 가격 범위 · 날짜·가격 범위 · 갠 박스 · 갠 스퀘어
+//     포지션         롱 · 숏 포지션: 진입 · 목표 · 손절 세 선, 매매(매수/매도 · 목표 · 손절)를 미리 골라 둠
+//     제외(가격 지지 · 저항이 아님) 수직선 · 시간대 · 주기 · 사인선 · 원 · 호 · 팬/호류 · 날짜 범위 · VWAP · 매물대 · 예측
+//                    · 화살표 · 마커 · 글 · 노트 · 말풍선 · 깃발 · 안내판 · 도형 · 경로 · 곡선 · 펜 · 형광펜 · 빠른 측정 · 나머지 패턴
 //   - 거의 같은 가격(0.5% 안)의 선은 한 줄로 묶음
 //   - 피보나치 · 구간(사각형 등)은 여러 가격을 가지므로 따로 한 줄씩 (레벨 · 범위)
 import { getTool, type Drawing } from "../../lib/drawing";
@@ -10,7 +21,10 @@ const LEVEL_TOOLS = new Set(["horizontal-line", "horizontal-ray", "cross-line", 
 /** 두 점으로 기울어진 선 → 오늘 값 */
 const SLANT_TOOLS = new Set(["trendline", "ray", "extended-line", "info-line", "trend-angle", "regression-trend"]);
 /** 위아래가 있는 구간 */
-const ZONE_TOOLS = new Set(["rectangle", "rotated-rectangle", "price-range", "price-range-only", "parallel-channel", "flat-top-bottom", "gann-box"]);
+const ZONE_TOOLS = new Set(["rectangle", "rotated-rectangle", "price-range", "price-range-only", "gann-box", "gann-square"]);
+/** 두 점 기울어진 선으로 보는 도구의 [시작점, 끝점] 번호 */
+const LINE_OF: Record<string, [number, number]> = { "gann-fan": [0, 1], "head-shoulders": [2, 4] };
+const FIB_CHANNEL_LEVELS = [0, 0.382, 0.618, 1];
 
 const RET_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
 const EXT_LEVELS = [0, 0.382, 0.618, 1, 1.272, 1.618, 2, 2.618];
@@ -25,6 +39,8 @@ export type Rung = {
   label: string;
   /** 기울어진 선 하나면 두 점 [시각(초), 가격] (날마다 값이 달라서 이행률 판정 때 그날 값을 다시 계산) */
   pts?: [number, number][];
+  /** 도구가 미리 정한 매매 (롱 · 숏 포지션의 진입 · 목표 · 손절) */
+  preset?: string;
 };
 export type Level = { key: string; lv: number; price: number };
 export type Group =
@@ -71,14 +87,116 @@ function at(d: Drawing, t: number, bars?: { time: number }[]) {
   return pa + ((pb - pa) * (t - a.time)) / (b.time - a.time);
 }
 
+/** 봉 순서 → 시각 (timeToLogical 의 반대) */
+function logicalToTime(bars: { time: number }[], l: number) {
+  const last = bars.length - 1;
+  if (l >= last) return bars[last].time + (l - last) * step(bars);
+  if (l <= 0) return bars[0].time + l * step(bars);
+  const i = Math.floor(l);
+  return bars[i].time + (bars[i + 1].time - bars[i].time) * (l - i);
+}
+
+/** 두 점 [시각, 가격] 을 이은 직선의 t 시각 값 (봉 순서 기준) */
+function onLine(pts: [number, number][], t: number, bars?: { time: number }[]) {
+  const [[ta, pa], [tb, pb]] = pts;
+  if (tb === ta) return pb;
+  if (bars?.length) {
+    const [la, lb, lt] = [timeToLogical(bars, ta), timeToLogical(bars, tb), timeToLogical(bars, t)];
+    if (lb !== la) return pa + ((pb - pa) * (lt - la)) / (lb - la);
+  }
+  return pa + ((pb - pa) * (t - ta)) / (tb - ta);
+}
+
 /** bars: 차트의 봉 (있으면 추세선 값을 차트와 같은 봉 순서로) */
-export function buildLadder(drawings: Drawing[], nowTime: number | undefined, bars?: { time: number }[]) {
+export function buildLadder(drawings: Drawing[], nowTime: number | undefined, bars?: { time: number; close?: number }[]) {
   const single: Rung[] = [];
   const groups: Group[] = [];
+  /** 지지 · 저항으로 보지 않는 드로잉 (글 · 화살표 · 시간 도구 등) */
+  const skipped: { id: string; label: string }[] = [];
+  const L = (t: number) => (bars?.length ? timeToLogical(bars, t) : t);
+  const T = (l: number) => (bars?.length ? logicalToTime(bars, l) : l);
+  /** 기울어진 선 하나 넣기 (값 = 오늘 · 마지막 봉 기준) */
+  const slant = (key: string, id: string, label: string, pts: [number, number][], preset?: string) => {
+    if (pts[0][0] === pts[1][0]) return;
+    const v = onLine(pts, nowTime ?? pts[1][0], bars);
+    if (v > 0) single.push({ key, ids: [id], price: v, label: nowTime ? `${label} · 오늘 값` : label, pts, ...(preset ? { preset } : {}) });
+  };
   for (const d of drawings) {
     const label = getTool(d.toolId)?.label ?? d.toolId;
     const p0 = num(d.points[0]?.price);
-    if (!(p0 > 0)) continue;
+    if (!(p0 > 0)) {
+      skipped.push({ id: d.id, label });
+      continue;
+    }
+    const P = (i: number) => num(d.points[i]?.price);
+    const Tm = (i: number) => d.points[i]?.time;
+    if (d.toolId === "long-position" || d.toolId === "short-position") {
+      // 0 = 진입, 1 = 목표, 2 = 손절 (lib/drawing/tools/forecast.ts)
+      const long = d.toolId === "long-position";
+      const parts: [string, number, string][] = [["진입", P(0), long ? "매수" : "매도"], ["목표", P(1), "목표"], ["손절", P(2), "손절"]];
+      for (const [name, price, preset] of parts) if (price > 0) single.push({ key: `${d.id}:${name}`, ids: [d.id], price, label: `${label} ${name}`, preset });
+      continue;
+    }
+    if (d.toolId === "flat-top-bottom" && d.points.length >= 3) {
+      slant(`${d.id}:slant`, d.id, `${label} 기울기선`, [[Tm(0), P(0)], [Tm(1), P(1)]]);
+      single.push({ key: `${d.id}:flat`, ids: [d.id], price: P(2), label: `${label} 평평한 선` });
+      continue;
+    }
+    if (LINE_OF[d.toolId] && d.points.length > LINE_OF[d.toolId][1]) {
+      const [i, j] = LINE_OF[d.toolId];
+      slant(d.id, d.id, d.toolId === "head-shoulders" ? `${label} 넥라인` : `${label} 1x1`, [[Tm(i), P(i)], [Tm(j), P(j)]]);
+      continue;
+    }
+    if (d.toolId === "triangle-pattern" && d.points.length >= 4) {
+      slant(`${d.id}:ac`, d.id, `${label} A-C`, [[Tm(0), P(0)], [Tm(2), P(2)]]);
+      slant(`${d.id}:bd`, d.id, `${label} B-D`, [[Tm(1), P(1)], [Tm(3), P(3)]]);
+      continue;
+    }
+    if ((d.toolId === "pitchfork" || d.toolId === "schiff-pitchfork" || d.toolId === "modified-schiff") && d.points.length >= 3) {
+      // 손잡이(h)에서 B · C 중점(m)으로 가는 방향으로 h · B · C 를 지나는 세 선 (차트와 같은 계산, 시간은 봉 순서)
+      const [la, lb, lc] = [L(Tm(0)), L(Tm(1)), L(Tm(2))];
+      const h = d.toolId === "pitchfork" ? [la, P(0)] : d.toolId === "schiff-pitchfork" ? [la, (P(0) + P(1)) / 2] : [(la + lb) / 2, (P(0) + P(1)) / 2];
+      const m = [(lb + lc) / 2, (P(1) + P(2)) / 2];
+      const dl = m[0] - h[0] || 1;
+      const dp = m[1] - h[1];
+      const through = (l: number, p: number): [number, number][] => [[T(l), p], [T(l + dl), p + dp]];
+      slant(`${d.id}:mid`, d.id, `${label} 중앙선`, through(h[0], h[1]));
+      slant(`${d.id}:b`, d.id, `${label} 갈래 B`, through(lb, P(1)));
+      slant(`${d.id}:c`, d.id, `${label} 갈래 C`, through(lc, P(2)));
+      continue;
+    }
+    if (d.toolId === "fib-channel" && d.points.length >= 3) {
+      const base: [number, number][] = [[Tm(0), P(0)], [Tm(1), P(1)]];
+      if (Tm(0) === Tm(1)) continue;
+      const off = P(2) - onLine(base, Tm(2), bars);
+      for (const lv of FIB_CHANNEL_LEVELS) slant(`${d.id}:${lv}`, d.id, `${label} ${lv}`, [[Tm(0), P(0) + off * lv], [Tm(1), P(1) + off * lv]]);
+      continue;
+    }
+    if (d.toolId === "regression-trend" && d.points.length >= 2) {
+      // 두 점 사이 봉의 종가를 봉 순서에 대해 선형 회귀, ±2σ 위 · 아래 (차트와 같은 계산). 종가가 없으면 뺌
+      const [t1, t2] = [Tm(0), Tm(1)].sort((x, y) => x - y);
+      const inside = (bars ?? []).filter((b) => b.time >= t1 && b.time <= t2 && typeof b.close === "number");
+      if (inside.length < 2) {
+        skipped.push({ id: d.id, label });
+        continue;
+      }
+      const n = inside.length;
+      const mx = (n - 1) / 2;
+      const my = inside.reduce((a, b) => a + (b.close as number), 0) / n;
+      let sxy = 0;
+      let sxx = 0;
+      inside.forEach((b, i) => {
+        sxy += (i - mx) * ((b.close as number) - my);
+        sxx += (i - mx) ** 2;
+      });
+      const k = sxx ? sxy / sxx : 0;
+      const fit = (i: number) => my + k * (i - mx);
+      const sd = Math.sqrt(inside.reduce((a, b, i) => a + ((b.close as number) - fit(i)) ** 2, 0) / n);
+      const ends = (o: number): [number, number][] => [[inside[0].time, fit(0) + o], [inside[n - 1].time, fit(n - 1) + o]];
+      slant(`${d.id}:up`, d.id, `${label} 위`, ends(2 * sd));
+      slant(`${d.id}:dn`, d.id, `${label} 아래`, ends(-2 * sd));
+      continue;
+    }
     if (LEVEL_TOOLS.has(d.toolId)) single.push({ key: d.id, ids: [d.id], price: p0, label });
     else if (SLANT_TOOLS.has(d.toolId) && d.points.length >= 2) {
       const [a, b] = d.points;
@@ -87,6 +205,21 @@ export function buildLadder(drawings: Drawing[], nowTime: number | undefined, ba
       const v = nowTime ? at(d, nowTime, bars) : num(d.points[d.points.length - 1].price);
       const pts: [number, number][] = [[a.time, num(a.price)], [b.time, num(b.price)]];
       if (v > 0) single.push({ key: d.id, ids: [d.id], price: v, label: nowTime ? `${label} · 오늘 값` : label, pts });
+    } else if (d.toolId === "parallel-channel" && d.points.length >= 3) {
+      // 기준선(1 · 2번 점) + 3번 점으로 정한 평행선 → 추세선 두 개처럼 (차트도 같은 간격으로 평행선을 그림)
+      const [a, b, c] = d.points;
+      if (a.time === b.time) continue;
+      const base: [number, number][] = [[a.time, num(a.price)], [b.time, num(b.price)]];
+      const off = num(c.price) - onLine(base, c.time, bars);
+      const par: [number, number][] = [[a.time, num(a.price) + off], [b.time, num(b.price) + off]];
+      const t = nowTime ?? b.time;
+      const [vb, vp] = [onLine(base, t, bars), onLine(par, t, bars)];
+      const upperIsBase = vb >= vp;
+      const sfx = nowTime ? " · 오늘 값" : "";
+      for (const [which, pts, v] of [["base", base, vb], ["par", par, vp]] as const) {
+        const upper = (which === "base") === upperIsBase;
+        if (v > 0) single.push({ key: `${d.id}:${which}`, ids: [d.id], price: v, label: `${label} ${upper ? "위" : "아래"}${sfx}`, pts: pts as [number, number][] });
+      }
     } else if (d.toolId === "fib-retracement" && d.points.length >= 2) {
       const pa = num(d.points[0].price);
       const pb = num(d.points[1].price);
@@ -97,7 +230,7 @@ export function buildLadder(drawings: Drawing[], nowTime: number | undefined, ba
     } else if (ZONE_TOOLS.has(d.toolId) && d.points.length >= 2) {
       const ps = d.points.map((p) => num(p.price)).filter((p) => p > 0);
       groups.push({ kind: "zone", key: d.id, id: d.id, label, low: Math.min(...ps), high: Math.max(...ps) });
-    }
+    } else skipped.push({ id: d.id, label });
   }
   // 0.5% 안의 선은 한 줄로
   single.sort((a, b) => b.price - a.price);
@@ -108,9 +241,10 @@ export function buildLadder(drawings: Drawing[], nowTime: number | undefined, ba
       last.ids.push(...r.ids);
       last.label = `선 ${last.ids.length}개 겹침`;
       delete last.pts;
+      if (r.preset && !last.preset) last.preset = r.preset;
     } else rungs.push({ ...r, ids: [...r.ids] });
   }
-  return { rungs, groups };
+  return { rungs, groups, skipped };
 }
 
 /** 가까운 순으로 위 n개 · 아래 n개 (나머지는 접어 둠) */
@@ -178,9 +312,9 @@ export const roleKey = ROLE_KEY;
 export function noteLines(drawings: Drawing[], nowTime: number | undefined, current: number | undefined, answers: Record<string, string>, last?: LastBar, bars?: { time: number }[]): NoteLine[] {
   const { rungs, groups } = buildLadder(drawings, nowTime, bars);
   const out: NoteLine[] = [];
-  const push = (key: string, label: string, low: number, high: number, pts?: [number, number][]) => {
+  const push = (key: string, label: string, low: number, high: number, pts?: [number, number][], preset?: string) => {
     const { role, auto } = roleOf(key, low, high, current, answers, pts ? last : undefined);
-    const trade = answers[key] || null;
+    const trade = (key in answers ? answers[key] : preset) || null;
     out.push({
       ...(low === high ? { price: low } : { low, high }),
       key,
@@ -191,7 +325,7 @@ export function noteLines(drawings: Drawing[], nowTime: number | undefined, curr
       trade,
     });
   };
-  for (const r of rungs) push(r.key, r.label, r.price, r.price, r.pts);
+  for (const r of rungs) push(r.key, r.label, r.price, r.price, r.pts, r.preset);
   for (const g of groups) {
     if (g.kind === "zone") push(g.key, g.label, g.low, g.high);
     else for (const l of g.levels) push(l.key, `${g.label} ${l.lv}`, l.price, l.price);

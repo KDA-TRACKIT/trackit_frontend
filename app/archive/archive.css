@@ -580,3 +580,5 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-mp-menu button { display:block; width:100%; padding:8px 12px; border:0; border-radius:6px; background:none; color:var(--c-ink); font:inherit; font-size:15px; font-weight:600; text-align:left; white-space:nowrap; cursor:pointer; }
 .ar-mp-menu button:hover { background:var(--c-subtle); }
 .ar-mp-menu button.on { color:var(--c-accent); font-weight:800; }
+
+.ar-pt-table .ar-pt-empty { margin:0; padding:22px 12px; color:var(--c-sub); font-size:13.5px; text-align:center; }

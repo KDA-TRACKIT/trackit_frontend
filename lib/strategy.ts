@@ -116,3 +116,30 @@ export const currentRecords = (list: TradeRecord[]) => {
   const replaced = new Set(list.flatMap((r) => (r.replaces ? [r.replaces] : [])));
   return list.filter((r) => !replaced.has(r.id));
 };
+
+/**
+ * 같은 선(같은 열쇠)이 직전 저장본과 비교해 바뀌었는지
+ *   선의 '길이'는 보지 않음: 추세선 · 채널 끝점을 같은 선 위로 늘리거나 줄여도 그대로 (2026-11-19)
+ *   늘릴 때 끝점이 봉에 붙으며 기울기가 조금 바뀔 수 있어서, 기울어진 선은 '예전 선이 있던 구간의 양 끝'에서
+ *   두 선의 값 차이가 0.5% 안이면 같은 선 (기울기를 직접 비교하지 않음)
+ *   한 가격 선 = 가격, 구간 = 아래 · 위 (0.1% 안이면 같음). 지지 · 저항이 바뀌면 수정
+ */
+export type LineChange = "new" | "same" | "moved";
+/** 기울어진 선을 늘릴 때 생기는 작은 오차까지 같은 선으로 보는 한계 */
+export const SLANT_TOL = 0.005;
+const near = (a: number, b: number, tol: number) => Math.abs(a - b) <= Math.max(Math.abs(a), Math.abs(b)) * tol;
+const valueOn = (p: [number, number][], t: number) => {
+  const dt = p[1][0] - p[0][0];
+  return dt ? p[0][1] + ((p[1][1] - p[0][1]) * (t - p[0][0])) / dt : p[1][1];
+};
+export function lineChange(prev: NoteLine | undefined, cur: NoteLine): LineChange {
+  if (!prev) return "new";
+  if (prev.role !== cur.role) return "moved";
+  if (cur.pts && prev.pts) {
+    const [t1, t2] = [prev.pts[0][0], prev.pts[1][0]];
+    return near(valueOn(prev.pts, t1), valueOn(cur.pts, t1), SLANT_TOL) && near(valueOn(prev.pts, t2), valueOn(cur.pts, t2), SLANT_TOL) ? "same" : "moved";
+  }
+  if (cur.price !== undefined && prev.price !== undefined) return near(cur.price, prev.price, 0.001) ? "same" : "moved";
+  if (cur.low !== undefined && prev.low !== undefined) return near(cur.low, prev.low, 0.001) && near(cur.high ?? 0, prev.high ?? 0, 0.001) ? "same" : "moved";
+  return "moved";
+}

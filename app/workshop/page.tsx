@@ -22,7 +22,9 @@ import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
-import { noteLines } from "./lineLadder";
+import { noteLines, type NoteLine } from "./lineLadder";
+import SaveReview from "./SaveReview";
+import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { autoPlan } from "./PlanCheck";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
@@ -264,6 +266,10 @@ export default function WorkshopPage() {
 
   /** 차트가 넘겨 준 선 지우기 (차트 노트 선 목록의 ✕) */
   const removeLinesRef = useRef<((ids: string[]) => void) | null>(null);
+  /** 차트가 넘겨 준 그림 찍기 (저장 확인 창) */
+  const snapshotRef = useRef<((marks: { price: number; text: string; color: string }[]) => Promise<string | null>) | null>(null);
+  /** 저장 확인 창에 보여 줄 차트 그림 · 그은 선 (확인하고 저장을 누른 그 순간 기준) */
+  const [review, setReview] = useState<{ image: string | null; shooting: boolean; lines: NoteLine[] } | null>(null);
   /** 이 종목에서 오늘 체결된 것들 (지금은 매매하기 모의 주문) */
   const [executions, setExecutions] = useState<Execution[]>([]);
   /** AI 노트 체결 연결: auto = AI 추천 그대로, none = 연결 안 함, 그 밖엔 체결 id */
@@ -430,7 +436,7 @@ export default function WorkshopPage() {
   /** 확인하고 저장 → 기록 (로그인했으면 서버 확정 노트로, 지금 차트 드로잉도 같이) */
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
-  async function confirmNote() {
+  async function confirmNote(edits?: { pendingText: string; records: Record<string, string> }) {
     if (confirmBusy) return;
     setConfirmBusy(true);
     setConfirmError(null);
@@ -444,7 +450,8 @@ export default function WorkshopPage() {
       symbol: symbol.code,
       symbolName: symbol.name,
       // 메모 + 투자자가 확인한 계획 (최초 확정본). 관찰 메모는 앞에 표시 → 기록 보드 · 이행률에서 계획으로 안 침
-      text: [noteText.trim(), aiMemoResult?.memo ? `[AI 정리] ${aiMemoResult.memo.trim()}` : "", planText(plan)].filter(Boolean).join("\n\n"),
+      // 확인 창에서 고쳤으면 고친 글
+      text: edits ? edits.pendingText : savedText(),
       drawings: drawings.map(drawingToAnnotation),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
@@ -467,14 +474,56 @@ export default function WorkshopPage() {
         next: plan.next,
       },
     });
-    setConfirmBusy(false);
     if (!result.ok) {
+      setConfirmBusy(false);
       setConfirmError(result.error ?? "저장하지 못했어요.");
+      return;
+    }
+    // 확인 창에서 고친 종목 전략 메모: 확정 메모는 못 고쳐서 새 메모로 남기고 예전 메모를 가리킴 (아래 종목 전략에서 고치는 것과 같음)
+    const failed: string[] = [];
+    for (const [id, text] of Object.entries(edits?.records ?? {})) {
+      const r = allRecords.find((x) => x.id === id);
+      if (!r || !text.trim()) continue;
+      const now = kstNow();
+      const { id: _id, drawings: _drawings, ...rest } = r;
+      void _id;
+      void _drawings;
+      const res = await addRecord({ ...rest, date: now.date, noteTime: now.time, text: text.trim(), replaces: id });
+      if (!res.ok) failed.push(res.error ?? "고친 메모를 저장하지 못했어요.");
+    }
+    setConfirmBusy(false);
+    if (failed.length) {
+      // 이번 노트는 이미 저장됨 → 창은 닫고 고친 메모만 못 남겼다고 알림
+      setConfirming(false);
+      setConfirmed(true);
+      setConfirmedAt(nowKst());
+      setConfirmError(null);
+      window.alert(`노트는 저장됐지만 고친 종목 전략 ${failed.length}개를 저장하지 못했어요. 아래 종목 전략에서 다시 고쳐 주세요.`);
       return;
     }
     setConfirming(false);
     setConfirmed(true);
     setConfirmedAt(nowKst());
+  }
+
+  /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 정리(눌렀으면) + 고른 매매 */
+  const savedText = () => [noteText.trim(), aiMemoResult?.memo ? `[AI 정리] ${aiMemoResult.memo.trim()}` : "", planText(plan)].filter(Boolean).join("\n\n");
+
+  /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
+  function openReview() {
+    const last = bars[bars.length - 1];
+    const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
+    const marks = lines.flatMap((l) => {
+      const p = l.price ?? (l.role === "RESISTANCE" ? l.high : l.low);
+      if (!p || !l.role) return [];
+      const support = l.role === "SUPPORT";
+      return [{ price: p, text: `${support ? "지지" : "저항"}${l.trade ? ` · ${l.trade}` : ""}`, color: support ? "#1f8a4c" : "#d64545" }];
+    });
+    // 창은 바로 열고, 차트 그림(드로잉이 다 들어가게 잠깐 넓혀 찍음)은 찍히는 대로 넣음
+    setReview({ image: null, shooting: true, lines });
+    setConfirmError(null);
+    setConfirming(true);
+    void (snapshotRef.current?.(marks) ?? Promise.resolve(null)).then((image) => setReview((r) => (r ? { ...r, image, shooting: false } : r)));
   }
 
   /** 사후 해설: 최초 확정본은 그대로 두고, 날짜 · 시각과 함께 따로 남김 */
@@ -633,6 +682,7 @@ export default function WorkshopPage() {
             onDrawingsChange={changeDrawings}
             loadedDrawings={loadedDrawings}
             registerRemove={(fn) => (removeLinesRef.current = fn)}
+            registerSnapshot={(fn) => (snapshotRef.current = fn)}
             dataKey={`${symbol.code}:${interval}:${source}`}
             symbolCode={symbol.code}
             symbolName={symbol.name}
@@ -771,32 +821,37 @@ ${t}` : t))}
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
-                  placeholder="선만 그어도 AI가 판단해요. 판단 근거를 더 적으면 저장할 때 AI가 같이 분석해요."
+                  placeholder="선만 그어도 AI가 판단해요. 판단 근거를 더 적으면 AI 분석 때 같이 분석해요."
                   aria-label="차트 메모"
                 />
               </div>
-              {confirming ? (
-                <div className="ws-confirm">
-                  <p>
-                    {linkedExecution ? "" : "연결된 체결이 없어 검증 대기로 저장돼요. "}확정하면 수정·삭제할 수 없습니다. 고칠 땐 새 버전으로 남습니다.
-                  </p>
-                  {confirmError && <p className="ws-confirm-error">{confirmError}</p>}
-                  <div>
-                    <button onClick={() => setConfirming(false)}>취소</button>
-                    <button className="primary" onClick={() => void confirmNote()} disabled={confirmBusy}>{confirmBusy ? "저장 중…" : "확정"}</button>
-                  </div>
-                </div>
+              {confirmed ? (
+                <button className="ws-save" disabled>
+                  확정 완료
+                </button>
               ) : (
-                confirmed ? (
-                  <button className="ws-save" disabled>
-                    확정 완료
-                  </button>
-                ) : (
-                  // 매매 계획 필수 없음: 선을 긋거나 근거를 적으면 바로 저장
-                  <button className="ws-save" disabled={!noteText.trim() && !drawings.length} onClick={() => setConfirming(true)}>
-                    확인하고 저장
-                  </button>
-                )
+                // 매매 계획 필수 없음: 선을 긋거나 근거를 적으면 저장. 누르면 큰 확인 창 (저장될 차트 · 선 · 종목 전략 · AI 분석 · Memo)
+                <button className="ws-save" disabled={!noteText.trim() && !drawings.length} onClick={openReview}>
+                  확인하고 저장
+                </button>
+              )}
+              {confirming && review && (
+                <SaveReview
+                  symbolName={symbol.name}
+                  image={review.image}
+                  shooting={review.shooting}
+                  pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
+                  ai={aiMemoResult}
+                  records={currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`))}
+                  linked={!!linkedExecution}
+                  busy={confirmBusy}
+                  error={confirmError}
+                  onCancel={() => {
+                    setConfirming(false);
+                    setConfirmError(null);
+                  }}
+                  onConfirm={(edits) => void confirmNote(edits)}
+                />
               )}
               {confirmed && (
                 <div className="ws-after">
