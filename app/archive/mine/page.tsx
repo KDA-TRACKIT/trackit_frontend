@@ -77,13 +77,8 @@ export default function MyStrategiesPage() {
     <main className="mk-page ar-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
-        <nav className="ar-crumb">
-          <Link href="/archive">전략보관함</Link> / <b>내 전략</b>
-        </nav>
-        <div className="ar-hub-head">
-          <div>
-            <h1 className="mk-title">내 전략</h1>
-          </div>
+        <div className="ar-title-row">
+          <h1 className="mk-title">내 전략</h1>
           <Link href="/archive/ai" className="ar-new">
             <Plus size={16} /> 새 전략 작성
           </Link>

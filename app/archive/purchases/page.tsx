@@ -1,6 +1,7 @@
 "use client";
 // 전략보관함 첫 화면 = 구매한 전략의 트레이더 (시안 Trackit (3) "전략보관함-구매한 전략 (열람권 시각화)")
 //   열람권을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 열람권(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
+//   보유 열람권 = 아직 안 쓴 열람권만 (전략을 연 열람권은 '보유 전략'의 달로 보임). 다 썼으면 0개
 //   보유 열람권 티켓은 장수만큼 겹쳐 '보유 열람권' 글자 끝에 맞춰 끝나고, 7장부터 가운데 ⋯ (PassTickets)
 //   카드를 누르면 그 트레이더의 월별 전략 (/archive/purchases/[id])
 //   열람권 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
@@ -9,7 +10,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { apiRequest } from "../../../lib/api/client";
-import { usePasses } from "../../../lib/purchases";
+import { unusedPasses, usePasses } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, tone, traderById } from "../../marketplace/data";
@@ -57,7 +58,8 @@ export default function PurchasesPage() {
     const free = freeViews.filter((v) => v.traderId === id);
     const t = traderById(id);
     const months = [...new Set([...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.map((v) => v.month)])].sort().reverse();
-    return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, count: mine.length, months, ret: t?.monthly.at(-1)?.ret ?? null };
+    // bought = 이 트레이더 열람권을 산 장수(쓴 것 포함), left = 그중 아직 안 쓴 장수 → '보유 열람권'은 left
+    return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, bought: mine.length, left: unusedPasses(passes, id).length, months, ret: t?.monthly.at(-1)?.ret ?? null };
   });
   const nothing = server !== null && !traders.length && !server.length;
 
@@ -65,7 +67,9 @@ export default function PurchasesPage() {
     <main className="mk-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
-        <h1 className="mk-title">트레이더</h1>
+        <div className="ar-title-row">
+          <h1 className="mk-title">구매한 전략</h1>
+        </div>
         {error && <p className="ar-note">{error}</p>}
 
         {nothing ? (
@@ -94,10 +98,10 @@ export default function PurchasesPage() {
                           )}
                         </strong>
                       </div>
-                      <div className={`ar-trader-stat${g.count > 0 ? " ar-pass-stat" : ""}`} title={g.count ? `열람권 ${g.count}장` : undefined}>
+                      <div className={`ar-trader-stat${g.bought > 0 ? " ar-pass-stat" : ""}`} title={g.bought ? `남은 열람권 ${g.left}장 (산 ${g.bought}장 중 ${g.bought - g.left}장으로 전략을 열었어요)` : undefined}>
                         <small>보유 열람권</small>
-                        <PassTickets count={g.count} />
-                        <b>{g.count ? `${g.count}개` : "무료 전략"}</b>
+                        <PassTickets count={g.left} />
+                        <b className={g.bought && !g.left ? "ar-none" : undefined}>{g.bought ? `${g.left}개` : "무료 전략"}</b>
                       </div>
                       <div className="ar-trader-stat">
                         <small>전략 이행률</small>

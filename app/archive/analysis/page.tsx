@@ -60,10 +60,9 @@ export default function AnalysisPage() {
     <main className="mk-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
-        <div className="ar-head">
+        <div className="ar-title-row">
           <h1 className="mk-title">전략 분석</h1>
         </div>
-        <p className="ar-summary">열람권으로 연 전략의 트레이더를 나란히 비교해요.</p>
 
         {!rows.length ? (
           <div className="mk-card mk-empty">
