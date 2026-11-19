@@ -4,7 +4,6 @@
 //   데이터: 섹터맵과 같은 업종별 시세(키움 추가 호출 없음) + 외국인·기관(ka90009).
 //   국내 현재가 · 전일 대비는 페이지 공통 줄(lib/live-quotes)로 장중 5초마다 새로
 import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChartApi, type UTCTimestamp } from "lightweight-charts";
-import HoneyPot from "../HoneyPot";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { memoAttr } from "../../lib/memo-target";
@@ -72,14 +71,47 @@ function hue(code: string) {
 }
 /** 로고가 없던 종목 (다시 부르지 않음) */
 const noLogo = new Set<string>();
+/** 흰색 로고 (투명 배경) → 어두운 칸에 */
+const lightLogo = new Set<string>();
+
+/**
+ * 로고 색 보기: 비자 · IBM · 디즈니 · 보잉처럼 투명 배경에 흰색으로만 그린 로고는 흰 칸에서 안 보인다.
+ *   blank = 보이는 점이 없음(빈 그림), light = 투명한 곳이 있고 보이는 점이 거의 다 흰색
+ *   로고는 같은 주소(/api/v1/insights/logo → rewrites)라 캔버스로 읽을 수 있다. 못 읽으면 그대로 둔다
+ */
+function logoTone(img: HTMLImageElement): "blank" | "light" | "ok" {
+  try {
+    const n = 24;
+    const canvas = document.createElement("canvas");
+    canvas.width = n;
+    canvas.height = n;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return "ok";
+    ctx.drawImage(img, 0, 0, n, n);
+    const px = ctx.getImageData(0, 0, n, n).data;
+    let seen = 0;
+    let white = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < 40) continue;
+      seen++;
+      if (px[i] > 225 && px[i + 1] > 225 && px[i + 2] > 225) white++;
+    }
+    if (seen === 0) return "blank";
+    return seen < n * n * 0.97 && white / seen > 0.85 ? "light" : "ok";
+  } catch {
+    return "ok";
+  }
+}
+
 /** 종목 동그라미: 로고(백엔드 /insights/logo 가 받아 보관)가 있으면 로고, 없으면 이름 첫 글자 */
 function Avatar({ code, name, market, size = 30 }: { code: string; name: string; market?: SectorMarket; size?: number }) {
   const m = !market ? null : market === "kospi" || market === "kosdaq" ? market : "us";
   const key = `${m}:${code}`;
   const [failed, setFailed] = useState(() => !m || noLogo.has(key));
+  const [dark, setDark] = useState(() => lightLogo.has(key));
   if (m && !failed)
     return (
-      <span className="ins-mv-avatar logo" style={{ width: size, height: size }} aria-hidden>
+      <span className={`ins-mv-avatar logo${dark ? " dark" : ""}`} style={{ width: size, height: size }} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element -- 작은 외부 로고, 서버가 이미 캐시 */}
         <img
           src={`/api/v1/insights/logo?symbol=${encodeURIComponent(code)}&market=${m}`}
@@ -87,6 +119,16 @@ function Avatar({ code, name, market, size = 30 }: { code: string; name: string;
           width={size}
           height={size}
           loading="lazy"
+          onLoad={(e) => {
+            const tone = logoTone(e.currentTarget);
+            if (tone === "blank") {
+              noLogo.add(key);
+              setFailed(true);
+            } else if (tone === "light") {
+              lightLogo.add(key);
+              setDark(true);
+            }
+          }}
           onError={() => {
             noLogo.add(key);
             setFailed(true);
@@ -210,20 +252,34 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
                   const on = sel?.code === r.code;
                   return (
                     <li key={r.code} className={`ins-mv-row${on ? " on" : ""}`} onClick={() => setPicked(r.code)} {...memoAttr({ kind: "stock", code: r.code, name: r.name, note: `오늘의 종목 · ${TABS.find((t) => t.key === tabNow)?.label}` })}>
-                      <button
-                        type="button"
-                        hidden={!kr}
-                        className={`fav${wl.has(r.code) ? " on" : ""}`}
-                        aria-label={`${r.name} 관심 종목`}
-                        data-memo-skip
-                        onClick={(e) => (e.stopPropagation(), toggleFav(r))}
-                      >
-                        <HoneyPot level={wl.has(r.code) ? 1 : 0} size={17} />
-                      </button>
+                      {kr ? (
+                        <button
+                          type="button"
+                          className={`fav${wl.has(r.code) ? " on" : ""}`}
+                          aria-label={`${r.name} 관심 종목`}
+                          aria-pressed={wl.has(r.code)}
+                          data-memo-skip
+                          onClick={(e) => (e.stopPropagation(), toggleFav(r))}
+                        >
+                          {wl.has(r.code) ? "★" : "☆"}
+                        </button>
+                      ) : (
+                        // 미국은 관심 종목 버튼이 없어도 칸은 남긴다. hidden 버튼은 Tailwind 가 display:none !important 로 빼서
+                        // 칸이 하나씩 밀렸다 (이름이 사라지고 시가총액이 거래대금 자리에, 시가총액 칸은 빔)
+                        <span className="fav" aria-hidden />
+                      )}
                       <span className="who">
                         <em>{i + 1}</em>
                         <Avatar code={r.code} name={r.name} market={market} />
-                        <b title={r.name}>{r.name}</b>
+                        {us ? (
+                          // 미국: 티커 + 한글 이름 (검색 · 관심 종목과 같은 모양)
+                          <span className="nm" title={`${r.code} · ${r.name}`}>
+                            <b className="tk">{r.code}</b>
+                            <small>{r.name}</small>
+                          </span>
+                        ) : (
+                          <b title={r.name}>{r.name}</b>
+                        )}
                       </span>
                       <span className="num">{r.price ? price(r.price, currency) : "—"}</span>
                       <span className={`num ${tone(r.changeRate)}`}>
@@ -309,8 +365,8 @@ function Detail({
             {us ? row.code : row.code} {row.industry && `· ${row.industry}`}
           </small>
         </div>
-        <button type="button" hidden={us} className={`fav${fav ? " on" : ""}`} onClick={onFav} aria-label={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"} title={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"}>
-          <HoneyPot level={fav ? 1 : 0} size={19} />
+        <button type="button" hidden={us} className={`fav${fav ? " on" : ""}`} onClick={onFav} aria-label={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"} aria-pressed={fav} title={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"}>
+          {fav ? "★" : "☆"}
         </button>
       </div>
       <p className="ins-mv-price">
