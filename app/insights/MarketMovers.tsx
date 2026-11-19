@@ -152,7 +152,8 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
   const us = isUsMarket(market);
   const kr = us ? null : (market as KrMarket);
 
-  const sector = useLoad(`movers-${market}`, () => getSectorMap(market), (d) => (d?.marketOpen ? 20_000 : 300_000));
+  // 장중 20초 · 장 밖 5분, 서버가 아직 시세를 못 받아 비어 있으면 30초마다
+  const sector = useLoad(`movers-${market}`, () => getSectorMap(market), (d) => (d?.marketOpen ? 20_000 : d && !d.sectors.length ? 30_000 : 300_000));
   const flows = useLoad(`movers-flows-${kr ?? "none"}`, () => (kr ? getFlows(kr) : Promise.resolve(null)), (d) => (d ? 60_000 : null));
   const currency = sector.data?.currency ?? (us ? "USD" : "KRW");
 
@@ -262,6 +263,9 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
               <Loading height={420} />
               {us && <p className="ins-meta ins-mv-wait">미국 종목 시세를 모으는 중이에요. 처음엔 30초쯤 걸려요</p>}
             </div>
+          ) : !all.size ? (
+            // 서버가 아직 시세를 못 받아 종목이 없음 (예전엔 머리줄만 있는 빈 표)
+            <Failed message={`${us ? "미국 " : ""}종목 시세를 아직 받지 못했어요 · 잠시 뒤 저절로 다시 불러와요`} onRetry={sector.reload} height={420} />
           ) : (
             <>
               <div className="ins-mv-row ins-mv-th">
