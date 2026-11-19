@@ -744,66 +744,7 @@ ${t}` : t))}
               />
 
               {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
-              {aiMemoResult?.summary && (
-                <details className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
-                  <summary>AI 분석 보기</summary>
-                  {aiMemoResult.memo && (
-                    <div>
-                      <strong>AI 정리</strong>
-                      <p className="ws-ai-memo">{aiMemoResult.memo}</p>
-                    </div>
-                  )}
-                  <div>
-                    <strong>요약</strong>
-                    <p>{aiMemoResult.summary}</p>
-                  </div>
-                  {aiMemoResult.questions?.[0] && (
-                    <div>
-                      <strong>AI 질문</strong>
-                      <p>{aiMemoResult.questions[0]}</p>
-                    </div>
-                  )}
-                  <div>
-                    <strong>방향</strong>
-                    <p>
-                      {({ LONG: "상승 관점", SHORT: "하락 관점", WAIT: "관망", UNKNOWN: "판단 보류" } as Record<string, string>)[aiMemoResult.direction ?? "UNKNOWN"] ?? aiMemoResult.direction}
-                      {aiMemoResult.confidence && ` · 확신 ${({ HIGH: "높음", MEDIUM: "보통", LOW: "낮음" } as const)[aiMemoResult.confidence]}`}
-                    </p>
-                  </div>
-                  {aiMemoResult.marketStructure && (
-                    <div>
-                      <strong>차트 구조</strong>
-                      <p>{aiMemoResult.marketStructure}</p>
-                    </div>
-                  )}
-                  {!!aiMemoResult.confluence?.length && (
-                    <div>
-                      <strong>겹치는 근거</strong>
-                      <p>{aiMemoResult.confluence.join(" · ")}</p>
-                    </div>
-                  )}
-                  {(aiMemoResult.bullishScenario || aiMemoResult.bearishScenario) && (
-                    <div>
-                      <strong>시나리오</strong>
-                      {aiMemoResult.bullishScenario && <p>▲ {aiMemoResult.bullishScenario}</p>}
-                      {aiMemoResult.bearishScenario && <p>▼ {aiMemoResult.bearishScenario}</p>}
-                    </div>
-                  )}
-                  <div>
-                    <strong>사용한 작도</strong>
-                    <p>{aiMemoResult.tools?.length ? aiMemoResult.tools.join(" · ") : "없음"}</p>
-                  </div>
-                  <div>
-                    <strong>위험</strong>
-                    <p>{aiMemoResult.risks?.length ? aiMemoResult.risks.join(" · ") : "특이사항 없음"}</p>
-                  </div>
-                  <div>
-                    <strong>무효화 조건</strong>
-                    <p>{Array.isArray(aiMemoResult.invalidation) ? aiMemoResult.invalidation.join(" · ") || "없음" : aiMemoResult.invalidation || "없음"}</p>
-                  </div>
-                  {aiMemoResult.model && <small>{aiMemoResult.provider ? `${aiMemoResult.provider} · ` : ""}{aiMemoResult.model}</small>}
-                </details>
-              )}
+              {/* AI 분석 내용은 'AI 분석 후 저장' 확인 창에서 한 번에 보여 줌 (여기 따로 펼치는 칸은 없앰) */}
 
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (

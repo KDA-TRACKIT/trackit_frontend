@@ -116,12 +116,22 @@ export default function SaveReview({
           {ai && (
             <section>
               <h3>AI 분석</h3>
+              {/* 차트 노트 옆 'AI 분석 보기' 를 없애고 여기서 전부 (방향 · 요약 · 구조 · 근거 · 시나리오 · 위험 · 무효화 · 질문) */}
               <div className="ws-review-ai">
-                {ai.direction && <p><b>방향</b> {DIR[ai.direction] ?? ai.direction}</p>}
+                {ai.direction && (
+                  <p>
+                    <b>방향</b> {DIR[ai.direction] ?? ai.direction}
+                    {ai.confidence && ` · 확신 ${({ HIGH: "높음", MEDIUM: "보통", LOW: "낮음" } as const)[ai.confidence]}`}
+                  </p>
+                )}
                 {ai.summary && <p><b>요약</b> {ai.summary}</p>}
                 {ai.marketStructure && <p><b>차트 구조</b> {ai.marketStructure}</p>}
+                {ai.confluence?.length ? <p><b>겹치는 근거</b> {ai.confluence.join(" · ")}</p> : null}
+                {ai.bullishScenario && <p><b>상승 시나리오</b> {ai.bullishScenario}</p>}
+                {ai.bearishScenario && <p><b>하락 시나리오</b> {ai.bearishScenario}</p>}
                 {ai.risks?.length ? <p><b>위험</b> {ai.risks.join(" · ")}</p> : null}
-                {ai.invalidation && <p><b>무효화 조건</b> {Array.isArray(ai.invalidation) ? ai.invalidation.join(" · ") : ai.invalidation}</p>}
+                {ai.invalidation && (Array.isArray(ai.invalidation) ? ai.invalidation.length > 0 : true) && <p><b>무효화 조건</b> {Array.isArray(ai.invalidation) ? ai.invalidation.join(" · ") : ai.invalidation}</p>}
+                {ai.questions?.[0] && <p><b>AI 질문</b> {ai.questions[0]}</p>}
               </div>
             </section>
           )}
