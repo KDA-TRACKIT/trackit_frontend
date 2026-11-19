@@ -682,8 +682,7 @@ export default function WorkshopPage() {
             bars={bars}
             interval={interval}
             onIntervalChange={changeInterval}
-            onSave={saveToRecord}
-            saving={memoBusy}
+            // 차트 위 'AI 분석' 버튼은 없앰: AI 분석은 차트 노트 아래 버튼 하나로 (분석 뒤 확인하고 저장)
             avgPrice={avgPrice}
             notes={notes}
             onAddNote={addNote}
@@ -829,7 +828,7 @@ ${t}` : t))}
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
-                  placeholder="선만 그어도 AI가 판단해요. 판단 근거를 더 적으면 AI 분석 때 같이 분석해요."
+                  placeholder="선만 그어도 AI가 판단해요. 판단 근거, 조건(예: 저항이 지지로 바뀌면 매수), 분할 매수 · 분할 매도 계획(예: 190,000원에 절반, 185,000원에 나머지)을 적으면 AI 분석 때 같이 분석해요."
                   aria-label="차트 노트"
                 />
               </div>
@@ -854,7 +853,13 @@ ${t}` : t))}
                         ? "선을 긋거나 Memo 를 적으면 AI 분석을 할 수 있어요."
                         : aiMemoResult
                           ? "분석 뒤 Memo · 선이 바뀌었어요. 다시 분석하면 저장할 수 있어요."
-                          : "그은 선과 Memo 를 AI 가 함께 분석한 뒤 확인하고 저장할 수 있어요."}
+                          : (
+                            <>
+                              그은 선과 Memo 를 AI 가 함께 분석한 뒤 확인하고
+                              <br />
+                              저장할 수 있어요.
+                            </>
+                          )}
                     </p>
                   </>
                 )

@@ -2,7 +2,8 @@
 // 전략 확정 전 확인: AI 가 빈칸을 임의로 채우지 않고 되묻고, 투자자가 진입 근거 · 매수 조건 · 손절 기준을 직접 고쳐 확정한다
 //   - 그은 선은 알고리즘이 지지 · 저항으로 나눔 (선 종류 상관없이 현재가보다 아래 = 지지, 위 = 저항, lineLadder.classify)
 //     접지 않고 바로 보임, 선 하나에 한 줄 (피보는 레벨마다 한 줄, 구간은 한 줄)
-//     투자자는 그중 '이 선에서 매매하겠다'를 더 고름 (지지: 매수 · 손절 / 저항: 목표 · 매도). 다시 누르면 취소되고 계획 칸의 문장도 빠짐
+//     줄마다 콤보박스 하나: 기본은 지지 · 저항, 펼쳐서 매수 · 손절 · 목표 · 매도를 고름 (조건 · 분할 매매는 Memo 로 안내) (지지 · 저항으로 되돌리면 취소, 계획 칸 문장도 빠짐)
+//     분할 매수 · 분할 매도는 Memo 에 적도록 안내
 //     현재가와 겹쳐 나눌 수 없는 선은 투자자가 지지 · 저항을 고름. 안 고르면 이행률 계산에서 빠짐
 //   - 피보나치는 레벨을, 사각형 · 가격 범위는 구간을 한 줄로
 //   - 손절 기준이 비어 있으면 "손절 기준이 있나요?" 라고 물음
@@ -77,9 +78,12 @@ export function planText(p: Plan) {
   return rows.length > 1 ? rows.map(([k, v]) => `[${k}] ${v.trim()}`).join("\n") : "";
 }
 
-/** 지지 · 저항에 따라 고를 수 있는 매매 (투자자가 더 고르는 것) */
-const TRADE: Record<Role, string[]> = { 지지: ["매수", "손절"], 저항: ["목표", "매도"] };
-const ZONE_TRADE: Record<Role, string[]> = { 지지: ["매수 구간", "손절 구간"], 저항: ["목표 구간"] };
+/**
+ * 선마다 고를 수 있는 매매 (콤보박스, 기본은 지지 · 저항 그대로)
+ *   '저항이 지지로 바뀌면 매수' 같은 조건 · 분할 매수 · 분할 매도는 고르지 않고 Memo 에 적도록 안내
+ */
+const TRADES = ["매수", "손절", "목표", "매도"];
+const ZONE_TRADES = ["매수 구간", "손절 구간", "목표 구간", "매도 구간"];
 
 /** 의미 → 계획의 어느 칸에 어떤 문장으로 */
 function phrase(m: string, p: string): [keyof Plan, string] | null {
@@ -107,6 +111,8 @@ function phrase(m: string, p: string): [keyof Plan, string] | null {
       return ["condition", `${p} 구간에서 매수`];
     case "손절 구간":
       return ["stop", `${p} 구간 이탈 시 손절`];
+    case "매도 구간":
+      return ["condition", `${p} 구간에서 매도`];
     case "저항 구간":
       return ["entry", `${p} 구간 저항`];
     default:
@@ -190,44 +196,41 @@ export default function PlanConfirm({
     onAnswer(roleKey(key), r);
   };
 
-  /** 역할 표시 + 매매 고르기 */
-  const lineChips = (key: string, low: number, high: number, p: string, zone = false, slant = false) => {
+  /** 역할 + 매매를 콤보박스 하나로: 기본은 알고리즘이 나눈 지지 · 저항, 펼쳐서 매수 · 손절 · 목표 · 매도를 고름 */
+  const lineSelect = (key: string, low: number, high: number, p: string, zone = false, slant = false) => {
     const { role, auto } = roleOf(key, low, high, current, answers, slant ? lastBar : undefined);
     const picked = tradeOf(key);
+    const value = picked ? `t:${picked}` : role ? `r:${role}` : "";
     return (
-      <div className="ws-ladder-chips">
-        {auto ? (
-          <span className={`ws-ladder-role ${role === "지지" ? "sup" : "res"}`} title="알고리즘이 현재가 기준으로 나눔">
-            {role}
-          </span>
-        ) : (
-          <>
-            {(["지지", "저항"] as Role[]).map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={role === r ? "on" : "sug"}
-                onClick={() => setRole(key, role === r ? "" : r, p)}
-                title={role === r ? "다시 누르면 취소" : "현재가와 겹쳐 나눌 수 없어요. 직접 골라 주세요 (안 고르면 이행률에서 빠져요)"}
-              >
-                {role === r ? `${r} ×` : `${r}?`}
-              </button>
-            ))}
-          </>
-        )}
+      <select
+        className={`ws-ladder-select ${role === "지지" ? "sup" : role === "저항" ? "res" : "none"}${picked ? " trade" : ""}`}
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v.startsWith("t:")) return choose(key, v.slice(2), p);
+          // 지지 · 저항으로 되돌림 = 고른 매매 취소. 못 나눈 선은 투자자가 지지 · 저항을 고름
+          if (auto) {
+            if (picked) choose(key, picked, p);
+          } else setRole(key, v.slice(2) as Role | "", p);
+        }}
+        aria-label={`${p} 선의 지지 · 저항 · 매매`}
+        title={auto ? "알고리즘이 현재가 기준으로 지지 · 저항을 나눴어요. 펼쳐서 매매를 고를 수 있어요 (매수 · 손절 · 목표 · 매도)" : "현재가와 겹쳐 나눌 수 없어요. 직접 골라 주세요 (안 고르면 이행률에서 빠져요)"}
+      >
+        {!role && <option value="">미분류 · 골라 주세요</option>}
+        {(auto ? [role as Role] : (["지지", "저항"] as Role[])).map((r) => (
+          <option key={r} value={`r:${r}`}>
+            {r}
+          </option>
+        ))}
         {role &&
-          (picked ? (
-            <button type="button" className="on" onClick={() => choose(key, picked, p)} title="다시 누르면 취소">
-              {picked} <span aria-hidden>×</span>
-            </button>
-          ) : (
-            (zone ? ZONE_TRADE : TRADE)[role].map((m) => (
-              <button key={m} type="button" onClick={() => choose(key, m, p)} title="이 선에서 매매하겠다고 고르기">
-                {m}
-              </button>
-            ))
+          (zone ? ZONE_TRADES : TRADES).map((m) => (
+            <option key={m} value={`t:${m}`}>
+              {m}
+            </option>
           ))}
-      </div>
+        {/* 예전에 고른 값(롱 · 숏 포지션 미리 고름 등)이 목록에 없으면 그대로 보여 줌 */}
+        {picked && !(zone ? ZONE_TRADES : TRADES).includes(picked) && <option value={`t:${picked}`}>{picked}</option>}
+      </select>
     );
   };
 
@@ -270,7 +273,7 @@ export default function PlanConfirm({
     >
       <b>{r.text}</b>
       <span className="ws-ladder-kind">{r.label}</span>
-      {lineChips(r.key, r.low, r.high, r.text, r.zone, r.slant)}
+      {lineSelect(r.key, r.low, r.high, r.text, r.zone, r.slant)}
       {onDelete && (
         <button
           type="button"
@@ -308,6 +311,9 @@ export default function PlanConfirm({
         {above.length > 0 && <ul>{above.map(row)}</ul>}
         {current ? <div className="ws-ladder-now">현재가 {money(current)}</div> : null}
         {below.length > 0 && <ul>{below.map(row)}</ul>}
+        <p className="ws-ladder-hint">
+          선마다 지지 · 저항이 자동으로 정해지고, 눌러서 매수 · 손절 · 목표 · 매도를 고를 수 있어요. “저항이 지지로 바뀌면 매수”, “지지가 깨져 저항이 되면 매도” 같은 조건이나 분할 매수 · 분할 매도 계획은 아래 Memo 에 적어 주세요.
+        </p>
       </div>
     </div>
   );
