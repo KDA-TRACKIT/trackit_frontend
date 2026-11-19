@@ -25,7 +25,10 @@ import {
   monthLabel,
   pctText,
   realizedReturns,
-  returnTint,
+  retColor,
+  retGradient,
+  retScale,
+  retTicks,
   shortDate,
   toMemo,
   togglePin,
@@ -314,13 +317,13 @@ function MemoRow({ m, pinned, on, onSelect, mode = "time" }: { m: Memo; pinned: 
       <button type="button" className="mm-row-hit" aria-label={`${m.subject} ${mode === "date" ? shortDate(m.date) : m.time} 노트 크게 보기`} aria-current={on || undefined} onClick={() => onSelect(m.id)} />
       <div className="mm-row-top">
         <span className="mm-row-who">
-          {mode === "time" && <b>{m.subject}</b>}
           <KindBadge kind={m.kind} />
+          {mode === "time" && <b>{m.subject}</b>}
           {ex && <em className="mm-linked">{ex.side} 체결 연결</em>}
         </span>
         <span className="mm-row-meta">
           <PinButton id={m.id} pinned={pinned} />
-          {ex && <Link2 size={12} aria-hidden="true" className="mm-link-ic" />}
+          {ex && <Link2 size={16} aria-hidden="true" className="mm-link-ic" />}
           <time>{mode === "date" ? shortDate(m.date) : m.time}</time>
           <ChevronRight size={16} aria-hidden="true" />
         </span>
@@ -537,6 +540,9 @@ function CalendarView({
   const byDate = new Map<string, Memo[]>();
   for (const m of [...inMonth].sort(byOld)) byDate.set(m.date, [...(byDate.get(m.date) ?? []), m]);
   const monthRet = returns.get(month);
+  // 수익률 눈금: 이 달 칸에 칠하는 날(평일)의 가장 큰 |수익률| 기준 — 칸 색과 범례가 같은 눈금
+  const scale = retScale([...returns].filter(([k]) => k.length === 10 && k.startsWith(month) && !["토", "일"].includes(weekdayOf(k))).map(([, v]) => v));
+  const ticks = retTicks(scale);
   const dayItems = [...(byDate.get(day) ?? [])].sort(sort === "new" ? byNew : byOld);
   // 오른쪽 목록: 고른 날 다음에 그 달의 앞선 날들 (최근 날부터)
   const earlier = [...byDate.keys()].filter((d) => d < day).sort().reverse();
@@ -588,7 +594,7 @@ function CalendarView({
                     role="gridcell"
                     aria-selected={isSel}
                     className={`mm-cell${weekend ? " is-weekend" : ""}${isSel ? " is-sel" : ""}${d === today ? " is-today" : ""}${d > today ? " is-future" : ""}`}
-                    style={ret !== undefined && !weekend ? { background: returnTint(ret) } : undefined}
+                    style={ret !== undefined && !weekend ? { background: retColor(ret, scale) } : undefined}
                     onClick={() => onDay(d)}
                   >
                     <button type="button" className="mm-cell-day" aria-label={`${longDate(d)}${items.length ? ` 노트 ${items.length}개` : ""}`} onClick={(e) => (e.stopPropagation(), onDay(d))}>
@@ -629,16 +635,14 @@ function CalendarView({
               </span>
             ))}
           </div>
-          <div className="mm-legend-ret" title="칸 색: 그날 청산한 거래의 실현 수익률">
+          <div className="mm-legend-ret" title={`칸 색: 그날 청산한 거래의 실현 수익률 · 눈금은 이 달 가장 큰 수익률에 맞춰 ±${scale}%`}>
             <b>수익률</b>
             <div>
-              <i className="mm-grad" aria-hidden="true" />
+              <i className="mm-grad" aria-hidden="true" style={{ background: retGradient(scale) }} />
               <span>
-                <small>−1% 이하</small>
-                <small>−0.5%</small>
-                <small>0</small>
-                <small>+0.5%</small>
-                <small>+1% 이상</small>
+                {ticks.map((t) => (
+                  <small key={t}>{t}</small>
+                ))}
               </span>
             </div>
           </div>

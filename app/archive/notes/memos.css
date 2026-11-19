@@ -1,13 +1,17 @@
 /* 전략보관함 · 내 노트 (Figma Trackit 2182:6164 리스트형 · 종목형, 1876:5541 달력형). 색 · 크기는 Figma 값 그대로 */
 /* 버튼 규칙은 앞에 .mm-page — 전략 마켓 공통 .mk-page button { font:inherit } 보다 세게 (안 그러면 글자 크기가 16px 로 덮임) */
 
+/* 달력 수익률 색 (model.ts retColor · retGradient 가 칸과 범례에 같이 씀): 0 = 보통 칸 색 → 눈금 끝 = Figma 끝 색 */
+.mm-page { --ret-zero:#f4f6fa; --ret-up:#9ae3b9; --ret-down:#fec2c0; }
+html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b; --ret-down:#803843; }
+
 /* ── 종류(참고 자료) 색: Figma '노트 종류별 색 · 최종'(1935:55) ── */
 .mm-dot { display:inline-block; flex:none; width:7px; height:7px; border-radius:50%; }
 .mm-dot.k-chart { background:#6e56cf; } .mm-dot.k-market { background:#66768c; } .mm-dot.k-news { background:#1f8fd6; } .mm-dot.k-economy { background:#c08a00; } .mm-dot.k-disclosure { background:#8c5a2e; }
 .mm-badge, .mm-kind-chip { display:inline-flex; align-items:center; gap:4px; flex:none; height:19px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:500; white-space:nowrap; }
 .mm-kind-chip { height:21px; padding:0 7px 0 6px; font-size:12px; }
 :is(.mm-badge, .mm-kind-chip).k-chart { background:#e8e7fe; color:#4b4280; }
-:is(.mm-badge, .mm-kind-chip).k-market { background:#ddebff; color:#254d82; }
+:is(.mm-badge, .mm-kind-chip).k-market { background:#e8ecf1; color:#3d4a5c; } /* 점(#66768c 회청색)과 같은 색 계열 — 예전 파랑은 뉴스와 헷갈렸음 */
 :is(.mm-badge, .mm-kind-chip).k-news { background:#d9edfd; color:#04527f; }
 :is(.mm-badge, .mm-kind-chip).k-economy { background:#f8e7cc; color:#654704; }
 :is(.mm-badge, .mm-kind-chip).k-disclosure { background:#fee4cf; color:#723e02; }
@@ -25,9 +29,11 @@
 .mm-search input::placeholder { color:#8791a3; }
 .mm-search:focus-within { box-shadow:inset 0 0 0 1px #0f2367; }
 .mm-search button { display:grid; place-items:center; width:20px; height:20px; padding:0; border:0; border-radius:50%; background:#e6ebf2; color:#5c6678; cursor:pointer; }
-.mm-select { position:relative; display:inline-flex; flex:none; align-items:center; gap:6px; height:30px; padding:0 10px 0 12px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); color:#4a5463; font-size:12px; font-weight:500; }
+/* 종목 · 기간(달) 칸은 너비 고정 — 보기(리스트 · 달력 · 종목)를 바꿔 글자('최근 1개월' ↔ '2026년 11월')가 달라져도 줄이 움직이지 않음 */
+.mm-select { position:relative; display:inline-flex; flex:none; align-items:center; gap:6px; width:140px; height:30px; padding:0 10px 0 12px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); color:#4a5463; font-size:12px; font-weight:500; }
 .mm-select.with-icon { padding-left:13px; }
 .mm-select select, .mm-sort select { appearance:none; padding:0; border:0; outline:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+.mm-select select { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mm-select:focus-within { border-color:#0f2367; }
 .mm-select svg { flex:none; pointer-events:none; }
 
@@ -77,12 +83,18 @@
 .mm-row > :not(.mm-row-hit) { position:relative; z-index:1; pointer-events:none; }
 .mm-row .mm-pin { pointer-events:auto; }
 .mm-row-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.mm-row-who { display:flex; align-items:center; gap:14px; min-width:0; }
+/* 라벨 → 제목 → 체결 연결 순서 */
+.mm-row-who { display:flex; align-items:center; gap:8px; min-width:0; }
 .mm-row-who b { overflow:hidden; color:#1c212b; font-size:14px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
-.mm-linked { color:#406199; font-size:11px; font-style:normal; font-weight:500; white-space:nowrap; }
-.mm-row-meta { display:flex; flex:none; align-items:center; gap:8px; color:#8791a3; font-size:12px; font-weight:600; }
+.mm-linked { margin-left:6px; color:#406199; font-size:11px; font-style:normal; font-weight:500; white-space:nowrap; }
+/* 오른쪽 압정 · 연결 · 시각 · 꺾쇠: 아이콘(24 격자)마다 그림 둘레 빈칸이 달라서, 보이는 그림 사이 간격이 모두 8px 이 되게 여백을 따로 줌
+ *   압정 단추 20 안의 압정 그림 좌우 빈칸 4.7 · 연결(16) 그림 좌우 빈칸 0.7 · 꺾쇠(16) 그림 왼쪽 빈칸 5.3 */
+.mm-row-meta { display:flex; flex:none; align-items:center; gap:0; color:#8791a3; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+.mm-row-meta .mm-link-ic { flex:none; margin-left:2.6px; color:#334d7d; }
+.mm-row-meta time { margin-left:3.3px; }
+.mm-row-meta .mm-link-ic + time { margin-left:7.3px; }
+.mm-row-meta time + svg { flex:none; margin-left:2.7px; }
 .mm-row.on .mm-row-meta time { color:#334d7d; }
-.mm-link-ic { color:#334d7d; }
 .mm-row-text { display:-webkit-box; margin:0; overflow:hidden; color:#4a5463; font-size:13px; font-weight:500; line-height:1.5; white-space:pre-line; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .mm-row-ref { margin:0; overflow:hidden; color:#4f638c; font-size:12px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
 .mm-page .mm-more { display:flex; align-items:center; justify-content:center; gap:4px; width:100%; height:44px; border:0; border-top:1px solid #eef2f6; background:none; color:#4a5463; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
@@ -119,7 +131,8 @@
 .mm-page .mm-other { display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px; border:1px solid #e2e8f0; border-radius:10px; background:var(--c-surface, #fff); color:#8791a3; font:inherit; text-align:left; cursor:pointer; }
 .mm-page .mm-other + .mm-other { margin-top:6px; }
 .mm-page .mm-other:hover { background:#f7f9fc; }
-.mm-page .mm-other small { flex:none; color:#8791a3; font-size:12px; font-weight:500; }
+/* 날짜 · 시각 칸 너비 고정 (가장 긴 '12월 31일 23:59' 기준) — '9월 5일'처럼 짧아도 뒤 라벨이 한 줄로 맞음 */
+.mm-page .mm-other small { flex:none; width:88px; color:#8791a3; font-size:12px; font-weight:500; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .mm-page .mm-other > span:not(.mm-badge) { flex:1; min-width:0; overflow:hidden; color:#4a5463; font-size:13px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
 .mm-actions { display:flex; justify-content:flex-end; padding-top:16px; border-top:1px solid #eef2f6; }
 
@@ -163,7 +176,7 @@
 .mm-page .mm-chip .mm-dot { width:6px; height:6px; margin-right:3px; vertical-align:1px; }
 .mm-page .mm-chip:hover, .mm-page .mm-chip:focus-visible { box-shadow:0 2px 6px rgb(16 26 45 / 16%); outline:none; text-decoration:underline; }
 .mm-page .mm-chip.k-chart:is(:hover, :focus-visible) { background:#f3f2fd; color:#322f4b; }
-.mm-page .mm-chip.k-market:is(:hover, :focus-visible) { background:#edf4fe; color:#22344c; }
+.mm-page .mm-chip.k-market:is(:hover, :focus-visible) { background:#eef1f5; color:#2b3442; }
 .mm-page .mm-chip.k-news:is(:hover, :focus-visible) { background:#eaf5ff; color:#1a364a; }
 .mm-page .mm-chip.k-economy:is(:hover, :focus-visible) { background:#fcf2e2; color:#403012; }
 .mm-page .mm-chip.k-disclosure:is(:hover, :focus-visible) { background:#fff1e6; color:#452c17; }
@@ -174,7 +187,7 @@
 .mm-chip-wrap:hover .mm-preview, .mm-chip:focus-visible + .mm-preview { display:flex; }
 .mm-chip-wrap.to-left .mm-preview { right:0; left:auto; }
 .mm-preview.k-chart { border-color:#dddbff; background:#f3f2fd; }
-.mm-preview.k-market { border-color:#cde2fe; background:#edf4fe; }
+.mm-preview.k-market { border-color:#d5dce6; background:#eef1f5; }
 .mm-preview.k-news { border-color:#c5e4fe; background:#eaf5ff; }
 .mm-preview.k-economy { border-color:#f0ddbc; background:#fcf2e2; }
 .mm-preview.k-disclosure { border-color:#f8d9c0; background:#fff1e6; }
@@ -190,7 +203,7 @@
 .mm-legend-kinds span { display:inline-flex; align-items:center; gap:5px; }
 .mm-legend-ret { display:flex; align-items:flex-start; gap:10px; }
 .mm-legend-ret > b { padding-top:1px; color:#1c212b; font-size:12px; font-weight:600; }
-.mm-grad { display:block; width:260px; height:10px; border-radius:5px; background:linear-gradient(90deg, #fec2c0, #f5fcf9 50%, #9ae3b9); }
+.mm-grad { display:block; width:260px; height:10px; border-radius:5px; background:var(--ret-zero); } /* 실제 색은 retGradient (칸 색과 같은 함수) */
 .mm-legend-ret span { display:flex; justify-content:space-between; width:260px; margin-top:3px; color:#8791a3; font-size:11px; }
 /* 오른쪽 1/3: 고른 날 노트 */
 .mm-side { overflow:hidden; }
@@ -265,5 +278,8 @@ html[data-theme="dark"] .mm-page .mm-views button:not(.on) { color:var(--c-ink-2
 html[data-theme="dark"] .mm-page :is(.mm-cell.is-weekend, .mm-cell.is-blank) { background:none; }
 html[data-theme="dark"] .mm-page .mm-chip { background:rgb(255 255 255 / 8%); color:var(--c-ink); }
 html[data-theme="dark"] .mm-page .mm-chip.on { background:var(--c-surface); }
-html[data-theme="dark"] .mm-page .mm-cell[style] :is(.mm-cell-day, .mm-chip) { color:#1b2a44; }
-html[data-theme="dark"] .mm-page .mm-cell[style] .mm-chip { background:rgb(255 255 255 / 60%); }
+/* 다크: 수익률 칸은 짙은 초록 · 빨강이라 글자는 밝게 그대로, 수익률 글자는 옅은 초록 · 빨강 (대비 5:1 이상) */
+html[data-theme="dark"] .mm-page :is(.mm-cell-day, .mm-side-day) .up { color:#b6f2cf; }
+html[data-theme="dark"] .mm-page :is(.mm-cell-day, .mm-side-day) .down { color:#ffc4c4; }
+html[data-theme="dark"] .mm-page .mm-cell.is-sel .mm-cell-day b { color:var(--c-ink); }
+html[data-theme="dark"] .mm-page .mm-cell-day em { color:#d6e1fb; }
