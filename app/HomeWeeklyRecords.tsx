@@ -31,7 +31,10 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
   }
   return (
     <section className="home-weekly home-container" aria-labelledby="weekly-records-title">
-      <div className="home-section-heading"><h2 id="weekly-records-title">이번 주 거래기록 · 노트</h2><Link className="home-action" href="/archive/records">내 노트 <span aria-hidden="true">→</span></Link></div>
+      <div className="home-section-heading">
+        <h2 id="weekly-records-title">이번 주 거래기록 · 매매일지</h2>
+        <Link className="home-action" href="/mypage/activity/trades">거래 기록 열기 <span aria-hidden="true">→</span></Link>
+      </div>
       <div className="home-weekly-card">
         <div className="home-week-nav">
           <button type="button" aria-label="이전 주" onClick={() => moveWeek(-1)}><ChevronLeft size={16} /></button>
@@ -48,9 +51,17 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
             </button>;
           })}
         </div>
-        <div className="home-day-detail" aria-live="polite">
-          <div className="home-day-detail-head"><p>선택 날짜 · {koreanDay(selection.date)} ({WEEKDAYS[selectedIndex]})</p></div>
-          {dailyTrades.map((trade) => <div className="home-day-trade" key={trade.id}><strong>{names[trade.symbol] ?? trade.symbol} · {trade.side === "BUY" ? "매수" : "매도"}</strong><span>{Number(trade.quantity).toLocaleString("ko-KR")}주 · {Number(trade.price).toLocaleString("ko-KR")}원</span></div>)}
+        <div className="home-day-detail">
+          <div className="home-day-detail-head" aria-live="polite">
+            <p>선택 날짜 · {koreanDay(selection.date)} ({WEEKDAYS[selectedIndex]})</p>
+            {dailyTrades.map((trade) => (
+              <div className="home-day-trade" key={trade.id}>
+                <strong>{names[trade.symbol] ?? trade.symbol} · {trade.side === "BUY" ? "매수" : "매도"}</strong>
+                <span>{Number(trade.quantity).toLocaleString("ko-KR")}주 · {Number(trade.price).toLocaleString("ko-KR")}원</span>
+              </div>
+            ))}
+          </div>
+          <Link className="home-action home-notes-action" href="/archive/notes">내 노트 열기 <span aria-hidden="true">→</span></Link>
           {dailyNotes.map((record) => <Link key={record.id} className="home-day-note" href={workshopLink(record.symbol, record.symbolName, selection.date)}><i className={recordColor(record)} aria-hidden="true" /><strong>{record.noteTime.slice(0, 5)} · {record.symbolName ?? record.topic ?? "시장 전반"}</strong><span>{record.text}</span></Link>)}
           {!loading && !dailyTrades.length && !dailyNotes.length && <p className="home-detail-empty">{failed ? "거래 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : "이 날짜에 저장된 거래와 노트가 없습니다."}</p>}
         </div>
