@@ -39,7 +39,6 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 
 /* ── 참고 자료(종류) 고르기 ── */
 .mm-kinds { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:20px 0; }
-.mm-kinds > span { margin-right:2px; color:#3d4d66; font-size:13px; font-weight:600; }
 .mm-page .mm-kinds button { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 12px; border:0; border-radius:8px; background:#f2f5fa; color:#52617a; font:inherit; font-size:12px; font-weight:500; cursor:pointer; }
 .mm-page .mm-kinds button:hover { background:#e8edf5; }
 .mm-page .mm-kinds button.on { background:#0f2367; color:#fff; }
@@ -264,6 +263,12 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
   .mm-flow p { flex-basis:100%; text-align:left; }
   .mm-grad, .mm-legend-ret span { width:200px; }
 }
+/* 종류 칩이 한 줄에 안 들어가면 (칩 7개 ≈ 490px + 여백 · 스크롤바) 들쭉날쭉 꺾이지 않게 4칸 격자 · 고정한 노트는 2칸 */
+@media (max-width: 580px) {
+  .mm-kinds { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); }
+  .mm-page .mm-kinds button { justify-content:center; padding:0 8px; }
+  .mm-page .mm-kinds button:last-child { grid-column:span 2; }
+}
 
 /* ── 다크 모드 ── */
 html[data-theme="dark"] .mm-page :is(.mm-card, .mm-filters, .mm-select, .mm-tool, .mm-today, .mm-back, .mm-other, .mm-flow > span, .mm-btn.ghost, .mm-tools .mm-pin) { border-color:var(--c-line); }
@@ -274,7 +279,6 @@ html[data-theme="dark"] .mm-page :is(.mm-group + .mm-group, .mm-row + .mm-row, .
 html[data-theme="dark"] .mm-page :is(.mm-row:hover, .mm-side-row:hover, .mm-other:hover, .mm-more:hover) { background:var(--c-hover); }
 html[data-theme="dark"] .mm-page .mm-row.on { background:var(--c-hover); box-shadow:inset 3px 0 0 #7c9be0; }
 html[data-theme="dark"] .mm-page .mm-kinds button:not(.on) { background:var(--c-subtle); color:var(--c-ink-2); }
-html[data-theme="dark"] .mm-page .mm-kinds > span { color:var(--c-ink-2); }
 html[data-theme="dark"] .mm-page .mm-views { border-color:var(--c-line); }
 html[data-theme="dark"] .mm-page .mm-views button:not(.on) { color:var(--c-ink-2); }
 html[data-theme="dark"] .mm-page :is(.mm-cell.is-weekend, .mm-cell.is-blank) { background:none; }

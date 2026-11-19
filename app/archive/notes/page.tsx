@@ -201,7 +201,6 @@ export default function MemosPage() {
         </div>
 
         <div className="mm-kinds" role="radiogroup" aria-label="참고 자료">
-          <span>참고 자료</span>
           {[{ key: "all" as const, label: "전체" }, ...KINDS].map((k) => (
             <button key={k.key} type="button" role="radio" aria-checked={kind === k.key} className={kind === k.key ? "on" : ""} onClick={() => setKind(k.key)}>
               {k.key !== "all" && <i className={`mm-dot k-${k.key}`} aria-hidden="true" />}
