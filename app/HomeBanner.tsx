@@ -17,7 +17,7 @@ export default function HomeBanner({ tradeCount: _tradeCount, failed: _failed }:
         <span className={styles.accent} aria-hidden="true" />
         <h1 id="home-banner-title" aria-label={BANNER_TITLE}><span aria-hidden="true"><WaveText text={BANNER_TITLE} /></span></h1>
         <p className={styles.description}>나의 투자 여정을 함께하는 트레이딩 플랫폼, TRACKIT.</p>
-        <Link className={styles.cta} href="/workshop">트레이딩 로그 보기 <span aria-hidden="true">→</span></Link>
+        <Link className={styles.cta} href="/workshop">트레이딩 로그 <span aria-hidden="true">→</span></Link>
       </div>
       <div className={styles.mascot} aria-hidden="true">
         <Image src="/images/home-bee.png" alt="" width={347} height={430} priority sizes="347px" />
