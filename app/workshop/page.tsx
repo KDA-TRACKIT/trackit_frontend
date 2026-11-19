@@ -21,11 +21,10 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
-import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
+import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanConfirm";
 import { noteLines, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
 import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
-import { autoPlan } from "./PlanCheck";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -383,9 +382,9 @@ export default function WorkshopPage() {
       });
       setAiMemoResult(result);
       setAnalyzedKey(key);
-      // 필수 항목을 따로 채우지 않아도 되게: AI 방향 + 그은 선으로 진입 조건 · 손절 · 목표를 미리 채움
-      //   투자자가 그은 선에서 이미 고른 매매(콤보박스)는 그대로 두고 빈 칸만 채움
-      setPlan(autoPlan(plan, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction, bars));
+      // 매수 조건 · 손절 · 목표는 AI 가 선 위치로 지어내지 않음 (Memo 와 어긋나고 소수 가격이 붙었음)
+      //   → 투자자가 그은 선 콤보박스에서 고른 매매만 계획에 들어감. 방향만 AI 판단으로 (안 정했을 때)
+      if (!plan.direction && /LONG|SHORT/.test(result.direction ?? "")) setPlan({ ...plan, direction: result.direction === "SHORT" ? "매도" : "매수" });
       setConfirmedAt(null);
       setAfterNotes([]);
       setSuggestion(result.suggestion ?? result.summary ?? "");
@@ -451,6 +450,8 @@ export default function WorkshopPage() {
     if (confirmBusy) return;
     setConfirmBusy(true);
     setConfirmError(null);
+    // 계획 = 그은 선에서 고른 매매 + Memo 에 쓴 매수 · 손절 · 목표 문장
+    const fp = withMemo(plan, noteText);
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
     const result = await addRecord({
       date: kstNow().date,
@@ -468,21 +469,22 @@ export default function WorkshopPage() {
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
       // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
       plan: {
-        status: "plan",
-        kind: plan.kind,
-        direction: plan.direction,
-        entry: plan.condition,
-        stop: plan.stop,
-        target: plan.target,
-        until: plan.until,
-        weight: plan.weight,
-        decision: plan.decision,
-        reason: plan.reason || plan.entry,
-        viewDir: plan.viewDir,
-        level: plan.level,
-        diff: plan.diff,
-        cause: plan.cause,
-        next: plan.next,
+        // 체결과 연결 안 된 노트는 매매 계획이 아니라 관찰 노트로
+        status: linkedExecution ? "plan" : "observe",
+        kind: fp.kind,
+        direction: fp.direction,
+        entry: fp.condition,
+        stop: fp.stop,
+        target: fp.target,
+        until: fp.until,
+        weight: fp.weight,
+        decision: fp.decision,
+        reason: fp.reason || fp.entry,
+        viewDir: fp.viewDir,
+        level: fp.level,
+        diff: fp.diff,
+        cause: fp.cause,
+        next: fp.next,
       },
     });
     if (!result.ok) {
@@ -523,8 +525,9 @@ export default function WorkshopPage() {
     if (await saveToRecord()) openReview();
   }
 
-  /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 정리(눌렀으면) + 고른 매매 */
-  const savedText = () => [noteText.trim(), aiMemoResult?.memo ? `[AI 정리] ${aiMemoResult.memo.trim()}` : "", planText(plan)].filter(Boolean).join("\n\n");
+  /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 분석 정리(머리표 없이) + 고른 매매 */
+  //   매매 계획 줄([노트 종류] · [매수 조건] …)은 체결과 연결됐을 때만 (연결 안 되면 매매 계획으로 치지 않음)
+  const savedText = () => [noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : "", linkedExecution ? planText(withMemo(plan, noteText)) : ""].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {

@@ -266,4 +266,5 @@ export function dateLabel(date: string) {
  *   - [관찰 메모] (예전 계획 점검)
  *   - 빠른 메모로 종목을 골랐을 때 붙던 출처 · 등락 ([전기/전자 0.00%] · [오늘의 종목 · …] · [뉴스]) — 지금은 안 붙임
  */
-export const memoText = (t: string) => t.replace(/^\[관찰 메모\]\s*/, "").replace(/^\[(?:[^\]]*?[+\-−]?\d+(?:\.\d+)?%|오늘의 종목[^\]]*|뉴스)\]\s*/, "");
+// 예전에 저장된 메모의 '[AI 정리]' 머리표는 보여 줄 때 뺌
+export const memoText = (t: string) => t.replace(/^\[관찰 메모\]\s*/, "").replace(/^\[AI 정리\]\s*/gm, "").replace(/^\[(?:[^\]]*?[+\-−]?\d+(?:\.\d+)?%|오늘의 종목[^\]]*|뉴스)\]\s*/, "");

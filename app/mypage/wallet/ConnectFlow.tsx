@@ -15,10 +15,12 @@ const CARRIERS = ["SKT", "KT", "LG U+", "알뜰폰"];
 const SEARCH_LINES = ["본인 확인 정보로 증권사에 계좌를 묻는 중", "계좌 목록과 잔고 정보를 받는 중", "찾은 계좌를 연결하는 중"];
 
 export default function ConnectFlow({ onClose }: { onClose: (changed: boolean) => void }) {
-  const { profile } = useMypage();
+  const { meta } = useMypage();
+  // 본인인증 이름 = 가입 때 적은 실명(name · full_name). 닉네임은 넣지 않음 (없으면 빈 칸으로 직접 입력)
+  const realName = [meta.full_name, meta.name].find((v): v is string => typeof v === "string" && v.trim() !== "" && v.trim() !== String(meta.nickname ?? "").trim())?.trim() ?? "";
   const [step, setStep] = useState<Step>("intro");
   const [agree, setAgree] = useState({ send: false, identity: false });
-  const [form, setForm] = useState({ name: profile.name ?? "", birth: "", gender: "", carrier: "SKT", phone: "" });
+  const [form, setForm] = useState({ name: realName, birth: "", gender: "", carrier: "SKT", phone: "" });
   const [sent, setSent] = useState<{ code: string; until: number } | null>(null);
   const [code, setCode] = useState("");
   /** 시연: 문자 대신 띄우는 인증번호 팝업 */
