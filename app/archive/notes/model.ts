@@ -182,12 +182,36 @@ export function realizedReturns(positions: Position[]) {
 
 export const pctText = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}%`;
 
-/**
- * 수익률 → 칸 바탕색. Figma 달력 칸 색에서 맞춤: +0.15% #CAEFD8 · +0.42% #B8EBCC · +0.92% #9DE4BA (+1% 이상 #9AE3B9),
- *   −0.31% #FFD8D7 · −0.62% #FECDCC (−1% 이하 #FEC2C0). 0 근처에서 시작하는 색 → 끝 색으로 |수익률|만큼 (1%에서 끝)
+/*
+ * 달력 수익률 색 — 칸 · 범례 막대가 모두 아래 retColor 하나로 칠함 (범례 = 칸 색 그대로)
+ *   0 = 보통 칸 색(--ret-zero) → 눈금 끝 = Figma 끝 색(+ #9AE3B9 · − #FEC2C0, 다크는 짙은 초록 · 빨강). 테마 색은 memos.css 의 --ret-*
+ *   눈금: 그 달 가장 큰 |수익률|을 덮는 보기 좋은 값 (1 · 2 · 3 · 5 · 10 · 20 …%) — 청산 거래 수익률은 하루 ±5% 넘게도 나와서
+ *     Figma 의 ±1% 고정이면 거의 모든 칸이 끝 색 한 가지로 칠해짐
+ *   세기: √(|수익률| ÷ 눈금) — 작은 수익률도 색이 보이고, 클수록 짙어짐
  */
-export function returnTint(v: number) {
-  const t = Math.min(1, Math.abs(v));
-  const mix = (a: number[], b: number[]) => `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * t)).join(" ")})`;
-  return v >= 0 ? mix([211, 241, 222], [154, 227, 185]) : mix([255, 227, 226], [254, 194, 192]);
+const RET_STEPS = [1, 2, 3, 5, 10, 20, 30, 50, 100];
+/** 그 달 눈금(%): 값들 중 가장 큰 |수익률|을 덮는 단계 (값이 없으면 1) */
+export const retScale = (values: number[]) => {
+  const m = Math.max(0, ...values.map(Math.abs));
+  return RET_STEPS.find((s) => m <= s) ?? RET_STEPS[RET_STEPS.length - 1];
+};
+/** 색 세기 0~1 */
+export const retLevel = (v: number, scale: number) => Math.sqrt(Math.min(1, Math.abs(v) / scale));
+/** 수익률 → 바탕색 (CSS color-mix, 테마는 CSS 변수가 정함) */
+export const retColor = (v: number, scale: number) =>
+  `color-mix(in srgb, var(${v >= 0 ? "--ret-up" : "--ret-down"}) ${(retLevel(v, scale) * 100).toFixed(1)}%, var(--ret-zero))`;
+/** 범례 막대: −눈금 ~ 0 ~ +눈금을 retColor 로 촘촘히 찍은 그라데이션 (칸 색과 똑같음) */
+export function retGradient(scale: number) {
+  const stops: string[] = [];
+  for (let k = -20; k <= 20; k++) {
+    const level = Math.abs(k) / 20; // 세기를 고르게 나눠 찍고, 그 세기의 수익률 위치에 둠
+    const v = Math.sign(k) * level * level * scale;
+    stops.push(`${retColor(v, scale)} ${(50 + (v / scale) * 50).toFixed(2)}%`);
+  }
+  return `linear-gradient(90deg, ${stops.join(", ")})`;
+}
+/** 범례 눈금 글자: −눈금 이하 · −절반 · 0 · +절반 · +눈금 이상 */
+export function retTicks(scale: number) {
+  const n = (x: number) => `${Number(x.toFixed(2))}%`;
+  return [`−${n(scale)} 이하`, `−${n(scale / 2)}`, "0", `+${n(scale / 2)}`, `+${n(scale)} 이상`];
 }
