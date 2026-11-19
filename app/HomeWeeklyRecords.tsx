@@ -32,8 +32,8 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
   return (
     <section className="home-weekly home-container" aria-labelledby="weekly-records-title">
       <div className="home-section-heading">
-        <h2 id="weekly-records-title">이번 주 거래기록 · 매매일지</h2>
-        <Link className="home-action" href="/mypage/activity/trades">거래 기록 열기 <span aria-hidden="true">→</span></Link>
+        <h2 id="weekly-records-title">이번 주 거래기록 · 노트</h2>
+        <Link className="home-action" href="/archive/notes">내 노트 <span aria-hidden="true">→</span></Link>
       </div>
       <div className="home-weekly-card">
         <div className="home-week-nav">
@@ -61,7 +61,6 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
               </div>
             ))}
           </div>
-          <Link className="home-action home-notes-action" href="/archive/notes">내 노트 열기 <span aria-hidden="true">→</span></Link>
           {dailyNotes.map((record) => <Link key={record.id} className="home-day-note" href={workshopLink(record.symbol, record.symbolName, selection.date)}><i className={recordColor(record)} aria-hidden="true" /><strong>{record.noteTime.slice(0, 5)} · {record.symbolName ?? record.topic ?? "시장 전반"}</strong><span>{record.text}</span></Link>)}
           {!loading && !dailyTrades.length && !dailyNotes.length && <p className="home-detail-empty">{failed ? "거래 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : "이 날짜에 저장된 거래와 노트가 없습니다."}</p>}
         </div>
