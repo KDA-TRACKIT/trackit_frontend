@@ -73,7 +73,7 @@ export default function TraderCarousel() {
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <div className="home-trader-metrics">
                 <div>
-                  <p className="home-trader-metric-label">한 달 실시간 수익률</p>
+                  <p className="home-trader-metric-label">실시간 수익률</p>
                   <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
                 </div>
                 <div>
