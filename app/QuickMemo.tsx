@@ -240,7 +240,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
         <div ref={panelRef} className="qm-panel" style={panelStyle} role="dialog" aria-label="빠른 메모">
           <div className="qm-head">
             <strong>빠른 메모</strong>
-            <Link href="/archive/mine">기록 보기 ›</Link>
+            <Link href="/archive/memos">기록 보기 ›</Link>
           </div>
 
           <div className="qm-target">

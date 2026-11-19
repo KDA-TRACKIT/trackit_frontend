@@ -21,9 +21,10 @@ const MENU: Menu[] = [
     key: "archive",
     label: "전략보관함",
     href: "/archive",
-    // 전략보관함 드롭다운: 내 전략 · 구매한 전략 · 전략 분석. 첫 화면은 구매한 전략의 트레이더 목록 (모든 종목 기록 · AI 전략 만들기는 내 전략에서)
+    // 전략보관함 드롭다운: 내 메모 · 구매한 전략 · 전략 분석. 첫 화면은 구매한 전략의 트레이더 목록
+    //   (예전 '내 전략'(/archive/mine, 판매 등록 · AI 초안)은 메뉴에선 빠지고 마이페이지 판매 · AI 전략 만들기에서 들어감)
     sub: [
-      { label: "내 전략", href: "/archive/mine", desc: "만들고 판매하는 전략" },
+      { label: "내 메모", href: "/archive/memos", desc: "작성한 메모 모아 보기" },
       { label: "구매한 전략", href: "/archive/purchases", desc: "결제한 전략" },
       { label: "전략 분석", href: "/archive/analysis", desc: "연 전략의 트레이더 비교" },
     ],
