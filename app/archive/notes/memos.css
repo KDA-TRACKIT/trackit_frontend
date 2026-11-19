@@ -142,9 +142,10 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-cal-nav { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .mm-cal-nav > div { display:flex; align-items:center; gap:8px; }
 .mm-cal-nav > div:first-child { gap:10px; }
-.mm-cal-nav h2 { margin:0; color:#1c212b; font-size:18px; font-weight:700; letter-spacing:-.3px; }
+/* 달 제목 · 수익률 배지 너비 고정 (숫자 같은 폭): '1월' ↔ '12월'이어도 옆 배지 · '노트 N개' 자리가 그대로 */
+.mm-cal-nav h2 { min-width:106px; margin:0; color:#1c212b; font-size:18px; font-weight:700; letter-spacing:-.3px; font-variant-numeric:tabular-nums; }
 .mm-cal-nav small { color:#8791a3; font-size:12px; }
-.mm-ret-pill { display:inline-flex; align-items:center; gap:6px; height:23px; padding:0 10px; border-radius:999px; font-size:12px; font-weight:500; }
+.mm-ret-pill { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:108px; height:23px; padding:0 10px; border-radius:999px; box-sizing:border-box; font-size:12px; font-weight:500; font-variant-numeric:tabular-nums; }
 .mm-ret-pill b { font-weight:700; }
 .mm-ret-pill.up { background:#b4e9c9; color:#0a5a40; }
 .mm-ret-pill.down { background:#fecdcc; color:#9a1e2e; }
@@ -246,7 +247,7 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
   .mm-page .mm-views button { padding:0 8px; font-size:13px; }
   .mm-linked { display:none; }
   .mm-cal-nav { flex-wrap:wrap; }
-  .mm-cal-nav h2 { font-size:16px; white-space:nowrap; }
+  .mm-cal-nav h2 { min-width:94px; font-size:16px; white-space:nowrap; }
   .mm-filters { flex-wrap:wrap; }
   .mm-search { flex-basis:100%; }
   .mm-cal { padding:14px 10px; }
