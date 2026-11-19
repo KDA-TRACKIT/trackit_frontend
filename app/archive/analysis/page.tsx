@@ -91,7 +91,7 @@ export default function AnalysisPage() {
                   {rows.map((r) => (
                     <tr key={r.t.id}>
                       <td>
-                        <GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /> <Link href={`/marketplace/${r.t.id}`}>{r.t.name}</Link>
+                        <Link href={`/marketplace/${r.t.id}`}>{r.t.name}</Link> <GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small />
                         <small>{r.t.type}</small>
                       </td>
                       <td className={tone(r.avg)}>{pct(Math.round(r.avg * 100) / 100)}</td>
@@ -115,7 +115,7 @@ export default function AnalysisPage() {
             {rows.map((r) => (
               <section key={r.t.id} className="mk-card an-card">
                 <div className="an-card-head">
-                  <strong><GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /> {r.t.name}</strong>
+                  <strong>{r.t.name} <GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /></strong>
                   <small>월별 수익률 · 최근 1년</small>
                 </div>
                 <div className="an-bars" role="img" aria-label={`${r.t.name} 월별 수익률`}>

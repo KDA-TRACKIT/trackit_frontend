@@ -3,7 +3,7 @@
 //   표에서 고르면 아래에 전략 상세 · 성과 분석. 판매 가격 · 판매 설정은 마이페이지 판매 관리에서
 //   맨 아래: 모든 종목의 전체 기록 (종목별 전략 기록, 2026-11-19 회의)
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
 import { apiRequest, errorMessage } from "../../../lib/api/client";
@@ -72,6 +72,12 @@ export default function MyStrategiesPage() {
   const shown = rows.filter((r) => !word || `${r.title} ${r.target}`.toLowerCase().includes(word));
   const picked = rows.find((r) => r.key === sel) ?? rows[0];
   const selling = rows.filter((r) => r.tone === "sell").length;
+  // 상세 보기: 고른 전략의 상세(표 아래)로 내려가서 보여 줌
+  const detailRef = useRef<HTMLDivElement>(null);
+  const openDetail = (key: string) => {
+    setSel(key);
+    requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   return (
     <main className="mk-page ar-page">
@@ -100,7 +106,6 @@ export default function MyStrategiesPage() {
           <div className="mk-card">
             <small>초안</small>
             <strong>{drafts.length}개</strong>
-            <span>AI로 만든 전략 · 이 브라우저에 저장</span>
           </div>
         </div>
         {error && <p className="ar-note">{error}</p>}
@@ -148,7 +153,14 @@ export default function MyStrategiesPage() {
                       <span className={`ar-st ${r.tone}`}>{r.status}</span>
                     </td>
                     <td>
-                      <button type="button" className="ar-textbtn" onClick={() => setSel(r.key)}>
+                      <button
+                        type="button"
+                        className="ar-textbtn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(r.key);
+                        }}
+                      >
                         상세 보기 →
                       </button>
                     </td>
@@ -160,7 +172,7 @@ export default function MyStrategiesPage() {
         </section>
 
         {picked && (
-          <div className="ar-detail">
+          <div className="ar-detail" ref={detailRef} style={{ scrollMarginTop: 80 }}>
             <section className="mk-card ar-detail-main">
               <h3>전략 상세</h3>
               <h4>

@@ -90,7 +90,7 @@ export default function PurchasesPage() {
                       <div className="ar-trader-who">
                         <small>{g.t?.tagline}</small>
                         <strong>
-                          {g.t && <GradeBadge grade={g.t.grade?.grade} unrated={g.t.grade?.unrated} small />} {g.name}{" "}
+                          {g.name} {g.t && <GradeBadge grade={g.t.grade?.grade} unrated={g.t.grade?.unrated} small />}{" "}
                           {g.t && (
                             <span className="ar-heart" title="받은 꿀 합계">
                               <HoneyPot count={likeTotals[g.t.id] ?? 0} /> {likeTotals[g.t.id] ?? 0}

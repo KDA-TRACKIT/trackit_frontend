@@ -79,7 +79,7 @@ export function PurchasedCards({ items, picked, onPick, cta }: { items: Item[]; 
               )}
               <b className="ar-avatar">{t?.name.slice(0, 1) ?? "?"}</b>
               <span>
-                {t && <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />} {t?.name ?? i.sub}
+                {t?.name ?? i.sub} {t && <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />}
               </span>
             </div>
             <strong>{i.title}</strong>

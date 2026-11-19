@@ -69,7 +69,7 @@ export default function StrategyView() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-narrow">
         <Link href={`/marketplace/${t.id}`} className="mk-back">
-          ‹ <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {t.name}
+          ‹ {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
         </Link>
         <section className="mk-card mk-sim-head">
           <small>

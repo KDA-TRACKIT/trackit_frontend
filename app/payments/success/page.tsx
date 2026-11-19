@@ -53,7 +53,7 @@ export default function PaymentSuccess() {
             <h1>결제 완료</h1>
             {state.result.item.type === "sample" ? (
               <p>
-                <GradeBadge grade={traderById(state.result.item.traderId ?? "")?.grade?.grade} unrated={traderById(state.result.item.traderId ?? "")?.grade?.unrated} small /> <b>{state.result.item.traderName}</b> 전략 열람권 {state.result.item.quantity ?? 1}장을 샀어요.
+                <b>{state.result.item.traderName}</b> <GradeBadge grade={traderById(state.result.item.traderId ?? "")?.grade?.grade} unrated={traderById(state.result.item.traderId ?? "")?.grade?.unrated} small /> 전략 열람권 {state.result.item.quantity ?? 1}장을 샀어요.
                 <br />
                 1장으로 월별 전략 하나를 골라 열 수 있어요. 남은 열람권은 나중에 써도 돼요.
               </p>

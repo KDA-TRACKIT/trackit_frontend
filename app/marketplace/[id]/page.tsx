@@ -68,7 +68,7 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> {t.name} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function TraderPage() {
 
           <aside className="mk-card mk-buy">
             <small>
-              <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> <b>{t.name}</b>의 전략 열람권
+              <b>{t.name}</b> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />의 전략 열람권
             </small>
             <strong>
               {won(t.price)} <span>/ 1장 · 전략 1개</span>
@@ -177,7 +177,7 @@ export default function TraderPage() {
             {similar.map((o) => (
               <Link key={o.id} href={`/marketplace/${o.id}`} className="mk-card mk-sim">
                 <strong>
-                  <GradeBadge grade={o.grade?.grade} unrated={o.grade?.unrated} small /> {o.name}
+                  {o.name} <GradeBadge grade={o.grade?.grade} unrated={o.grade?.unrated} small />
                 </strong>
                 <p>{o.tagline}</p>
                 <span className={oneStock(o, "3m") ? "" : tone(o.returns["3m"])}>3개월 {oneStock(o, "3m") ? "-" : pct(o.returns["3m"])}</span>
