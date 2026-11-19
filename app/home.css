@@ -37,7 +37,8 @@
 .home-leaderboard { padding:56px 0; background:#f7f9fc; }
 .home-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; }
 .home-section-heading h2 { margin:0; color:var(--c-ink,#151515); font-size:27px; line-height:34px; font-weight:600; letter-spacing:-.6px; }
-.home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:12px; height:42px; padding:0 24px; border-radius:12px; background:#0f2367; color:#fff; font-size:16px; font-weight:600; }
+/* 남색 버튼(전략 마켓 · 거래 기록 열기 · 내 메모 열기)은 글자 길이와 상관없이 같은 크기: 가장 긴 '거래 기록 열기 →'(173px)가 들어가는 176px */
+.home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:12px; min-width:176px; height:42px; padding:0 24px; border-radius:12px; background:#0f2367; color:#fff; font-size:16px; font-weight:600; }
 .home-action:hover { background:#203777; }
 /* 제목 → 정렬 탭 → 카드 간격 (제목 글자 아래 20 · 탭 아래 20, 카드끼리 간격 20 과 맞춤) */
 .home-leaderboard-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 20px; }
@@ -73,14 +74,14 @@
 .home-redesign i.trade { background:#7653ed; }.home-redesign i.market { background:#697e9e; }.home-redesign i.news { background:#2196f3; }
 .home-note-dots small { color:var(--home-muted); font-size:10px; }
 .home-day-detail { margin-top:16px; padding-top:16px; border-top:1px solid var(--home-line); min-height:150px; }
-.home-day-detail-head { position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:8px; }
+/* '선택 날짜' 줄과 '내 메모 열기'를 한 줄 가운데에 맞춤 (예전엔 버튼을 13px 아래에 띄워 글줄보다 내려가 있었음) */
+.home-day-detail-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:8px; }
 .home-day-detail-head > p { margin:0; color:var(--home-muted); font-size:14px; line-height:22px; }
-.home-day-detail-head .home-action { position:absolute; top:13px; right:0; min-width:169px; }
-.home-day-trade { display:flex; align-items:center; gap:28px; min-height:34px; padding-right:180px; color:var(--home-ink); font-size:18px; }
+.home-day-trade { display:flex; align-items:center; gap:28px; min-height:34px; color:var(--home-ink); font-size:18px; }
 .home-day-trade strong { font-weight:600; }.home-day-trade > span { color:var(--home-muted); font-size:14px; }
 .home-day-note { display:flex; align-items:center; gap:10px; min-height:40px; color:var(--home-ink); }
 .home-day-note strong { flex:none; font-size:18px; font-weight:600; }.home-day-note > span { overflow:hidden; color:var(--c-sub,#3d4757); font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
-.home-detail-empty { margin:25px 180px 15px 0; color:var(--home-muted); font-size:14px; }
+.home-detail-empty { margin:25px 0 15px; color:var(--home-muted); font-size:14px; }
 .home-redesign :is(a,button):focus-visible { outline:2px solid #557ab5; outline-offset:3px; }
 html[data-theme="dark"] .home-redesign { --home-line:var(--c-line); --home-muted:var(--c-sub); --home-navy:var(--c-accent); --home-ink:var(--c-ink); background:var(--c-bg); }
 html[data-theme="dark"] .home-redesign :is(.home-leaderboard,.home-week-day,.home-trader-tag) { background:var(--c-subtle); }
@@ -97,7 +98,7 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
 
   .home-container { width:calc(100% - 32px); }.home-overview { grid-template-columns:1fr; margin-top:24px; margin-bottom:24px; }
   .home-section-heading { align-items:flex-start; }.home-section-heading h2 { font-size:21px; line-height:28px; }
-  .home-action { height:36px; padding:0 12px; font-size:12px; gap:8px; }
+  .home-action { min-width:128px; height:36px; padding:0 12px; font-size:12px; gap:8px; }
   .home-leaderboard { padding:32px 0; }.home-leaderboard-tabs { margin-top:14px; }
   .home-redesign .trader-grid { gap:12px; }.home-weekly { padding-top:36px; }
   .home-weekly-card { padding:14px; }.home-week-nav h3 { font-size:15px; }

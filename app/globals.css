@@ -41,12 +41,13 @@
    메뉴 칸을 바 높이만큼 늘려 두고(top:100% = 바 아래 선) 그 아래로 내린다 */
 .gnb-main { align-self:stretch; }
 .gnb-drop { position:relative; display:flex; align-items:center; height:100%; }
-.gnb-drop-menu { position:absolute; top:calc(100% + 1px); left:50%; z-index:30; display:none; min-width:220px; padding:6px; transform:translateX(-50%); border:1px solid #e3e8ef; border-top:0; border-radius:0 0 12px 12px; background:#fff; box-shadow:0 12px 24px rgba(15,35,103,.12); }
+/* 드롭다운 항목 글자 왼쪽 끝 = 위 메뉴 글자(투자작업실 · 전략보관함) 왼쪽 끝: 테두리 1 + 안쪽 여백 6 + 항목 여백 12 = 19px 만큼 왼쪽으로 */
+.gnb-drop-menu { position:absolute; top:calc(100% + 1px); left:-19px; z-index:30; display:none; min-width:220px; padding:6px; border:1px solid #e3e8ef; border-top:0; border-radius:0 0 12px 12px; background:#fff; box-shadow:0 12px 24px rgba(15,35,103,.12); }
 .gnb-drop:hover .gnb-drop-menu, .gnb-drop:focus-within .gnb-drop-menu { display:block; }
 .gnb-main .gnb-drop-menu a { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; }
 .gnb-main .gnb-drop-menu a:hover { background:#f2f5f9; }
 .gnb-main .gnb-drop-menu .soon { display:flex; flex-direction:column; gap:1px; padding:9px 12px; border-radius:8px; font-size:14px; opacity:.5; cursor:default; }
-@media (max-width:800px) { .gnb-main { align-self:auto; } .gnb-drop { height:auto; } }
+@media (max-width:800px) { .gnb-main { align-self:auto; } .gnb-drop { height:auto; } .gnb-drop:last-child .gnb-drop-menu { left:auto; right:-19px; } }
 .gnb-drop-menu b { color:#141414; font-weight:700; }
 .gnb-drop-menu small { color:#8a92a0; font-size:12px; }
 .gnb-account { height:auto; align-items:center; padding-bottom:0; border-bottom:0; }

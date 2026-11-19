@@ -84,6 +84,10 @@
 .ar-page { --ar-k-strategy:#8b5cf6; --ar-k-journal:#344d7d; --ar-k-note:#2f9e5b; --ar-k-chart:#d9822b; --ar-k-news:#1592a6; --ar-ai:linear-gradient(100deg,#344d7d,#6d4fd1); }
 html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-wrap { width:min(1080px, calc(100% - 48px)); }
+/* 전략보관함 세 화면(내 전략 · 구매한 전략 · 전략 분석) 제목 줄: 같은 자리 · 같은 크기 · 같은 아래 간격.
+   제목 줄 높이를 40px(오른쪽 '새 전략 작성' 버튼 높이)로 고정해 버튼이 있어도 없어도 제목 글자가 같은 자리에 옴 */
+.ar-title-row { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; min-height:40px; margin-bottom:18px; }
+.ar-title-row .mk-title { margin:0; line-height:40px; }
 .ar-hub-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
 .ar-hub-head .mk-title { margin-bottom:6px; display:flex; align-items:center; gap:8px; }
 .ar-hub-head p { margin:0; color:var(--c-sub); font-size:13.5px; }
@@ -492,7 +496,7 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .mk-guess-chart .ws-intervals, .mk-guess-chart .ws-interval-custom, .mk-guess-chart .ws-avg-toggle { display:none; }
 
 /* ===== 구매한 전략 시안 (2026-11-18): 트레이더 카드 ===== */
-.ar-traders { display:flex; flex-direction:column; gap:20px; margin:28px 0 0; padding:0; list-style:none; }
+.ar-traders { display:flex; flex-direction:column; gap:20px; margin:0; padding:0; list-style:none; }
 .ar-trader { display:grid; grid-template-columns:minmax(0,2.3fr) 1fr 1fr 1.1fr 1.4fr; align-items:center; gap:16px; padding:24px 24px; border:1px solid var(--c-line); border-radius:12px; background:var(--c-surface); color:var(--c-ink); text-decoration:none; transition:border-color .12s, box-shadow .12s; }
 .ar-trader:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
 .ar-trader-who small { display:block; color:var(--c-sub); font-size:12px; font-weight:600; }
@@ -516,6 +520,8 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .pass-more-blur { width:20px; height:14px; -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); -webkit-mask:radial-gradient(closest-side, #000 55%, #0000); mask:radial-gradient(closest-side, #000 55%, #0000); }
 .pass-more svg { display:block; position:relative; }
 .ar-trader-stat b.gain { color:#d64545; } .ar-trader-stat b.loss { color:#2f64c4; }
+/* 열람권을 다 써서 보유 0개: 티켓 없이 다른 카드의 장수와 같은 자리(2열)에 흐리게 */
+.ar-trader-stat b.ar-none { color:var(--c-faint); }
 @media (max-width:800px) { .ar-trader { grid-template-columns:1fr 1fr; } .ar-trader-who { grid-column:1 / -1; } }
 /* 구매한 전략 → 트레이더 (시안) */
 .ar-pt-back { display:inline-flex; align-items:center; gap:2px; margin:8px 0 0 -5px; padding:4px 8px 4px 0; color:var(--c-sub); font-size:16px; font-weight:600; text-decoration:none; }
