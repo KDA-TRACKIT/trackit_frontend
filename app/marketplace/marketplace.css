@@ -552,13 +552,17 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-cards { display:flex; flex-direction:column; gap:14px; margin:0; padding:0; list-style:none; }
 .mk-tcard { display:grid; grid-template-columns:minmax(0,2.4fr) .9fr .8fr 1fr 130px; align-items:center; gap:16px; padding:18px 22px; border:1px solid var(--c-line); border-radius:12px; background:var(--c-surface); color:inherit; text-decoration:none; transition:border-color .12s, box-shadow .12s; }
 .mk-tcard:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
-.mk-tcard-who small { color:var(--c-sub); font-size:11.5px; font-weight:600; }
-.mk-tcard-who strong { display:flex; align-items:center; gap:6px; margin:4px 0 3px; font-size:17px; font-weight:800; }
+/* 카드 칸 5개 모두 '이름표 한 줄(16) + 값 칸(38)' 같은 틀 — 기간을 바꾸거나 값이 '-'·그래프·'전체' 기간 표시여도 카드 높이와 이름표 줄이 그대로 */
+.mk-tcard-who, .mk-tcard-stat, .mk-tcard-spark { display:grid; grid-template-rows:16px 38px; row-gap:4px; align-items:center; min-width:0; }
+.mk-tcard-who small, .mk-tcard-stat small, .mk-tcard-spark small { display:block; overflow:hidden; color:var(--c-sub); font-size:11.5px; line-height:16px; text-overflow:ellipsis; white-space:nowrap; }
+.mk-tcard-who small { font-weight:600; }
+.mk-tcard-who strong { display:flex; align-items:center; gap:6px; min-width:0; font-size:17px; font-weight:800; }
+.mk-tcard-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
-.mk-tcard-stat small, .mk-tcard-spark small { display:block; margin-bottom:4px; color:var(--c-sub); font-size:11.5px; }
+.mk-tcard-spark > span { font-size:15px; font-weight:700; }
 .mk-tcard-stat b { font-size:15px; font-weight:700; white-space:nowrap; }
 .mk-tcard-stat b.big { font-size:19px; font-weight:800; }
-@media (max-width:800px) { .mk-tcard { grid-template-columns:1fr 1fr; } .mk-tcard-who { grid-column:1 / -1; } .mk-tcard-spark { display:none; } }
+@media (max-width:800px) { .mk-tcard { grid-template-columns:1fr 1fr; } .mk-tcard-who { grid-column:1 / -1; } .mk-tcard-spark { display:none; } .mk-tcard-who, .mk-tcard-stat { grid-template-rows:16px 30px; } }
 /* 트레이더 상세 지표: 남색 카드 4개 (시안) */
 .mk-kpis-navy { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
 .mk-kpis-navy > div { display:flex; flex-direction:column; gap:4px; padding:16px 18px; border-radius:10px; background:#0f2367; color:#fff; }
@@ -570,4 +574,5 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 /* 전략 구매 버튼 배치 */
 .mk-buyrow { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 .mk-buyrow > :last-child { flex:1 1 auto; }
-.mk-tcard-stat small .mk-span { display:block; margin-top:2px; color:var(--c-faint); font-size:11px; font-style:normal; font-weight:500; }
+/* '전체' 기간의 첫 기록 달 ~ 마지막 달: 이름표 옆 같은 줄 (둘째 줄로 내리면 카드가 길어짐) */
+.mk-tcard-stat small .mk-span { margin-left:5px; color:var(--c-faint); font-size:11px; font-style:normal; font-weight:500; line-height:1; }

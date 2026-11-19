@@ -255,7 +255,7 @@ function MarketplaceList() {
                   <div className="mk-tcard-who">
                     <small>{t.tagline}</small>
                     <strong>
-                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[t.id] ?? 0} /> {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+                      <FavButton id={t.id} name={t.name} /> <span className="mk-tcard-name">{t.name}</span> <span className="mk-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[t.id] ?? 0} /> {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
                     </strong>
                   </div>
                   <div className="mk-tcard-stat">
