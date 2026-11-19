@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../../lib/api/client";
 import { usePasses } from "../../../lib/purchases";
-import { monthLabel } from "../../marketplace/data";
+import { monthLabel, traderById } from "../../marketplace/data";
+import { GradeBadge } from "../../marketplace/GradeParts";
 import { day, won } from "../sales/data";
 import { Card, Empty, FilterChips, PageHead, Stat, Table } from "../ui";
 
@@ -25,6 +26,8 @@ type Row = {
   id: string;
   trader: string;
   traderHref?: string;
+  /** 등급 표시용 (전략 마켓 트레이더) */
+  traderId?: string;
   title: string;
   scope: string;
   price: number;
@@ -53,6 +56,7 @@ export default function PurchasesPage() {
             id: p.id,
             trader: p.traderName,
             traderHref: `/marketplace/${p.traderId}`,
+            traderId: p.traderId,
             title: p.used.title,
             scope: `${monthLabel(p.used.month)} 전략`,
             price: p.amount,
@@ -64,6 +68,7 @@ export default function PurchasesPage() {
             id: p.id,
             trader: p.traderName,
             traderHref: `/marketplace/${p.traderId}`,
+            traderId: p.traderId,
             title: "열람권 (아직 안 씀)",
             scope: "월별 전략 1개",
             price: p.amount,
@@ -109,7 +114,10 @@ export default function PurchasesPage() {
         <Table cols={["트레이더", "전략", "구매 범위", "결제 금액", "구매일", "이용 기간", "상태"]}>
           {list.map((r) => (
             <div key={r.id} className="mp-tr">
-              <span className="clip">{r.traderHref ? <Link href={r.traderHref}>{r.trader}</Link> : r.trader}</span>
+              <span className="clip">
+                {r.traderHref ? <Link href={r.traderHref}>{r.trader}</Link> : r.trader}
+                {r.traderId && <> <GradeBadge grade={traderById(r.traderId)?.grade?.grade} unrated={traderById(r.traderId)?.grade?.unrated} small /></>}
+              </span>
               <span className="clip" title={r.title}>
                 <strong>{r.title}</strong>
               </span>

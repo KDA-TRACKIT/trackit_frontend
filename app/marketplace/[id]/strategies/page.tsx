@@ -43,7 +43,7 @@ export default function StrategiesPage() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-narrow">
         <Link href={`/marketplace/${t.id}`} className="mk-back">
-          ‹ {t.name}
+          ‹ {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
         </Link>
         <h1 className="mk-sub-title">
           <b>{t.name}</b> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />의 월별 전략

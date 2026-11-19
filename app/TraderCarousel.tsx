@@ -68,7 +68,7 @@ export default function TraderCarousel() {
               <h3>
                 <b className="home-trader-rank">{index + 1}</b>
                 <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/leaderboard-avatar.svg" alt="" width={30} height={30} /><Image src="/home/leaderboard-avatar-icon.svg" alt="" width={18} height={18} /></span>
-                <span>{t.name}</span>
+                <span>{t.name}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
               </h3>
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <div className="home-trader-metrics">

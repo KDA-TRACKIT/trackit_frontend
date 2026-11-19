@@ -1,16 +1,14 @@
 "use client";
-// 종목 전략 (2026-11-19 회의, 예전 '기록' 자리): 지금 종목에 쌓인 메모를 하나의 창에 이어서 (메모마다 칸을 나누지 않음)
-//   - 줄마다 왼쪽에 날짜 · 시각, 오른쪽 내용. 내용을 누르면 그 자리에서 고침
-//   - 확정 메모는 못 고쳐서, 고치면 새 메모로 남기고(replaces) 예전 메모는 기록에 그대로 둠 → 여기엔 고친 것만 보임
+// 종목 전략 (2026-11-19): 가장 최근에 저장된 정리본 하나만 (AI 분석 후 저장의 '이번 저장'과 같은 글). 지난 기록은 내 노트에서
+//   - 누르면 그 자리에서 고침. 확정 노트는 못 고쳐서, 고치면 지금 노트들을 합친 새 정리본으로 남김 (예전 것은 기록에 그대로)
 //   - 본인이 지우지 않는 한 계속 쌓임. 이행률은 여기서 보여 주지 않음 (계산은 lib/strategy.ts)
 //   - 증시 캘린더에서 쓴 메모를 가져와 이 종목 전략에 쌓을 수 있음
 import { useEffect, useMemo, useState } from "react";
 import type { Execution } from "../../lib/ai-link";
 import type { SymbolInfo } from "../../lib/market-data";
-import { addRecord, dateLabel, initRecordSource, kstNow, memoText, removeRecord, useRecords, type TradeRecord } from "../../lib/records";
+import { addRecord, dateLabel, initRecordSource, kstNow, memoText, useRecords, type TradeRecord } from "../../lib/records";
 import CalendarMemos from "./CalendarMemos";
 import { currentRecords, symbolRecords } from "../../lib/strategy";
-import { consolidateStrategy } from "../../lib/strategyText";
 
 const shown = memoText;
 
@@ -25,9 +23,9 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
     [all, symbol.code],
   );
 
-  // 정리본: 쌓인 노트에서 투자자가 쓴 매수 · 매도 · 손절 · 목표 · 메모만 합친 하나 (AI 분석 글 · 자동 계획 줄 빼고)
-  const merged = useMemo(() => consolidateStrategy(notes.map((r) => memoText(r.text)), "").text, [notes]);
+  // 종목 전략 = 가장 최근에 저장된 정리본 하나 (AI 분석 후 저장의 '이번 저장'과 같은 글). 지난 기록은 내 노트에서
   const latest = notes[notes.length - 1];
+  const merged = latest ? shown(latest.text) : "";
   const [mergedEdit, setMergedEdit] = useState<string | null>(null);
   /** 정리본 고치기 = 지금 보이는 노트를 다 합친 새 정리본으로 저장 (예전 것은 기록에 그대로) */
   async function saveMerged() {
@@ -42,8 +40,6 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
       setMsg(null);
     } else setMsg(res.error ?? "고치지 못했어요.");
   }
-  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -66,30 +62,6 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
       text: importText(m),
     });
     setMsg(r.ok ? null : (r.error ?? "가져오지 못했어요."));
-  }
-
-  /** 고치기 = 새 메모로 남기고 예전 메모를 가리킴 (선 · 체결 연결 · 정량 전략은 그대로 이어감) */
-  async function saveEdit(r: TradeRecord) {
-    const text = editing?.text.trim() ?? "";
-    if (busy || !text || text === shown(r.text)) return setEditing(null);
-    setBusy(true);
-    const now = kstNow();
-    const { id, drawings: _drawings, ...rest } = r;
-    void _drawings;
-    const res = await addRecord({ ...rest, date: now.date, noteTime: now.time, text, replaces: id });
-    setBusy(false);
-    if (res.ok) {
-      setEditing(null);
-      setMsg(null);
-    } else setMsg(res.error ?? "고치지 못했어요.");
-  }
-
-  async function remove(id: string) {
-    setBusy(true);
-    const result = await removeRecord(id);
-    setBusy(false);
-    if (result.ok) setDeleting(null);
-    else setMsg(result.error ?? "지우지 못했어요.");
   }
 
   return (
@@ -133,70 +105,12 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
               </div>
             ) : (
               <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 정리본으로 남아요)" onClick={() => setMergedEdit(merged)} onKeyDown={(e) => e.key === "Enter" && setMergedEdit(merged)}>
-                {merged || "아직 정한 매수 · 매도 · 손절 · 목표가 없어요. 눌러서 적거나 차트 노트에서 저장하세요."}
+                {merged || "아직 쌓인 내용이 없어요. 눌러서 적거나 차트 노트에서 저장하세요."}
               </p>
             )}
           </div>
         </div>
       )}
-      {notes.length > 0 && <details className="ws-strat-history"><summary>지난 기록 {notes.length}개</summary>
-      <div className="ws-memo ws-strat-memo">
-        {notes.length === 0 ? (
-          <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>
-        ) : (
-          notes.map((r) => (
-            <div key={r.id} className="ws-strat-row">
-              <time>
-                {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
-                {/* 전략 노트 뒤에 관련 매매가 생겨 매매 노트가 된 것만 표시 */}
-                {r.noteType === "trade" && <em className="ws-strat-trade" title="이 전략대로 매매가 있었어요 (같은 종목 · 같은 방향 · 노트 뒤 매매)">매매 노트</em>}
-              </time>
-              {editing?.id === r.id ? (
-                <div className="ws-strat-edit">
-                  <textarea
-                    autoFocus
-                    value={editing.text}
-                    onChange={(e) => setEditing({ id: r.id, text: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") setEditing(null);
-                      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void saveEdit(r);
-                    }}
-                    rows={Math.min(8, Math.max(2, editing.text.split("\n").length))}
-                    aria-label="노트 고치기"
-                  />
-                  <div>
-                    <button type="button" onClick={() => setEditing(null)} disabled={busy}>
-                      취소
-                    </button>
-                    <button type="button" className="primary" onClick={() => void saveEdit(r)} disabled={busy || !editing.text.trim()}>
-                      {busy ? "저장 중…" : "저장"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 노트로 남아요)" onClick={() => setEditing({ id: r.id, text: shown(r.text) })} onKeyDown={(e) => e.key === "Enter" && setEditing({ id: r.id, text: shown(r.text) })}>
-                  {shown(r.text)}
-                </p>
-              )}
-              <button type="button" className="ws-strat-del" onClick={() => setDeleting(deleting === r.id ? null : r.id)} aria-label="지우기" title="지우기">
-                ✕
-              </button>
-              {deleting === r.id && (
-                <div className="ws-rec-del-confirm">
-                  <span>이 내용을 지울까요?</span>
-                  <button onClick={() => setDeleting(null)} disabled={busy}>
-                    닫기
-                  </button>
-                  <button className="danger" onClick={() => void remove(r.id)} disabled={busy}>
-                    {busy ? "지우는 중…" : "지우기"}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-      </details>}
       {notes.length === 0 && <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>}
     </section>
   );
