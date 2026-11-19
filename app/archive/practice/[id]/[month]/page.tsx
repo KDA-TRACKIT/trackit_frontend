@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "../../../../SiteHeader";
 import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, strategiesOf, traderById } from "../../../../marketplace/data";
+import { GradeBadge } from "../../../../marketplace/GradeParts";
 import GuessFirst, { useDark, type SimDetail } from "../../../../marketplace/GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import "../../../../marketplace/marketplace.css";
@@ -45,7 +46,7 @@ export default function PracticePage() {
         <nav className="ar-crumb">
           <Link href="/archive">아카이브</Link> / <Link href="/archive/purchases">구매한 전략</Link> / <b>연습하기</b>
         </nav>
-        <h1 className="mk-title">{t && s ? `${t.name}의 ${monthLabel(month)} 전략 · 연습하기` : "연습하기"}</h1>
+        <h1 className="mk-title">{t && s ? <><GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {`${t.name}의 ${monthLabel(month)} 전략 · 연습하기`}</> : "연습하기"}</h1>
 
         {!t || !s ? (
           <p className="mk-card mk-empty">전략을 찾을 수 없어요.</p>

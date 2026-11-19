@@ -8,6 +8,7 @@ import SiteHeader from "../../SiteHeader";
 import { usePasses } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { monthLabel, pct, tone, traderById, type Trader } from "../../marketplace/data";
+import { GradeBadge } from "../../marketplace/GradeParts";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
 
@@ -102,7 +103,7 @@ export default function AnalysisPage() {
                   {rows.map((r) => (
                     <tr key={r.t.id}>
                       <td>
-                        <Link href={`/marketplace/${r.t.id}`}>{r.t.name}</Link>
+                        <GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /> <Link href={`/marketplace/${r.t.id}`}>{r.t.name}</Link>
                         <small>{r.t.type}</small>
                       </td>
                       <td className={tone(r.avg)}>{pct(Math.round(r.avg * 100) / 100)}</td>
@@ -126,7 +127,7 @@ export default function AnalysisPage() {
             {rows.map((r) => (
               <section key={r.t.id} className="mk-card an-card">
                 <div className="an-card-head">
-                  <strong>{r.t.name}</strong>
+                  <strong><GradeBadge grade={r.t.grade?.grade} unrated={r.t.grade?.unrated} small /> {r.t.name}</strong>
                   <small>월별 수익률 · {WINDOWS.find((w) => w.key === months)?.label}</small>
                 </div>
                 <div className="an-bars" role="img" aria-label={`${r.t.name} 월별 수익률`}>

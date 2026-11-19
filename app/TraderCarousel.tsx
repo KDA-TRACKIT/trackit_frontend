@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
 import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
+import { GradeBadge } from "./marketplace/GradeParts";
 
 
 export default function TraderCarousel() {
@@ -68,7 +69,7 @@ export default function TraderCarousel() {
               <h3>
                 <b className="home-trader-rank">{index + 1}</b>
                 <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/avatar.svg" alt="" width={30} height={30} /><Image src="/home/avatar-icon.svg" alt="" width={18} height={18} /></span>
-                <span>{t.name}</span>
+                <span>{t.name}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
               </h3>
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <p className="home-trader-return-label">한 달 수익률</p>

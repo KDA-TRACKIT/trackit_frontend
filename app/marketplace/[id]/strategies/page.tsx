@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
+import { GradeBadge } from "../../GradeParts";
 import { Pager, PassBuyBox, StrategyButton, useNotice } from "../../parts";
 import { unusedPasses, usePasses } from "../../../../lib/purchases";
 import { useFeedback } from "../../../../lib/feedback";
@@ -45,7 +46,7 @@ export default function StrategiesPage() {
           ‹ {t.name}
         </Link>
         <h1 className="mk-sub-title">
-          <b>{t.name}</b>의 월별 전략
+          <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> <b>{t.name}</b>의 월별 전략
         </h1>
         <p className="mk-sub-desc">한 달의 매매 기준, 진입 · 청산 기록, 원칙을 지켰는지 회고를 함께 담았어요.</p>
         {passLeft > 0 && (

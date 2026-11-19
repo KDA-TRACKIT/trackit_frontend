@@ -170,7 +170,7 @@ export default function QuickMemo({ base = null, pickable = false }: { base?: Me
     const common = { date: now.date, noteTime: now.time, executionTime: null, ...quant };
     const result =
       target?.kind === "stock"
-        ? await addRecord({ ...common, symbol: target.code, symbolName: target.name, text: target.note ? `[${target.note}] ${body}` : body })
+        ? await addRecord({ ...common, symbol: target.code, symbolName: target.name, text: body })
         : target?.kind === "topic"
           ? await addRecord({ ...common, symbol: null, symbolName: null, topic: target.topic, text: `[${target.label}] ${body}${tail}` })
           : await addRecord({ ...common, symbol: null, symbolName: null, topic, text: `${body}${tail}` });

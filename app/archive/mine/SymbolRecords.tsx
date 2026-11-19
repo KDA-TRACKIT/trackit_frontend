@@ -3,8 +3,8 @@
 //   종목마다 한 장: 그 종목 메모 + 그 종목으로 정량 전략을 적은 뉴스 · 경제 지표 메모, 날짜와 내용만 (트레이딩 로그 종목 전략과 같은 모양)
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
-import { dateLabel, initRecordSource, useRecords, type TradeRecord } from "../../../lib/records";
-import { symbolRecords } from "../../../lib/strategy";
+import { dateLabel, initRecordSource, memoText, useRecords, type TradeRecord } from "../../../lib/records";
+import { currentRecords, symbolRecords } from "../../../lib/strategy";
 
 export default function SymbolRecords() {
   const all = useRecords();
@@ -19,7 +19,7 @@ export default function SymbolRecords() {
     }
     return [...names.entries()]
       .map(([code, name]) => {
-        const items = symbolRecords(all, code).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
+        const items = currentRecords(symbolRecords(all, code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
         return { code, name, items, last: items.at(-1) };
       })
       .filter((g) => g.items.length)
@@ -44,7 +44,7 @@ export default function SymbolRecords() {
                     <b>
                       {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
                     </b>
-                    <p>{r.text.replace(/^\[관찰 메모\]\s*/, "")}</p>
+                    <p>{memoText(r.text)}</p>
                   </div>
                 ))}
               </div>

@@ -1267,3 +1267,18 @@ details.ws-ladder { padding:10px 12px; }
 .ws-plan .ws-ladder-del { flex:none; width:20px; height:20px; padding:0; border:0; background:none; color:var(--c-faint); font-size:11px; cursor:pointer; opacity:0; }
 .ws-plan .ws-ladder ul li:hover .ws-ladder-del, .ws-plan .ws-ladder-del:focus-visible { opacity:1; }
 .ws-plan .ws-ladder-del:hover { color:var(--c-down); }
+
+/* 종목 전략: 하나의 창에 이어서 (줄마다 날짜 · 시각 | 내용, 내용을 누르면 고침) */
+.ws-strat-memo { gap:0; }
+.ws-strat-row { position:relative; display:grid; grid-template-columns:132px minmax(0,1fr) 20px; gap:2px 12px; align-items:start; padding:5px 0; }
+.ws-strat-row > time { padding-top:3px; color:var(--ws-muted); font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ws-strat-row > p { margin:0; padding:2px 6px; border-radius:4px; font-size:14px; line-height:22px; white-space:pre-wrap; word-break:keep-all; cursor:text; }
+.ws-strat-row > p:hover { background:var(--c-subtle); }
+.ws-strat-row > .ws-strat-del { position:static; }
+.ws-strat-row:hover > .ws-strat-del, .ws-strat-row > .ws-strat-del:focus-visible { opacity:1; }
+.ws-strat-row > .ws-rec-del-confirm { grid-column:2 / -1; }
+.ws-strat-edit textarea { width:100%; padding:4px 6px; border:1px solid var(--c-accent); border-radius:4px; background:var(--c-surface); color:var(--c-ink); font:14px/22px Pretendard,sans-serif; resize:vertical; outline:0; box-sizing:border-box; }
+.ws-strat-edit > div { display:flex; justify-content:flex-end; gap:6px; margin-top:4px; }
+.ws-strat-edit button { height:26px; padding:0 12px; border:1px solid var(--ws-line); border-radius:4px; background:var(--c-surface); color:var(--c-ink); font-size:12px; cursor:pointer; }
+.ws-strat-edit button.primary { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); font-weight:700; }
+@media (max-width:640px) { .ws-strat-row { grid-template-columns:minmax(0,1fr) 20px; } .ws-strat-row > time { grid-column:1 / -1; } }

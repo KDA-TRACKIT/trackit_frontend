@@ -364,6 +364,7 @@ export default function WorkshopPage() {
             : []),
         ],
         mode: "ai",
+        provider: "openai",
         currency: us ? "USD" : "KRW",
       });
       setAiMemoResult(result);

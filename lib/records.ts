@@ -29,6 +29,8 @@ export type TradeRecord = {
   lines?: NoteLine[];
   /** 뉴스 · 경제 지표 메모에 적은 정량 전략의 종목 (예: 삼성전자 21만원에 매도). 그 종목 전략에 같이 쌓임 */
   target?: { code: string; name: string };
+  /** 고친 메모면 고치기 전 메모 id (확정 메모는 못 고쳐서 새 메모로 남김, 예전 것은 기록에 그대로) */
+  replaces?: string;
 };
 
 /** 종목 없는 메모의 주제 */
@@ -91,6 +93,7 @@ function fromServer(): Promise<TradeRecord[]> {
           drawings: Array.isArray(n.drawings) ? n.drawings.length : 0,
           ...(Array.isArray(s.lines) ? { lines: s.lines } : {}),
           ...(s.target ? { target: s.target } : {}),
+          ...(s.replaces ? { replaces: s.replaces } : {}),
         } satisfies TradeRecord;
       }),
     ),
@@ -169,6 +172,7 @@ export async function addRecord(
         drawings,
         lines: record.lines,
         target: record.target,
+        replaces: record.replaces,
         plan,
       });
       await refreshServerRecords();
@@ -255,3 +259,10 @@ export function dateLabel(date: string) {
   const [y, m, d] = date.split("-").map(Number);
   return `${date.replaceAll("-", ".")} (${WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]})`;
 }
+
+/**
+ * 화면에 보일 메모 글: 앞에 붙던 꼬리표를 뺌
+ *   - [관찰 메모] (예전 계획 점검)
+ *   - 빠른 메모로 종목을 골랐을 때 붙던 출처 · 등락 ([전기/전자 0.00%] · [오늘의 종목 · …] · [뉴스]) — 지금은 안 붙임
+ */
+export const memoText = (t: string) => t.replace(/^\[관찰 메모\]\s*/, "").replace(/^\[(?:[^\]]*?[+\-−]?\d+(?:\.\d+)?%|오늘의 종목[^\]]*|뉴스)\]\s*/, "");

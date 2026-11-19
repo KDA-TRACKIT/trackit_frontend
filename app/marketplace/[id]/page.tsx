@@ -85,7 +85,7 @@ export default function TraderPage() {
 
           <aside className="mk-card mk-buy">
             <small>
-              <b>{t.name}</b>의 전략 열람권
+              <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> <b>{t.name}</b>의 전략 열람권
             </small>
             <strong>
               {won(t.price)} <span>/ 1장 · 전략 1개</span>
