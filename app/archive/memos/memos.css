@@ -216,7 +216,8 @@
 .mm-detail.in-side { gap:13px; padding:14px 20px 22px; }
 .mm-detail.in-side .mm-detail-head h2 { font-size:20px; }
 .mm-detail.in-side .mm-chart { height:220px; }
-.mm-detail.in-side .mm-flow { flex-wrap:wrap; }
+.mm-detail.in-side .mm-flow { flex-wrap:wrap; gap:6px; }
+.mm-detail.in-side .mm-flow > span { gap:6px; padding:7px 10px; }
 .mm-detail.in-side .mm-flow p { flex-basis:100%; text-align:left; }
 .mm-detail-nav { display:flex; align-items:center; gap:6px; padding-bottom:12px; border-bottom:1px solid #eef2f6; }
 .mm-detail-nav > span { margin-left:auto; color:#8791a3; font-size:12px; }
