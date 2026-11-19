@@ -125,7 +125,7 @@ function PickList({ items, loading, picked, onPick, full }: { items: ReturnType<
               </button>
               {KINDS.map((k) => (
                 <button key={k.key} type="button" className={kind === k.key ? "on" : ""} onClick={() => setKind(k.key)}>
-                  {k.label} {c[k.key]}
+                  {k.key === "journal" ? "매매 노트" : k.label} {c[k.key]}
                 </button>
               ))}
             </div>
