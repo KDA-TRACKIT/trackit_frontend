@@ -14,6 +14,7 @@ import StrategyChart from "../../../StrategyChart";
 import { GradeBadge } from "../../../GradeParts";
 import { useDark, type SimDetail } from "../../../GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
+import { markFreeView } from "../../../../../lib/free-views";
 import "../../../marketplace.css";
 
 export default function StrategyView() {
@@ -39,6 +40,13 @@ export default function StrategyView() {
 
   const list = t ? strategiesOf(t) : [];
   const s = list.find((x) => x.month === month);
+  // 무료 전략을 열면 아카이브에 남김 (열람권 없이 본 것도)
+  const freeKey = t && s?.free ? `${t.id}|${t.name}|${month}|${s.title}` : "";
+  useEffect(() => {
+    if (!freeKey) return;
+    const [traderId, traderName, m, ...title] = freeKey.split("|");
+    markFreeView({ traderId, traderName, month: m, title: title.join("|") });
+  }, [freeKey]);
   if (!t || !s) {
     return (
       <main className="mk-page">

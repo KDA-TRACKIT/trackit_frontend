@@ -1,11 +1,13 @@
 "use client";
 // 아카이브 · 구매한 전략: 산 열람권과 열람권으로 연 전략 (계정에 저장, lib/purchases → GET /me/passes)
+//   무료로 본 전략(트레이더 첫 공개 전략)도 같이 (lib/free-views, 이 브라우저)
 //   실제 판매 등록을 산 것 → 서버 GET /market/purchases
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { apiRequest } from "../../../lib/api/client";
 import { usePasses } from "../../../lib/purchases";
+import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
@@ -30,6 +32,7 @@ const STATUS: Record<string, string> = { PAID: "결제 완료", PENDING: "결제
 
 export default function PurchasesPage() {
   const passes = usePasses();
+  const freeViews = useFreeViews();
   const likeTotals = useLikeTotals();
   const [server, setServer] = useState<ServerPurchase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,13 +51,15 @@ export default function PurchasesPage() {
   // 남은 열람권은 트레이더별로 묶어 장수로
   const byTrader = [...new Map(unused.map((p) => [p.traderId, { traderId: p.traderId, name: p.traderName, count: unused.filter((x) => x.traderId === p.traderId).length }])).values()];
   const total = passes.reduce((a, p) => a + p.amount, 0) + (server ?? []).filter((p) => p.paymentStatus === "PAID").reduce((a, p) => a + Number(p.price), 0);
-  const nothing = server !== null && !passes.length && !server.length;
+  const nothing = server !== null && !passes.length && !server.length && !freeViews.length;
   // 시안: 열람권을 산 트레이더별 카드 (보유 열람권 · 전략 이행률 · 최근 1개월 수익률 · 보유 전략)
-  const traders = [...new Set(passes.map((p) => p.traderId))].map((id) => {
+  // 열람권을 산 트레이더 + 무료 전략만 본 트레이더
+  const traders = [...new Set([...passes.map((p) => p.traderId), ...freeViews.map((v) => v.traderId)])].map((id) => {
     const mine = passes.filter((p) => p.traderId === id);
+    const free = freeViews.filter((v) => v.traderId === id);
     const t = traderById(id);
-    const months = [...new Set(mine.flatMap((p) => (p.used ? [p.used.month] : [])))].sort().reverse();
-    return { id, t, name: t?.name ?? mine[0].traderName, count: mine.length, months, ret: t?.monthly.at(-1)?.ret ?? null };
+    const months = [...new Set([...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.map((v) => v.month)])].sort().reverse();
+    return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, count: mine.length, months, ret: t?.monthly.at(-1)?.ret ?? null };
   });
   const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
 
@@ -68,7 +73,7 @@ export default function PurchasesPage() {
             "불러오는 중…"
           ) : nothing ? null : (
             <>
-              열람권 <b>{passes.length}</b>장 (남은 {unused.length}장) · 연 전략 <b>{used.length + (server?.length ?? 0)}</b>개 · 결제 합계 <b>{won(total)}</b>
+              열람권 <b>{passes.length}</b>장 (남은 {unused.length}장) · 연 전략 <b>{used.length + (server?.length ?? 0) + freeViews.length}</b>개 · 결제 합계 <b>{won(total)}</b>
             </>
           )}
         </p>
@@ -143,7 +148,7 @@ export default function PurchasesPage() {
               </section>
             )}
 
-            {(used.length > 0 || (server?.length ?? 0) > 0) && (
+            {(used.length > 0 || (server?.length ?? 0) > 0 || freeViews.length > 0) && (
               <section className="ar-day">
                 <h2>연 전략</h2>
                 <ul>
@@ -182,6 +187,37 @@ export default function PurchasesPage() {
                             연습하기
                           </Link>
                           <Link href={`/marketplace/${p.traderId}/strategies/${p.used!.month}`} className="ar-prow-btn">
+                            전략 상세 보기
+                          </Link>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {freeViews.map((v) => {
+                    const t = traderById(v.traderId);
+                    const s = t ? strategiesOf(t).find((x) => x.month === v.month) : undefined;
+                    return (
+                      <li key={`free-${v.traderId}-${v.month}`} className="mk-card ar-prow">
+                        <div>
+                          <strong>
+                            <GradeBadge grade={t?.grade?.grade} unrated={t?.grade?.unrated} small /> {v.traderName}의 {monthLabel(v.month)} 전략
+                          </strong>
+                          <p>{s?.title ?? v.title}{t?.tagline ? ` · ${t.tagline}` : ""}</p>
+                          <small>{day(v.at)} 무료로 봄</small>
+                        </div>
+                        <div className="ar-prow-stat">
+                          {s && (
+                            <>
+                              <b className={tone(s.ret)}>수익률 {pct(s.ret)}</b>
+                              <span>이행률 {s.follow}%</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="ar-prow-acts">
+                          <Link href={`/archive/practice/${v.traderId}/${v.month}`} className="ar-prow-btn ghost">
+                            연습하기
+                          </Link>
+                          <Link href={`/marketplace/${v.traderId}/strategies/${v.month}`} className="ar-prow-btn">
                             전략 상세 보기
                           </Link>
                         </div>

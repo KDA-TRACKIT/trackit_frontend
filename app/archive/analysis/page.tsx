@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { usePasses } from "../../../lib/purchases";
+import { useFreeViews } from "../../../lib/free-views";
 import { monthLabel, pct, tone, traderById, type Trader } from "../../marketplace/data";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
@@ -28,11 +29,14 @@ const WINDOWS = [
 
 export default function AnalysisPage() {
   const passes = usePasses();
+  const freeViews = useFreeViews();
   const [months, setMonths] = useState(12);
 
   const rows: Row[] = useMemo(() => {
     const byTrader = new Map<string, { month: string; title: string }[]>();
     for (const p of passes) if (p.used) byTrader.set(p.traderId, [...(byTrader.get(p.traderId) ?? []), { month: p.used.month, title: p.used.title }]);
+    // 무료로 본 전략도 (같은 달이면 하나만)
+    for (const v of freeViews) if (!(byTrader.get(v.traderId) ?? []).some((o) => o.month === v.month)) byTrader.set(v.traderId, [...(byTrader.get(v.traderId) ?? []), { month: v.month, title: v.title }]);
     return [...byTrader.entries()].flatMap(([id, opened]) => {
       const t = traderById(id);
       if (!t) return [];
@@ -51,7 +55,7 @@ export default function AnalysisPage() {
         },
       ];
     });
-  }, [passes, months]);
+  }, [passes, freeViews, months]);
 
   const maxAbs = Math.max(4, ...rows.flatMap((r) => r.recent.map((m) => Math.abs(m.ret))));
 

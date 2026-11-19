@@ -1,9 +1,10 @@
 "use client";
-// 아카이브 한 곳에 모으는 재료: 구매한 전략(열람권으로 연 월별 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
+// 아카이브 한 곳에 모으는 재료: 구매한 전략(열람권으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
 //   기록은 lib/records (로그인 = 서버 확정 노트, 아니면 이 브라우저). 지어낸 기록 없이 있는 것만 보여 줌
 import { useEffect, useMemo, useState } from "react";
 import { classify, daysAgo, initRecordSource, recordSource, useRecords, type TradeRecord } from "../../lib/records";
 import { usePasses } from "../../lib/purchases";
+import { useFreeViews } from "../../lib/free-views";
 import { monthLabel, strategiesOf, traderById } from "../marketplace/data";
 
 export type ItemKind = "strategy" | "journal" | "note" | "chart" | "news";
@@ -77,6 +78,7 @@ const kstDate = (iso: string) => (iso ? new Date(new Date(iso).getTime() + 9 * 3
 export function useArchive() {
   const records = useRecords();
   const passes = usePasses();
+  const freeViews = useFreeViews();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     void initRecordSource().finally(() => setLoading(false));
@@ -107,8 +109,32 @@ export function useArchive() {
           follow: s?.follow,
         };
       });
-    return [...bought, ...records.map(recordItem)].sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-  }, [records, passes]);
+    // 무료로 본 전략 (열람권으로도 연 달이면 하나만)
+    const free: Item[] = freeViews
+      .filter((v) => !passes.some((p) => p.traderId === v.traderId && p.used?.month === v.month))
+      .map((v) => {
+        const t = traderById(v.traderId);
+        const s = t ? strategiesOf(t).find((x) => x.month === v.month) : undefined;
+        const at = kstDate(v.at);
+        return {
+          id: `free-${v.traderId}-${v.month}`,
+          kind: "strategy" as const,
+          date: at.slice(0, 10),
+          time: at.slice(11, 16),
+          symbol: null,
+          symbolName: null,
+          title: `${monthLabel(v.month)} · ${s?.title ?? v.title}`,
+          sub: `${v.traderName} · 무료로 봄`,
+          text: s?.summary ?? t?.rule?.desc ?? "",
+          href: `/marketplace/${v.traderId}/strategies/${v.month}`,
+          traderId: v.traderId,
+          month: v.month,
+          ret: s?.ret,
+          follow: s?.follow,
+        };
+      });
+    return [...bought, ...free, ...records.map(recordItem)].sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+  }, [records, passes, freeViews]);
 
   return { items, loading, source: recordSource() };
 }
