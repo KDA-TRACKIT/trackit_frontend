@@ -29,8 +29,13 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  /** 캘린더 메모 → 이 종목 메모로 (원래 메모는 그대로) */
+  /** 캘린더 메모 → 이 종목 메모로 남길 글 (같은 메모는 같은 글이 되어 중복을 알아봄) */
+  const importText = (m: TradeRecord) => `[캘린더 메모${m.topic ? ` · ${m.topic}` : ""} · ${m.date.slice(5).replace("-", ".")}] ${m.text}`;
+  // 이 종목에 이미 가져온 캘린더 메모 (지운 건 다시 가져올 수 있음)
+  const imported = useMemo(() => new Set(symbolRecords(all, symbol.code).map((r) => r.text)), [all, symbol.code]);
+  /** 캘린더 메모 → 이 종목 메모로 (원래 메모는 그대로, 이미 가져온 건 다시 안 가져옴) */
   async function importMemo(m: TradeRecord) {
+    if (imported.has(importText(m))) return setMsg("이미 가져온 메모예요.");
     const now = kstNow();
     const r = await addRecord({
       date: now.date,
@@ -38,7 +43,7 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
       executionTime: null,
       symbol: symbol.code,
       symbolName: symbol.name,
-      text: `[캘린더 메모${m.topic ? ` · ${m.topic}` : ""} · ${m.date.slice(5).replace("-", ".")}] ${m.text}`,
+      text: importText(m),
     });
     setMsg(r.ok ? null : (r.error ?? "가져오지 못했어요."));
   }
@@ -73,7 +78,7 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
         <h2>
           종목 전략 <span>{symbol.name}</span>
         </h2>
-        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} />
+        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={(m) => imported.has(importText(m))} />
       </header>
       {msg && <p className="ws-rec-error">{msg}</p>}
       <div className="ws-memo ws-strat-memo">

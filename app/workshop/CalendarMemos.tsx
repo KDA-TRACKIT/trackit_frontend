@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { classify, dateLabel, type TradeRecord } from "../../lib/records";
 
-export default function CalendarMemos({ records, onPick, disabled }: { records: TradeRecord[]; onPick: (memo: TradeRecord) => void; disabled?: boolean }) {
+export default function CalendarMemos({ records, onPick, disabled, isImported }: { records: TradeRecord[]; onPick: (memo: TradeRecord) => void; disabled?: boolean; /** 이미 가져온 메모 (다시 못 고름) */ isImported?: (memo: TradeRecord) => boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const memos = records
@@ -35,6 +35,8 @@ export default function CalendarMemos({ records, onPick, disabled }: { records: 
                 type="button"
                 role="option"
                 aria-selected={false}
+                disabled={isImported?.(r)}
+                title={isImported?.(r) ? "이미 가져온 메모예요" : undefined}
                 onClick={() => {
                   onPick(r);
                   setOpen(false);
@@ -43,6 +45,7 @@ export default function CalendarMemos({ records, onPick, disabled }: { records: 
                 <b>
                   {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
                   {r.topic ? ` · ${r.topic}` : ""}
+                  {isImported?.(r) ? " · 가져옴" : ""}
                 </b>
                 <span>{r.text}</span>
               </button>

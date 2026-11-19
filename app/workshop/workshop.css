@@ -1282,3 +1282,4 @@ details.ws-ladder { padding:10px 12px; }
 .ws-strat-edit button { height:26px; padding:0 12px; border:1px solid var(--ws-line); border-radius:4px; background:var(--c-surface); color:var(--c-ink); font-size:12px; cursor:pointer; }
 .ws-strat-edit button.primary { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); font-weight:700; }
 @media (max-width:640px) { .ws-strat-row { grid-template-columns:minmax(0,1fr) 20px; } .ws-strat-row > time { grid-column:1 / -1; } }
+.ws-cal-memos-list button:disabled { opacity:.45; cursor:default; } .ws-cal-memos-list button:disabled:hover { background:none; }
