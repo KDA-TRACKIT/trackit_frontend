@@ -4,8 +4,9 @@
 //   검색어 · 기간 · 정렬 · 필터 · 쪽은 주소(?q=…)에 둔다 → 트레이더를 눌렀다가 돌아와도 그대로 (lib/market-list)
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { rememberListUrl } from "../../lib/market-list";
+import { fitZoom } from "../../lib/fit-script";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
@@ -189,11 +190,32 @@ function MarketplaceList() {
         <div className="mk-toolbar">
           <div className="mk-periods" role="radiogroup" aria-label="수익률 기간">
             <span>수익률(%)</span>
-            {PERIODS.map((p) => (
-              <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })} title={p.key === "all" ? "트레이더마다 첫 기록 달부터 지금까지" : undefined}>
-                {p.label}
-              </button>
-            ))}
+            {PERIODS.map((p) => {
+              const tab = (
+                <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })}>
+                  {p.label}
+                </button>
+              );
+              if (p.key !== "all") return tab;
+              // '전체' 오른쪽 위 작은 ? (탭과 겹치지 않게 바로 옆) — 누르면 어디로 가지 않고, 올리거나(누르면 초점) 말풍선으로 기간만 보여 줌
+              return (
+                <div key={p.key} className="mk-period-all">
+                  {tab}
+                  <span className="mk-help" onMouseEnter={fitTip} onFocus={fitTip}>
+                    <button type="button" className="mk-help-btn" aria-label="'전체' 기간 설명" aria-describedby="mk-help-all">
+                      {/* 글꼴마다 '?' 높이가 달라 원 가운데에서 어긋나므로 그림으로 그림 (그림 상자 = 물음표 테두리 → 원 정가운데) */}
+                      <svg viewBox="2.5 1.5 7 12.3" width="5" height="8.8" aria-hidden="true">
+                        <path d="M3.5 5a2.5 2.5 0 1 1 4.415 1.607C7.401 7.22 6 7.6 6 8.3v.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="6" cy="12.65" r="1.15" fill="currentColor" />
+                      </svg>
+                    </button>
+                    <span id="mk-help-all" role="tooltip" className="mk-help-tip">
+                      첫 기록 달부터 {asOf}까지
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
           <div className="mk-tools">
             {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 가격 낮은/높은 순) */}
@@ -220,7 +242,6 @@ function MarketplaceList() {
             </button>
           </div>
         </div>
-        {period === "all" && <p className="mk-period-hint">전체 = 트레이더마다 첫 기록 달부터 {asOf}까지. 카드에 각 트레이더의 기간을 적어 뒀어요.</p>}
 
         {!shown.length ? (
           <p className="mk-card mk-empty">조건에 맞는 트레이더가 없어요. 검색어나 필터를 바꿔 보세요.</p>
@@ -348,6 +369,20 @@ function similarity(me: Investment, t: Trader) {
   const marketHit = (me.market.includes("국내") && t.market === "국내 주식") || ((me.market.includes("미국") || me.market.includes("해외")) && t.market === "해외 주식") ? 1 : 0;
   const periodHit = (me.period.includes("단기") && t.type === "단기 매매") || (me.period.includes("중기") && t.type === "스윙") || (me.period.includes("장기") && t.type === "추세 추종") ? 1 : 0;
   return common(me.styles, t.styles) * 2 + common(me.indicators, t.indicators) + marketHit * 2 + periodHit;
+}
+
+/** '전체' 도움말 말풍선이 화면 밖으로 나가지 않게 좌우로 밀기 (휴대폰에선 '전체'가 둘째 줄 왼쪽 끝으로 내려감). 꼬리는 계속 ? 를 가리킴 */
+function fitTip(e: SyntheticEvent<HTMLElement>) {
+  const tip = e.currentTarget.querySelector<HTMLElement>(".mk-help-tip");
+  if (!tip) return;
+  tip.style.setProperty("--dx", "0px");
+  // 화면 맞춤(zoom)일 때도 getBoundingClientRect · 화면 폭(clientWidth)은 보이는 크기 → 그대로 재고, 밀 거리만 zoom 으로 나눠 CSS 크기로
+  const z = fitZoom();
+  const r = tip.getBoundingClientRect();
+  const edge = 12;
+  const max = document.documentElement.clientWidth - edge;
+  const dx = r.left < edge ? edge - r.left : r.right > max ? max - r.right : 0;
+  tip.style.setProperty("--dx", `${Math.round(dx / z)}px`);
 }
 
 /** 전체 기간: 첫 기록 달 ~ 마지막 달 (예: 24.12 ~ 26.11) */

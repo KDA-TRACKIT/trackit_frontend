@@ -54,6 +54,19 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-periods button { height:30px; padding:0 13px; border:0; border-radius:16px; background:var(--c-subtle); color:var(--c-sub); font-size:12.5px; font-weight:600; }
 .mk-periods button:hover { color:var(--c-ink); }
 .mk-periods button.on { background:var(--mk-primary); color:var(--mk-primary-ink); }
+/* '전체' 기간 도움말: 탭 오른쪽 위 작은 ? (Figma '기록 작성률 도움말'과 같은 모양) — 올리거나 누르면(초점) 위에 남색 말풍선 */
+/* ? 는 탭 오른쪽 끝에서 2px 띄운 자리(오른쪽 여백 18px 안)에 두어 탭과 겹치지 않게, 위로 4px 올려 오른쪽 위에 */
+.mk-period-all { position:relative; display:inline-flex; padding-right:18px; }
+.mk-help { position:absolute; top:-4px; right:0; z-index:3; display:block; }
+.mk-page .mk-help-btn { display:grid; place-items:center; width:16px; height:16px; padding:0; border:1.2px solid #8a94a6; border-radius:50%; background:var(--c-surface, #fff); color:#5c6678; cursor:help; }
+.mk-help-btn svg { display:block; }
+.mk-page .mk-help-btn:hover, .mk-page .mk-help-btn:focus { border-color:#192a48; color:#192a48; outline:none; }
+.mk-help-tip { position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(calc(-50% + var(--dx, 0px))); width:max-content; max-width:min(440px, 86vw); padding:9px 14px; border-radius:8px; background:#192a48; color:#fff; font-size:13px; font-weight:500; line-height:1.5; white-space:normal; box-shadow:0 6px 18px rgb(15 35 103 / 18%); opacity:0; visibility:hidden; transition:opacity .12s, visibility .12s; pointer-events:none; }
+.mk-help-tip::after { content:""; position:absolute; top:100%; left:calc(50% - var(--dx, 0px)); transform:translateX(-50%); border:6px solid transparent; border-top-color:#192a48; border-bottom:0; }
+.mk-help:hover .mk-help-tip, .mk-help-btn:focus + .mk-help-tip { opacity:1; visibility:visible; }
+html[data-theme="dark"] .mk-page .mk-help-btn { border-color:#7d889c; color:#c4ccda; }
+html[data-theme="dark"] .mk-help-tip { background:#2b3b5e; }
+html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-tools { display:flex; align-items:center; gap:14px; }
 .mk-sorts { display:flex; align-items:center; }
 .mk-sorts button { position:relative; height:30px; padding:0 9px; border:0; background:none; color:var(--c-faint); font-size:13px; font-weight:500; }
@@ -557,5 +570,4 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 /* 전략 구매 버튼 배치 */
 .mk-buyrow { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 .mk-buyrow > :last-child { flex:1 1 auto; }
-.mk-period-hint { margin:-4px 0 12px; color:var(--c-sub); font-size:12px; }
 .mk-tcard-stat small .mk-span { display:block; margin-top:2px; color:var(--c-faint); font-size:11px; font-style:normal; font-weight:500; }
