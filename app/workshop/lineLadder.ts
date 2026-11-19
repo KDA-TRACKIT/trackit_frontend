@@ -3,27 +3,28 @@
 //   - 추세선류: 오늘(마지막 봉) 시각에서의 값으로 (기울어진 선은 시간이 지나면 가격이 바뀌니까)
 //   - 평행 채널: 추세선과 같은 로직으로 위 · 아래 두 선을 따로 (각각 마지막 봉 기준 지지 · 저항)
 //   드로잉 도구별 (도구 75개 전부 확인, 2026-11-19):
-//     한 가격 선     수평선 · 수평 반직선 · 십자선 · 가격 라벨 · 가격 노트 · 핀
-//     기울어진 선    추세선 · 반직선 · 정보선 · 연장선 · 추세 각도 · 갠 팬(1x1 선) · 헤드 앤 숄더(넥라인) · 삼각형 패턴(두 변)
+//     한 가격 선     수평선 · 수평 반직선 · 십자선 · 가격 라벨
+//     기울어진 선    추세선 · 반직선 · 연장선 · 추세 각도
 //     채널(선 여러 개) 평행 채널(위 · 아래) · 평탄 상단/하단(기울어진 선 + 평평한 선) · 피치포크 3종(중앙선 + 양쪽 갈래)
 //                    회귀 추세 채널(종가 회귀 ±2σ 위 · 아래) · 피보나치 채널(0 · 0.382 · 0.618 · 1)
 //     레벨           피보나치 되돌림 · 추세 기반 피보나치 확장
-//     구간           사각형 · 회전 사각형 · 가격 범위 · 날짜·가격 범위 · 갠 박스 · 갠 스퀘어
+//     구간           사각형
 //     포지션         롱 · 숏 포지션: 진입 · 목표 · 손절 세 선, 매매(매수/매도 · 목표 · 손절)를 미리 골라 둠
 //     제외(가격 지지 · 저항이 아님) 수직선 · 시간대 · 주기 · 사인선 · 원 · 호 · 팬/호류 · 날짜 범위 · VWAP · 매물대 · 예측
-//                    · 화살표 · 마커 · 글 · 노트 · 말풍선 · 깃발 · 안내판 · 도형 · 경로 · 곡선 · 펜 · 형광펜 · 빠른 측정 · 나머지 패턴
+//                    · 화살표 · 마커 · 글 · 노트 · 말풍선 · 깃발 · 안내판 · 도형 · 경로 · 곡선 · 펜 · 형광펜 · 빠른 측정
+//                    · 패턴 전부(헤드 앤 숄더 · 삼각형 · 엘리엇 … 모양을 보는 도구라 지지 · 저항으로 안 봄)
+//                    · 재는 도구(정보선 · 가격 범위 · 날짜·가격 범위) · 갠 박스 · 갠 스퀘어 · 갠 팬(비율 격자)
+//                    · 회전 사각형(기울어져 위 · 아래 가격이 구간이 아님) · 핀 · 가격 노트(표시 · 메모)
 //   - 거의 같은 가격(0.5% 안)의 선은 한 줄로 묶음
 //   - 피보나치 · 구간(사각형 등)은 여러 가격을 가지므로 따로 한 줄씩 (레벨 · 범위)
 import { getTool, type Drawing } from "../../lib/drawing";
 
 /** 한 가격에 그어진 선 */
-const LEVEL_TOOLS = new Set(["horizontal-line", "horizontal-ray", "cross-line", "price-label", "price-note", "pin"]);
+const LEVEL_TOOLS = new Set(["horizontal-line", "horizontal-ray", "cross-line", "price-label"]);
 /** 두 점으로 기울어진 선 → 오늘 값 */
-const SLANT_TOOLS = new Set(["trendline", "ray", "extended-line", "info-line", "trend-angle", "regression-trend"]);
+const SLANT_TOOLS = new Set(["trendline", "ray", "extended-line", "trend-angle", "regression-trend"]);
 /** 위아래가 있는 구간 */
-const ZONE_TOOLS = new Set(["rectangle", "rotated-rectangle", "price-range", "price-range-only", "gann-box", "gann-square"]);
-/** 두 점 기울어진 선으로 보는 도구의 [시작점, 끝점] 번호 */
-const LINE_OF: Record<string, [number, number]> = { "gann-fan": [0, 1], "head-shoulders": [2, 4] };
+const ZONE_TOOLS = new Set(["rectangle"]);
 const FIB_CHANNEL_LEVELS = [0, 0.382, 0.618, 1];
 
 const RET_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
@@ -140,16 +141,6 @@ export function buildLadder(drawings: Drawing[], nowTime: number | undefined, ba
     if (d.toolId === "flat-top-bottom" && d.points.length >= 3) {
       slant(`${d.id}:slant`, d.id, `${label} 기울기선`, [[Tm(0), P(0)], [Tm(1), P(1)]]);
       single.push({ key: `${d.id}:flat`, ids: [d.id], price: P(2), label: `${label} 평평한 선` });
-      continue;
-    }
-    if (LINE_OF[d.toolId] && d.points.length > LINE_OF[d.toolId][1]) {
-      const [i, j] = LINE_OF[d.toolId];
-      slant(d.id, d.id, d.toolId === "head-shoulders" ? `${label} 넥라인` : `${label} 1x1`, [[Tm(i), P(i)], [Tm(j), P(j)]]);
-      continue;
-    }
-    if (d.toolId === "triangle-pattern" && d.points.length >= 4) {
-      slant(`${d.id}:ac`, d.id, `${label} A-C`, [[Tm(0), P(0)], [Tm(2), P(2)]]);
-      slant(`${d.id}:bd`, d.id, `${label} B-D`, [[Tm(1), P(1)], [Tm(3), P(3)]]);
       continue;
     }
     if ((d.toolId === "pitchfork" || d.toolId === "schiff-pitchfork" || d.toolId === "modified-schiff") && d.points.length >= 3) {
