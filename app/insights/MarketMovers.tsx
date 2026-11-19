@@ -7,7 +7,7 @@ import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChart
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { memoAttr } from "../../lib/memo-target";
-import { getFlows, getSectorMap, getUsBars, isUsMarket, kiwoomTicker, type FlowRow, type KrMarket, type SectorMarket } from "../../lib/api/insights";
+import { getFlows, getSectorMap, getUsBars, isUsMarket, kiwoomTicker, searchAllSymbols, type FlowRow, type KrMarket, type SectorMarket } from "../../lib/api/insights";
 import { useQuotes } from "../../lib/live-quotes";
 import type { Bar } from "../../lib/interval";
 import { loadDaily } from "../archive/bars";
@@ -198,11 +198,33 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
 
   const sel = shown.find((r) => r.code === picked) ?? shown[0];
   const wl = useWatchlist();
-  // 관심 종목은 국내만 (미국은 섹터맵 자료에 거래소가 없어 시세를 못 받음 → 미국은 검색으로 추가)
-  const toggleFav = (r: Row) => {
-    if (!kr) return;
-    if (wl.has(r.code)) void wl.remove(r.code);
-    else void wl.add({ code: r.code, name: r.name, market: kr === "kospi" ? "KOSPI" : "KOSDAQ" });
+  /** 관심 종목에 저장하는 코드: 국내 6자리, 미국은 종목 검색 · 관심 종목과 같은 키움 표기 (BRK.B → BRKb) */
+  const favCode = (r: Row) => (us ? kiwoomTicker(r.code) : r.code);
+  /** 별을 누른 뒤 거래소를 찾는 중인 미국 종목 (두 번 눌리지 않게) */
+  const [favBusy, setFavBusy] = useState<string | null>(null);
+  const [favNote, setFavNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!favNote) return;
+    const t = setTimeout(() => setFavNote(null), 3500);
+    return () => clearTimeout(t);
+  }, [favNote]);
+  const toggleFav = async (r: Row) => {
+    const code = favCode(r);
+    if (wl.has(code)) return void wl.remove(code);
+    if (wl.items.length >= wl.max) return setFavNote(`관심 종목은 ${wl.max}개까지 넣을 수 있어요`);
+    if (kr) return void wl.add({ code, name: r.name, market: kr === "kospi" ? "KOSPI" : "KOSDAQ" });
+    // 미국: 섹터맵 자료에는 거래소가 없어 종목 검색으로 찾는다 (관심 종목 시세는 "거래소:티커"로 받음)
+    if (favBusy) return;
+    setFavBusy(code);
+    try {
+      const hit = (await searchAllSymbols(code)).find((s) => s.country === "US" && s.code === code && s.exchange);
+      if (hit) await wl.add({ code: hit.code, name: hit.name, market: hit.market, exchange: hit.exchange });
+      else setFavNote(`${r.code} 는 아직 관심 종목에 넣을 수 없어요 (종목 목록에 없음)`);
+    } catch {
+      setFavNote("관심 종목에 넣지 못했어요. 잠시 뒤 다시 눌러 주세요");
+    } finally {
+      setFavBusy(null);
+    }
   };
   const flowCol = !!FLOW_KEY[tabNow];
 
@@ -225,6 +247,11 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
           </button>
         ))}
       </div>
+      {(favNote || wl.error) && (
+        <p className="ins-missing" role="status">
+          {favNote ?? wl.error}
+        </p>
+      )}
 
       <div className="ins-mv-body">
         <div className={`ins-mv-table${noVol ? " novol" : ""}${us ? " us" : ""}`}>
@@ -252,22 +279,19 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
                   const on = sel?.code === r.code;
                   return (
                     <li key={r.code} className={`ins-mv-row${on ? " on" : ""}`} onClick={() => setPicked(r.code)} {...memoAttr({ kind: "stock", code: r.code, name: r.name, note: `오늘의 종목 · ${TABS.find((t) => t.key === tabNow)?.label}` })}>
-                      {kr ? (
-                        <button
-                          type="button"
-                          className={`fav${wl.has(r.code) ? " on" : ""}`}
-                          aria-label={`${r.name} 관심 종목`}
-                          aria-pressed={wl.has(r.code)}
-                          data-memo-skip
-                          onClick={(e) => (e.stopPropagation(), toggleFav(r))}
-                        >
-                          {wl.has(r.code) ? "★" : "☆"}
-                        </button>
-                      ) : (
-                        // 미국은 관심 종목 버튼이 없어도 칸은 남긴다. hidden 버튼은 Tailwind 가 display:none !important 로 빼서
-                        // 칸이 하나씩 밀렸다 (이름이 사라지고 시가총액이 거래대금 자리에, 시가총액 칸은 빔)
-                        <span className="fav" aria-hidden />
-                      )}
+                      {/* 국내 · 미국 모두 별. 예전엔 미국 줄의 버튼을 hidden 으로 숨겼는데 Tailwind 가 display:none !important 로
+                          칸에서 빼서 줄이 한 칸씩 밀렸다 (이름이 사라지고 시가총액이 거래대금 자리에, 시가총액 칸은 빔) */}
+                      <button
+                        type="button"
+                        className={`fav${wl.has(favCode(r)) ? " on" : ""}`}
+                        aria-label={`${r.name} 관심 종목`}
+                        aria-pressed={wl.has(favCode(r))}
+                        disabled={favBusy === favCode(r)}
+                        data-memo-skip
+                        onClick={(e) => (e.stopPropagation(), void toggleFav(r))}
+                      >
+                        {wl.has(favCode(r)) ? "★" : "☆"}
+                      </button>
                       <span className="who">
                         <em>{i + 1}</em>
                         <Avatar code={r.code} name={r.name} market={market} />
@@ -308,7 +332,7 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
           )}
         </div>
         {sel ? (
-          <Detail key={`${market}:${sel.code}`} row={live(sel)} market={market} currency={currency} flows={flows.data} fav={!!kr && wl.has(sel.code)} onFav={() => toggleFav(sel)} onOpenUs={onOpenUs} />
+          <Detail key={`${market}:${sel.code}`} row={live(sel)} market={market} currency={currency} flows={flows.data} fav={wl.has(favCode(sel))} onFav={() => void toggleFav(sel)} onOpenUs={onOpenUs} />
         ) : (
           <aside className="ins-mv-detail" />
         )}
@@ -365,7 +389,7 @@ function Detail({
             {us ? row.code : row.code} {row.industry && `· ${row.industry}`}
           </small>
         </div>
-        <button type="button" hidden={us} className={`fav${fav ? " on" : ""}`} onClick={onFav} aria-label={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"} aria-pressed={fav} title={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"}>
+        <button type="button" className={`fav${fav ? " on" : ""}`} onClick={onFav} aria-label={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"} aria-pressed={fav} title={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"}>
           {fav ? "★" : "☆"}
         </button>
       </div>

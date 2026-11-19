@@ -136,7 +136,7 @@ li.ins-mv-row.on { background:var(--c-subtle); }
 .ins-mv .fav { display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:none; color:#b3bac6; font-size:17px; line-height:1; cursor:pointer; }
 .ins-mv .fav:hover, .ins-mv .fav.on { color:#f2b01e; }
 .ins-mv-dhead .fav { font-size:19px; }
-.ins-mv span.fav { pointer-events:none; }
+.ins-mv .fav:disabled { cursor:progress; opacity:.5; }
 /* 미국: 티커(굵게) + 한글 이름(흐리게) */
 .ins-mv-row .who .nm { display:flex; min-width:0; align-items:baseline; gap:6px; }
 .ins-mv-row .who .tk { flex:none; overflow:visible; font-weight:700; letter-spacing:.2px; }
