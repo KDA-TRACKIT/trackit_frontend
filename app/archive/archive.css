@@ -504,7 +504,8 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-trader-stat b.gain { color:#d64545; } .ar-trader-stat b.loss { color:#2f64c4; }
 @media (max-width:800px) { .ar-trader { grid-template-columns:1fr 1fr; } .ar-trader-who { grid-column:1 / -1; } }
 /* 구매한 전략 → 트레이더 (시안) */
-.ar-pt-back { display:inline-block; margin-top:8px; color:var(--c-sub); font-size:14px; text-decoration:none; }
+.ar-pt-back { display:inline-flex; align-items:center; gap:2px; margin:8px 0 0 -5px; padding:4px 8px 4px 0; color:var(--c-sub); font-size:16px; font-weight:600; text-decoration:none; }
+.ar-pt-back:hover { color:var(--c-ink); }
 .ar-pt-head { display:flex; align-items:center; justify-content:space-between; margin:10px 0 18px; }
 .ar-pt-head h1 { margin:0; font-size:26px; font-weight:800; }
 .ar-pt-head select { border:0; background:none; color:inherit; font:inherit; font-size:26px; font-weight:800; cursor:pointer; }

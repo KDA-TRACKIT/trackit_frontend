@@ -1,6 +1,7 @@
 "use client";
 // 장바구니: 담아 둔 월별 전략을 트레이더별로 모아 보여 줌
 //   열람권은 트레이더별로 사서 한 장에 한 달을 열기 때문에, 트레이더마다 "모자란 장수"만큼 한 번에 사고 → 각 전략을 열람권으로 연다
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
@@ -34,7 +35,8 @@ export default function CartPage() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-cart">
         <Link href="/marketplace" className="mk-back">
-          ‹ 트레이더 목록
+          <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
+          트레이더 목록
         </Link>
         <h1 className="mk-title">장바구니</h1>
         <p className="mk-cart-desc">열어 보고 싶은 전략을 모아 두는 곳이에요. 열람권은 트레이더별로 사고, 한 장으로 한 달 전략을 열어요.</p>

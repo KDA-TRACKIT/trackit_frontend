@@ -2,6 +2,7 @@
 // 아카이브 · 구매한 전략 → 트레이더를 누르면 (시안 2026-11-18 "구매한 전략 － 트레이더 클릭 시")
 //   열람권으로 연 달 중 하나를 골라: 거래 내역(종목 고르기) · 전체/사전 노트 · 종목 차트 + 차트 메모 · 기타 정보
 //   내용은 /strategy-data/{id}/{달} (열람권을 서버가 확인), 그 달 대표 종목이 아닌 종목 차트는 일봉을 따로 받음
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -97,7 +98,8 @@ export default function PurchasedTraderPage() {
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap ar-pt">
         <Link href="/archive/purchases" className="ar-pt-back">
-          ‹ 트레이더 목록
+          <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
+          트레이더 목록
         </Link>
         <div className="ar-pt-head">
           <h1>

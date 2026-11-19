@@ -1,5 +1,6 @@
 "use client";
 // 트레이더 상세: 소개 · 열람권 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(꿀) · 구매자 후기(익명) · 비슷한 트레이더
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
@@ -55,7 +56,8 @@ export default function TraderPage() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap">
         <Link href="/marketplace" className="mk-back" onClick={(e) => backToList(e, router.push)}>
-          ‹ 트레이더 목록
+          <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
+          트레이더 목록
         </Link>
 
         <div className="mk-hero">
