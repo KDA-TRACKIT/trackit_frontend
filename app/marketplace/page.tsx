@@ -2,6 +2,7 @@
 // 전략 마켓: 트레이더를 한 줄씩 비교 (검색 · 기간별 수익률 · 필터 · 정렬 · 쪽 나눔)
 //   데이터는 아직 예시(./data). 수익 초록 · 손실 빨강
 //   검색어 · 기간 · 정렬 · 필터 · 쪽은 주소(?q=…)에 둔다 → 트레이더를 눌렀다가 돌아와도 그대로 (lib/market-list)
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type SyntheticEvent } from "react";
@@ -9,10 +10,9 @@ import { rememberListUrl } from "../../lib/market-list";
 import { fitZoom } from "../../lib/fit-script";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
-import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
+import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
-import HoneyPot from "../HoneyPot";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
@@ -35,7 +35,7 @@ const sortAsc = (s: Sort) => s.endsWith("-asc");
 const sortLabel = (s: Sort) => (s === "price-asc" ? "가격 낮은 순" : s === "price" ? "가격 높은 순" : SORTS.find((x) => x.key === sortKey(s))!.label);
 type Filter = { mdd: [number, number]; ret: [number, number]; price: [number, number]; types: string[]; markets: string[] };
 const NO_FILTER: Filter = { mdd: [0, 100], ret: [-100, 100], price: [0, 50000], types: [], markets: [] };
-const PER_PAGE = 8;
+const PER_PAGE = 10;
 
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 const filterCount = (f: Filter) =>
@@ -155,10 +155,11 @@ function MarketplaceList() {
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * per, cur * per);
   const periodLabel = PERIODS.find((p) => p.key === period)!.label;
+  const returnLabel = period === "1m" ? "실시간 수익률" : `${periodLabel} 수익률`;
   const nFilter = filterCount(filter);
 
   return (
-    <main className="mk-page">
+    <main className="mk-page mk-trader-page">
       <SiteHeader active="marketplace" />
       <div className="mk-wrap">
         <h1 className="mk-title">트레이더</h1>
@@ -172,7 +173,7 @@ function MarketplaceList() {
           }}
         >
           {/* 주소의 검색어가 바뀌면(돌아오기 · 지우기) 칸도 그 값으로 다시 */}
-          <input key={query} name="q" defaultValue={query} placeholder="트레이더 이름, 매매 방식 검색" aria-label="트레이더 검색" />
+          <input key={query} name="q" defaultValue={query} placeholder="트레이더 이름, 매매 방식 등으로 검색하세요" aria-label="트레이더 검색" />
           <button type="submit">검색</button>
         </form>
 
@@ -185,11 +186,15 @@ function MarketplaceList() {
               </button>
             )}
           </strong>
-          <small className="mk-asof">{asOf} 기준</small>
+          <button type="button" className={`mk-filter-btn${nFilter ? " on" : ""}`} onClick={() => setOpen(true)} aria-label={nFilter ? `필터 ${nFilter}개 적용됨` : "필터"}>
+            <SlidersHorizontal size={15} aria-hidden />
+            필터
+            {nFilter > 0 && <span className="mk-filter-count">{nFilter}</span>}
+          </button>
         </div>
         <div className="mk-toolbar">
           <div className="mk-periods" role="radiogroup" aria-label="수익률 기간">
-            <span>수익률(%)</span>
+            <span>수익률 (%)</span>
             {PERIODS.map((p) => {
               const tab = (
                 <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })}>
@@ -223,7 +228,7 @@ function MarketplaceList() {
             {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 가격 낮은/높은 순) */}
             <div className="mk-sortdd" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSortOpen(false)}>
               <button type="button" className="mk-sortdd-btn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
-                {sortLabel(sort)} ▾
+                {sortLabel(sort)} <Image src="/marketplace/sort-chevron.svg" alt="" width={14} height={14} />
               </button>
               {sortOpen && (
                 <ul className="mk-sortdd-list" role="listbox" aria-label="정렬">
@@ -237,57 +242,24 @@ function MarketplaceList() {
                 </ul>
               )}
             </div>
-            <button type="button" className={`mk-filter-btn${nFilter ? " on" : ""}`} onClick={() => setOpen(true)} aria-label={nFilter ? `필터 ${nFilter}개 적용됨` : "필터"}>
-              <SlidersHorizontal size={15} aria-hidden />
-              필터
-              {nFilter > 0 && <span className="mk-filter-count">{nFilter}</span>}
-            </button>
           </div>
         </div>
 
         {!shown.length ? (
           <p className="mk-card mk-empty">조건에 맞는 트레이더가 없어요. 검색어나 필터를 바꿔 보세요.</p>
         ) : (
-          <ul className="mk-cards">
-            {shown.map((t) => (
-              <li key={t.id}>
-                <Link href={`/marketplace/${t.id}`} className="mk-tcard">
-                  <div className="mk-tcard-who">
-                    <small>{t.tagline}</small>
-                    <strong>
-                      <FavButton id={t.id} name={t.name} /> <span className="mk-tcard-name">{t.name}</span> <span className="mk-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[t.id] ?? 0} /> {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
-                    </strong>
-                  </div>
-                  <div className="mk-tcard-stat">
-                    <small>가격</small>
-                    <b>{sellable(t) ? won(t.price) : "판매 중지"}</b>
-                  </div>
-                  <div className="mk-tcard-stat">
-                    <small>전략 이행률</small>
-                    <b>{t.follow}%</b>
-                  </div>
-                  <div className="mk-tcard-stat">
-                    <small>
-                      {/* 이번 달만 실시간, 나머지는 그 기간 처음부터 지금까지 쌓인 수익률 */}
-                      {period === "1m" ? "실시간 수익률" : `${periodLabel} 수익률`}
-                      {period === "all" && t.monthly.length > 0 && <em className="mk-span">{spanOf(t)}</em>}
-                    </small>
-                    {oneStock(t, period) ? (
-                      <b title="이 기간엔 매매가 없거나 한 종목만 매매해 수익률을 비교하지 않아요">-</b>
-                    ) : (
-                      <b className={`big ${tone(t.returns[period])}`}>{pct(t.returns[period])}</b>
-                    )}
-                  </div>
-                  <div className="mk-tcard-spark">
-                    <small>수익률 추이</small>
-                    {oneStock(t, period) ? <span>-</span> : <Spark equity={t.curves?.[period] ?? [10000]} w={110} h={34} />}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="mk-trader-panel">
+            <div className="mk-trader-columns" aria-hidden="true">
+              <span>트레이더</span><span>수익률 추이</span><span>수익률</span><span>이행률</span><span>열람권 가격</span><span>등급</span>
+            </div>
+            <ul className="mk-trader-rows">
+              {shown.map((trader) => (
+                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={likeTotals[trader.id] ?? 0} />
+              ))}
+            </ul>
+          </div>
         )}
-        <Pager page={cur} pages={pages} onPage={(p) => (setPage(p), window.scrollTo({ top: 0, behavior: "smooth" }))} />
+        <Pager page={cur} pages={pages} doubleChevron onPage={(p) => (setPage(p), window.scrollTo({ top: 0, behavior: "smooth" }))} />
       </div>
 
       {open && (
@@ -301,6 +273,46 @@ function MarketplaceList() {
         />
       )}
     </main>
+  );
+}
+
+function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; period: Period; returnLabel: string; honey: number }) {
+  const showReturn = !oneStock(trader, period);
+  const curve = trader.curves?.[period];
+  return (
+    <li className="mk-trader-row">
+      <FavButton id={trader.id} name={trader.name} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} />
+      <Link className="mk-trader-row-link" href={`/marketplace/${trader.id}`}>
+        <div className="mk-trader-who">
+          <div className="mk-trader-name-line">
+            <strong className="mk-trader-name">{trader.name}</strong>
+            <span className="mk-trader-honey" title="받은 꿀 합계">
+              <Image src="/home/leaderboard-honey.svg" alt="받은 꿀" width={11.42} height={14.3401} />
+              {honey}
+            </span>
+          </div>
+          <small>#{trader.tagline.replace(/^#\s*/, "")}</small>
+        </div>
+        <div className="mk-trader-trend" aria-hidden="true">
+          {showReturn && curve ? <Spark equity={curve} w={140} h={44} /> : <span>—</span>}
+        </div>
+        <div className="mk-trader-metric">
+          <span className="mk-trader-metric-label">{returnLabel}</span>
+          {showReturn ? (
+            <b className={tone(trader.returns[period])}>{pct(trader.returns[period])}</b>
+          ) : (
+            <b title="이 기간엔 매매가 없거나 한 종목만 매매해 수익률을 비교하지 않아요">—</b>
+          )}
+          {period === "all" && trader.monthly.length > 0 && <small className="mk-trader-span">{spanOf(trader)}</small>}
+        </div>
+        <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{trader.follow}%</b></div>
+        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">열람권 가격</span><b>{sellable(trader) ? won(trader.price) : "판매 중지"}</b></div>
+        <div className="mk-trader-metric mk-trader-grade">
+          <span className="mk-trader-metric-label">등급</span>
+          {trader.grade ? <GradeBadge grade={trader.grade.grade} unrated={trader.grade.unrated} /> : <b>—</b>}
+        </div>
+      </Link>
+    </li>
   );
 }
 

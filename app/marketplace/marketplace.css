@@ -539,30 +539,87 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-redeem-acts { display:flex; justify-content:flex-end; gap:8px; }
 .mk-redeem-acts button { min-width:80px; }
 
-/* ===== 전략 마켓 시안 (2026-11-18): 트레이더 카드 · 정렬 드롭다운 ===== */
+/* 전략 마켓 트레이더 목록 */
 .mk-result-head { display:flex; align-items:baseline; justify-content:space-between; }
-.mk-asof { color:var(--c-sub); font-size:12px; }
 .mk-sortdd { position:relative; }
-.mk-sortdd-btn { height:34px; padding:0 10px; border:0; background:none; color:var(--c-ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
 .mk-sortdd-list { position:absolute; z-index:30; top:calc(100% + 4px); right:0; width:150px; margin:0; padding:6px; list-style:none; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 10px 24px rgba(15,35,103,.12); }
 .mk-sortdd-list li.sep { margin-top:4px; padding-top:4px; border-top:1px solid var(--c-line); }
 .mk-sortdd-list button { display:flex; width:100%; justify-content:space-between; padding:7px 10px; border:0; border-radius:6px; background:none; color:var(--c-ink-2, var(--c-ink)); font:inherit; font-size:13px; text-align:left; cursor:pointer; }
 .mk-sortdd-list button:hover { background:var(--c-hover); }
 .mk-sortdd-list button.on { background:#eef2f9; color:#0f2367; font-weight:800; }
-.mk-cards { display:flex; flex-direction:column; gap:14px; margin:0; padding:0; list-style:none; }
-.mk-tcard { display:grid; grid-template-columns:minmax(0,2.4fr) .9fr .8fr 1fr 130px; align-items:center; gap:16px; padding:18px 22px; border:1px solid var(--c-line); border-radius:12px; background:var(--c-surface); color:inherit; text-decoration:none; transition:border-color .12s, box-shadow .12s; }
-.mk-tcard:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
-/* 카드 칸 5개 모두 '이름표 한 줄(16) + 값 칸(38)' 같은 틀 — 기간을 바꾸거나 값이 '-'·그래프·'전체' 기간 표시여도 카드 높이와 이름표 줄이 그대로 */
-.mk-tcard-who, .mk-tcard-stat, .mk-tcard-spark { display:grid; grid-template-rows:16px 38px; row-gap:4px; align-items:center; min-width:0; }
-.mk-tcard-who small, .mk-tcard-stat small, .mk-tcard-spark small { display:block; overflow:hidden; color:var(--c-sub); font-size:11.5px; line-height:16px; text-overflow:ellipsis; white-space:nowrap; }
-.mk-tcard-who small { font-weight:600; }
-.mk-tcard-who strong { display:flex; align-items:center; gap:6px; min-width:0; font-size:17px; font-weight:800; }
-.mk-tcard-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
-.mk-tcard-spark > span { font-size:15px; font-weight:700; }
-.mk-tcard-stat b { font-size:15px; font-weight:700; white-space:nowrap; }
-.mk-tcard-stat b.big { font-size:19px; font-weight:800; }
-@media (max-width:800px) { .mk-tcard { grid-template-columns:1fr 1fr; } .mk-tcard-who { grid-column:1 / -1; } .mk-tcard-spark { display:none; } .mk-tcard-who, .mk-tcard-stat { grid-template-rows:16px 30px; } }
+.mk-trader-page { background:var(--c-surface); }
+.mk-trader-page .mk-wrap { width:min(1060px,calc(100% - 48px)); padding-top:56px; }
+.mk-trader-page .mk-title { color:var(--mk-primary); font-size:40px; line-height:48px; font-weight:600; }
+.mk-trader-page .mk-search { height:65px; padding-inline:22px; }
+.mk-trader-page .mk-search input { font-size:18px; }
+.mk-trader-page .mk-search input::placeholder { color:var(--c-sub); }
+.mk-trader-page .mk-search button { height:34px; padding-inline:14px; border-radius:12px; font-size:14px; font-weight:600; }
+.mk-trader-page .mk-result-head { align-items:center; gap:12px; margin:34px 0 13px; }
+.mk-trader-page .mk-result-head strong { font-size:20px; font-weight:600; }
+.mk-trader-page .mk-toolbar { margin-bottom:14px; }
+.mk-trader-page .mk-periods { gap:8px; }
+.mk-trader-page .mk-periods > span:first-child { display:inline; margin:0; color:var(--c-ink); font-size:15px; }
+.mk-trader-page .mk-periods button[role="radio"] { height:34px; padding-inline:14px; border-radius:12px; font-size:14px; font-weight:500; }
+.mk-trader-page .mk-periods button.on { font-weight:600; }
+.mk-trader-page .mk-sortdd-btn { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:104px; height:36px; padding:0 13px; border:0; border-radius:12px; background:var(--c-subtle); color:var(--c-accent); font-size:17px; }
+html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0) invert(1); }
+.mk-trader-panel { overflow:hidden; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); }
+.mk-trader-columns,.mk-trader-row-link { display:grid; grid-template-columns:minmax(0,332fr) minmax(0,201fr) minmax(0,163fr) minmax(0,106fr) minmax(0,160fr) minmax(0,50fr); align-items:center; padding-inline:23px; }
+.mk-trader-columns { min-height:47px; border-bottom:1px solid var(--c-line); background:var(--c-subtle); color:var(--mk-primary); font-size:16px; font-weight:600; }
+.mk-trader-columns > :first-child { font-size:14px; }
+.mk-trader-rows { margin:0; padding:0; list-style:none; }
+.mk-trader-row { position:relative; isolation:isolate; font-variant-numeric:tabular-nums; }
+.mk-trader-row-link { min-height:84px; color:inherit; }
+.mk-trader-row + .mk-trader-row::before { position:absolute; inset:0 23px auto; border-top:1px solid var(--c-line); content:""; pointer-events:none; }
+.mk-trader-row-link::after { position:absolute; z-index:-1; inset:4px 8px; border-radius:8px; content:""; pointer-events:none; }
+.mk-trader-row-link:hover::after { background:var(--c-hover); }
+.mk-trader-row-link:focus-visible::after { outline:2px solid var(--c-focus); }
+.mk-trader-who { min-width:0; padding-inline:28px 26px; }
+.mk-trader-row > .mk-fav { position:absolute; z-index:1; top:17px; left:23px; display:grid; place-items:center; width:20px; height:26px; padding:0; font-size:20px; }
+.mk-trader-name-line { display:flex; align-items:center; gap:12px; }
+.mk-trader-name { min-width:0; overflow:hidden; color:var(--c-ink); font-size:22px; line-height:26px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.mk-trader-who small { display:block; overflow:hidden; margin-top:4px; color:var(--c-sub); font-size:12px; line-height:20px; text-overflow:ellipsis; white-space:nowrap; }
+.mk-trader-honey { display:inline-flex; flex:none; align-items:center; gap:4px; height:26px; padding-inline:8px; border:1px solid #fff5ce; border-radius:13px; color:var(--mk-like); font-size:14px; font-weight:600; }
+.mk-trader-honey img { width:11.42px; height:14.3401px; }
+.mk-trader-trend .mk-spark { margin:0; max-width:calc(100% - 12px); }
+.mk-trader-trend .mk-spark :is(.area,.dot) { display:none; }
+.mk-trader-trend .mk-spark .base { stroke:var(--c-line); stroke-dasharray:none; opacity:1; }
+.mk-trader-trend .mk-spark.gain .ln { stroke:var(--mk-gain); }
+.mk-trader-trend .mk-spark.loss .ln { stroke:var(--mk-loss); }
+.mk-trader-metric { min-width:0; font-size:20px; line-height:26px; }
+.mk-trader-price,.mk-trader-grade { font-size:22px; }
+.mk-trader-metric b { font-weight:600; white-space:nowrap; }
+.mk-trader-metric-label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.mk-trader-span { display:block; color:var(--c-sub); font-size:11px; line-height:14px; white-space:nowrap; }
+.mk-trader-grade .mk-grade { display:inline; min-width:0; height:auto; padding:0; border:0; background:none; box-shadow:none; text-shadow:none; color:var(--mk-trader-grade-color,var(--mk-primary)); font-size:22px; font-weight:600; vertical-align:baseline; }
+.mk-trader-grade .mk-grade::after { content:none; }
+.mk-trader-grade .g-B { --mk-trader-grade-color:#31427c; }
+.mk-trader-grade .g-C { --mk-trader-grade-color:#49588b; }
+.mk-trader-grade .g-D { --mk-trader-grade-color:#616e9b; }
+.mk-trader-grade .g-F { --mk-trader-grade-color:#d03f3f; }
+.mk-trader-grade .g-U { --mk-trader-grade-color:var(--c-sub); }
+html[data-theme="dark"] .mk-trader-grade .mk-grade { color:var(--c-ink); }
+html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--mk-like) 50%,transparent); }
+.mk-trader-page .mk-pager { gap:0; }
+.mk-trader-page .mk-pager button { min-width:42px; height:36px; border-radius:12px; font-size:14px; }
+
+@media (max-width:800px) {
+  .mk-trader-page .mk-wrap { width:calc(100% - 32px); padding-top:32px; }
+  .mk-trader-page .mk-title { font-size:32px; line-height:40px; }
+  .mk-trader-page .mk-search { height:54px; padding-inline:12px; }
+  .mk-trader-page .mk-search input { font-size:15px; }
+  .mk-trader-page .mk-result-head { margin-top:24px; }
+  .mk-trader-page .mk-periods button[role="radio"] { padding-inline:10px; }
+  .mk-trader-columns,.mk-trader-trend { display:none; }
+  .mk-trader-row-link { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px 16px; }
+  .mk-trader-row + .mk-trader-row::before { inset-inline:16px; }
+  .mk-trader-row > .mk-fav { top:14px; left:16px; }
+  .mk-trader-who { grid-column:1 / -1; padding-right:0; }
+  .mk-trader-name { font-size:18px; }
+  .mk-trader-metric,.mk-trader-grade .mk-grade { font-size:17px; line-height:22px; }
+  .mk-trader-metric-label { position:static; display:block; width:auto; height:auto; clip-path:none; color:var(--c-sub); font-size:12px; line-height:17px; }
+}
 /* 트레이더 상세 지표: 남색 카드 4개 (시안) */
 .mk-kpis-navy { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
 .mk-kpis-navy > div { display:flex; flex-direction:column; gap:4px; padding:16px 18px; border-radius:10px; background:#0f2367; color:#fff; }
@@ -574,5 +631,3 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 /* 전략 구매 버튼 배치 */
 .mk-buyrow { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 .mk-buyrow > :last-child { flex:1 1 auto; }
-/* '전체' 기간의 첫 기록 달 ~ 마지막 달: 이름표 옆 같은 줄 (둘째 줄로 내리면 카드가 길어짐) */
-.mk-tcard-stat small .mk-span { margin-left:5px; color:var(--c-faint); font-size:11px; font-style:normal; font-weight:500; line-height:1; }

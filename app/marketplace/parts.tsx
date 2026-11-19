@@ -3,7 +3,7 @@ import Link from "next/link";
 import PolicyDialog from "../PolicyDialog";
 import { POLICY, POLICY_FOOT, POLICY_LEAD, POLICY_TITLE, PURCHASE_NOTICE } from "./policy";
 // 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 열람권 구매 · 열람권으로 열기
-import { useEffect, useId, useRef, useState, type Ref } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { useRouter } from "next/navigation";
 import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { startCheckout } from "../../lib/api/payments";
@@ -53,14 +53,14 @@ export function Spark({ equity, w = 160, h = 46 }: { equity: number[]; w?: numbe
   );
 }
 
-export function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+export function Pager({ page, pages, onPage, doubleChevron = false }: { page: number; pages: number; onPage: (p: number) => void; doubleChevron?: boolean }) {
   if (pages <= 1) return null;
   const start = Math.max(1, Math.min(page - 2, pages - 4));
   const nums = Array.from({ length: Math.min(5, pages) }, (_, i) => start + i);
   return (
     <nav className="mk-pager" aria-label="쪽 이동">
       <button type="button" disabled={page === 1} onClick={() => onPage(page - 1)} aria-label="이전 쪽">
-        ‹
+        {doubleChevron ? "«" : "‹"}
       </button>
       {nums.map((n) => (
         <button key={n} type="button" className={n === page ? "on" : ""} aria-current={n === page ? "page" : undefined} onClick={() => onPage(n)}>
@@ -68,7 +68,7 @@ export function Pager({ page, pages, onPage }: { page: number; pages: number; on
         </button>
       ))}
       <button type="button" disabled={page === pages} onClick={() => onPage(page + 1)} aria-label="다음 쪽">
-        ›
+        {doubleChevron ? "»" : "›"}
       </button>
     </nav>
   );
@@ -109,7 +109,7 @@ export function useNotice() {
 }
 
 /** ☆ 즐겨찾기 (이 브라우저에 저장, 새 전략을 올리면 상단 종으로 알림) */
-export function FavButton({ id, name, label = false }: { id: string; name: string; label?: boolean }) {
+export function FavButton({ id, name, label = false, outlineIcon }: { id: string; name: string; label?: boolean; outlineIcon?: ReactNode }) {
   const favs = useFavorites();
   const on = isFavorite(favs, id);
   return (
@@ -126,7 +126,7 @@ export function FavButton({ id, name, label = false }: { id: string; name: strin
         toggleFavorite(id, name);
       }}
     >
-      {on ? "★" : "☆"}
+      {on ? "★" : outlineIcon ?? "☆"}
       {label && <span>{on ? "즐겨찾기 중" : "즐겨찾기"}</span>}
     </button>
   );
