@@ -111,9 +111,9 @@ export function consistency(records: TradeRecord[]) {
   return { months, rate: across.length ? across.reduce((a, m) => a + m.vsPrev!, 0) / across.length : null };
 }
 
-/** 지금 보이는 메모: 고쳐서 새 메모로 바뀐 예전 메모는 뺌 (예전 메모는 기록에 그대로 남아 있음) */
+/** 지금 보이는 메모: 고쳐서 새 메모로 바뀐 예전 메모 · 종목 전략 정리본에 합쳐진 예전 메모는 뺌 (예전 메모는 기록에 그대로 남아 있음) */
 export const currentRecords = (list: TradeRecord[]) => {
-  const replaced = new Set(list.flatMap((r) => (r.replaces ? [r.replaces] : [])));
+  const replaced = new Set(list.flatMap((r) => [...(r.replaces ? [r.replaces] : []), ...(r.consolidates ?? [])]));
   return list.filter((r) => !replaced.has(r.id));
 };
 

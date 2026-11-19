@@ -31,6 +31,8 @@ export type TradeRecord = {
   target?: { code: string; name: string };
   /** 고친 메모면 고치기 전 메모 id (확정 메모는 못 고쳐서 새 메모로 남김, 예전 것은 기록에 그대로) */
   replaces?: string;
+  /** 종목 전략 정리본이면 합친 예전 메모 id 들 (화면엔 정리본 하나만 보임) */
+  consolidates?: string[];
 };
 
 /** 종목 없는 메모의 주제 */
@@ -94,6 +96,7 @@ function fromServer(): Promise<TradeRecord[]> {
           ...(Array.isArray(s.lines) ? { lines: s.lines } : {}),
           ...(s.target ? { target: s.target } : {}),
           ...(s.replaces ? { replaces: s.replaces } : {}),
+          ...(Array.isArray(s.consolidates) ? { consolidates: s.consolidates.filter((x: unknown): x is string => typeof x === "string") } : {}),
         } satisfies TradeRecord;
       }),
     ),
@@ -174,6 +177,7 @@ export async function addRecord(
         lines: record.lines,
         target: record.target,
         replaces: record.replaces,
+        consolidates: record.consolidates,
         plan,
       });
       await refreshServerRecords();

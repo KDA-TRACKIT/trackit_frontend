@@ -1376,3 +1376,4 @@ details.ws-ladder { padding:10px 12px; }
 /* 저장 확인 창: AI 가 종목 전략을 합치며 뺀 예전 항목 */
 .ws-review-dropped { margin:0 0 8px; padding:8px 12px; border-radius:8px; background:var(--c-warn-soft, #fff3e6); color:var(--c-ink-2); font-size:12.5px; line-height:19px; word-break:keep-all; }
 .ws-review-dropped b { margin-right:6px; color:var(--c-warn, #d97706); }
+.ws-review-merged { margin:0 0 8px; color:var(--c-sub); font-size:12.5px; line-height:18px; word-break:keep-all; }

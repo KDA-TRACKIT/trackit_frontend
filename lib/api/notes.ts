@@ -22,6 +22,8 @@ type NoteSummary = {
   target?: { code: string; name: string };
   /** 고친 메모면 고치기 전 메모 id */
   replaces?: string;
+  /** 종목 전략 정리본이면 합친 예전 메모 id 들 (화면엔 정리본 하나만, 예전 것은 기록에 그대로) */
+  consolidates?: string[];
 };
 
 export type NoteVersion = {
@@ -55,6 +57,8 @@ export async function saveNote(input: {
   lines?: NoteLine[];
   target?: { code: string; name: string };
   replaces?: string;
+  /** 종목 전략 정리본이면 합친 예전 메모 id 들 (화면엔 정리본 하나만, 예전 것은 기록에 그대로) */
+  consolidates?: string[];
   /**
    * 노트 완성도 점검: plan = 종류별 필수를 다 채움, observe = 관찰 메모 (이행률의 '계획 있음'에 안 들어감)
    * kind: trade 매매 계획 · hold 보유 관리 · view 분석·전망 · review 회고. 나머지는 종류별 항목 (빈 값은 빠짐)
@@ -72,6 +76,7 @@ export async function saveNote(input: {
     ...(input.lines?.length ? { lines: input.lines } : {}),
     ...(input.target ? { target: input.target } : {}),
     ...(input.replaces ? { replaces: input.replaces } : {}),
+    ...(input.consolidates?.length ? { consolidates: input.consolidates } : {}),
     ...(input.plan
       ? (() => {
           const { status, kind, ...fields } = input.plan;

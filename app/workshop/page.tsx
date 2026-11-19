@@ -346,6 +346,11 @@ export default function WorkshopPage() {
   /** AI 분석 대상: Memo + 그은 선 (이게 바뀌면 다시 분석해야 저장) */
   const inputKey = JSON.stringify([noteText.trim(), drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
   const analyzed = !!aiMemoResult && analyzedKey === inputKey;
+  /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
+  const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
+  /** AI 가 쌓인 전략과 합친 정리본이 있으면 이번 저장이 종목 전략 전체를 대신함 */
+  const consolidating = !!aiMemoResult?.strategy?.trim() && strategyRecords.length > 0;
+
   /** AI 분석 (그은 선 + Memo). 결과가 들어오면 true */
   async function saveToRecord(): Promise<boolean> {
     if (memoBusy) return false;
@@ -377,8 +382,7 @@ export default function WorkshopPage() {
             : []),
         ],
         // 이 종목에 쌓인 종목 전략 → AI 가 이번 노트와 합쳐 하나로 정리 (바뀐 관점만 빼고 이어받음)
-        previousStrategy: currentRecords(recordsOfSymbol(allRecords, symbol.code))
-          .sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`))
+        previousStrategy: strategyRecords
           .slice(-60)
           .map((r) => ({ at: `${r.date} ${r.noteTime.slice(0, 5)}`, text: memoText(r.text).slice(0, 4000) }))
           .filter((r) => r.text.trim()),
@@ -470,6 +474,8 @@ export default function WorkshopPage() {
       // 메모 + 투자자가 확인한 계획 (최초 확정본). 관찰 메모는 앞에 표시 → 기록 보드 · 이행률에서 계획으로 안 침
       // 확인 창에서 고쳤으면 고친 글
       text: edits ? edits.pendingText : savedText(),
+      // AI 가 쌓인 종목 전략과 합친 정리본이면, 합친 예전 메모를 가리켜 화면엔 정리본 하나만 보이게 (예전 것은 기록에 남음)
+      consolidates: consolidating ? strategyRecords.map((r) => r.id) : undefined,
       drawings: drawings.map(drawingToAnnotation),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
@@ -826,7 +832,8 @@ ${t}` : t))}
                   shooting={review.shooting}
                   pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
                   ai={aiMemoResult}
-                  records={currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`))}
+                  records={strategyRecords}
+                  consolidating={consolidating}
                   linked={!!linkedExecution}
                   busy={confirmBusy}
                   error={confirmError}

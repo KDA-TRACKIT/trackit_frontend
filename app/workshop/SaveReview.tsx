@@ -16,6 +16,7 @@ export default function SaveReview({
   pending,
   ai,
   records,
+  consolidating = false,
   linked,
   busy,
   error,
@@ -32,6 +33,8 @@ export default function SaveReview({
   ai: ChartMemoResult | null;
   /** 이 종목 전략에 지금까지 쌓인 메모 */
   records: TradeRecord[];
+  /** 이번 저장이 AI 가 쌓인 전략과 합친 정리본 → 예전 메모는 따로 안 보이고 정리본 하나로 */
+  consolidating?: boolean;
   /** 체결과 연결됐는지 (아니면 검증 대기로 저장) */
   linked: boolean;
   busy: boolean;
@@ -139,7 +142,7 @@ export default function SaveReview({
           {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분(AI 가 쌓인 전략과 합친 정리본)을 합친 모습 */}
           <section>
             <h3>
-              종목 전략 <span>{records.length + (pendingText.trim() ? 1 : 0)}개 · 저장 후 · 눌러서 고치기</span>
+              종목 전략 <span>{consolidating ? 1 : records.length + (pendingText.trim() ? 1 : 0)}개 · 저장 후 · 눌러서 고치기</span>
             </h3>
             {/* AI 가 쌓인 전략과 합치며 뺀 예전 항목 (이번 Memo 로 관점이 바뀐 것) */}
             {ai?.strategy && ai.dropped?.length ? (
@@ -147,8 +150,11 @@ export default function SaveReview({
                 <b>이번에 바뀌어 뺀 예전 전략</b> {ai.dropped.join(" · ")}
               </p>
             ) : null}
+            {consolidating && (
+              <p className="ws-review-merged">예전 종목 전략 {records.length}개를 이 정리본 하나로 합쳐요. 예전 것은 기록에 그대로 남아요.</p>
+            )}
             <div className="ws-review-records">
-              {records.map((r) => (
+              {!consolidating && records.map((r) => (
                 <div key={r.id} className={recEdits[r.id] !== undefined ? "edited" : undefined}>
                   <time>
                     {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
