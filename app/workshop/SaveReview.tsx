@@ -9,6 +9,47 @@ import { dateLabel, memoText, type TradeRecord } from "../../lib/records";
 
 const DIR: Record<string, string> = { LONG: "상승 관점", SHORT: "하락 관점", WAIT: "관망", UNKNOWN: "판단 보류" };
 
+/**
+ * 종목 전략 글에서 '- 매수: …' 같은 계획 줄을 바꾸기 (없으면 다른 계획 줄 뒤 · 현재가 줄 뒤에 넣고, 빈 값이면 뺌)
+ *   같은 칸 줄이 여러 개면 하나로 합침
+ */
+const PLAN_ORDER = ["매수", "매도", "손절", "목표"];
+function withPlanLine(text: string, label: string, value: string) {
+  const lines = text.split("\n");
+  const re = new RegExp(`^-\\s*${label}\\s*:`);
+  const at = lines.findIndex((l) => re.test(l));
+  const rest = lines.filter((l, i) => !re.test(l) || i === at);
+  const v = value.trim();
+  if (at >= 0) {
+    const idx = rest.findIndex((l) => re.test(l));
+    if (v) rest[idx] = `- ${label}: ${v}`;
+    else rest.splice(idx, 1);
+    return rest.join("\n");
+  }
+  if (!v) return text;
+  // 넣을 자리: 순서상 앞 칸 줄 뒤 → 다른 '- X:' 줄 앞 → 현재가 줄 뒤 → 맨 앞
+  const order = PLAN_ORDER.indexOf(label);
+  let pos = -1;
+  rest.forEach((l, i) => {
+    const m = l.match(/^-\s*(매수|매도|손절|목표)\s*:/);
+    if (m && PLAN_ORDER.indexOf(m[1]) < order) pos = i;
+  });
+  if (pos < 0) {
+    const firstPlan = rest.findIndex((l) => /^-\s*(매수|매도|손절|목표|메모)\s*:/.test(l));
+    if (firstPlan >= 0) pos = firstPlan - 1;
+    else {
+      const cur = rest.findIndex((l) => /^\[현재가\]/.test(l));
+      if (cur >= 0) {
+        rest.splice(cur + 1, 0, "", `- ${label}: ${v}`);
+        return rest.join("\n");
+      }
+      return [`- ${label}: ${v}`, "", ...rest].join("\n");
+    }
+  }
+  rest.splice(pos + 1, 0, `- ${label}: ${v}`);
+  return rest.join("\n");
+}
+
 export default function SaveReview({
   symbolName,
   image,
@@ -50,13 +91,16 @@ export default function SaveReview({
   error: string | null;
   onCancel: () => void;
   /** 확정: 고친 이번 저장 글 · 고친 쌓인 메모(id → 글) */
-  onConfirm: (edits: { pendingText: string; records: Record<string, string> }) => void;
+  onConfirm: (edits: { pendingText: string; records: Record<string, string>; plan: { label: string; text: string }[] }) => void;
 }) {
   // 종목 전략 고치기: 확정 전까지는 여기에만 (취소하면 버림)
-  const [pendingText, setPendingText] = useState(pending.text);
+  const [pendingText, setPendingText] = useState(() => planRows.reduce((t, r) => withPlanLine(t, r.label, r.text), pending.text));
   const [recEdits, setRecEdits] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const PENDING = "__pending__";
+  // 매매 계획 4칸 (자동으로 채운 칸도 눌러서 고침). 고치면 아래 종목 전략의 '- 매수: …' 줄도 같이 바뀜
+  const [plan, setPlan] = useState(planRows);
+  const [planEditing, setPlanEditing] = useState<string | null>(null);
   const textOf = (id: string, original: string) => (id === PENDING ? pendingText : (recEdits[id] ?? original));
   const setText = (id: string, original: string, t: string) =>
     id === PENDING
@@ -152,13 +196,52 @@ export default function SaveReview({
           {planRows.some((r) => r.text) ? (
             <section>
               <h3>
-                매매 계획 <span>{current ? `현재가 ${current} · ` : ""}{linked ? "체결과 연결돼 매매 계획으로 저장" : "체결과 연결되면 매매 계획으로 쳐요"}</span>
+                매매 계획 <span>눌러서 고치기 · {current ? `현재가 ${current} · ` : ""}{linked ? "체결과 연결돼 매매 계획으로 저장" : "체결과 연결되면 매매 계획으로 쳐요"}</span>
               </h3>
               <ul className="ws-review-plan">
-                {planRows.map((r) => (
+                {plan.map((r, i) => (
                   <li key={r.label}>
                     <b>{r.label}</b>
-                    {r.text ? <span>{r.text}</span> : <em>정하지 않음 · 맞는 선이 없어 비워 둠</em>}
+                    {planEditing === r.label ? (
+                      <input
+                        autoFocus
+                        value={r.text}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPlan((cur) => cur.map((x, j) => (j === i ? { ...x, text: v } : x)));
+                          setPendingText((t) => withPlanLine(t, r.label, v));
+                        }}
+                        onBlur={() => setPlanEditing(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === "Escape") {
+                            e.stopPropagation();
+                            setPlanEditing(null);
+                          }
+                        }}
+                        placeholder={`${r.label} 조건 (비우면 빼요)`}
+                        aria-label={`매매 계획 ${r.label} 고치기`}
+                      />
+                    ) : (
+                      <span role="button" tabIndex={0} className="ws-review-editable" title="눌러서 고치기 (종목 전략에도 반영)" onClick={() => !busy && setPlanEditing(r.label)} onKeyDown={(e) => e.key === "Enter" && !busy && setPlanEditing(r.label)}>
+                        {r.text || <em>정하지 않음 · 눌러서 적기</em>}
+                      </span>
+                    )}
+                    {/* 이 칸을 아예 안 씀 (손절 · 목표 기준을 안 쓸 수도 있음): 비우고 종목 전략에서도 뺌, 자동으로 다시 안 채움 */}
+                    {r.text && planEditing !== r.label ? (
+                      <button
+                        type="button"
+                        className="ws-review-plan-x"
+                        onClick={() => {
+                          setPlan((cur) => cur.map((x, j) => (j === i ? { ...x, text: "" } : x)));
+                          setPendingText((t) => withPlanLine(t, r.label, ""));
+                        }}
+                        disabled={busy}
+                        aria-label={`${r.label} 지우기`}
+                        title={`${r.label} 안 쓰기 (종목 전략에서도 빠져요)`}
+                      >
+                        ✕
+                      </button>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -210,7 +293,7 @@ export default function SaveReview({
             <button type="button" onClick={onCancel} disabled={busy}>
               취소
             </button>
-            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: pendingText.trim(), records: recEdits })} disabled={busy}>
+            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: pendingText.trim(), records: recEdits, plan })} disabled={busy}>
               {busy ? "저장 중…" : "확정"}
             </button>
           </div>

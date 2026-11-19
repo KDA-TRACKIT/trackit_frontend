@@ -472,12 +472,15 @@ export default function WorkshopPage() {
   /** 확인하고 저장 → 기록 (로그인했으면 서버 확정 노트로, 지금 차트 드로잉도 같이) */
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
-  async function confirmNote(edits?: { pendingText: string; records: Record<string, string> }) {
+  async function confirmNote(edits?: { pendingText: string; records: Record<string, string>; plan?: { label: string; text: string }[] }) {
     if (confirmBusy) return;
     setConfirmBusy(true);
     setConfirmError(null);
     // 계획 = 그은 선에서 고른 매매 + Memo 에 쓴 매수 · 손절 · 목표 문장
-    const fp = fullPlan();
+    //   확인 창에서 매매 계획 칸을 고쳤으면 그 값 (매수 · 매도 → 조건, 손절, 목표)
+    const auto = fullPlan();
+    const row = (label: string) => edits?.plan?.find((r) => r.label === label)?.text.trim() ?? "";
+    const fp = edits?.plan ? { ...auto, condition: [row("매수"), row("매도")].filter(Boolean).join(" / "), stop: row("손절"), target: row("목표") } : auto;
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
     const result = await addRecord({
       date: kstNow().date,
@@ -556,9 +559,10 @@ export default function WorkshopPage() {
   /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 분석 정리(머리표 없이) + 고른 매매 */
   //   매매 계획 줄([노트 종류] · [매수 조건] …)은 체결과 연결됐을 때만 (연결 안 되면 매매 계획으로 치지 않음)
   const savedText = () =>
-    // 종목 전략 정리본(투자자가 쓴 문장 그대로) + AI 분석 문단(참고용, 다음 정리 때는 전략으로 안 침) + 체결과 연결되면 계획 줄
+    // 종목 전략 정리본(투자자가 쓴 문장 그대로) + AI 분석 문단(참고용, 다음 정리 때는 전략으로 안 침)
+    //   매매 계획 4칸(자동 포함)은 확인 창에서 이 정리본의 '- 매수: …' 줄로 들어가고, 칸을 고치면 그 줄도 바뀜
     //   맨 위 줄은 저장할 때의 현재가 (나중에 그때 가격을 바로 보게. '[' 로 시작해 다음 정리 때 전략 문장으로 안 침)
-    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].concat(linkedExecution ? planText(fullPlan()) : "").filter(Boolean).join("\n\n");
+    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {

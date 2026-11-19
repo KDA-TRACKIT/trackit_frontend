@@ -1382,3 +1382,9 @@ details.ws-ladder { padding:10px 12px; }
 .ws-review-plan li { display:grid; grid-template-columns:44px minmax(0,1fr); gap:10px; font-size:13.5px; line-height:21px; word-break:keep-all; }
 .ws-review-plan b { color:var(--c-sub); font-weight:700; }
 .ws-review-plan em { color:var(--c-faint); font-style:normal; }
+.ws-review-plan .ws-review-editable { margin:-2px -6px; padding:2px 6px; border-radius:6px; cursor:text; }
+.ws-review-plan .ws-review-editable:hover { background:var(--c-hover, rgba(0,0,0,.04)); outline:1px dashed var(--c-line-strong); }
+.ws-review-plan input { width:100%; box-sizing:border-box; height:28px; padding:0 8px; border:1px solid var(--c-accent); border-radius:6px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; }
+.ws-review-plan li { grid-template-columns:44px minmax(0,1fr) auto; align-items:center; }
+.ws-review-plan-x { width:22px; height:22px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-faint); font-size:12px; cursor:pointer; }
+.ws-review-plan-x:hover { background:var(--c-hover, rgba(0,0,0,.05)); color:var(--c-down, #e03131); }
