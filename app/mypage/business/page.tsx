@@ -37,6 +37,12 @@ export default function BusinessPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  // 비즈니스 프로필 관리(시안 2026-11-19): 정산 정보를 화면에서 바로 고치고 "계좌 변경"으로 저장 → 은행 · 사업자번호는 고치기 전까지 저장된 값
+  const [mEdit, setMEdit] = useState<{ bank?: string; biz?: string }>({});
+  const mBank = mEdit.bank ?? business?.settlement?.bank ?? "";
+  const mBiz = mEdit.biz ?? business?.settlement?.businessNo ?? "";
+  const mOk = !!mBank && account.length >= 10 && (mBiz === "" || mBiz.replace(/\D/g, "").length === 10);
+  const [saved, setSaved] = useState(false);
   const settleOk = !!bank && account.length >= 10 && (biz === "" || biz.replace(/\D/g, "").length === 10);
 
   async function convert() {
@@ -69,13 +75,18 @@ export default function BusinessPage() {
     setStep("terms");
   }
 
-  function editAccount() {
-    setBank(business?.settlement?.bank ?? "");
-    setAccount("");
-    setBiz(business?.settlement?.businessNo ?? "");
-    setError(null);
-    setEditing(true);
-    setStep("settle");
+  /** 관리 화면에서 바로 계좌 변경 (계좌번호는 끝 4자리만 남기고 입력칸은 비움) */
+  function saveInline() {
+    if (!business || !mOk) return;
+    try {
+      saveBusiness(user.id, { ...business, settlement: { bank: mBank, accountLast4: account.slice(-4), holder: business.settlement?.holder || profile.name, ...(mBiz ? { businessNo: mBiz } : {}) } });
+      setAccount("");
+      setMEdit({});
+      setError(null);
+      setSaved(true);
+    } catch {
+      setError("계좌 변경 내용을 저장하지 못했어요. 다시 시도해 주세요.");
+    }
   }
 
   function registerAccount() {
@@ -99,12 +110,30 @@ export default function BusinessPage() {
           <p className="mp-card-desc">판매 수익은 매월 20일, 전월 확정 금액이 아래 계좌로 입금됩니다.</p>
           <div className="mp-form mp-settle">
             <div className="mp-row-2">
-              <label className="mp-field"><span>정산 은행</span><input value={business.settlement?.bank ?? "미등록"} readOnly /></label>
-              <label className="mp-field"><span>계좌번호</span><input value={business.settlement ? `•••• ${business.settlement.accountLast4}` : "미등록"} readOnly /></label>
+              <label className="mp-field">
+                <span>정산 은행</span>
+                <select value={mBank} onChange={(e) => (setMEdit({ ...mEdit, bank: e.target.value }), setSaved(false))}>
+                  <option value="">은행을 선택하세요</option>
+                  {BANKS.map((b) => (
+                    <option key={b}>{b}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="mp-field">
+                <span>
+                  계좌번호 {business.settlement && <small>지금 •••• {business.settlement.accountLast4}</small>}
+                </span>
+                <input inputMode="numeric" autoComplete="off" value={account} onChange={(e) => (setAccount(e.target.value.replace(/\D/g, "").slice(0, 16)), setSaved(false))} placeholder="- 없이 숫자만 입력" />
+              </label>
             </div>
             <label className="mp-field"><span>예금주 <small>본인 인증 정보와 같아야 합니다.</small></span><input value={business.settlement?.holder || profile.name} readOnly /></label>
-            <label className="mp-field"><span>사업자등록번호 <small>선택 · 개인사업자/법인만 입력</small></span><input value={business.settlement?.businessNo || "미등록"} readOnly /></label>
+            <label className="mp-field">
+              <span>사업자등록번호 <small>선택 · 개인사업자/법인만 입력</small></span>
+              <input inputMode="numeric" value={mBiz} onChange={(e) => (setMEdit({ ...mEdit, biz: bizNo(e.target.value) }), setSaved(false))} placeholder="000-00-00000" />
+            </label>
           </div>
+          {error && <p className="mp-notice err" role="alert">{error}</p>}
+          {saved && <p className="mp-notice ok">정산 계좌를 바꿨어요.</p>}
         </Card>
       ) : <Card title="전략 판매 시작하기" desc="판매 조건을 확인하고 약관에 동의하면 비즈니스 프로필로 전환할 수 있어요.">
           <div className="mp-biz-box">
@@ -114,7 +143,7 @@ export default function BusinessPage() {
       </Card>}
       <div className="mp-actions">
         {pending ? <button type="button" className="mp-btn primary" disabled>계정 전환 취소</button> : business ? (
-          <button type="button" className="mp-btn primary" onClick={editAccount}>
+          <button type="button" className="mp-btn primary" disabled={!mOk} onClick={saveInline}>
             계좌 변경
           </button>
         ) : (

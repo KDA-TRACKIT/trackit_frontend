@@ -24,11 +24,12 @@ html:has(.auth-design) { scrollbar-gutter:auto; }
   color-scheme:light;
 }
 .auth-design-header { position:relative; }
-.auth-design-header .gnb { height:84px; grid-template-columns:1fr auto; grid-template-rows:none; gap:0; background:#fff; border:0; border-bottom:1px solid #d2d8e1; padding:0 clamp(24px,4.444vw,64px); }
-.auth-design-header .gnb-brand { font-size:34px; line-height:41px; letter-spacing:-1px; color:#0f2367; font-weight:800; }
+.auth-design-header .gnb { height:84px; grid-template-columns:1fr auto; grid-template-rows:none; gap:0; background:#fff; border:0; border-bottom:1px solid #d2d8e1; padding:0 clamp(24px,calc(4.444 * var(--vw, 1vw)),64px); }
+/* 로고 = 로그인 전 첫 화면(.ti-nav) 로고와 같은 글자 · 자리 */
+.auth-design-header .gnb-brand { font-size:34px; line-height:34px; letter-spacing:-1.6px; color:#0f2367; font-weight:850; }
 .auth-design-header .gnb-main { display:none; }
 .auth-design-header .gnb-account { grid-area:auto; justify-self:end; }
-.auth-header-title { position:absolute; z-index:11; top:17px; left:calc(clamp(24px,4.444vw,64px) + 187px); display:flex; align-items:center; height:51px; padding-left:43px; border-left:1px solid #d2d8e1; color:#20242c; font-size:21px; font-weight:800; pointer-events:none; }
+.auth-header-title { position:absolute; z-index:11; top:17px; left:calc(clamp(24px,calc(4.444 * var(--vw, 1vw)),64px) + max(0px, calc(43px - clamp(24px,calc(4.444 * var(--vw, 1vw)),64px))) + 187px); display:flex; align-items:center; height:51px; padding-left:43px; border-left:1px solid #d2d8e1; color:#20242c; font-size:21px; font-weight:800; pointer-events:none; }
 .auth-header-login { color:#151515; font-size:18px; font-weight:600; }
 .auth-design .login-panel { width:min(360px,calc(100% - 48px)); margin:93px auto 0; }
 .auth-design .login-wordmark { margin:0 0 76px; color:#344d7d; font-size:53.55px; line-height:61px; letter-spacing:-1.6px; font-weight:800; text-align:center; }
@@ -142,9 +143,7 @@ html:has(.auth-design) { scrollbar-gutter:auto; }
 .auth-design .af-cal-grid :is(button,span) { height:36px; }
 .auth-design .af-cal button.on { background:#132565; color:#fff; }
 @media (max-width:600px) {
-  .auth-design-header .gnb { height:72px; padding:0 24px; }
-  .auth-design-header .gnb-brand { font-size:26px; line-height:32px; }
-  .auth-header-title { top:18px; left:161px; height:36px; padding-left:20px; font-size:16px; }
+  .auth-header-title { top:22px; left:161px; height:36px; padding-left:20px; font-size:16px; }
   .auth-header-login { font-size:14px; }
   .auth-design .login-panel { margin-top:64px; }
   .auth-design .login-wordmark { font-size:46px; margin-bottom:56px; }
@@ -163,3 +162,6 @@ html:has(.auth-design) { scrollbar-gutter:auto; }
   .signup-success p { font-size:14px; line-height:24px; }
   .signup-success-action { min-height:52px; }
 }
+/* 로그인 · 회원가입 위쪽 바 = 로그인 전 첫 화면 위쪽 바 (소개 intro.css 와 같은 너비에서 바뀜) */
+@media (max-width:800px) { .auth-design-header .gnb-brand { font-size:26px; line-height:26px; } }
+@media (max-width:759px) { .auth-design-header .gnb { height:80px; padding:0 16px; } .auth-design-header .gnb-brand { margin-left:20px; } }

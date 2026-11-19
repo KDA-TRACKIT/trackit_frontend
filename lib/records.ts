@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import { accessToken } from "./api/client";
 import { MARKET_SYMBOL, listNotes, saveNote, hideNote } from "./api/notes";
 import { uuid } from "./uuid";
+import type { NoteLine } from "../app/workshop/lineLadder";
 
 export type TradeRecord = {
   id: string;
@@ -24,6 +25,8 @@ export type TradeRecord = {
   text: string;
   /** 차트에 그린 선 · 도형 수 (있으면 차트 노트) */
   drawings?: number;
+  /** 그은 선의 지지 · 저항 분류 (종목 전략에 누적) */
+  lines?: NoteLine[];
 };
 
 /** 종목 없는 메모의 주제 */
@@ -84,6 +87,7 @@ function fromServer(): Promise<TradeRecord[]> {
           topic: market ? (s.topic ?? "시장 전반") : undefined,
           text: s.summary ?? "",
           drawings: Array.isArray(n.drawings) ? n.drawings.length : 0,
+          ...(Array.isArray(s.lines) ? { lines: s.lines } : {}),
         } satisfies TradeRecord;
       }),
     ),
@@ -160,6 +164,7 @@ export async function addRecord(
         topic: record.topic,
         execution: record.executionTime ? { time: record.executionTime, side: record.side ?? "", quantity: record.quantity ?? 0 } : null,
         drawings,
+        lines: record.lines,
         plan,
       });
       await refreshServerRecords();

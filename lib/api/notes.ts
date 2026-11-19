@@ -4,6 +4,7 @@
 // 종목 없는 "시장 전반" 메모는 사용자마다 하나인 MARKET 일지에 모은다
 import type { Journal } from "../types/journal";
 import { apiRequest } from "./client";
+import type { NoteLine } from "../../app/workshop/lineLadder";
 
 export const MARKET_SYMBOL = "MARKET";
 
@@ -15,6 +16,8 @@ type NoteSummary = {
   execution?: { time: string; side: string; quantity: number } | null;
   /** 노트를 쓴 시각 KST HH:MM:SS (확정 시각과 다를 수 있음) */
   noteTime?: string;
+  /** 그은 선의 지지 · 저항 분류와 고른 매매 (종목 전략 · 이행률 판정에 씀) */
+  lines?: NoteLine[];
 };
 
 export type NoteVersion = {
@@ -45,6 +48,7 @@ export async function saveNote(input: {
   topic?: string;
   execution?: { time: string; side: string; quantity: number } | null;
   drawings?: unknown;
+  lines?: NoteLine[];
   /**
    * 노트 완성도 점검: plan = 종류별 필수를 다 채움, observe = 관찰 메모 (이행률의 '계획 있음'에 안 들어감)
    * kind: trade 매매 계획 · hold 보유 관리 · view 분석·전망 · review 회고. 나머지는 종류별 항목 (빈 값은 빠짐)
@@ -59,6 +63,7 @@ export async function saveNote(input: {
     noteTime: input.noteTime,
     ...(input.topic ? { topic: input.topic } : {}),
     ...(input.execution ? { execution: input.execution } : {}),
+    ...(input.lines?.length ? { lines: input.lines } : {}),
     ...(input.plan
       ? (() => {
           const { status, kind, ...fields } = input.plan;

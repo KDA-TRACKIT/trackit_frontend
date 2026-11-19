@@ -118,10 +118,10 @@ function deadlines() {
  *   방향 = AI 판단(상승 → 매수 · 하락 → 매도), 진입 조건 · 손절 · 목표 = 그은 선 중 지금 가격에 가까운 것
  *   (매수: 아래 첫 선 = 진입, 아래 둘째 선 = 손절, 위 첫 선 = 목표 / 매도는 반대)
  */
-export function autoPlan(base: Plan, drawings: Drawing[], nowTime: number | undefined, current: number | undefined, money: (n: number) => string, aiDirection?: string): Plan {
+export function autoPlan(base: Plan, drawings: Drawing[], nowTime: number | undefined, current: number | undefined, money: (n: number) => string, aiDirection?: string, bars?: { time: number }[]): Plan {
   const dir: Plan["direction"] = base.direction || (/상승|LONG/i.test(aiDirection ?? "") ? "매수" : /하락|SHORT/i.test(aiDirection ?? "") ? "매도" : "");
   const sell = dir === "매도";
-  const rungs = buildLadder(drawings, nowTime).rungs.map((r) => r.price);
+  const rungs = buildLadder(drawings, nowTime, bars).rungs.map((r) => r.price);
   const cur = current ?? 0;
   const below = [...new Set(rungs.filter((p) => !cur || p < cur))].sort((a, b) => b - a);
   const above = [...new Set(rungs.filter((p) => !cur || p >= cur))].sort((a, b) => a - b);

@@ -273,11 +273,10 @@ function MarketplaceList() {
 
       {open && (
         <FilterModal
-          sort={sort}
           initial={filter}
           onClose={() => setOpen(false)}
-          onApply={(f, s) => {
-            update({ filter: f, sort: s, page: 1 });
+          onApply={(f) => {
+            update({ filter: f, page: 1 });
             setOpen(false);
           }}
         />
@@ -286,9 +285,9 @@ function MarketplaceList() {
   );
 }
 
-function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; initial: Filter; onClose: () => void; onApply: (f: Filter, s: Sort) => void }) {
+// 필터: 낙폭 · 수익률 · 가격 · 유형 · 국가 (정렬은 목록 위 드롭다운에서만)
+function FilterModal({ initial, onClose, onApply }: { initial: Filter; onClose: () => void; onApply: (f: Filter) => void }) {
   const [f, setF] = useState<Filter>(initial);
-  const [sort, setSort] = useState<Sort>(sort0);
   return (
     <div className="mk-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="mk-modal" role="dialog" aria-modal="true" aria-label="필터" onKeyDown={(e) => e.key === "Escape" && onClose()}>
@@ -297,14 +296,6 @@ function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; i
           <button type="button" onClick={onClose} aria-label="닫기">
             ✕
           </button>
-        </div>
-        <span className="mk-range-label">정렬</span>
-        <div className="mk-seg">
-          {SORT_ALL.map((k) => (
-            <button key={k} type="button" className={sort === k ? "on" : ""} onClick={() => setSort(k)}>
-              {sortLabel(k)}
-            </button>
-          ))}
         </div>
         <Range2 label="최대 낙폭 범위" min={0} max={100} step={1} value={f.mdd} onChange={(mdd) => setF({ ...f, mdd })} format={(n) => `${n}%`} />
         <Range2 label="수익률 범위" min={-100} max={100} step={1} value={f.ret} onChange={(ret) => setF({ ...f, ret })} format={(n) => `${n > 0 ? "+" : ""}${n}%`} />
@@ -333,10 +324,10 @@ function FilterModal({ sort: sort0, initial, onClose, onApply }: { sort: Sort; i
           ))}
         </div>
         <div className="mk-modal-foot">
-          <button type="button" className="mk-ghost" onClick={() => (setF(NO_FILTER), setSort("rec"))}>
+          <button type="button" className="mk-ghost" onClick={() => setF(NO_FILTER)}>
             ↺ 초기화
           </button>
-          <button type="button" className="mk-primary" onClick={() => onApply(f, sort)}>
+          <button type="button" className="mk-primary" onClick={() => onApply(f)}>
             필터 적용하기
           </button>
         </div>

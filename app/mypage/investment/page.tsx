@@ -34,6 +34,9 @@ export default function InvestmentPage() {
         </div>
       </Card>
       <div className="mp-actions">
+        <button type="button" className="mp-btn" onClick={() => (setValue(readInvestment(meta)), setNote(null))} disabled={busy || !dirty}>
+          취소
+        </button>
         <button type="button" className="mp-btn primary" onClick={() => void save()} disabled={busy || !dirty}>
           {busy ? "저장 중…" : "변경사항 저장"}
         </button>

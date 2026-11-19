@@ -1,14 +1,15 @@
 "use client";
 // 전략 확정 전 확인: AI 가 빈칸을 임의로 채우지 않고 되묻고, 투자자가 진입 근거 · 매수 조건 · 손절 기준을 직접 고쳐 확정한다
-//   - 그은 선을 현재가 기준 위(저항 후보) · 아래(지지 후보) 가격순 사다리로, 가까운 3개씩 먼저 (나머지는 접어 둠)
-//     칩 하나로 의미를 고름 (위: 저항 · 목표 · 관심 · 무시 / 아래: 지지 · 매수 · 손절 · 관심 · 무시)
-//     첫 칩은 점선 '제안'일 뿐, 고르는 건 투자자. 다시 누르면 취소되고 계획 칸의 문장도 빠짐
+//   - 그은 선은 알고리즘이 지지 · 저항으로 나눔 (선 종류 상관없이 현재가보다 아래 = 지지, 위 = 저항, lineLadder.classify)
+//     접지 않고 바로 보임, 선 하나에 한 줄 (피보는 레벨마다 한 줄, 구간은 한 줄)
+//     투자자는 그중 '이 선에서 매매하겠다'를 더 고름 (지지: 매수 · 손절 / 저항: 목표 · 매도). 다시 누르면 취소되고 계획 칸의 문장도 빠짐
+//     현재가와 겹쳐 나눌 수 없는 선은 투자자가 지지 · 저항을 고름. 안 고르면 이행률 계산에서 빠짐
 //   - 피보나치는 레벨을, 사각형 · 가격 범위는 구간을 한 줄로
 //   - 손절 기준이 비어 있으면 "손절 기준이 있나요?" 라고 물음
 //   - AI 요약은 '제안'으로만 보여 주고, 넣을지는 투자자가 고름
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Drawing } from "../../lib/drawing";
-import { buildLadder, nearest, type Rung } from "./lineLadder";
+import { buildLadder, classify, roleKey, roleOf, type LastBar, type Role } from "./lineLadder";
 
 /** 노트 종류 (2026-11-17 회의): 매매 계획 · 보유 관리 · 분석·전망 · 회고 — 종류마다 필수 항목이 다름 (PlanCheck) */
 export type NoteKind = "trade" | "hold" | "view" | "review";
@@ -75,11 +76,9 @@ export function planText(p: Plan) {
   return rows.length > 1 ? rows.map(([k, v]) => `[${k}] ${v.trim()}`).join("\n") : "";
 }
 
-/** 위(저항 후보) · 아래(지지 후보) · 구간에 따라 고를 수 있는 의미. 첫 칸은 점선으로 '제안'만 */
-const ABOVE = ["저항", "목표", "관심", "무시"];
-const BELOW = ["지지", "매수", "손절", "관심", "무시"];
-const ZONE_ABOVE = ["저항 구간", "목표 구간", "관심", "무시"];
-const ZONE_BELOW = ["매수 구간", "손절 구간", "관심", "무시"];
+/** 지지 · 저항에 따라 고를 수 있는 매매 (투자자가 더 고르는 것) */
+const TRADE: Record<Role, string[]> = { 지지: ["매수", "손절"], 저항: ["목표", "매도"] };
+const ZONE_TRADE: Record<Role, string[]> = { 지지: ["매수 구간", "손절 구간"], 저항: ["목표 구간"] };
 
 /** 의미 → 계획의 어느 칸에 어떤 문장으로 */
 function phrase(m: string, p: string): [keyof Plan, string] | null {
@@ -88,6 +87,8 @@ function phrase(m: string, p: string): [keyof Plan, string] | null {
       return ["entry", `${p} 저항`];
     case "지지":
       return ["condition", `${p} 지지 확인`];
+    case "매도":
+      return ["condition", `${p} 도달 시 매도`];
     case "매수":
     case "매수 예정가":
       return ["condition", `${p} 근처에서 매수`];
@@ -130,6 +131,8 @@ export default function PlanConfirm({
   locked,
   current,
   nowTime,
+  lastBar,
+  bars,
   onHover,
 }: {
   drawings: Drawing[];
@@ -146,16 +149,14 @@ export default function PlanConfirm({
   current?: number;
   /** 마지막 봉 시각 (추세선의 오늘 값) */
   nowTime?: number;
+  /** 마지막 봉 (추세선은 이 봉 몸통 기준으로 지지 · 저항) */
+  lastBar?: LastBar;
+  /** 차트 봉 (추세선 값을 차트와 같은 봉 순서로) */
+  bars?: { time: number }[];
   /** 줄에 마우스를 올리면 차트에서 그 선을 강조 */
   onHover?: (id: string | null) => void;
 }) {
-  const [all, setAll] = useState(false);
-  const [openFib, setOpenFib] = useState<Record<string, boolean>>({});
-  const { rungs, groups } = useMemo(() => buildLadder(drawings, nowTime), [drawings, nowTime]);
-  const view = all
-    ? { above: rungs.filter((r) => !current || r.price >= current), below: rungs.filter((r) => !!current && r.price < current), hidden: 0 }
-    : nearest(rungs, current, 3);
-  const isAbove = (price: number) => !current || price >= current;
+  const { rungs, groups } = useMemo(() => buildLadder(drawings, nowTime, bars), [drawings, nowTime, bars]);
 
   /** 고르기 · 같은 걸 다시 누르면 취소 (계획 칸의 그 문장도 같이 빠짐) */
   const choose = (key: string, m: string, p: string) => {
@@ -176,135 +177,102 @@ export default function PlanConfirm({
     onPlan(next);
   };
 
-  const chips = (key: string, options: string[], p: string) => {
+  /** 나눌 수 없는 선: 투자자가 지지 · 저항을 고름 (바꾸면 그 선에서 고른 매매는 취소) */
+  const setRole = (key: string, r: Role | "", p: string) => {
+    if (answers[key]) choose(key, answers[key], p);
+    onAnswer(roleKey(key), r);
+  };
+
+  /** 역할 표시 + 매매 고르기 */
+  const lineChips = (key: string, low: number, high: number, p: string, zone = false, slant = false) => {
+    const { role, auto } = roleOf(key, low, high, current, answers, slant ? lastBar : undefined);
     const picked = answers[key];
-    if (picked)
-      return (
-        <div className="ws-ladder-chips">
-          <button type="button" className="on" onClick={() => choose(key, picked, p)} title="다시 누르면 취소">
-            {picked} <span aria-hidden>×</span>
-          </button>
-        </div>
-      );
     return (
       <div className="ws-ladder-chips">
-        {options.map((m, i) => (
-          <button key={m} type="button" className={i === 0 ? "sug" : ""} onClick={() => choose(key, m, p)}>
-            {i === 0 ? `${m}?` : m}
-          </button>
-        ))}
+        {auto ? (
+          <span className={`ws-ladder-role ${role === "지지" ? "sup" : "res"}`} title="알고리즘이 현재가 기준으로 나눔">
+            {role}
+          </span>
+        ) : (
+          <>
+            {(["지지", "저항"] as Role[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={role === r ? "on" : "sug"}
+                onClick={() => setRole(key, role === r ? "" : r, p)}
+                title={role === r ? "다시 누르면 취소" : "현재가와 겹쳐 나눌 수 없어요. 직접 골라 주세요 (안 고르면 이행률에서 빠져요)"}
+              >
+                {role === r ? `${r} ×` : `${r}?`}
+              </button>
+            ))}
+          </>
+        )}
+        {role &&
+          (picked ? (
+            <button type="button" className="on" onClick={() => choose(key, picked, p)} title="다시 누르면 취소">
+              {picked} <span aria-hidden>×</span>
+            </button>
+          ) : (
+            (zone ? ZONE_TRADE : TRADE)[role].map((m) => (
+              <button key={m} type="button" onClick={() => choose(key, m, p)} title="이 선에서 매매하겠다고 고르기">
+                {m}
+              </button>
+            ))
+          ))}
       </div>
     );
   };
 
-  const rung = (r: Rung) => (
-    <li key={r.key} onMouseEnter={() => onHover?.(r.ids[0])} onMouseLeave={() => onHover?.(null)}>
-      <b>{money(r.price)}</b>
-      <div>
-        <span className="ws-ladder-kind">{r.label}</span>
-        {chips(r.key, isAbove(r.price) ? ABOVE : BELOW, money(r.price))}
-      </div>
+  /** 한 줄 = 선 하나: 가격 · 선 종류 · 지지/저항 · 매매 (피보는 레벨마다, 구간은 한 줄) */
+  type Row = { key: string; hover: string; label: string; low: number; high: number; text: string; zone: boolean; slant?: boolean };
+  // 1,000 이상은 원 단위로 (피보 · 추세선 오늘 값은 소수가 나옴)
+  const fmt = (n: number) => money(n >= 1000 ? Math.round(n) : Math.round(n * 100) / 100);
+  const rows: Row[] = [
+    ...rungs.map((r) => ({ key: r.key, hover: r.ids[0], label: r.label.replace(" · 오늘 값", ""), low: r.price, high: r.price, text: fmt(r.price), zone: false, slant: !!r.pts })),
+    ...groups.flatMap((g): Row[] =>
+      g.kind === "zone"
+        ? [{ key: g.key, hover: g.id, label: g.label, low: g.low, high: g.high, text: `${fmt(g.low)}~${fmt(g.high)}`, zone: true }]
+        : g.levels.map((l) => ({ key: l.key, hover: g.id, label: `피보 ${l.lv}`, low: l.price, high: l.price, text: fmt(l.price), zone: false })),
+    ),
+  ].sort((a, b) => b.high + b.low - (a.high + a.low));
+  const mid = (r: Row) => (r.low + r.high) / 2;
+  const roleRow = (r: Row) => roleOf(r.key, r.low, r.high, current, answers, r.slant ? lastBar : undefined).role;
+  // 위 · 아래는 역할대로 (저항 위 · 지지 아래, 못 나눈 건 가격으로)
+  const isUp = (r: Row) => {
+    const role = classify(r.low, r.high, current, r.slant ? lastBar : undefined);
+    return role ? role === "저항" : !current || mid(r) >= current;
+  };
+  const above = rows.filter(isUp);
+  const below = rows.filter((r) => !isUp(r));
+  const row = (r: Row) => (
+    <li key={r.key} onMouseEnter={() => onHover?.(r.hover)} onMouseLeave={() => onHover?.(null)}>
+      <b>{r.text}</b>
+      <span className="ws-ladder-kind">{r.label}</span>
+      {lineChips(r.key, r.low, r.high, r.text, r.zone, r.slant)}
     </li>
   );
 
-  // 고른 것 한눈에 (무시 빼고)
-  const picked: string[] = [];
-  for (const r of rungs) if (answers[r.key] && answers[r.key] !== "무시") picked.push(`[${answers[r.key]}] ${money(r.price)}`);
-  for (const g of groups) {
-    if (g.kind === "zone" && answers[g.key] && answers[g.key] !== "무시") picked.push(`[${answers[g.key]}] ${money(g.low)}~${money(g.high)}`);
-    if (g.kind === "fib") for (const l of g.levels) if (answers[l.key] && answers[l.key] !== "무시") picked.push(`[${answers[l.key]}] ${money(l.price)} (피보 ${l.lv})`);
-  }
+  const tradeCount = rows.filter((r) => answers[r.key]).length;
+  const unset = rows.filter((r) => !roleRow(r)).length;
 
-  const lineCount = rungs.reduce((n, r) => n + r.ids.length, 0) + groups.length;
   // 확정 뒤엔 사다리 대신 아무것도 (계획은 메모 뒤 [항목] 줄로 남음)
-  if (locked || lineCount === 0) return null;
+  if (locked || rows.length === 0) return null;
   return (
     <div className="ws-plan">
-      {/* 그은 선: 접어 두고, 펼치면 현재가 기준 위 · 아래 사다리에서 지지/저항을 고름 (AI 는 정하지 않음) */}
-      {
-        <details className="ws-ladder">
-          <summary className="ws-ladder-head">
-            <strong>그은 선 {lineCount}개</strong>
-            <small>{picked.length ? `고른 것 ${picked.length}개` : "지지 · 저항 고르기"}</small>
-          </summary>
-          {view.above.length > 0 && (
-            <>
-              <p className="ws-ladder-sec">위 · 저항 후보</p>
-              <ul>{view.above.map(rung)}</ul>
-            </>
-          )}
-          {current ? <div className="ws-ladder-now">현재가 {money(current)}</div> : null}
-          {view.below.length > 0 && (
-            <>
-              <p className="ws-ladder-sec">아래 · 지지 후보</p>
-              <ul>{view.below.map(rung)}</ul>
-            </>
-          )}
-          {(view.hidden > 0 || all) && (
-            <button type="button" className="ws-ladder-more" onClick={() => setAll((v) => !v)}>
-              {all ? "가까운 선만 보기" : `+ 멀리 있는 선 ${view.hidden}개 더 보기`}
-            </button>
-          )}
-
-          {groups.length > 0 && (
-            <ul className="ws-ladder-groups">
-              {groups.map((g) =>
-                g.kind === "zone" ? (
-                  <li key={g.key} onMouseEnter={() => onHover?.(g.id)} onMouseLeave={() => onHover?.(null)}>
-                    <span className="ws-ladder-kind">
-                      {g.label} · <b>{money(g.low)}~{money(g.high)}</b>
-                    </span>
-                    {chips(g.key, isAbove(g.low) ? ZONE_ABOVE : ZONE_BELOW, `${money(g.low)}~${money(g.high)}`)}
-                  </li>
-                ) : (
-                  <li key={g.key} onMouseEnter={() => onHover?.(g.id)} onMouseLeave={() => onHover?.(null)}>
-                    <span className="ws-ladder-kind">
-                      {g.label} · <b>{g.levels.length}개 레벨</b>
-                    </span>
-                    <div className="ws-ladder-chips">
-                      {(openFib[g.key]
-                        ? g.levels
-                        : [...g.levels]
-                            .sort((a, b) => Math.abs(a.price - (current ?? a.price)) - Math.abs(b.price - (current ?? b.price)))
-                            .slice(0, 3)
-                            .sort((a, b) => a.lv - b.lv)
-                      ).map((l) => {
-                        const m = answers[l.key] ?? (isAbove(l.price) ? "저항" : "지지");
-                        return (
-                          <button
-                            key={l.key}
-                            type="button"
-                            className={answers[l.key] ? "on" : ""}
-                            onClick={() => choose(l.key, m, `${money(l.price)} (피보 ${l.lv})`)}
-                            title={answers[l.key] ? "다시 누르면 취소" : `${m}으로 고르기`}
-                          >
-                            {l.lv} · {money(l.price)}
-                            {answers[l.key] ? ` ${answers[l.key]} ×` : ""}
-                          </button>
-                        );
-                      })}
-                      {g.levels.length > 3 && (
-                        <button type="button" className="ghost" onClick={() => setOpenFib((o) => ({ ...o, [g.key]: !o[g.key] }))}>
-                          {openFib[g.key] ? "접기" : "펼치기"}
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ),
-              )}
-            </ul>
-          )}
-
-          {picked.length > 0 && (
-            <div className="ws-ladder-picked" aria-label="고른 선">
-              {picked.map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-            </div>
-          )}
-        </details>
-      }
-
+      {/* 그은 선: 접지 않고 바로, 선 하나에 한 줄 (현재가 기준 위 = 저항 · 아래 = 지지) */}
+      <div className="ws-ladder">
+        <div className="ws-ladder-head">
+          <strong>그은 선 {rows.length}개</strong>
+          <small>
+            {tradeCount ? `매매 ${tradeCount}개` : "지지 · 저항 자동 분류"}
+            {unset ? ` · 미분류 ${unset}개` : ""}
+          </small>
+        </div>
+        {above.length > 0 && <ul>{above.map(row)}</ul>}
+        {current ? <div className="ws-ladder-now">현재가 {money(current)}</div> : null}
+        {below.length > 0 && <ul>{below.map(row)}</ul>}
+      </div>
     </div>
   );
 }

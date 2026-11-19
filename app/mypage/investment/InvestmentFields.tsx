@@ -44,12 +44,26 @@ export function InvestmentFields({ value, onChange, showPeriod = true, variant =
   const my = !onboarding;
   return (
     <div className="mp-form">
-      <label className="mp-field">
-        <span>주요 투자 시장</span>
-        <input value={value.market} onChange={(e) => set({ market: e.target.value })} maxLength={60} placeholder="예: 국내 주식, 미국 주식, ETF" />
-      </label>
-      {/* 주요 투자 기간: 마이페이지 · 가입 직후 모두 (단타 · 스윙 · 중장기를 매매 방식에서 빼고 여기로) */}
-      {showPeriod && (
+      {/* 마이페이지(시안 2026-11-19): 주요 투자 시장 · 주요 투자 기간을 한 줄에 칸 두 개로 */}
+      {my && showPeriod ? (
+        <div className="mp-row-2">
+          <label className="mp-field">
+            <span>주요 투자 시장</span>
+            <input value={value.market} onChange={(e) => set({ market: e.target.value })} maxLength={60} placeholder="예: 국내 주식, 미국 주식, ETF" />
+          </label>
+          <label className="mp-field">
+            <span>주요 투자 기간</span>
+            <input value={value.period} onChange={(e) => set({ period: e.target.value })} maxLength={30} placeholder="예: 단기, 중기, 장기" />
+          </label>
+        </div>
+      ) : (
+        <label className="mp-field">
+          <span>주요 투자 시장</span>
+          <input value={value.market} onChange={(e) => set({ market: e.target.value })} maxLength={60} placeholder="예: 국내 주식, 미국 주식, ETF" />
+        </label>
+      )}
+      {/* 주요 투자 기간 (가입 직후): 단기 · 중기 · 장기 중 고르기 (단타 · 스윙 · 중장기를 매매 방식에서 빼고 여기로) */}
+      {showPeriod && !my && (
         <div className="mp-field">
           <span className="mp-label">
             주요 투자 기간 <em className="mp-optional">(선택)</em> {my && <small>복수 선택 가능</small>}

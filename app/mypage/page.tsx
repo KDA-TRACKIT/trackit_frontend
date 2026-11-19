@@ -21,7 +21,10 @@ export default function MyPage() {
       {ready && n > 0 ? n.toLocaleString("ko-KR") : "—"} <small>{unit}</small>
     </strong>
   );
+  // 시안(2026-11-19): 공개 전략 · 유료 열람권 · 판매 내역 · 정산 내역 4칸
   const SALES = [
+    { title: "공개 전략", sub: "무료 열람", href: "/mypage/sales/strategies" },
+    { title: "유료 열람권", sub: "열람권 관리", href: "/mypage/sales" },
     { title: "판매 내역", sub: totals.count ? `판매 기록 ${totals.count}건` : "판매 기록", href: "/mypage/sales/history" },
     { title: "정산 내역", sub: "정산 기록", href: "/mypage/sales/settlements" },
   ];
@@ -92,7 +95,7 @@ export default function MyPage() {
         </Card>
       </div>
 
-      <Card title="판매 관리" desc="내 전략의 판매 내역과 정산 내역을 관리합니다.">
+      <Card title="판매 관리" desc="내 전략의 공개·유료 열람권과 판매 내역을 관리합니다.">
         <div className="mp-home-sales">
           {SALES.map((s) => (
             <div key={s.title}>

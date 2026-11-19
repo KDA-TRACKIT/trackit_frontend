@@ -371,11 +371,14 @@ html[data-theme="dark"] .signup-done-card { background:var(--c-surface); border-
 /* 좋아요 꿀단지 아이콘 (app/HoneyPot.tsx) 테두리: 어두운 화면에선 밝게 */
 html[data-theme="dark"] { --honey-line:#f7d47e; --honey-fill:#d4870b; --honey-top:#f0a92a; }
 
-/* 로고: 모든 TRACKIT 글자 앞에 꿀단지 그림 (public/home/brand.png, 홈 상단과 같음) */
-.ti-brand, .login-wordmark { display:inline-flex; align-items:center; gap:10px; }
-/* 위쪽 바: 글자 위치는 그대로 두고 그림은 왼쪽 여백에 (홈에 있던 자리: 왼쪽 25px · 세로 가운데, 좁은 화면은 22px · 왼쪽 7px · 위 10px) */
-.gnb { position:relative; }
-.gnb .brand-mark { position:absolute; z-index:11; left:25px; top:50%; width:32px; height:32px; border-radius:10px; transform:translateY(-50%); }
-@media (max-width:700px) { .gnb .brand-mark { top:10px; left:7px; width:22px; height:22px; transform:none; } .gnb-brand { margin-left:12px; } }
-.login-wordmark { display:flex; justify-content:center; }
-.brand-mark { flex:none; width:1em; height:1em; border-radius:28%; object-fit:cover; }
+/* 로고: 맨 위 바(.gnb · 소개 화면 .ti-nav)의 TRACKIT 앞에만 꿀단지 그림 (public/home/brand.png)
+   글자 자리는 그대로, 그림은 글자 왼쪽 7px 바깥 (넓은 화면에선 홈에 있던 자리 = 왼쪽 25px).
+   좌우 여백이 좁아 그림이 화면 밖으로 나가거나 글자와 겹칠 땐 글자를 그만큼만 오른쪽으로 민다 */
+.gnb-brand, .ti-nav .ti-brand { position:relative; margin-left:max(0px, calc(43px - clamp(24px, calc(4.444 * var(--vw, 1vw)), 64px))); }
+.brand-mark { position:absolute; z-index:11; right:calc(100% + 7px); top:50%; width:32px; height:32px; border-radius:10px; transform:translateY(-50%); }
+@media (max-width:700px) { .brand-mark { width:22px; height:22px; border-radius:7px; } .gnb-brand, .ti-nav .ti-brand { margin-left:12px; } }
+@media (max-width:759px) { .ti .ti-nav .ti-brand { margin-left:20px; } } /* 소개 화면은 좁을 때 좌우 여백 16px */
+/* 로그인 전 첫 화면(소개) 맨 위 로고 = 로그인 후 위쪽 바 로고와 같은 색 · 크기 */
+.ti .ti-nav .ti-brand { color:#0f2367; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:34px; }
+html[data-theme="dark"] .ti .ti-nav .ti-brand { color:var(--c-brand); }
+@media (max-width:800px) { .ti .ti-nav .ti-brand { font-size:26px; line-height:26px; } }

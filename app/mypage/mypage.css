@@ -281,7 +281,7 @@
 .mp-home-consent { display:flex; align-items:center; gap:10px; margin-top:18px; }
 .mp-tag-warn { flex:none; padding:5px 10px; border-radius:14px; background:var(--c-warn-soft, #fff1dc); color:var(--c-warn, #b7791f); font-size:11.5px; font-weight:700; }
 .mp-home-consent small { color:var(--c-faint); font-size:10.5px; line-height:1.4; }
-.mp-home-sales { display:grid; grid-template-columns:repeat(2,1fr); }
+.mp-home-sales { display:grid; grid-template-columns:repeat(4,1fr); }
 .mp-home-sales > div { display:flex; flex-direction:column; gap:10px; padding:6px 0; }
 .mp-home-sales > div + div { padding-left:18px; border-left:1px solid var(--c-line); }
 .mp-home-sales strong { font-size:14px; font-weight:700; }
@@ -648,3 +648,6 @@ html:not([data-theme="dark"]) :is(.mp, .mp-modal, .mp-cf) { --c-accent:#0f2367; 
 .mp-wallet-none .mp-btn { height:38px; padding:0 22px; }
 .mp-optional { margin-left:2px; color:var(--c-sub); font-size:12px; font-style:normal; font-weight:500; }
 .mp-period-chips button small { margin-left:6px; color:var(--c-sub); font-size:11px; font-weight:500; } .mp-period-chips button.on small { color:inherit; opacity:.75; }
+
+/* 판매 관리 4칸 (시안 2026-11-19): 좁으면 2칸 × 2줄, 둘째 줄 첫 칸은 왼쪽 선 없음 */
+@media (max-width:900px) { .mp-home-sales { grid-template-columns:1fr 1fr; gap:20px 0; } .mp-home-sales > div:nth-child(3) { border-left:0; padding-left:0; } }

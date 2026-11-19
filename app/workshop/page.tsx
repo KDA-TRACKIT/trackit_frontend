@@ -22,7 +22,8 @@ import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, type Plan } from "./PlanConfirm";
-import PlanCheck, { autoPlan, checkPlan, nums, type CheckContext } from "./PlanCheck";
+import { noteLines } from "./lineLadder";
+import { autoPlan } from "./PlanCheck";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -223,7 +224,6 @@ export default function WorkshopPage() {
   /** 투자자가 확인 · 수정하는 계획 (진입 근거 · 매수 조건 · 손절 기준 · 목표). AI 는 채우지 않고 되묻기만 */
   const [plan, setPlan] = useState<Plan>(EMPTY_PLAN);
   /** 확정할 때 계획으로 남길지(필수 4가지 다 있음), 관찰 메모로 남길지 */
-  const [saveAs, setSaveAs] = useState<"plan" | "observe">("plan");
   /** 그은 선마다 투자자가 고른 의미 */
   const [lineMeaning, setLineMeaning] = useState<Record<string, string>>({});
   /** AI 노트 선 목록에서 마우스를 올린 드로잉 (차트에서 강조) */
@@ -275,12 +275,6 @@ export default function WorkshopPage() {
   // 노트 완성도 점검에 쓰는 것: 이 종목 지난 기록의 손절(보유 관리 '위험 확대') · 연결된 매매가 있는지(회고)
   const allRecords = useRecords();
   const symbolRecords = allRecords.filter((r) => r.symbol === symbol.code);
-  const lastStopText = symbolRecords.map((r) => r.text.match(/\[손절 기준\]\s*([^\n]+)/)?.[1]).find(Boolean);
-  const checkCtx: CheckContext = {
-    symbolName: symbol.name,
-    prevStop: lastStopText ? (nums(lastStopText)[0] ?? null) : null,
-    hasCycle: !!linkedExecution || symbolRecords.some((r) => !!r.executionTime),
-  };
   const [autoLinked, setAutoLinked] = useState<string | null>(null);
   /** 오른쪽 영역: 노트(기본) · 매매 */
   const [side, setSide] = useState<"notes" | "trade">("notes");
@@ -360,17 +354,22 @@ export default function WorkshopPage() {
           ),
           ...(d.text ? { text: d.text } : {}),
         })),
-        notes: notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+        // 투자자가 판단 근거 칸에 더 적은 내용도 같이 보내 AI 분석에 반영
+        notes: [
+          ...notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
+          ...(noteText.trim() && bars.length
+            ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자 판단 근거] ${noteText.trim()}` }]
+            : []),
+        ],
         mode: "ai",
         currency: us ? "USD" : "KRW",
       });
       setAiMemoResult(result);
       // 필수 항목을 따로 채우지 않아도 되게: AI 방향 + 그은 선으로 진입 조건 · 손절 · 목표를 미리 채움
-      setPlan(autoPlan(EMPTY_PLAN, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction));
+      setPlan(autoPlan(EMPTY_PLAN, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction, bars));
       setLineMeaning({});
       setConfirmedAt(null);
       setAfterNotes([]);
-      setNoteText(result.memo);
       setSuggestion(result.suggestion ?? result.summary ?? "");
       setNoteTime(nowKst());
       setSuggestionApplied(false);
@@ -442,13 +441,15 @@ export default function WorkshopPage() {
       symbol: symbol.code,
       symbolName: symbol.name,
       // 메모 + 투자자가 확인한 계획 (최초 확정본). 관찰 메모는 앞에 표시 → 기록 보드 · 이행률에서 계획으로 안 침
-      text: [saveAs === "observe" ? "[관찰 메모]" : "", noteText.trim(), planText(plan)].filter(Boolean).join("\n\n"),
+      text: [noteText.trim(), aiMemoResult?.memo ? `[AI 정리] ${aiMemoResult.memo.trim()}` : "", planText(plan)].filter(Boolean).join("\n\n"),
       drawings: drawings.map(drawingToAnnotation),
+      // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
+      lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
       // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
       plan: {
-        status: saveAs,
+        status: "plan",
         kind: plan.kind,
-        direction: checkPlan(plan, noteText, checkCtx).direction,
+        direction: plan.direction,
         entry: plan.condition,
         stop: plan.stop,
         target: plan.target,
@@ -650,28 +651,34 @@ ${t}` : t))}
               <h2>
                 AI 노트 <span className="ws-tag">저장 전 검증</span>
               </h2>
-              <div className="ws-memo">
-                <div className="ws-memo-head">
-                  <small>
-                    {symbol.name}
-                    {noteTime && ` · ${hhmm(noteTime)}`}
-                    {notes.length > 0 && " · 차트 노트"}
-                  </small>
-                </div>
-                {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
-                <textarea
-                  className="ws-memo-text"
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  readOnly={confirmed}
-                  placeholder="판단 근거를 적어 두세요. 저장을 누르면 AI가 드로잉을 보고 정리해 넣어요."
-                  aria-label="차트 메모"
-                />
-              </div>
+              {/* 그은 선: 알고리즘 지지 · 저항이 맨 위 (선만 그어도 판단) */}
+              <PlanConfirm
+                drawings={drawings}
+                plan={plan}
+                onPlan={setPlan}
+                answers={lineMeaning}
+                onAnswer={(id, m) => setLineMeaning((a) => ({ ...a, [id]: m }))}
+                aiSummary={aiMemoResult?.summary}
+                aiQuestions={aiMemoResult?.questions}
+                money={money}
+                locked={confirmed}
+                current={today?.close}
+                nowTime={bars[bars.length - 1]?.time}
+                lastBar={bars[bars.length - 1]}
+                bars={bars}
+                onHover={setHoverLine}
+              />
+
               {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
               {aiMemoResult?.summary && (
                 <details className="ws-ai-breakdown" aria-label="AI 차트 분석 상세">
                   <summary>AI 분석 보기</summary>
+                  {aiMemoResult.memo && (
+                    <div>
+                      <strong>AI 정리</strong>
+                      <p className="ws-ai-memo">{aiMemoResult.memo}</p>
+                    </div>
+                  )}
                   <div>
                     <strong>요약</strong>
                     <p>{aiMemoResult.summary}</p>
@@ -724,22 +731,6 @@ ${t}` : t))}
                 </details>
               )}
 
-              {/* 투자자가 확인 · 수정해서 확정하는 계획 (AI 는 되묻기만) */}
-              <PlanConfirm
-                drawings={drawings}
-                plan={plan}
-                onPlan={setPlan}
-                answers={lineMeaning}
-                onAnswer={(id, m) => setLineMeaning((a) => ({ ...a, [id]: m }))}
-                aiSummary={aiMemoResult?.summary}
-                aiQuestions={aiMemoResult?.questions}
-                money={money}
-                locked={confirmed}
-                current={today?.close}
-                nowTime={bars[bars.length - 1]?.time}
-                onHover={setHoverLine}
-              />
-
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (
                 <div className="ws-note-list">
@@ -759,10 +750,29 @@ ${t}` : t))}
                 </div>
               )}
 
+              {/* 판단 근거: 아래로 (투자자가 더 적은 건 AI 가 분석해 반영) */}
+              <div className="ws-memo">
+                <div className="ws-memo-head">
+                  <small>
+                    {symbol.name}
+                    {noteTime && ` · ${hhmm(noteTime)}`}
+                    {notes.length > 0 && " · 차트 노트"}
+                  </small>
+                </div>
+                {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
+                <textarea
+                  className="ws-memo-text"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  readOnly={confirmed}
+                  placeholder="선만 그어도 AI가 판단해요. 판단 근거를 더 적으면 저장할 때 AI가 같이 분석해요."
+                  aria-label="차트 메모"
+                />
+              </div>
               {confirming ? (
                 <div className="ws-confirm">
                   <p>
-                    {saveAs === "observe" ? "관찰 메모로 저장해요 (이행률의 '계획 있음'에 들어가지 않아요). " : linkedExecution ? "" : "연결된 체결이 없어 검증 대기로 저장돼요. "}확정하면 수정·삭제할 수 없습니다. 고칠 땐 새 버전으로 남습니다.
+                    {linkedExecution ? "" : "연결된 체결이 없어 검증 대기로 저장돼요. "}확정하면 수정·삭제할 수 없습니다. 고칠 땐 새 버전으로 남습니다.
                   </p>
                   {confirmError && <p className="ws-confirm-error">{confirmError}</p>}
                   <div>
@@ -776,23 +786,10 @@ ${t}` : t))}
                     확정 완료
                   </button>
                 ) : (
-                  <>
-                    {/* 계획 점검: 필수 4가지(방향 · 진입 · 손절 · 기한)를 다 채워야 '계획'으로 저장, 아니면 관찰 메모 */}
-                    <PlanCheck plan={plan} onPlan={setPlan} noteText={noteText} drawings={drawings} current={today?.close} nowTime={bars[bars.length - 1]?.time} money={money} ctx={checkCtx} />
-                    {/* 버튼 하나: 필수를 다 채우면 계획으로, 아니면 관찰 메모로 */}
-                    {checkPlan(plan, noteText, checkCtx).ok ? (
-                      <button className="ws-save" onClick={() => (setSaveAs("plan"), setConfirming(true))}>
-                        확인하고 저장
-                      </button>
-                    ) : (
-                      <>
-                        <button className="ws-save ghost" disabled={!noteText.trim() && !plan.entry.trim() && !plan.condition.trim()} onClick={() => (setSaveAs("observe"), setConfirming(true))}>
-                          관찰 메모로 저장
-                        </button>
-                        <p className="ws-save-hint">필수를 다 채우면 매매 계획으로 저장돼요</p>
-                      </>
-                    )}
-                  </>
+                  // 매매 계획 필수 없음: 선을 긋거나 근거를 적으면 바로 저장
+                  <button className="ws-save" disabled={!noteText.trim() && !drawings.length} onClick={() => setConfirming(true)}>
+                    확인하고 저장
+                  </button>
                 )
               )}
               {confirmed && (
