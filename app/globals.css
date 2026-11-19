@@ -367,3 +367,15 @@ html[data-theme="dark"] .signup-done-card { background:var(--c-surface); border-
 .gnb-menu-theme, .gnb-menu-theme > span, .gnb-menu .theme-seg, .gnb-menu .theme-seg button, .gnb-menu-head, .gnb-menu > a { white-space:nowrap; }
 .gnb-menu .gnb-noti a { white-space:normal; }
 .gnb-menu:has(.gnb-noti) { width:340px; max-width:calc(100vw - 32px); }
+
+/* 좋아요 꿀단지 아이콘 (app/HoneyPot.tsx) 테두리: 어두운 화면에선 밝게 */
+html[data-theme="dark"] { --honey-line:#f7d47e; --honey-fill:#d4870b; --honey-top:#f0a92a; }
+
+/* 로고: 모든 TRACKIT 글자 앞에 꿀단지 그림 (public/home/brand.png, 홈 상단과 같음) */
+.ti-brand, .login-wordmark { display:inline-flex; align-items:center; gap:10px; }
+/* 위쪽 바: 글자 위치는 그대로 두고 그림은 왼쪽 여백에 (홈에 있던 자리: 왼쪽 25px · 세로 가운데, 좁은 화면은 22px · 왼쪽 7px · 위 10px) */
+.gnb { position:relative; }
+.gnb .brand-mark { position:absolute; z-index:11; left:25px; top:50%; width:32px; height:32px; border-radius:10px; transform:translateY(-50%); }
+@media (max-width:700px) { .gnb .brand-mark { top:10px; left:7px; width:22px; height:22px; transform:none; } .gnb-brand { margin-left:12px; } }
+.login-wordmark { display:flex; justify-content:center; }
+.brand-mark { flex:none; width:1em; height:1em; border-radius:28%; object-fit:cover; }

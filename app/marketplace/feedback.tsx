@@ -1,13 +1,13 @@
 "use client";
-// 전략 후기 조각: 전략(달)마다 ♥ 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
-import { Heart } from "lucide-react";
+// 전략 후기 조각: 전략(달)마다 꿀 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
+import HoneyPot from "../HoneyPot";
 import { useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { filterComment } from "../../lib/comment-filter";
 import { postComment, removeComment, toggleLike, type TraderFeedback } from "../../lib/feedback";
 import { monthLabel, type Trader } from "./data";
 
-/** 전략 하나(달)의 ♥ — 열람권으로 연 사람만 누를 수 있음 */
+/** 전략 하나(달)의 꿀 — 열람권으로 연 사람만 누를 수 있음 */
 export function LikeButton({ trader, month, fb, notify }: { trader: Trader; month: string; fb: TraderFeedback | null; notify: (m: string) => void }) {
   const [busy, setBusy] = useState(false);
   const count = fb?.likesByMonth[month] ?? 0;
@@ -19,9 +19,9 @@ export function LikeButton({ trader, month, fb, notify }: { trader: Trader; mont
       className={`mk-heart${liked ? " on" : ""}`}
       disabled={busy}
       aria-pressed={liked}
-      title={canLike ? (liked ? "♥ 취소" : "이 전략에 ♥") : "열람권으로 이 전략을 연 사람만 ♥ 할 수 있어요"}
+      title={canLike ? (liked ? "꿀 취소" : "이 전략에 꿀 주기") : "열람권으로 이 전략을 연 사람만 꿀을 줄 수 있어요"}
       onClick={async () => {
-        if (!canLike) return notify("열람권으로 이 전략을 연 사람만 ♥ 할 수 있어요");
+        if (!canLike) return notify("열람권으로 이 전략을 연 사람만 꿀을 줄 수 있어요");
         setBusy(true);
         try {
           await toggleLike(trader.id, month);
@@ -32,7 +32,7 @@ export function LikeButton({ trader, month, fb, notify }: { trader: Trader; mont
         }
       }}
     >
-      <Heart size={14} fill={liked ? "currentColor" : "none"} aria-hidden />
+      <HoneyPot count={count} max={100} size={15} />
       {count}
     </button>
   );

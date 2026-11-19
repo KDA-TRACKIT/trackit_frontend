@@ -1,7 +1,7 @@
 /* 전략 쇼핑 (라이트 · 다크 모두 --c-* 변수로) — 수익 초록 · 손실 빨강 */
-.mk-page { --mk-gain:#1f9d55; --mk-loss:#e03131; --mk-primary:#0f2367; --mk-primary-ink:#fff; --mk-like:#e5484d;
+.mk-page { --mk-gain:#1f9d55; --mk-loss:#e03131; --mk-primary:#0f2367; --mk-primary-ink:#fff; --mk-like:#b9770e;
   min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
-html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-primary:#7c9be0; --mk-primary-ink:#0e1116; --mk-like:#ff7a80; }
+html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-primary:#7c9be0; --mk-primary-ink:#0e1116; --mk-like:#f0b43c; }
 .mk-page .gain { color:var(--mk-gain); }
 .mk-page .loss { color:var(--mk-loss); }
 .mk-page button { font:inherit; cursor:pointer; }
@@ -15,7 +15,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-ghost, .mk-soft { height:40px; padding:0 16px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink-2); font-size:13.5px; font-weight:600; }
 .mk-soft { border-color:transparent; background:var(--c-subtle); }
 .mk-ghost:hover, .mk-soft:hover { background:var(--c-hover); }
-.mk-like { color:var(--mk-like); font-size:12px; font-weight:600; }
+.mk-like { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
 .mk-fav { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 6px; border:0; border-radius:6px; background:none; color:var(--c-faint); font-size:16px; line-height:1; vertical-align:middle; }
 .mk-fav:hover { background:var(--c-hover); color:#e8a400; }
 .mk-fav.on { color:#e8a400; }
@@ -252,7 +252,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-qty-input input:hover { border-color:var(--c-line); }
 .mk-qty-input input:focus { border-color:var(--c-focus); background:var(--c-surface); outline:0; }
 
-/* 전략 ♥ (산 사람만) */
+/* 전략 꿀 (산 사람만) */
 .mk-heart { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-sub); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; cursor:pointer; }
 .mk-heart:hover { border-color:var(--mk-like); color:var(--mk-like); }
 .mk-heart.on { border-color:var(--mk-like); background:color-mix(in srgb, var(--mk-like) 12%, transparent); color:var(--mk-like); }
@@ -551,7 +551,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-tcard-who small { color:var(--c-sub); font-size:11.5px; font-weight:600; }
 .mk-tcard-who strong { display:flex; align-items:center; gap:6px; margin:4px 0 3px; font-size:17px; font-weight:800; }
 .mk-tcard-who p { margin:0; overflow:hidden; color:var(--c-sub); font-size:12.5px; white-space:nowrap; text-overflow:ellipsis; }
-.mk-heart { color:#d64545; font-size:12px; font-weight:600; }
+.mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
 .mk-tcard-stat small, .mk-tcard-spark small { display:block; margin-bottom:4px; color:var(--c-sub); font-size:11.5px; }
 .mk-tcard-stat b { font-size:15px; font-weight:700; white-space:nowrap; }
 .mk-tcard-stat b.big { font-size:19px; font-weight:800; }

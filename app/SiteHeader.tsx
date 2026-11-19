@@ -42,6 +42,8 @@ export default function SiteHeader({ active = null, tone, right, menu = true, ti
   return (
     <header className={`gnb${tone === "dark" ? " gnb-dark" : ""}${title !== undefined || !menu ? " gnb-auth" : ""}`}>
       <Link className="gnb-brand" href="/" aria-label="TRACKIT 홈">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="brand-mark" src="/home/brand.png" alt="" width={32} height={32} />
         TRACKIT
       </Link>
       {title !== undefined ? (

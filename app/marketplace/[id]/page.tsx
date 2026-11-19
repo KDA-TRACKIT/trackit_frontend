@@ -1,5 +1,5 @@
 "use client";
-// 트레이더 상세: 소개 · 열람권 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(♥) · 구매자 후기(익명) · 비슷한 트레이더
+// 트레이더 상세: 소개 · 열람권 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(꿀) · 구매자 후기(익명) · 비슷한 트레이더
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
@@ -8,6 +8,7 @@ import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { CartButton, FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
 import { GradeBadge } from "../GradeParts";
+import HoneyPot from "../../HoneyPot";
 import { unusedPasses, usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Reviews } from "../feedback";
@@ -65,7 +66,7 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> {t.name} <span className="mk-like" title="전략을 산 사람들이 준 ♥ 합계">♥ {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> {t.name} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
               </div>
             </div>

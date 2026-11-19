@@ -98,7 +98,11 @@ export default function LoginPage() {
       <AuthHeader />
 
       <section className="login-panel">
-        <h1 className="login-wordmark">TRACKIT</h1>
+        <h1 className="login-wordmark">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-mark" src="/home/brand.png" alt="" width={44} height={44} />
+          TRACKIT
+        </h1>
 
         <form
           onSubmit={handleLogin}

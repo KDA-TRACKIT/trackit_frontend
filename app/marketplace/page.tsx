@@ -11,6 +11,7 @@ import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { CartLink, FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
+import HoneyPot from "../HoneyPot";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
@@ -232,7 +233,7 @@ function MarketplaceList() {
                   <div className="mk-tcard-who">
                     <small>{t.tagline}</small>
                     <strong>
-                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart">♥ {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+                      <FavButton id={t.id} name={t.name} /> {t.name} <span className="mk-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[t.id] ?? 0} /> {likeTotals[t.id] ?? 0}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
                     </strong>
                     <p>{t.intro}</p>
                   </div>

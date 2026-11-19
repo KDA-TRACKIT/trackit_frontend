@@ -4,7 +4,7 @@
 //   데이터: 섹터맵과 같은 업종별 시세(키움 추가 호출 없음) + 외국인·기관(ka90009).
 //   국내 현재가 · 전일 대비는 페이지 공통 줄(lib/live-quotes)로 장중 5초마다 새로
 import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChartApi, type UTCTimestamp } from "lightweight-charts";
-import { Heart } from "lucide-react";
+import HoneyPot from "../HoneyPot";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { memoAttr } from "../../lib/memo-target";
@@ -218,7 +218,7 @@ export default function MarketMovers({ onOpenUs }: { onOpenUs?: (t: UsChartTarge
                         data-memo-skip
                         onClick={(e) => (e.stopPropagation(), toggleFav(r))}
                       >
-                        <Heart size={16} />
+                        <HoneyPot level={wl.has(r.code) ? 1 : 0} size={17} />
                       </button>
                       <span className="who">
                         <em>{i + 1}</em>
@@ -310,7 +310,7 @@ function Detail({
           </small>
         </div>
         <button type="button" hidden={us} className={`fav${fav ? " on" : ""}`} onClick={onFav} aria-label={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"} title={fav ? "관심 종목에서 빼기" : "관심 종목에 추가"}>
-          <Heart size={18} />
+          <HoneyPot level={fav ? 1 : 0} size={19} />
         </button>
       </div>
       <p className="ins-mv-price">

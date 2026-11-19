@@ -25,7 +25,7 @@ export function useWatchlist() {
   useEffect(() => {
     // 로그인 안 한 경우에만 브라우저 목록을 읽는다 (첫 그림은 서버와 같게 비워 두고)
     const t = setTimeout(() => setLocal(readLocal()), 0);
-    // 같은 화면의 다른 칸(오늘의 종목 ♥ 등)이 바꾸면 다시 읽음
+    // 같은 화면의 다른 칸(오늘의 종목 꿀단지 등)이 바꾸면 다시 읽음
     const sync = () => setLocal(readLocal());
     window.addEventListener("trackit:watchlist", sync);
     return () => {

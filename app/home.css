@@ -4,7 +4,6 @@
 .home-redesign { --home-line:#e5e9f0; --home-muted:#69778d; --home-navy:#0f2367; --home-ink:#192538; background:#fdfdfd; padding-bottom:250px; }
 .home-container { width:min(1060px,calc(100% - 48px)); margin-inline:auto; }
 .home-header-wrap { position:relative; }
-.home-brand-icon { position:absolute; z-index:11; left:25px; top:26px; border-radius:10px; }
 .home-overview { display:grid; grid-template-columns:minmax(0,580fr) minmax(0,460fr); gap:20px; margin-top:40px; margin-bottom:36px; }
 .home-redesign .home-month-chart { width:100%; height:288px; min-width:0; padding:21px 23px; border:1px solid var(--home-line); border-radius:12px; background:var(--c-surface,#fff); }
 .home-chart-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
@@ -94,7 +93,7 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
 }
 @media (max-width:700px) {
   .home-redesign { padding-bottom:80px; }
-  .home-brand-icon { top:10px; left:7px; width:22px; height:22px; }.home-redesign .gnb-brand { margin-left:12px; }
+
   .home-container { width:calc(100% - 32px); }.home-overview { grid-template-columns:1fr; margin-top:24px; margin-bottom:24px; }
   .home-section-heading { align-items:flex-start; }.home-section-heading h2 { font-size:21px; line-height:28px; }
   .home-action { height:36px; padding:0 12px; font-size:12px; gap:8px; }
@@ -235,7 +234,7 @@ html:has(.home-policy-dialog[open]) { overflow:hidden; }
 .trader-grid { display:grid; grid-auto-flow:column; grid-auto-columns:max(175px,calc((100% - 48px) / 5)); gap:12px; margin:0; padding:0; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; list-style:none; }
 .trader-grid::-webkit-scrollbar { display:none; }
 .trader-grid > li { scroll-snap-align:start; }
-/* 카드 (시안): 흰 둥근 카드 · 프로필 일러스트 + 굵은 이름 · 수익률(네이비) · 전략이행률 · ♡ + 좋아요 */
+/* 카드 (시안): 흰 둥근 카드 · 프로필 일러스트 + 굵은 이름 · 수익률(네이비) · 전략이행률 · 꿀통 + 좋아요 */
 .trader-card { display:flex; flex-direction:column; gap:6px; min-height:132px; padding:12px 14px 14px; border:1px solid #e3e8ef; border-radius:14px; background:#fff; color:#3b4052; font-size:15px; text-decoration:none; transition:border-color .15s, box-shadow .15s, transform .15s; }
 .trader-card:hover { border-color:#cfd8e6; box-shadow:0 6px 18px rgba(15,35,103,.08); transform:translateY(-2px); }
 .trader-card h3 { display:flex; align-items:center; gap:10px; margin:0 0 4px; color:#141a2b; font-size:19px; font-weight:800; letter-spacing:-.4px; }

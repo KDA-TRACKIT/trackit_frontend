@@ -19,7 +19,6 @@ import "./home.css";
 import TraderCarousel from "./TraderCarousel";
 import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
 import { weekDays } from "../lib/home-calendar";
-import Image from "next/image";
 
 /** 연결된 증권사 계좌 하나와 동기화 상태 */
 type BrokerAccount = { id: string; label: string; status: SyncStatus | null };
@@ -97,7 +96,6 @@ export default function HomeDashboard() {
     <main className="home home-redesign">
       <div className="home-header-wrap">
       <SiteHeader active="home" />
-        <Image className="home-brand-icon" src="/home/brand.png" alt="" width={32} height={32} />
       </div>
       <HomeBanner />
       <section className="home-overview home-container" aria-label="나의 투자 요약">

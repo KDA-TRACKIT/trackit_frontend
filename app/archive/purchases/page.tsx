@@ -9,6 +9,7 @@ import { usePasses } from "../../../lib/purchases";
 import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
+import HoneyPot from "../../HoneyPot";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
 
@@ -91,7 +92,7 @@ export default function PurchasesPage() {
                       <div className="ar-trader-who">
                         <small>{g.t?.tagline}</small>
                         <strong>
-                          {g.name} {g.t && <span className="ar-heart">♥ {likeTotals[g.t.id] ?? 0}</span>}
+                          {g.name} {g.t && <span className="ar-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[g.t.id] ?? 0} /> {likeTotals[g.t.id] ?? 0}</span>}
                         </strong>
                         <p>{g.t?.intro}</p>
                       </div>

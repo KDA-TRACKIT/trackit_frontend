@@ -1,8 +1,9 @@
 "use client";
 // 홈 "트레이더 보드": 전략 쇼핑 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
-//   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · ♡ 좋아요, 누르면 트레이더 상세
+//   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · 꿀통 좋아요, 누르면 트레이더 상세
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import HoneyPot from "./HoneyPot";
 import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +13,7 @@ import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data
 export default function TraderCarousel() {
   const likeTotals = useLikeTotals();
   const [order, setOrder] = useState("이번 달 인기");
-  // ♥(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
+  // 꿀(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
   const BOARD = TRADERS.filter(listed).sort((a, b) => {
     if (order === "이행률 높은 순") return b.follow - a.follow || b.returns["1m"] - a.returns["1m"];
     if (order === "최근 활동") return (strategiesOf(b)[0]?.month ?? "").localeCompare(strategiesOf(a)[0]?.month ?? "") || b.returns["1m"] - a.returns["1m"];
@@ -72,7 +73,7 @@ export default function TraderCarousel() {
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <p className="home-trader-return-label">한 달 수익률</p>
               <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
-              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><Heart size={11} fill="currentColor" aria-label="좋아요" /> {likeTotals[t.id] ?? 0}</span></div>
+              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><HoneyPot count={likeTotals[t.id] ?? 0} size={13} /> {likeTotals[t.id] ?? 0}</span></div>
             </Link>
           </li>
         ))}

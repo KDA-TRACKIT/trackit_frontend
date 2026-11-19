@@ -74,7 +74,7 @@ export default function Intro() {
   return <main className="ti" ref={root}>
     <a className="ti-skip" href="#ti-features">기능 소개로 건너뛰기</a>
     <header className={motion.scrolled ? "ti-nav ti-nav-scrolled" : "ti-nav"}>
-      <a href="#ti-top" className="ti-brand">TRACKIT</a>
+      <a href="#ti-top" className="ti-brand">{/* eslint-disable-next-line @next/next/no-img-element */}<img className="brand-mark" src="/home/brand.png" alt="" width={32} height={32} />TRACKIT</a>
       {/* 소개 화면은 로그인 전에만 보여서 메뉴 없음 (가운데 칸은 남겨 로고 · 오른쪽 위치 그대로) */}
       <nav className="ti-nav-links" aria-label="주 메뉴" />
       <div className="ti-nav-right"><ThemeToggle/><Link href="/login" className="ti-nav-cta"><span>↗</span> 시작하기</Link></div>
@@ -122,6 +122,6 @@ export default function Intro() {
     <section className="ti-toolkit" id="ti-toolkit"><div className="ti-arrival" aria-hidden="true"><span/><i/></div><p className="ti-eyebrow">03 — YOUR INVESTMENT TOOLKIT</p><h2>투자의 모든 단계에,<br/>필요한 도구가 있습니다.</h2><div className="ti-toolkit-layout"><aside><span className="ti-outline-label">YOUR WORKFLOW</span><h3>생각을 분석으로.<br/>기록을 전략으로.</h3><p>매일의 작은 판단을 쌓아<br/>더 선명한 나만의 기준을 만드세요.</p></aside><div className="ti-tiles">{labels.map((label, i) => <article className={`ti-tile ti-tile-${i}`} key={label}><div><h3>{label}</h3></div><p>{["차트 위에 나만의 관점을", "다른 투자자의 관점을 만나세요", "생각이 사라지기 전에", "판단과 실행을 한 흐름으로", "경험을 가치 있는 전략으로", "기록에서 발견하는 다음 힌트"][i]}</p><Glyph kind={i}/><small>0{i + 1} / TRACKIT</small></article>)}</div></div></section>
 
     <section className="ti-ending" id="ti-start"><div className="ti-cta-panel"><p className="ti-eyebrow">YOUR NEXT CHAPTER</p><h2>당신의 다음 투자를, 더 선명하게.</h2><p>오늘의 생각이 내일의 전략이 되도록.<br/>지금, TRACKIT에서 시작하세요.</p><Link href="/login" className="ti-big-cta"><span>↗</span> TRACKIT 시작하기</Link></div></section>
-    <footer className="ti-footer"><a href="#ti-top" className="ti-brand">TRACKIT</a><span>THINK. TRADE. TRACK.</span><a href="#ti-top">맨 위로 ↑</a></footer>
+    <footer className="ti-footer"><a href="#ti-top" className="ti-brand">{/* eslint-disable-next-line @next/next/no-img-element */}<img className="brand-mark" src="/home/brand.png" alt="" width={32} height={32} />TRACKIT</a><span>THINK. TRADE. TRACK.</span><a href="#ti-top">맨 위로 ↑</a></footer>
   </main>;
 }

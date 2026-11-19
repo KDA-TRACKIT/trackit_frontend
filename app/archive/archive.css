@@ -497,7 +497,7 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-trader:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
 .ar-trader-who small { display:block; color:var(--c-sub); font-size:12px; font-weight:600; }
 .ar-trader-who strong { display:flex; align-items:center; gap:8px; margin:6px 0 4px; font-size:21px; font-weight:800; }
-.ar-heart { color:#d64545; font-size:12px; font-weight:600; }
+.ar-heart { display:inline-flex; align-items:center; gap:3px; vertical-align:middle; color:#b9770e; font-size:12px; font-weight:600; }
 .ar-trader-who p { margin:0; color:var(--c-sub); font-size:13px; }
 .ar-trader-stat small { display:block; color:var(--c-sub); font-size:12px; }
 .ar-trader-stat b { display:block; margin-top:6px; font-size:18px; font-weight:700; white-space:nowrap; }
