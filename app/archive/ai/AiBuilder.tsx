@@ -15,11 +15,11 @@ import { monthLabel } from "../../marketplace/data";
 
 const MAX = 10;
 
-export default function AiBuilder() {
+export default function AiBuilder({ initialPick = [] }: { initialPick?: string[] }) {
   const router = useRouter();
   const { items, loading } = useArchive();
   const [view, setView] = useState<View>("list");
-  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [picked, setPicked] = useState<Set<string>>(() => new Set(initialPick));
   const [request, setRequest] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editing, setEditing] = useState(false);
