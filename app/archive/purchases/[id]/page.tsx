@@ -117,9 +117,6 @@ export default function PurchasedTraderPage() {
             )}{" "}
             전략
           </h1>
-          <Link href="/mypage/purchases" className="ar-pt-manage">
-            내 열람권 관리 →
-          </Link>
         </div>
 
         {!month ? (
