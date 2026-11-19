@@ -14,6 +14,8 @@ export type Drawing = {
   style: DrawingStyle;
   /** 텍스트·노트·말풍선처럼 글이 들어가는 툴만 */
   text?: string;
+  /** 잠금: 고를 순 있지만 끌어서 옮기거나 점을 바꿀 수 없음 (선택 막대의 자물쇠로 풂) */
+  locked?: boolean;
 };
 
 /** 왼쪽 도구 바의 그룹 */

@@ -24,6 +24,7 @@ import IndicatorPicker from "./IndicatorPicker";
 import type { AvgPrice } from "../../hooks/useAvgPrice";
 import ColorSwatches from "./ColorSwatches";
 import Image from "next/image";
+import { Lock, LockOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
 import { DrawingLayer, fromChartTime, toChartTime } from "../../lib/drawing/render/lwc-adapter";
@@ -977,6 +978,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const orig = id ? drawingsRef.current.find((d) => d.id === id) : undefined;
       if (!id || !orig) return;
       event.stopPropagation();
+      // 잠근 드로잉: 고르기만 (선택 막대에서 풀 수 있게), 끌어서 옮기지 않음
+      if (orig.locked) {
+        selectDrawing(id);
+        skipClick = true;
+        return;
+      }
       // 도구는 그대로 들고 있는다 (빈 곳을 누르면 바로 새로 그림)
       selectDrawing(id);
       skipClick = true;
@@ -1000,7 +1007,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       }
       const { x, y } = localXY(event);
       const sel = layer.selected();
-      const onHandle = sel ? layer.handleAt(sel, x, y) !== null : false;
+      const selLocked = !!sel && !!drawingsRef.current.find((d) => d.id === sel)?.locked;
+      const onHandle = sel && !selLocked ? layer.handleAt(sel, x, y) !== null : false;
       const id = onHandle ? sel : layer.drawingAt(x, y);
       layer.setHovered(id);
       if (!id && hoverScenario(x, y)) {
@@ -1867,7 +1875,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       const pr = y === null ? null : layer.yToPrice(y + 18);
       return t === null || pr === null ? p : { time: t, price: String(Math.round(pr)) };
     });
-    const copy = { ...d, id: uuid(), points };
+    const copy = { ...d, id: uuid(), points, locked: undefined }; // 복제본은 잠그지 않은 채로
     commit([...drawingsRef.current, copy]);
     selectDrawing(copy.id);
   }
@@ -2401,6 +2409,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                 </button>
               )}
               <span className="ws-draw-edit-sep" />
+              {/* 잠금: 잠그면 이 드로잉은 끌어서 옮길 수 없음 (풀어야 움직임) */}
+              <button
+                className={selectedDrawing.locked ? "on" : ""}
+                aria-pressed={!!selectedDrawing.locked}
+                onClick={() => updateSelected({ locked: !selectedDrawing.locked })}
+                title={selectedDrawing.locked ? "잠김: 옮길 수 없어요. 누르면 풀림" : "잠그기: 실수로 옮겨지지 않게"}
+                aria-label={selectedDrawing.locked ? "잠금 풀기" : "잠그기"}
+              >
+                {selectedDrawing.locked ? <Lock size={17} strokeWidth={1.9} aria-hidden /> : <LockOpen size={17} strokeWidth={1.9} aria-hidden />}
+              </button>
               <button onClick={duplicateSelected} title="복제">
                 ⧉
               </button>

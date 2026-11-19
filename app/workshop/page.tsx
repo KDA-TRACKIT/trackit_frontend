@@ -347,14 +347,15 @@ export default function WorkshopPage() {
   /** AI 분석 대상: Memo + 그은 선 (이게 바뀌면 다시 분석해야 저장) */
   const inputKey = JSON.stringify([noteText.trim(), drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
   const analyzed = !!aiMemoResult && analyzedKey === inputKey;
-  async function saveToRecord() {
-    if (memoBusy) return;
+  /** AI 분석 (그은 선 + Memo). 결과가 들어오면 true */
+  async function saveToRecord(): Promise<boolean> {
+    if (memoBusy) return false;
     const key = inputKey;
     setMemoBusy(true);
     setSaveMessage("저장 중…");
     try {
       // 일지·작도 저장이 성공한 경우에만 저장된 최신 내용을 AI에 보낸다.
-      if (!(await saveChart())) return;
+      if (!(await saveChart())) return false;
       const result = await requestChartMemo({
         symbol: { code: symbol.code, name: symbol.name },
         interval,
@@ -383,8 +384,8 @@ export default function WorkshopPage() {
       setAiMemoResult(result);
       setAnalyzedKey(key);
       // 필수 항목을 따로 채우지 않아도 되게: AI 방향 + 그은 선으로 진입 조건 · 손절 · 목표를 미리 채움
-      setPlan(autoPlan(EMPTY_PLAN, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction, bars));
-      setLineMeaning({});
+      //   투자자가 그은 선에서 이미 고른 매매(콤보박스)는 그대로 두고 빈 칸만 채움
+      setPlan(autoPlan(plan, drawings, bars[bars.length - 1]?.time, daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close, money, result.direction, bars));
       setConfirmedAt(null);
       setAfterNotes([]);
       setSuggestion(result.suggestion ?? result.summary ?? "");
@@ -395,9 +396,11 @@ export default function WorkshopPage() {
       setLinkChoice("auto");
       setSaveMessage("자동 저장됨");
       setSaveDetail("AI가 차트 노트를 정리했어요");
+      return true;
     } catch (error) {
       setSaveMessage("저장 실패");
       setSaveDetail(`AI 정리 실패: ${errorMessage(error)}`);
+      return false;
     } finally {
       setMemoBusy(false);
     }
@@ -512,6 +515,12 @@ export default function WorkshopPage() {
     setConfirming(false);
     setConfirmed(true);
     setConfirmedAt(nowKst());
+  }
+
+  /** AI 분석 후 저장: Memo + 그은 선을 AI 가 분석하고 → 바로 저장 확인 창 (Memo 와 분석을 합친 글). 이미 같은 내용으로 분석했으면 바로 창 */
+  async function analyzeAndReview() {
+    if (analyzed) return openReview();
+    if (await saveToRecord()) openReview();
   }
 
   /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 정리(눌렀으면) + 고른 매매 */
@@ -837,32 +846,23 @@ ${t}` : t))}
                   확정 완료
                 </button>
               ) : (
-                // 순서: 그은 선 + Memo 를 AI 가 종합 분석 → 그다음 확인하고 저장 (분석 뒤 Memo · 선을 바꾸면 다시 분석)
-                //   누르면 큰 확인 창 (저장될 차트 · AI 분석 · 종목 전략)
-                analyzed ? (
-                  <button className="ws-save" onClick={openReview}>
-                    확인하고 저장
+                // AI 분석 후 저장: 누르면 그은 선 + Memo 를 AI 가 분석하고, 끝나면 저장 확인 창 (Memo 와 AI 분석을 합친 글 · 차트 · 종목 전략)
+                <>
+                  <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void analyzeAndReview()}>
+                    {memoBusy ? "AI 분석 중…" : "AI 분석 후 저장"}
                   </button>
-                ) : (
-                  <>
-                    <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void saveToRecord()}>
-                      {memoBusy ? "AI 분석 중…" : aiMemoResult ? "바뀐 내용 다시 AI 분석" : "AI 분석"}
-                    </button>
-                    <p className="ws-save-hint">
-                      {!noteText.trim() && !drawings.length
-                        ? "선을 긋거나 Memo 를 적으면 AI 분석을 할 수 있어요."
-                        : aiMemoResult
-                          ? "분석 뒤 Memo · 선이 바뀌었어요. 다시 분석하면 저장할 수 있어요."
-                          : (
-                            <>
-                              그은 선과 Memo 를 AI 가 함께 분석한 뒤 확인하고
-                              <br />
-                              저장할 수 있어요.
-                            </>
-                          )}
-                    </p>
-                  </>
-                )
+                  <p className="ws-save-hint">
+                    {!noteText.trim() && !drawings.length ? (
+                      "선을 긋거나 Memo 를 적으면 AI 분석 후 저장할 수 있어요."
+                    ) : (
+                      <>
+                        드로잉과 Memo 를 AI 가 함께 분석한 뒤
+                        <br />
+                        저장할 내용을 보여 드려요.
+                      </>
+                    )}
+                  </p>
+                </>
               )}
               {confirming && review && (
                 <SaveReview
