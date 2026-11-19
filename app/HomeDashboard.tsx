@@ -94,9 +94,7 @@ export default function HomeDashboard() {
 
   return (
     <main className="home home-redesign">
-      <div className="home-header-wrap">
       <SiteHeader active="home" />
-      </div>
       <HomeBanner />
       <section className="home-overview home-container" aria-label="나의 투자 요약">
         <ReturnChart data={data} failed={!!error} />
@@ -145,8 +143,8 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
   }, [data]);
 
   const last = series?.length ? series[series.length - 1].v : null;
-  const W = 580;
-  const H = 130;
+  const W = 500;
+  const H = 112;
   const chart = useMemo(() => {
     if (!series || series.length < 2) return null;
     const vals = [0, ...series.map((s) => s.v)];
@@ -162,11 +160,13 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
     const y = (v: number) => H - ((v - lo) / (hi - lo)) * H;
     const points = series.map((s) => `${x(s.t).toFixed(1)},${y(s.v).toFixed(1)}`).join(" ");
     const ticks = Array.from({ length: 5 }, (_, i) => hi - ((hi - lo) * i) / 4);
-    const dates = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(t0 + ((t1 - t0) * i) / 5 + 9 * 3_600_000);
+    const dates = Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(t0 + ((t1 - t0) * i) / 4 + 9 * 3_600_000);
       return `${String(d.getUTCMonth() + 1).padStart(2, "0")}.${String(d.getUTCDate()).padStart(2, "0")}`;
     });
-    return { points, ticks, dates, zeroY: y(0) };
+    const zeroY = y(0);
+    const area = `0,${zeroY} ${points} ${x(t1)},${zeroY}`;
+    return { points, area, ticks, dates, zeroY };
   }, [series]);
 
   return (
@@ -175,7 +175,7 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
       {data === null ? (
         failed ? <strong>—</strong> : <strong className="skel-line" aria-busy="true" />
       ) : (
-        <strong className={tone(last)}>{last === null ? "—" : pct(last)}</strong>
+        <strong className={tone(last)}>{last === null ? "—" : pct(last, 2)}</strong>
       )}
       {chart ? (
         <div className="chart">
@@ -187,6 +187,7 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
           <div className="chart-body">
             <div className="grid-lines" />
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-label="누적 수익률 차트">
+              <polygon points={chart.area} className={`home-chart-area ${tone(last)}`} />
               <line x1="0" x2={W} y1={chart.zeroY} y2={chart.zeroY} className="zero-line" />
               <polyline points={chart.points} fill="none" className={`line ${tone(last)}`} strokeWidth="2" vectorEffect="non-scaling-stroke" />
             </svg>

@@ -1,9 +1,8 @@
 "use client";
 // 홈 "트레이더 보드": 전략 마켓 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
-//   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · 꿀통 좋아요, 누르면 트레이더 상세
+//   카드: 프로필 · 이름 · 한 달 수익률 · 판매 등급 · 전략 이행률 · 받은 꿀
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import HoneyPot from "./HoneyPot";
 import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
@@ -68,13 +67,27 @@ export default function TraderCarousel() {
             <Link href={`/marketplace/${t.id}`} className="trader-card">
               <h3>
                 <b className="home-trader-rank">{index + 1}</b>
-                <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/avatar.svg" alt="" width={30} height={30} /><Image src="/home/avatar-icon.svg" alt="" width={18} height={18} /></span>
-                <span>{t.name}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+                <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/leaderboard-avatar.svg" alt="" width={30} height={30} /><Image src="/home/leaderboard-avatar-icon.svg" alt="" width={18} height={18} /></span>
+                <span>{t.name}</span>
               </h3>
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
-              <p className="home-trader-return-label">한 달 수익률</p>
-              <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
-              <div className="home-trader-footer"><span>이행률 {t.follow}%</span><span><HoneyPot count={likeTotals[t.id] ?? 0} size={13} /> {likeTotals[t.id] ?? 0}</span></div>
+              <div className="home-trader-metrics">
+                <div>
+                  <p className="home-trader-metric-label">한 달 수익률</p>
+                  <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
+                </div>
+                <div>
+                  <p className="home-trader-metric-label">등급</p>
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} />
+                </div>
+              </div>
+              <div className="home-trader-footer">
+                <span>이행률 {t.follow}%</span>
+                <span className="home-trader-honey" aria-label={`받은 꿀 ${likeTotals[t.id] ?? 0}개`}>
+                  <Image src="/home/leaderboard-honey.svg" alt="" width={11.42} height={14.34} />
+                  {likeTotals[t.id] ?? 0}
+                </span>
+              </div>
             </Link>
           </li>
         ))}
