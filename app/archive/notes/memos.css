@@ -72,7 +72,8 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-group + .mm-group { border-top:1px solid #eef2f6; }
 .mm-day { padding:16px 20px 6px; color:#1c212b; font-size:13px; font-weight:600; }
 .mm-day small { margin-left:4px; color:#8791a3; font-size:12px; font-weight:500; }
-.mm-stock-head { padding:11px 20px; background:#f7f9fc; }
+/* 묶음 머리 띠: 리스트형 날짜 · 종목형 종목이 같은 모양 (회색 띠 + 굵은 이름 + 회색 '노트 N개') */
+.mm-band { padding:11px 20px; background:#f7f9fc; }
 .mm-row { position:relative; display:flex; flex-direction:column; gap:8px; padding:16px 20px; }
 .mm-row + .mm-row { border-top:1px solid #eef2f6; }
 .mm-row:hover { background:#f9fafc; }
@@ -268,7 +269,7 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 html[data-theme="dark"] .mm-page :is(.mm-card, .mm-filters, .mm-select, .mm-tool, .mm-today, .mm-back, .mm-other, .mm-flow > span, .mm-btn.ghost, .mm-tools .mm-pin) { border-color:var(--c-line); }
 html[data-theme="dark"] .mm-page :is(.mm-list-head b, .mm-day, .mm-row-who b, .mm-detail-head h2, .mm-detail-text, .mm-box-head b, .mm-flow b, .mm-others h3, .mm-cal-nav h2, .mm-cell-day, .mm-side-top b, .mm-side-day b, .mm-empty b, .mm-today, .mm-back, .mm-btn.ghost, .mm-legend-ret > b) { color:var(--c-ink); }
 html[data-theme="dark"] .mm-page :is(.mm-row-text, .mm-side-text, .mm-other > span:not(.mm-badge), .mm-flow p, .mm-select, .mm-sort, .mm-tool, .mm-more) { color:var(--c-ink-2); }
-html[data-theme="dark"] .mm-page :is(.mm-search, .mm-box, .mm-chart, .mm-stock-head, .mm-side-day, .mm-cell, .mm-views) { background:var(--c-subtle); }
+html[data-theme="dark"] .mm-page :is(.mm-search, .mm-box, .mm-chart, .mm-band, .mm-side-day, .mm-cell, .mm-views) { background:var(--c-subtle); }
 html[data-theme="dark"] .mm-page :is(.mm-group + .mm-group, .mm-row + .mm-row, .mm-list-head, .mm-side-row, .mm-side-day, .mm-side-none, .mm-actions, .mm-detail-nav, .mm-more) { border-color:var(--c-line); }
 html[data-theme="dark"] .mm-page :is(.mm-row:hover, .mm-side-row:hover, .mm-other:hover, .mm-more:hover) { background:var(--c-hover); }
 html[data-theme="dark"] .mm-page .mm-row.on { background:var(--c-hover); box-shadow:inset 3px 0 0 #7c9be0; }

@@ -260,8 +260,8 @@ export default function MemosPage() {
               ) : (
                 byDay(listed).map((g) => (
                   <div key={g.date} className="mm-group">
-                    <div className="mm-day">
-                      {shortDate(g.date)} <small>{weekdayOf(g.date)}요일</small>
+                    <div className="mm-day mm-band">
+                      {shortDate(g.date)} <small>{weekdayOf(g.date)}요일 · 노트 {g.items.length}개</small>
                     </div>
                     {g.items.map((m) => (
                       <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={setSel} />
@@ -346,7 +346,7 @@ function StockGroups({ memos, pins, sel, onSelect }: { memos: Memo[]; pins: Read
     <>
       {shown.map((g) => (
         <div key={g.subject} className="mm-group">
-          <div className="mm-day mm-stock-head">
+          <div className="mm-day mm-band">
             {g.subject} <small>노트 {g.items.length}개</small>
           </div>
           {g.items.map((m) => (
