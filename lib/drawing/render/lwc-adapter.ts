@@ -176,7 +176,15 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
   timeToX(time: number): number | null {
     if (!this.param) return null;
     const logical = this.timeToLogical(time);
-    return logical === null ? null : this.param.chart.timeScale().logicalToCoordinate(logical as Logical);
+    if (logical === null) return null;
+    // lightweight-charts 는 소수 논리 인덱스를 0 으로 돌려줘서(봉 사이 · 다른 간격에서 그린 점), 앞뒤 정수 봉 사이를 직접 보간
+    //   예) 일봉에서 그린 피보 · 추세선을 주봉으로 보면 점이 봉 사이에 놓여 모두 x=0 → 깨져 보였음
+    const ts = this.param.chart.timeScale();
+    const i = Math.floor(logical);
+    const x0 = ts.logicalToCoordinate(i as Logical);
+    if (x0 === null || logical === i) return x0;
+    const x1 = ts.logicalToCoordinate((i + 1) as Logical);
+    return x1 === null ? x0 : x0 + (x1 - x0) * (logical - i);
   }
 
   /** x → 실제 시각. 봉이 있는 구간은 가장 가까운 봉, 그 밖은 봉 간격으로 늘린 시각 */
