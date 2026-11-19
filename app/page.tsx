@@ -4,6 +4,7 @@
 import { useProfile } from "./AccountChip";
 import HomeDashboard from "./HomeDashboard";
 import HomeInvestmentPrompt from "./HomeInvestmentPrompt";
+import HomePolicies from "./HomePolicies";
 import Intro from "./intro/Intro";
 import "./intro/intro.css";
 
@@ -13,5 +14,8 @@ export default function Home() {
   return profile ? <>
     <HomeDashboard />
     {!profile.hasInvestment && <HomeInvestmentPrompt key={`${profile.userId}:${profile.lastSignInAt}`} userId={profile.userId} lastSignInAt={profile.lastSignInAt} />}
-  </> : <Intro />;
+  </> : <>
+    <Intro />
+    <footer><HomePolicies /></footer>
+  </>;
 }
