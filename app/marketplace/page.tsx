@@ -201,18 +201,20 @@ function MarketplaceList() {
               return (
                 <div key={p.key} className="mk-period-all">
                   {tab}
-                  <span className="mk-help" onMouseEnter={fitTip} onFocus={fitTip}>
-                    <button type="button" className="mk-help-btn" aria-label="'전체' 기간 설명" aria-describedby="mk-help-all">
-                      {/* 글꼴마다 '?' 높이가 달라 원 가운데에서 어긋나므로 그림으로 그림 (그림 상자 = 물음표 테두리 → 원 정가운데) */}
-                      <svg viewBox="2.5 1.5 7 12.3" width="5" height="8.8" aria-hidden="true">
-                        <path d="M3.5 5a2.5 2.5 0 1 1 4.415 1.607C7.401 7.22 6 7.6 6 8.3v.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <circle cx="6" cy="12.65" r="1.15" fill="currentColor" />
-                      </svg>
-                    </button>
-                    <span id="mk-help-all" role="tooltip" className="mk-help-tip">
-                      첫 기록 달부터 {asOf}까지
+                  {period === "all" && (
+                    <span className="mk-help" onMouseEnter={fitTip} onFocus={fitTip}>
+                      <button type="button" className="mk-help-btn" aria-label="'전체' 기간 설명" aria-describedby="mk-help-all">
+                        {/* 글꼴마다 '?' 높이가 달라 원 가운데에서 어긋나므로 그림으로 그림 (그림 상자 = 물음표 테두리 → 원 정가운데) */}
+                        <svg viewBox="2.5 1.5 7 12.3" width="5" height="8.8" aria-hidden="true">
+                          <path d="M3.5 5a2.5 2.5 0 1 1 4.415 1.607C7.401 7.22 6 7.6 6 8.3v.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <circle cx="6" cy="12.65" r="1.15" fill="currentColor" />
+                        </svg>
+                      </button>
+                      <span id="mk-help-all" role="tooltip" className="mk-help-tip">
+                        전체는 첫 기록 달부터 {asOf}까지
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </div>
               );
             })}
