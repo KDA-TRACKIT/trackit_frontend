@@ -8,7 +8,6 @@ import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { startCheckout } from "../../lib/api/payments";
 import { errorMessage } from "../../lib/api/client";
 import { opened, redeem, unusedPasses, usePasses } from "../../lib/purchases";
-import { inCart, toggleCart, useCart } from "../../lib/cart";
 import type { Strategy, Trader } from "./data";
 
 /** 누적 수익 곡선 (월 수익률을 이어 붙임). 끝이 위면 초록, 아래면 빨강 */
@@ -129,39 +128,6 @@ export function FavButton({ id, name, label = false }: { id: string; name: strin
       {on ? "★" : "☆"}
       {label && <span>{on ? "즐겨찾기 중" : "즐겨찾기"}</span>}
     </button>
-  );
-}
-
-/** 🛒 장바구니 담기: 아직 안 연 유료 전략만. 담은 전략은 /marketplace/cart 에서 트레이더별로 한 번에 열람권을 사고 연다 */
-export function CartButton({ trader, strategy }: { trader: Trader; strategy: Strategy }) {
-  const cart = useCart();
-  const passes = usePasses();
-  if (strategy.free || opened(passes, trader.id, strategy.month)) return null;
-  const on = inCart(cart, trader.id, strategy.month);
-  return (
-    <button
-      type="button"
-      className={`mk-cart-btn${on ? " on" : ""}`}
-      aria-pressed={on}
-      title={on ? "장바구니에서 빼기" : "장바구니에 담기 (나중에 한 번에 열기)"}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleCart(trader.id, strategy.month, strategy.title);
-      }}
-    >
-      {on ? "담김 ✓" : "담기"}
-    </button>
-  );
-}
-
-/** 장바구니 바로가기 (담은 개수) */
-export function CartLink() {
-  const cart = useCart();
-  return (
-    <Link href="/marketplace/cart" className="mk-cart-link">
-      장바구니{cart.length ? <b>{cart.length}</b> : null}
-    </Link>
   );
 }
 

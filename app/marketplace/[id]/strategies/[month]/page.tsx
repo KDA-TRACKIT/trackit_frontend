@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "../../../../SiteHeader";
 import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../../data";
-import { CartButton, StrategyButton, useNotice } from "../../../parts";
+import { StrategyButton, useNotice } from "../../../parts";
 import StrategyChart from "../../../StrategyChart";
 import { GradeBadge } from "../../../GradeParts";
 import { useDark, type SimDetail } from "../../../GuessFirst";
@@ -109,7 +109,6 @@ export default function StrategyView() {
             </ul>
             <p>열면 차트에 그은 선, 진입 · 손절 · 목표 근거, 매매를 시간순으로, 계획대로 했는지까지 볼 수 있어요. 매매는 진입한 달 전략에 들어가요.</p>
             <div className="mk-buyrow">
-              <CartButton trader={t} strategy={s} />
               <StrategyButton trader={t} strategy={s} className="mk-primary" notify={notify} />
             </div>
           </section>

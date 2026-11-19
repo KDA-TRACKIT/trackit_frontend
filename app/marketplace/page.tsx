@@ -9,7 +9,7 @@ import { rememberListUrl } from "../../lib/market-list";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, PERIOD_MONTHS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
-import { CartLink, FavButton, Pager, Range2, Spark } from "./parts";
+import { FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
 import HoneyPot from "../HoneyPot";
 import "./marketplace.css";
@@ -213,7 +213,6 @@ function MarketplaceList() {
                 </ul>
               )}
             </div>
-            <CartLink />
             <button type="button" className={`mk-filter-btn${nFilter ? " on" : ""}`} onClick={() => setOpen(true)} aria-label={nFilter ? `필터 ${nFilter}개 적용됨` : "필터"}>
               <SlidersHorizontal size={15} aria-hidden />
               필터

@@ -6,7 +6,7 @@ import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
-import { CartButton, FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
+import { FavButton, PassBuyBox, StrategyButton, useNotice } from "../parts";
 import { GradeBadge } from "../GradeParts";
 import HoneyPot from "../../HoneyPot";
 import { unusedPasses, usePasses } from "../../../lib/purchases";
@@ -152,7 +152,6 @@ export default function TraderPage() {
                 </div>
                 <strong>{won(s.price)}</strong>
                 <div className="mk-buyrow">
-                  <CartButton trader={t} strategy={s} />
                   <StrategyButton trader={t} strategy={s} className="mk-soft" notify={notify} />
                 </div>
               </article>
