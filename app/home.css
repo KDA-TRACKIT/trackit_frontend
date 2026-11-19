@@ -39,7 +39,8 @@
 .home-section-heading h2 { margin:0; color:var(--c-ink,#151515); font-size:27px; line-height:34px; font-weight:600; letter-spacing:-.6px; }
 .home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:12px; height:42px; padding:0 24px; border-radius:12px; background:#0f2367; color:#fff; font-size:16px; font-weight:600; }
 .home-action:hover { background:#203777; }
-.home-leaderboard-tabs { display:flex; flex-wrap:wrap; gap:7px; margin:-2px 0 10px; }
+/* 제목 → 정렬 탭 → 카드 간격 (제목 글자 아래 20 · 탭 아래 20, 카드끼리 간격 20 과 맞춤) */
+.home-leaderboard-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 20px; }
 .home-leaderboard-tabs button { height:32px; padding:0 13px; border:1px solid var(--home-line); border-radius:12px; background:var(--c-surface,#fff); color:var(--home-navy); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .home-leaderboard-tabs button[aria-pressed="true"] { border-color:#0f2367; background:#0f2367; color:#fff; }
 .home-redesign .trader-grid { grid-auto-columns:calc((100% - 80px) / 4.7); gap:20px; }
