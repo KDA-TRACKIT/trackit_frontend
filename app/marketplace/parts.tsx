@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { PURCHASE_NOTICE } from "./policy";
-// 전략 쇼핑 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 열람권 구매 · 열람권으로 열기
+// 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 열람권 구매 · 열람권으로 열기
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";

@@ -1,5 +1,5 @@
 "use client";
-// 홈 "트레이더 보드": 전략 쇼핑 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
+// 홈 "트레이더 보드": 전략 마켓 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
 //   카드(시안): 프로필 일러스트 · 이름 · 수익률(3개월, + 초록 · − 빨강) · 전략이행률 · 꿀통 좋아요, 누르면 트레이더 상세
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";

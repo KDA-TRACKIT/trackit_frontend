@@ -1,4 +1,4 @@
-/* 아카이브 (구매한 전략 · 나의 기록) — 전략 쇼핑 스타일(marketplace.css) 위에 */
+/* 전략보관함 (구매한 전략 · 나의 기록) — 전략 마켓 스타일(marketplace.css) 위에 */
 .ar-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .ar-go { display:inline-flex; align-items:center; margin-bottom:18px; text-decoration:none; }
 .ar-summary { margin:-8px 0 16px; color:var(--c-sub); font-size:13.5px; }
@@ -39,7 +39,7 @@
 .ar-badge.thought { background:var(--c-subtle); color:var(--c-sub); }
 @media (max-width:640px) { .ar-row { grid-template-columns:1fr; } .ar-side { align-items:flex-start; } }
 
-/* 아카이브 첫 화면 */
+/* 전략보관함 첫 화면 */
 .ar-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 .ar-card { display:flex; flex-direction:column; gap:6px; padding:22px; color:inherit; text-decoration:none; transition:border-color .15s, transform .15s; }
 .ar-card:hover { border-color:var(--c-line-strong); transform:translateY(-2px); }
@@ -80,7 +80,7 @@
 @media (max-width:800px) { .ar-cards { grid-template-columns:1fr; } }
 
 
-/* ───────── 아카이브 허브 (목록 · 보드 · 차트) · AI 전략 만들기 · 내 전략 ───────── */
+/* ───────── 전략보관함 허브 (목록 · 보드 · 차트) · AI 전략 만들기 · 내 전략 ───────── */
 .ar-page { --ar-k-strategy:#8b5cf6; --ar-k-journal:#344d7d; --ar-k-note:#2f9e5b; --ar-k-chart:#d9822b; --ar-k-news:#1592a6; --ar-ai:linear-gradient(100deg,#344d7d,#6d4fd1); }
 html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-wrap { width:min(1080px, calc(100% - 48px)); }
@@ -556,3 +556,9 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-symbol-entries { display:flex; flex-direction:column; gap:12px; max-height:280px; overflow-y:auto; margin-top:10px; }
 .ar-symbol-entries b { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
 .ar-symbol-entries p { margin-top:3px; font-size:13.5px; line-height:21px; white-space:pre-wrap; word-break:keep-all; }
+
+/* 트레이더 카드 · 보유 열람권 티켓 (시안 Trackit (3)) */
+.ar-trader-stat b.ar-tickets { display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:4px; white-space:nowrap; }
+.ar-tickets svg { display:inline-block; }
+.ar-tickets .ar-ticket { flex:none; }
+.ar-tickets .ar-ticket:last-of-type { margin-right:4px; }

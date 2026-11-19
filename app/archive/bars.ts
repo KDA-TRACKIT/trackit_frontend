@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 차트용 일봉 (국내 6자리 종목만). 한 번 받은 건 화면을 옮겨도 다시 안 받음
+// 전략보관함 차트용 일봉 (국내 6자리 종목만). 한 번 받은 건 화면을 옮겨도 다시 안 받음
 import { useEffect, useState } from "react";
 import { fetchBars } from "../../lib/market-data";
 import type { Bar } from "../../lib/interval";

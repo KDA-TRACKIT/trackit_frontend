@@ -1,5 +1,5 @@
 "use client";
-// 먼저 판단해 보기 (아카이브 · 구매한 전략의 연습하기에서 씀) + 월별 전략 데이터 타입 · 다크 모드 훅
+// 먼저 판단해 보기 (전략보관함 · 구매한 전략의 연습하기에서 씀) + 월별 전략 데이터 타입 · 다크 모드 훅
 //   판매자가 이 종목을 처음 산 날 바로 전까지만 차트를 보여 주고, 매수 / 관망을 고른 뒤 판매자의 판단과 결과를 비교
 import { useMemo, useState, useSyncExternalStore } from "react";
 import WorkshopChart from "../workshop/WorkshopChart";

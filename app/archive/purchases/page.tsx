@@ -1,7 +1,9 @@
 "use client";
-// 아카이브 · 구매한 전략: 산 열람권과 열람권으로 연 전략 (계정에 저장, lib/purchases → GET /me/passes)
-//   무료로 본 전략(트레이더 첫 공개 전략)도 같이 (lib/free-views, 이 브라우저)
-//   실제 판매 등록을 산 것 → 서버 GET /market/purchases
+// 전략보관함 첫 화면 = 구매한 전략의 트레이더 (시안 Trackit (3) "전략보관함-구매한 전략 (열람권 시각화)")
+//   열람권을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 열람권(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
+//   카드를 누르면 그 트레이더의 월별 전략 (/archive/purchases/[id])
+//   열람권 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
+//   실제 판매 등록을 산 것(서버 GET /market/purchases)은 있으면 아래에 따로
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
@@ -9,7 +11,7 @@ import { apiRequest } from "../../../lib/api/client";
 import { usePasses } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
-import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
+import { monthLabel, pct, tone, traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
 import HoneyPot from "../../HoneyPot";
 import "../../marketplace/marketplace.css";
@@ -29,6 +31,18 @@ type ServerPurchase = {
 const won = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "");
 const STATUS: Record<string, string> = { PAID: "결제 완료", PENDING: "결제 대기", REFUNDED: "환불", FAILED: "실패" };
+const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
+
+/** 열람권 한 장 (노란 티켓) */
+function Ticket() {
+  return (
+    <svg className="ar-ticket" width="32" height="20" viewBox="0 0 32 20" aria-hidden focusable="false">
+      <path d="M3 1h26a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v4a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-4a3 3 0 0 0 0-6V3a2 2 0 0 1 2-2z" fill="#f2b10c" />
+      <path d="M12 3.5v13" stroke="#fff" strokeWidth="1.2" strokeDasharray="1.6 1.6" />
+      <circle cx="20" cy="10" r="2.6" fill="#fff" />
+    </svg>
+  );
+}
 
 export default function PurchasesPage() {
   const passes = usePasses();
@@ -46,13 +60,6 @@ export default function PurchasesPage() {
       });
   }, []);
 
-  const unused = passes.filter((p) => !p.used);
-  const used = passes.filter((p) => p.used).sort((a, b) => (b.used!.at ?? "").localeCompare(a.used!.at ?? ""));
-  // 남은 열람권은 트레이더별로 묶어 장수로
-  const byTrader = [...new Map(unused.map((p) => [p.traderId, { traderId: p.traderId, name: p.traderName, count: unused.filter((x) => x.traderId === p.traderId).length }])).values()];
-  const total = passes.reduce((a, p) => a + p.amount, 0) + (server ?? []).filter((p) => p.paymentStatus === "PAID").reduce((a, p) => a + Number(p.price), 0);
-  const nothing = server !== null && !passes.length && !server.length && !freeViews.length;
-  // 시안: 열람권을 산 트레이더별 카드 (보유 열람권 · 전략 이행률 · 최근 1개월 수익률 · 보유 전략)
   // 열람권을 산 트레이더 + 무료 전략만 본 트레이더
   const traders = [...new Set([...passes.map((p) => p.traderId), ...freeViews.map((v) => v.traderId)])].map((id) => {
     const mine = passes.filter((p) => p.traderId === id);
@@ -61,22 +68,13 @@ export default function PurchasesPage() {
     const months = [...new Set([...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.map((v) => v.month)])].sort().reverse();
     return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, count: mine.length, months, ret: t?.monthly.at(-1)?.ret ?? null };
   });
-  const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
+  const nothing = server !== null && !traders.length && !server.length;
 
   return (
     <main className="mk-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
         <h1 className="mk-title">트레이더</h1>
-        <p className="ar-summary">
-          {server === null ? (
-            "불러오는 중…"
-          ) : nothing ? null : (
-            <>
-              열람권 <b>{passes.length}</b>장 (남은 {unused.length}장) · 연 전략 <b>{used.length + (server?.length ?? 0) + freeViews.length}</b>개 · 결제 합계 <b>{won(total)}</b>
-            </>
-          )}
-        </p>
         {error && <p className="ar-note">{error}</p>}
 
         {nothing ? (
@@ -84,7 +82,7 @@ export default function PurchasesPage() {
             아직 산 열람권이 없어요. 트레이더의 열람권을 사면 월별 전략 하나를 골라 열 수 있어요.
             <br />
             <Link href="/marketplace" className="ar-link">
-              전략 쇼핑 둘러보기 ›
+              전략 마켓 둘러보기 ›
             </Link>
           </div>
         ) : (
@@ -97,13 +95,28 @@ export default function PurchasesPage() {
                       <div className="ar-trader-who">
                         <small>{g.t?.tagline}</small>
                         <strong>
-                          {g.t && <GradeBadge grade={g.t.grade?.grade} unrated={g.t.grade?.unrated} small />} {g.name} {g.t && <span className="ar-heart" title="받은 꿀 합계"><HoneyPot count={likeTotals[g.t.id] ?? 0} /> {likeTotals[g.t.id] ?? 0}</span>}
+                          {g.t && <GradeBadge grade={g.t.grade?.grade} unrated={g.t.grade?.unrated} small />} {g.name}{" "}
+                          {g.t && (
+                            <span className="ar-heart" title="받은 꿀 합계">
+                              <HoneyPot count={likeTotals[g.t.id] ?? 0} /> {likeTotals[g.t.id] ?? 0}
+                            </span>
+                          )}
                         </strong>
-                        <p>{g.t?.intro}</p>
                       </div>
                       <div className="ar-trader-stat">
                         <small>보유 열람권</small>
-                        <b>{g.count}개</b>
+                        <b className="ar-tickets" title={`열람권 ${g.count}장`}>
+                          {g.count ? (
+                            <>
+                              {Array.from({ length: Math.min(g.count, 3) }, (_, i) => (
+                                <Ticket key={i} />
+                              ))}
+                              {g.count}개
+                            </>
+                          ) : (
+                            "무료 전략"
+                          )}
+                        </b>
                       </div>
                       <div className="ar-trader-stat">
                         <small>전략 이행률</small>
@@ -122,108 +135,11 @@ export default function PurchasesPage() {
                 ))}
               </ul>
             )}
-            {byTrader.length > 0 && (
-              <section className="ar-day">
-                <h2>남은 열람권</h2>
-                <ul>
-                  {byTrader.map((g) => (
-                    <li key={g.traderId} className="mk-card ar-row">
-                      <div>
-                        <small>사용 가능</small>
-                        <strong>
-                          <GradeBadge grade={traderById(g.traderId)?.grade?.grade} unrated={traderById(g.traderId)?.grade?.unrated} small /> {g.name} 열람권 {g.count}장
-                        </strong>
-                        <p>월별 전략 중 하나를 골라 열람권으로 바꾸세요.</p>
-                      </div>
-                      <div className="ar-side">
-                        <div className="ar-actions">
-                          <Link href={`/marketplace/${g.traderId}/strategies`} className="mk-primary">
-                            전략 고르기
-                          </Link>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
 
-            {(used.length > 0 || (server?.length ?? 0) > 0 || freeViews.length > 0) && (
+            {(server?.length ?? 0) > 0 && (
               <section className="ar-day">
-                <h2>연 전략</h2>
+                <h2>판매 등록 전략</h2>
                 <ul>
-                  {used.map((p) => {
-                    const t = traderById(p.traderId);
-                    const s = t ? strategiesOf(t).find((x) => x.month === p.used!.month) : undefined;
-                    return (
-                      <li key={p.id} className="mk-card ar-prow">
-                        <div>
-                          <strong>
-                            <GradeBadge grade={t?.grade?.grade} unrated={t?.grade?.unrated} small /> {p.traderName}의 {monthLabel(p.used!.month)} 전략
-                          </strong>
-                          <p>{s?.title ?? p.used!.title}{t?.tagline ? ` · ${t.tagline}` : ""}</p>
-                          <small>
-                            {day(p.used!.at)} 열람권으로 엶 · 결제 {won(p.amount)}
-                            {p.receiptUrl && (
-                              <>
-                                {" · "}
-                                <a href={p.receiptUrl} target="_blank" rel="noreferrer">
-                                  영수증
-                                </a>
-                              </>
-                            )}
-                          </small>
-                        </div>
-                        <div className="ar-prow-stat">
-                          {s && (
-                            <>
-                              <b className={tone(s.ret)}>수익률 {pct(s.ret)}</b>
-                              <span>이행률 {s.follow}%</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="ar-prow-acts">
-                          <Link href={`/archive/practice/${p.traderId}/${p.used!.month}`} className="ar-prow-btn ghost">
-                            연습하기
-                          </Link>
-                          <Link href={`/marketplace/${p.traderId}/strategies/${p.used!.month}`} className="ar-prow-btn">
-                            전략 상세 보기
-                          </Link>
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {freeViews.map((v) => {
-                    const t = traderById(v.traderId);
-                    const s = t ? strategiesOf(t).find((x) => x.month === v.month) : undefined;
-                    return (
-                      <li key={`free-${v.traderId}-${v.month}`} className="mk-card ar-prow">
-                        <div>
-                          <strong>
-                            <GradeBadge grade={t?.grade?.grade} unrated={t?.grade?.unrated} small /> {v.traderName}의 {monthLabel(v.month)} 전략
-                          </strong>
-                          <p>{s?.title ?? v.title}{t?.tagline ? ` · ${t.tagline}` : ""}</p>
-                          <small>{day(v.at)} 무료로 봄</small>
-                        </div>
-                        <div className="ar-prow-stat">
-                          {s && (
-                            <>
-                              <b className={tone(s.ret)}>수익률 {pct(s.ret)}</b>
-                              <span>이행률 {s.follow}%</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="ar-prow-acts">
-                          <Link href={`/archive/practice/${v.traderId}/${v.month}`} className="ar-prow-btn ghost">
-                            연습하기
-                          </Link>
-                          <Link href={`/marketplace/${v.traderId}/strategies/${v.month}`} className="ar-prow-btn">
-                            전략 상세 보기
-                          </Link>
-                        </div>
-                      </li>
-                    );
-                  })}
                   {(server ?? []).map((p) => (
                     <li key={p.id} className="mk-card ar-row">
                       <div>

@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 · 보드: 손익 캘린더(청산한 거래의 실현손익) + 그날 기록 + 종목별 기록 타임라인 + 구매한 전략
+// 전략보관함 · 보드: 손익 캘린더(청산한 거래의 실현손익) + 그날 기록 + 종목별 기록 타임라인 + 구매한 전략
 //   pick 을 주면 날짜 · 기록을 눌러 재료로 담음 (AI 전략 만들기)
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";

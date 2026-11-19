@@ -12,9 +12,9 @@ export default function SalesPage() {
   const { strategies, totals, byStrategy, loading } = useSeller();
   const [open, setOpen] = useState(false);
   const { user } = useMypage();
-  // 판매자가 아니면 비즈니스 전환부터, 판매자면 달마다 잠긴 기록(아카이브)에서 전략으로
+  // 판매자가 아니면 비즈니스 전환부터, 판매자면 달마다 잠긴 기록(전략보관함)에서 전략으로
   const business = useBusiness(user.id);
-  const registerHref = business && business.status !== "pending" ? "/archive" : "/mypage/business";
+  const registerHref = business && business.status !== "pending" ? "/archive/mine" : "/mypage/business";
   const dash = (v: string | null) => (loading || v === null ? "—" : v);
   return (
     <>

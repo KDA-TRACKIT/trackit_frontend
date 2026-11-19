@@ -119,7 +119,7 @@ export default function HomeDashboard() {
       {error && <div className="home-data-notice home-container" role="status"><span>{error}</span><button type="button" onClick={load}>다시 시도</button></div>}
       <section id="trader-board" className="home-leaderboard">
         <div className="home-container">
-          <div className="home-section-heading"><h2>트레이더 리더보드</h2><Link className="home-action" href="/marketplace">전략 쇼핑 <span aria-hidden="true">→</span></Link></div>
+          <div className="home-section-heading"><h2>트레이더 리더보드</h2><Link className="home-action" href="/marketplace">전략 마켓 <span aria-hidden="true">→</span></Link></div>
           <TraderCarousel />
         </div>
       </section>

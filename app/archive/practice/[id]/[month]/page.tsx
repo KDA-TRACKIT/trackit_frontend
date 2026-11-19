@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 · 연습하기: 연 전략(열람권 · 무료)으로 "먼저 판단해 보기"
+// 전략보관함 · 연습하기: 연 전략(열람권 · 무료)으로 "먼저 판단해 보기"
 //   판매자가 처음 산 날 전까지의 차트만 보고 매수 / 관망을 고른 뒤, 판매자의 판단 · 결과와 비교
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -44,7 +44,7 @@ export default function PracticePage() {
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
         <nav className="ar-crumb">
-          <Link href="/archive">아카이브</Link> / <Link href="/archive/purchases">구매한 전략</Link> / <b>연습하기</b>
+          <Link href="/archive">전략보관함</Link> / <Link href="/archive/purchases">구매한 전략</Link> / <b>연습하기</b>
         </nav>
         <h1 className="mk-title">{t && s ? <><GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small /> {`${t.name}의 ${monthLabel(month)} 전략 · 연습하기`}</> : "연습하기"}</h1>
 

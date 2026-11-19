@@ -1,7 +1,7 @@
 "use client";
-// 아카이브 · 전략 분석: 열람권으로 연 전략의 트레이더를 나란히 비교
+// 전략보관함 · 전략 분석: 열람권으로 연 전략의 트레이더를 나란히 비교
 //   트레이더마다 평균 월 수익률 · 수익 난 달 비율 · 가장 좋았던/나빴던 달 · 최대 낙폭 · 이행률, 연 달의 수익률은 평균과 비교
-//   월별 수익률은 전략 쇼핑 데이터(예시) 기준
+//   월별 수익률은 전략 마켓 데이터(예시) 기준
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import SiteHeader from "../../SiteHeader";
@@ -81,7 +81,7 @@ export default function AnalysisPage() {
             아직 연 전략이 없어요. 열람권으로 전략을 열면 여기서 트레이더끼리 비교할 수 있어요.
             <br />
             <Link href="/marketplace" className="ar-link">
-              전략 쇼핑 둘러보기 ›
+              전략 마켓 둘러보기 ›
             </Link>
           </div>
         ) : (

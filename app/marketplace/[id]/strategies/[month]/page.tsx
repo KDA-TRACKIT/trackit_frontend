@@ -40,7 +40,7 @@ export default function StrategyView() {
 
   const list = t ? strategiesOf(t) : [];
   const s = list.find((x) => x.month === month);
-  // 무료 전략을 열면 아카이브에 남김 (열람권 없이 본 것도)
+  // 무료 전략을 열면 전략보관함에 남김 (열람권 없이 본 것도)
   const freeKey = t && s?.free ? `${t.id}|${t.name}|${month}|${s.title}` : "";
   useEffect(() => {
     if (!freeKey) return;

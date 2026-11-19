@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 한 곳에 모으는 재료: 구매한 전략(열람권으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
+// 전략보관함 한 곳에 모으는 재료: 구매한 전략(열람권으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
 //   기록은 lib/records (로그인 = 서버 확정 노트, 아니면 이 브라우저). 지어낸 기록 없이 있는 것만 보여 줌
 import { useEffect, useMemo, useState } from "react";
 import { classify, daysAgo, initRecordSource, recordSource, useRecords, type TradeRecord } from "../../lib/records";
@@ -74,7 +74,7 @@ function recordItem(r: TradeRecord): Item {
 
 const kstDate = (iso: string) => (iso ? new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString() : "");
 
-/** 아카이브 재료 전체 (최신순) */
+/** 전략보관함 재료 전체 (최신순) */
 export function useArchive() {
   const records = useRecords();
   const passes = usePasses();

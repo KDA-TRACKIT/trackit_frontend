@@ -1,7 +1,7 @@
 "use client";
 // 상단 종 알림: 판매(내 전략을 누가 샀을 때) + 즐겨찾기한 트레이더의 새 전략
 //   서버 GET /me/notifications (로그인했을 때, 즐겨찾기 중 실제 계정 id 는 ?owners= 로)
-//   + 전략 쇼핑 예시 트레이더(아직 서버 데이터가 아님)는 예시 데이터의 이번 달 전략으로
+//   + 전략 마켓 예시 트레이더(아직 서버 데이터가 아님)는 예시 데이터의 이번 달 전략으로
 //   읽은 시각은 이 브라우저에 두고, 그 뒤 알림만 "새 알림" 점
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "./api/client";

@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 · 목록: 왼쪽 분류 + 종목 · 기간 필터 + 카드
+// 전략보관함 · 목록: 왼쪽 분류 + 종목 · 기간 필터 + 카드
 import { useMemo, useState } from "react";
 import { KINDS, countBy, filterItems, topSymbols, type Item, type ItemKind } from "./items";
 import { ItemCard } from "./parts";

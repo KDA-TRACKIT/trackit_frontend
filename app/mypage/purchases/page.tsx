@@ -1,6 +1,6 @@
 "use client";
 // 마이페이지 · 구매 내역: 구매한 트레이더 전략과 이용 기간
-//   전략 쇼핑 열람권 (GET /me/passes) + 판매 등록된 전략 구매 (GET /market/purchases)
+//   전략 마켓 열람권 (GET /me/passes) + 판매 등록된 전략 구매 (GET /market/purchases)
 //   열람권으로 연 전략과 산 전략은 기간 제한 없이 계속 볼 수 있음 → 이용 기간 = 연(산) 날부터 계속
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -103,7 +103,7 @@ export default function PurchasesPage() {
         <div className="mp-toolbar" style={{ marginTop: 20 }}>
           <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
           <Link className="mp-btn" href="/archive/purchases">
-            아카이브에서 보기
+            전략보관함에서 보기
           </Link>
         </div>
         <Table cols={["트레이더", "전략", "구매 범위", "결제 금액", "구매일", "이용 기간", "상태"]}>
@@ -130,7 +130,7 @@ export default function PurchasesPage() {
             <Empty text={rows.length ? "조건에 맞는 구매가 없어요" : "아직 구매한 전략이 없어요"}>
               {!rows.length && (
                 <Link className="mp-btn primary" style={{ width: 142 }} href="/marketplace">
-                  전략 쇼핑 가기
+                  전략 마켓 가기
                 </Link>
               )}
             </Empty>

@@ -100,7 +100,7 @@ export default function PaymentSuccess() {
             <p>{state.message}</p>
             <div className="pay-actions">
               <Link className="pay-primary" href="/marketplace">
-                전략 쇼핑으로
+                전략 마켓으로
               </Link>
             </div>
           </>

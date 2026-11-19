@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 · AI로 새 전략 만들기: 재료 고르기(목록 · 보드 · 차트) → 요청 → 초안 미리보기 → 아카이브(내 전략)에 저장
+// 전략보관함 · AI로 새 전략 만들기: 재료 고르기(목록 · 보드 · 차트) → 요청 → 초안 미리보기 → 전략보관함(내 전략)에 저장
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -44,7 +44,7 @@ export default function AiBuilder() {
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
         <nav className="ar-crumb">
-          <Link href="/archive">아카이브</Link> / <b>AI 전략 만들기</b>
+          <Link href="/archive">전략보관함</Link> / <b>AI 전략 만들기</b>
         </nav>
         <div className="ar-hub-head">
           <div>
@@ -141,7 +141,7 @@ function PickList({ items, loading, picked, onPick, full }: { items: ReturnType<
       {loading && !items.length ? (
         <div className="mk-card mk-empty">불러오는 중…</div>
       ) : !shown.length ? (
-        <div className="mk-card mk-empty">고를 수 있는 기록이 없어요. 트레이딩 로그에서 기록을 남기거나 전략 쇼핑에서 전략을 열어 보세요.</div>
+        <div className="mk-card mk-empty">고를 수 있는 기록이 없어요. 트레이딩 로그에서 기록을 남기거나 전략 마켓에서 전략을 열어 보세요.</div>
       ) : (
         <div className="ar-grid">
           {shown.map((i) => (
@@ -290,7 +290,7 @@ function Preview({
           다시 만들기
         </button>
         <button type="button" className="mk-primary" onClick={onSave}>
-          아카이브에 저장
+          전략보관함에 저장
         </button>
       </div>
     </section>

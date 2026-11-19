@@ -1,5 +1,5 @@
 "use client";
-// 전략 쇼핑 목록에서 마지막으로 본 주소 (검색어 · 필터 · 쪽 포함). 트레이더 상세의 "트레이더 목록" 이 여기로 돌아간다
+// 전략 마켓 목록에서 마지막으로 본 주소 (검색어 · 필터 · 쪽 포함). 트레이더 상세의 "트레이더 목록" 이 여기로 돌아간다
 import type { MouseEvent } from "react";
 
 const KEY = "trackit:market-list";

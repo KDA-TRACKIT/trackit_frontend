@@ -1,4 +1,4 @@
-/* 판매자 등급 배지 (닉네임 앞). 홈 · 아카이브에서도 쓰려고 따로 (GradeParts.tsx 가 불러옴) */
+/* 판매자 등급 배지 (닉네임 앞). 홈 · 전략보관함에서도 쓰려고 따로 (GradeParts.tsx 가 불러옴) */
 .mk-grade { display:inline-grid; min-width:26px; height:20px; place-items:center; padding:0 5px; border-radius:5px; font-size:11.5px; font-weight:800; letter-spacing:0; vertical-align:2px; }
 .mk-grade.small { min-width:22px; height:18px; font-size:10.5px; }
 /* 판매 등급 배지: 높을수록 화려하게 — D 회색 테두리 · C 브론즈 · B 실버(가끔 반짝) · A 골드(반짝) · VIP 블랙골드(빛 + 반짝) */

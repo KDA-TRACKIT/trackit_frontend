@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 공용 조각: 기록 카드 · 종류 태그 · 보기 전환 · 구매한 전략 카드
+// 전략보관함 공용 조각: 기록 카드 · 종류 태그 · 보기 전환 · 구매한 전략 카드
 import Link from "next/link";
 import { Check, LayoutGrid, LineChart, List, Sparkles } from "lucide-react";
 import { Spark } from "../marketplace/parts";
@@ -111,8 +111,8 @@ export function PurchasedCards({ items, picked, onPick, cta }: { items: Item[]; 
       ) : (
         <Link href="/marketplace" className="ar-cta shop">
           <strong>전략을 더 담고 싶다면</strong>
-          <p>전략 쇼핑에서 월별 전략을 열면 바로 재료로 쓸 수 있어요.</p>
-          <span>전략 쇼핑 ›</span>
+          <p>전략 마켓에서 월별 전략을 열면 바로 재료로 쓸 수 있어요.</p>
+          <span>전략 마켓 ›</span>
         </Link>
       )}
     </div>

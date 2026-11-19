@@ -1,5 +1,5 @@
 "use client";
-// 전략 쇼핑 월별 전략 내용 받기: /strategy-data/{트레이더}/{달} (서버가 열람권을 확인하고 그 달 것만 보냄)
+// 전략 마켓 월별 전략 내용 받기: /strategy-data/{트레이더}/{달} (서버가 열람권을 확인하고 그 달 것만 보냄)
 //   로그인 토큰을 같이 보내야 연 전략을 받을 수 있음. 못 받으면(안 연 달 · 로그인 전) null
 import { accessToken } from "./api/client";
 import type { SimDetail } from "../app/marketplace/GuessFirst";

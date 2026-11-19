@@ -32,7 +32,7 @@ html[data-theme="dark"] {
 .gnb-menu .theme-seg button:hover { background:none; color:var(--c-ink); }
 .gnb-menu button.gnb-signout { color:var(--c-err); }
 
-/* 준비 중 페이지 (아카이브 · 전략 쇼핑) */
+/* 준비 중 페이지 (전략보관함 · 전략 마켓) */
 .placeholder-page { min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 .placeholder-card { width:calc(100% - 80px); margin:40px auto; padding:56px 32px; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); text-align:center; }
 .placeholder-card h1 { margin:0; font-size:22px; font-weight:800; }

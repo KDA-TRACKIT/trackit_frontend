@@ -1,10 +1,10 @@
 "use client";
-// 증시 캘린더 (상단 FOR TRADE 메뉴 안. ?tab=market|news|economy|disclosures 로 바로 열림)
+// 증시 캘린더 (상단 투자작업실 메뉴 안. ?tab=market|news|economy|disclosures 로 바로 열림)
 //   시장: 지수 카드 · 차트 · 시장 현황(Market) · 관심 종목 · 섹터맵 · 오늘의 종목(MarketMovers: 순위 표 + 종목 요약, 외국인·기관 포함)
 //   뉴스: 경제·증권 뉴스 제목 (종목 태그 · 관심 종목만)
 //   경제: 경제 캘린더(지난·이번 주·다가오는 지표, 실제·예상·이전) · 기준금리(미국·한국·유로·일본)
 //   공시: DART 최근 공시 (보유 종목만 보기)
-//   매매 캘린더(청산 손익)는 여기서 뺌 — 나중에 아카이브로 옮길 예정 (컴포넌트는 Mine.tsx 의 PnlCalendar 그대로)
+//   매매 캘린더(청산 손익)는 여기서 뺌 — 나중에 전략보관함로 옮길 예정 (컴포넌트는 Mine.tsx 의 PnlCalendar 그대로)
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteHeader from "../SiteHeader";

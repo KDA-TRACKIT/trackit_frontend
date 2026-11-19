@@ -1,5 +1,5 @@
 "use client";
-// 아카이브 · 차트: 종목 카드 → 그 종목 일봉 위에 내 기록 점. 점을 누르면 그 기록 (AI 만들기에선 재료로 담기)
+// 전략보관함 · 차트: 종목 카드 → 그 종목 일봉 위에 내 기록 점. 점을 누르면 그 기록 (AI 만들기에선 재료로 담기)
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check } from "lucide-react";

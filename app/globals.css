@@ -37,7 +37,7 @@
 /* 고른 메뉴가 굵어져도 폭이 안 바뀌게: 굵은 글씨 폭을 보이지 않는 줄로 미리 잡아 둔다 */
 .gnb-main > a, .gnb-drop > a { display:inline-flex; flex-direction:column; align-items:center; }
 .gnb-main > a::before, .gnb-drop > a::before { content:attr(data-label); height:0; overflow:hidden; visibility:hidden; font-weight:700; pointer-events:none; user-select:none; }
-/* FOR TRADE 같은 묶음 메뉴: 올리거나 키보드로 들어가면 상단 바 아래 선에 붙어서 펼침
+/* 투자작업실 같은 묶음 메뉴: 올리거나 키보드로 들어가면 상단 바 아래 선에 붙어서 펼침
    메뉴 칸을 바 높이만큼 늘려 두고(top:100% = 바 아래 선) 그 아래로 내린다 */
 .gnb-main { align-self:stretch; }
 .gnb-drop { position:relative; display:flex; align-items:center; height:100%; }
@@ -382,3 +382,11 @@ html[data-theme="dark"] { --honey-line:#f7d47e; --honey-fill:#d4870b; --honey-to
 .ti .ti-nav .ti-brand { color:#0f2367; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:34px; }
 html[data-theme="dark"] .ti .ti-nav .ti-brand { color:var(--c-brand); }
 @media (max-width:800px) { .ti .ti-nav .ti-brand { font-size:26px; line-height:26px; } }
+
+/* 메뉴 닉네임 4글자 (2026-11-19): 종 · 프로필 사진 자리는 그대로 두고 닉네임만 오른쪽으로 더 나가게
+   계정 칸 폭을 예전(사진 + 간격 + 3글자…)으로 고정 → 왼쪽의 종 · 사진 위치가 닉네임 길이에 따라 밀리지 않음 */
+@media (min-width:701px) {
+  .gnb-account-box:has(> .gnb-user) { flex:none; width:104px; }
+  .gnb-account-box > button.gnb-chip.gnb-user { max-width:none; overflow:visible; }
+  .gnb-account-box > button.gnb-chip.gnb-user .gnb-name { flex:none; overflow:visible; white-space:nowrap; }
+}

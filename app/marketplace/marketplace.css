@@ -1,4 +1,4 @@
-/* 전략 쇼핑 (라이트 · 다크 모두 --c-* 변수로) — 수익 초록 · 손실 빨강 */
+/* 전략 마켓 (라이트 · 다크 모두 --c-* 변수로) — 수익 초록 · 손실 빨강 */
 .mk-page { --mk-gain:#1f9d55; --mk-loss:#e03131; --mk-primary:#0f2367; --mk-primary-ink:#fff; --mk-like:#b9770e;
   min-height:calc(100 * var(--vh, 1vh)); background:var(--c-bg); color:var(--c-ink); font-family:Pretendard,"Noto Sans KR",sans-serif; }
 html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-primary:#7c9be0; --mk-primary-ink:#0e1116; --mk-like:#f0b43c; }
@@ -130,7 +130,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-modal-foot .mk-ghost { border:0; background:none; color:var(--c-sub); }
 
 /* 상세 */
-/* 위쪽 '‹ 트레이더 목록' · '‹ 전략 쇼핑': 본문(15~16px)보다 작아 잘 안 보이던 것 → 16px 굵게 + 아이콘 화살표, 누를 자리도 넓게 */
+/* 위쪽 '‹ 트레이더 목록' · '‹ 전략 마켓': 본문(15~16px)보다 작아 잘 안 보이던 것 → 16px 굵게 + 아이콘 화살표, 누를 자리도 넓게 */
 .mk-back { display:inline-flex; align-items:center; gap:2px; margin:0 0 14px -5px; padding:4px 8px 4px 0; color:var(--c-sub); font-size:16px; font-weight:600; text-decoration:none; }
 .mk-back:hover { color:var(--c-ink); }
 .mk-hero { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; }
@@ -506,7 +506,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-agree { font-size:13px; }
 .mk-agree input { margin-top:3px; }
 
-/* 한글 줄바꿈 (전략 쇼핑 · 아카이브 안에서만): 낱말 중간에서 끊지 않고, 마지막 줄에 한두 글자만 남지 않게 */
+/* 한글 줄바꿈 (전략 마켓 · 전략보관함 안에서만): 낱말 중간에서 끊지 않고, 마지막 줄에 한두 글자만 남지 않게 */
 .mk-page { word-break:keep-all; overflow-wrap:break-word; }
 .mk-page p, .mk-page li, .mk-page dd, .mk-page small, .mk-page label, .mk-page blockquote { text-wrap:pretty; }
 .mk-page h1, .mk-page h2, .mk-page h3, .mk-page h4, .mk-page strong { text-wrap:balance; }
@@ -535,7 +535,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-redeem-acts { display:flex; justify-content:flex-end; gap:8px; }
 .mk-redeem-acts button { min-width:80px; }
 
-/* ===== 전략 쇼핑 시안 (2026-11-18): 트레이더 카드 · 정렬 드롭다운 ===== */
+/* ===== 전략 마켓 시안 (2026-11-18): 트레이더 카드 · 정렬 드롭다운 ===== */
 .mk-result-head { display:flex; align-items:baseline; justify-content:space-between; }
 .mk-asof { color:var(--c-sub); font-size:12px; }
 .mk-sortdd { position:relative; }

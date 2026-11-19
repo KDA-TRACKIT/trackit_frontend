@@ -8,7 +8,7 @@ const MENU: Menu[] = [
   { key: "home", label: "홈", href: "/" },
   {
     key: "fortrade",
-    label: "FOR TRADE",
+    label: "투자작업실",
     href: "/workshop",
     // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
     sub: [
@@ -16,12 +16,12 @@ const MENU: Menu[] = [
       { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시" },
     ],
   },
-  { key: "marketplace", label: "전략 쇼핑", href: "/marketplace" },
+  { key: "marketplace", label: "전략 마켓", href: "/marketplace" },
   {
     key: "archive",
-    label: "아카이브",
+    label: "전략보관함",
     href: "/archive",
-    // 아카이브 드롭다운: 내 전략 · 구매한 전략 · 전략 분석 (전체 기록 · AI 전략 만들기는 아카이브 첫 화면에서)
+    // 전략보관함 드롭다운: 내 전략 · 구매한 전략 · 전략 분석. 첫 화면은 구매한 전략의 트레이더 목록 (모든 종목 기록 · AI 전략 만들기는 내 전략에서)
     sub: [
       { label: "내 전략", href: "/archive/mine", desc: "만들고 판매하는 전략" },
       { label: "구매한 전략", href: "/archive/purchases", desc: "결제한 전략" },

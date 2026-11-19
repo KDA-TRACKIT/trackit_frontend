@@ -190,11 +190,11 @@ function ago(iso: string) {
   return `${d.slice(5, 7)}.${d.slice(8, 10)}`;
 }
 
-/** 닉네임이 4글자를 넘으면 앞 3글자 + "..." (한글 · 이모지도 한 글자로 셈) — intro 브랜치 a78ff9a */
+/** 메뉴의 닉네임은 4글자까지, 넘으면 앞 4글자 + "…" (한글 · 이모지도 한 글자로 셈) */
 const nicknameSegmenter = new Intl.Segmenter("ko", { granularity: "grapheme" });
 function shortName(name: string) {
   const chars = Array.from(nicknameSegmenter.segment(name), ({ segment }) => segment);
-  return chars.length > 4 ? `${chars.slice(0, 3).join("")}...` : name;
+  return chars.length > 4 ? `${chars.slice(0, 4).join("")}…` : name;
 }
 
 export default function AccountChip() {
