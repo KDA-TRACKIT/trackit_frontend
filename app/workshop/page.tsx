@@ -262,6 +262,8 @@ export default function WorkshopPage() {
     [loadKey, restored.drawings],
   );
 
+  /** 차트가 넘겨 준 선 지우기 (차트 노트 선 목록의 ✕) */
+  const removeLinesRef = useRef<((ids: string[]) => void) | null>(null);
   /** 이 종목에서 오늘 체결된 것들 (지금은 매매하기 모의 주문) */
   const [executions, setExecutions] = useState<Execution[]>([]);
   /** AI 노트 체결 연결: auto = AI 추천 그대로, none = 연결 안 함, 그 밖엔 체결 id */
@@ -629,6 +631,7 @@ export default function WorkshopPage() {
             onAddNote={addNote}
             onDrawingsChange={changeDrawings}
             loadedDrawings={loadedDrawings}
+            registerRemove={(fn) => (removeLinesRef.current = fn)}
             dataKey={`${symbol.code}:${interval}:${source}`}
             symbolCode={symbol.code}
             symbolName={symbol.name}
@@ -649,7 +652,7 @@ ${t}` : t))}
             <>
             <section className="ws-panel ws-note-panel">
               <h2>
-                AI 노트 <span className="ws-tag">저장 전 검증</span>
+                차트 노트 <span className="ws-tag">저장 전 검증</span>
               </h2>
               {/* 그은 선: 알고리즘 지지 · 저항이 맨 위 (선만 그어도 판단) */}
               <PlanConfirm
@@ -667,6 +670,7 @@ ${t}` : t))}
                 lastBar={bars[bars.length - 1]}
                 bars={bars}
                 onHover={setHoverLine}
+                onDelete={(ids) => removeLinesRef.current?.(ids)}
               />
 
               {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
@@ -753,10 +757,11 @@ ${t}` : t))}
               {/* 판단 근거: 아래로 (투자자가 더 적은 건 AI 가 분석해 반영) */}
               <div className="ws-memo">
                 <div className="ws-memo-head">
+                  {/* 판단 근거 칸 = AI 노트 (적은 내용을 AI 가 같이 분석) */}
+                  <strong className="ws-memo-title">AI 노트</strong>
                   <small>
                     {symbol.name}
                     {noteTime && ` · ${hhmm(noteTime)}`}
-                    {notes.length > 0 && " · 차트 노트"}
                   </small>
                 </div>
                 {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}

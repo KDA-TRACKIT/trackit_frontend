@@ -10,6 +10,7 @@
 import { useMemo } from "react";
 import type { Drawing } from "../../lib/drawing";
 import { buildLadder, classify, roleKey, roleOf, type LastBar, type Role } from "./lineLadder";
+import { NEAREST_LINES } from "../../lib/strategy";
 
 /** 노트 종류 (2026-11-17 회의): 매매 계획 · 보유 관리 · 분석·전망 · 회고 — 종류마다 필수 항목이 다름 (PlanCheck) */
 export type NoteKind = "trade" | "hold" | "view" | "review";
@@ -134,6 +135,7 @@ export default function PlanConfirm({
   lastBar,
   bars,
   onHover,
+  onDelete,
 }: {
   drawings: Drawing[];
   plan: Plan;
@@ -155,6 +157,8 @@ export default function PlanConfirm({
   bars?: { time: number }[];
   /** 줄에 마우스를 올리면 차트에서 그 선을 강조 */
   onHover?: (id: string | null) => void;
+  /** 그은 선 지우기 (차트에서도 지워짐, 차트의 되돌리기로 살릴 수 있음) */
+  onDelete?: (drawingIds: string[]) => void;
 }) {
   const { rungs, groups } = useMemo(() => buildLadder(drawings, nowTime, bars), [drawings, nowTime, bars]);
 
@@ -225,15 +229,15 @@ export default function PlanConfirm({
   };
 
   /** 한 줄 = 선 하나: 가격 · 선 종류 · 지지/저항 · 매매 (피보는 레벨마다, 구간은 한 줄) */
-  type Row = { key: string; hover: string; label: string; low: number; high: number; text: string; zone: boolean; slant?: boolean };
+  type Row = { key: string; hover: string; ids: string[]; label: string; low: number; high: number; text: string; zone: boolean; slant?: boolean };
   // 1,000 이상은 원 단위로 (피보 · 추세선 오늘 값은 소수가 나옴)
   const fmt = (n: number) => money(n >= 1000 ? Math.round(n) : Math.round(n * 100) / 100);
   const rows: Row[] = [
-    ...rungs.map((r) => ({ key: r.key, hover: r.ids[0], label: r.label.replace(" · 오늘 값", ""), low: r.price, high: r.price, text: fmt(r.price), zone: false, slant: !!r.pts })),
+    ...rungs.map((r) => ({ key: r.key, hover: r.ids[0], ids: r.ids, label: r.label.replace(" · 오늘 값", ""), low: r.price, high: r.price, text: fmt(r.price), zone: false, slant: !!r.pts })),
     ...groups.flatMap((g): Row[] =>
       g.kind === "zone"
-        ? [{ key: g.key, hover: g.id, label: g.label, low: g.low, high: g.high, text: `${fmt(g.low)}~${fmt(g.high)}`, zone: true }]
-        : g.levels.map((l) => ({ key: l.key, hover: g.id, label: `피보 ${l.lv}`, low: l.price, high: l.price, text: fmt(l.price), zone: false })),
+        ? [{ key: g.key, hover: g.id, ids: [g.id], label: g.label, low: g.low, high: g.high, text: `${fmt(g.low)}~${fmt(g.high)}`, zone: true }]
+        : g.levels.map((l) => ({ key: l.key, hover: g.id, ids: [g.id], label: `피보 ${l.lv}`, low: l.price, high: l.price, text: fmt(l.price), zone: false })),
     ),
   ].sort((a, b) => b.high + b.low - (a.high + a.low));
   const mid = (r: Row) => (r.low + r.high) / 2;
@@ -245,11 +249,39 @@ export default function PlanConfirm({
   };
   const above = rows.filter(isUp);
   const below = rows.filter((r) => !isUp(r));
+  // 이행률에는 현재가에 가까운 지지선 5개 · 저항선 5개만 들어감 (2026-11-19 회의) → 나머지는 흐리게
+  const nearestOf = (role: Role) =>
+    rows
+      .filter((r) => roleRow(r) === role)
+      .sort((a, b) => Math.abs(mid(a) - (current ?? 0)) - Math.abs(mid(b) - (current ?? 0)))
+      .slice(0, NEAREST_LINES)
+      .map((r) => r.key);
+  const counted = new Set([...nearestOf("지지"), ...nearestOf("저항")]);
   const row = (r: Row) => (
-    <li key={r.key} onMouseEnter={() => onHover?.(r.hover)} onMouseLeave={() => onHover?.(null)}>
+    <li
+      key={r.key}
+      className={roleRow(r) && !counted.has(r.key) ? "far" : undefined}
+      title={roleRow(r) && !counted.has(r.key) ? `이행률에는 현재가에 가까운 ${roleRow(r)}선 ${NEAREST_LINES}개만 들어가요` : undefined}
+      onMouseEnter={() => onHover?.(r.hover)}
+      onMouseLeave={() => onHover?.(null)}
+    >
       <b>{r.text}</b>
       <span className="ws-ladder-kind">{r.label}</span>
       {lineChips(r.key, r.low, r.high, r.text, r.zone, r.slant)}
+      {onDelete && (
+        <button
+          type="button"
+          className="ws-ladder-del"
+          onClick={() => {
+            onHover?.(null);
+            onDelete(r.ids);
+          }}
+          aria-label={`${r.text} 선 지우기`}
+          title={r.label.startsWith("피보") ? "피보나치 전체 지우기" : r.ids.length > 1 ? `겹친 선 ${r.ids.length}개 지우기` : "선 지우기"}
+        >
+          ✕
+        </button>
+      )}
     </li>
   );
 

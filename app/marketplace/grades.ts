@@ -36,7 +36,8 @@ export function gradeOfSim(sim: { eq: number[]; mIdx: Record<string, number>; mo
     const Nt = inWin.reduce((a, m) => a + (m?.trades ?? 0), 0);
     const At = Nt ? inWin.reduce((a, m) => a + ((m?.follow ?? 0) / 100) * (m?.trades ?? 0), 0) / Nt : 0.5;
     const A = adjustedAdherence(Nt, At, win, At);
-    const metrics: Metrics = { R, SR, PSR, MDD, A, T };
+    // 시뮬레이션에는 전략 수정 이력(일관성)이 없어 이행률로 대신 (실서비스는 lib/strategy consistency)
+    const metrics: Metrics = { R, SR, PSR, MDD, A, C: A, T };
     return { month, metrics };
   });
   return gradeHistory(evals);

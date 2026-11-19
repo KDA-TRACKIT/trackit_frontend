@@ -18,6 +18,8 @@ type NoteSummary = {
   noteTime?: string;
   /** 그은 선의 지지 · 저항 분류와 고른 매매 (종목 전략 · 이행률 판정에 씀) */
   lines?: NoteLine[];
+  /** 뉴스 · 경제 지표 메모의 정량 전략 종목 */
+  target?: { code: string; name: string };
 };
 
 export type NoteVersion = {
@@ -49,6 +51,7 @@ export async function saveNote(input: {
   execution?: { time: string; side: string; quantity: number } | null;
   drawings?: unknown;
   lines?: NoteLine[];
+  target?: { code: string; name: string };
   /**
    * 노트 완성도 점검: plan = 종류별 필수를 다 채움, observe = 관찰 메모 (이행률의 '계획 있음'에 안 들어감)
    * kind: trade 매매 계획 · hold 보유 관리 · view 분석·전망 · review 회고. 나머지는 종류별 항목 (빈 값은 빠짐)
@@ -64,6 +67,7 @@ export async function saveNote(input: {
     ...(input.topic ? { topic: input.topic } : {}),
     ...(input.execution ? { execution: input.execution } : {}),
     ...(input.lines?.length ? { lines: input.lines } : {}),
+    ...(input.target ? { target: input.target } : {}),
     ...(input.plan
       ? (() => {
           const { status, kind, ...fields } = input.plan;

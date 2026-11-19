@@ -1,6 +1,7 @@
 "use client";
 // 아카이브 · 내 전략: 내가 만든 전략(서버 GET /strategies) + AI로 만든 초안(이 브라우저)을 한 표로
 //   표에서 고르면 아래에 전략 상세 · 성과 분석. 판매 가격 · 판매 설정은 마이페이지 판매 관리에서
+//   맨 아래: 모든 종목의 전체 기록 (종목별 전략 기록, 2026-11-19 회의)
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
@@ -8,6 +9,7 @@ import SiteHeader from "../../SiteHeader";
 import { apiRequest, errorMessage } from "../../../lib/api/client";
 import { removeDraft, sourceLabel, useDrafts, type Draft } from "../drafts";
 import { monthLabel } from "../../marketplace/data";
+import SymbolRecords from "./SymbolRecords";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
 
@@ -223,6 +225,7 @@ export default function MyStrategiesPage() {
             </section>
           </div>
         )}
+        <SymbolRecords />
       </div>
     </main>
   );

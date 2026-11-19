@@ -203,6 +203,8 @@ type Props = {
   /** 보유 평균 단가 (있으면 차트에 점선으로) */
   avgPrice?: AvgPrice | null;
   onDrawingsChange?: (drawings: Drawing[]) => void;
+  /** 밖(차트 노트의 선 목록)에서 선을 지울 수 있게 지우기 함수를 넘겨 줌 */
+  registerRemove?: (remove: (ids: string[]) => void) => void;
   /** 저장본에서 불러온 드로잉. key가 바뀔 때만 차트에 넣는다 (실행 취소 기록도 비움) */
   loadedDrawings?: { key: string; drawings: Drawing[] };
   notes: ChartNote[];
@@ -372,7 +374,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -1716,6 +1718,14 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     setFuture([]);
     apply(next);
   }
+
+  // 차트 노트 선 목록에서 지우기 → 되돌리기(↶)로 살릴 수 있게 commit
+  useEffect(() => {
+    registerRemove?.((ids) => {
+      const next = drawingsRef.current.filter((d) => !ids.includes(d.id));
+      if (next.length !== drawingsRef.current.length) commit(next);
+    });
+  });
 
   function undo() {
     if (past.length === 0) return;

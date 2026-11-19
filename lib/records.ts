@@ -27,6 +27,8 @@ export type TradeRecord = {
   drawings?: number;
   /** 그은 선의 지지 · 저항 분류 (종목 전략에 누적) */
   lines?: NoteLine[];
+  /** 뉴스 · 경제 지표 메모에 적은 정량 전략의 종목 (예: 삼성전자 21만원에 매도). 그 종목 전략에 같이 쌓임 */
+  target?: { code: string; name: string };
 };
 
 /** 종목 없는 메모의 주제 */
@@ -88,6 +90,7 @@ function fromServer(): Promise<TradeRecord[]> {
           text: s.summary ?? "",
           drawings: Array.isArray(n.drawings) ? n.drawings.length : 0,
           ...(Array.isArray(s.lines) ? { lines: s.lines } : {}),
+          ...(s.target ? { target: s.target } : {}),
         } satisfies TradeRecord;
       }),
     ),
@@ -165,6 +168,7 @@ export async function addRecord(
         execution: record.executionTime ? { time: record.executionTime, side: record.side ?? "", quantity: record.quantity ?? 0 } : null,
         drawings,
         lines: record.lines,
+        target: record.target,
         plan,
       });
       await refreshServerRecords();

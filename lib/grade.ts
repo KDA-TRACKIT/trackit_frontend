@@ -37,6 +37,8 @@ export type Metrics = {
   MDD: number;
   /** 이행률 보정값 (후보 7) */
   A: number;
+  /** 일관성 지표 0~1: 시점마다 (이번 전략 ∩ 직전 전략) ÷ 이번 전략 의 평균 (lib/strategy consistency, 2026-11-19 회의) */
+  C: number;
   /** 활동 개월 */
   T: number;
 };
@@ -106,10 +108,21 @@ export function rawGrade(m: Metrics): Grade {
 }
 
 const phi = (x: number) => (x <= 0 ? 0 : x <= 1 ? x ** 1.5 : 1 + 1.5 * Math.log(x));
-/** 성적 점수 E (D 기준선 0, A 기준선 1) */
+/**
+ * 성적 점수 E (D 기준선 0, A 기준선 1)
+ *   비중 (2026-11-19 회의): 수익률 0.25 · 샤프 0.2 · 이행률 0.225 · 일관성 0.075 · 낙폭 0.15 · 활동 기간 0.1 (합 1)
+ *   샤프를 0.3 → 0.2 로 줄인 0.3 을 이행률 : 일관성 = 3 : 1 로 나눔
+ */
 export function scoreE(m: Metrics) {
   const tau = Math.log(Math.min(Math.max(m.T, 3), 24) / 3) / Math.log(4);
-  return 0.25 * phi(m.R / 10) + 0.3 * phi((m.SR - 0.3) / 0.9) + 0.2 * phi((m.A - 0.5) / 0.32) + 0.15 * phi((50 - m.MDD) / 25) + 0.1 * tau;
+  return (
+    0.25 * phi(m.R / 10) +
+    0.2 * phi((m.SR - 0.3) / 0.9) +
+    0.225 * phi((m.A - 0.5) / 0.32) +
+    0.075 * phi((m.C - 0.5) / 0.32) +
+    0.15 * phi((50 - m.MDD) / 25) +
+    0.1 * tau
+  );
 }
 
 /** 금액 단위: 10만원 미만 100원, 이상 1,000원 단위 내림 */
@@ -236,7 +249,7 @@ export function gradeHistory(months: { month: string; metrics: Metrics }[]): Gra
     unrated: grade === null,
     price: last?.price ?? null,
     fee: g !== "F" && g !== "일반" ? FEE[g as Sellable] : null,
-    metrics: last?.metrics ?? { R: 0, SR: 0, PSR: 0.5, MDD: 0, A: 0.5, T: 0 },
+    metrics: last?.metrics ?? { R: 0, SR: 0, PSR: 0.5, MDD: 0, A: 0.5, C: 0.5, T: 0 },
     E: last?.E ?? 0,
     history,
   };

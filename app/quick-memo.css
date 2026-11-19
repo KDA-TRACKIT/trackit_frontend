@@ -40,3 +40,19 @@ html[data-theme="dark"] .qm-bubble { background:#0b0b0b; border-color:#2c3340; b
 body.memo-picking [data-memo] { cursor:copy !important; }
 body.memo-picking [data-memo]:hover { outline:2px dashed var(--c-accent); outline-offset:2px; border-radius:6px; }
 
+
+/* 정량 전략 (종목 없는 메모): 종목 · 가격 · 매수/매도 한 줄 */
+.qm-quant { display:flex; align-items:center; gap:5px; margin-top:8px; }
+.qm-quant-search { position:relative; flex:1; min-width:0; }
+.qm-quant-search input, .qm-quant-price { width:100%; height:28px; padding:0 8px; border:1px solid var(--c-line); border-radius:7px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:12.5px; outline:0; box-sizing:border-box; }
+.qm-quant-price { flex:none; width:92px; text-align:right; font-variant-numeric:tabular-nums; }
+.qm-quant-search input:focus, .qm-quant-price:focus { border-color:var(--c-accent); }
+.qm-quant-search ul { position:absolute; z-index:2; top:30px; right:0; left:0; margin:0; padding:4px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); list-style:none; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.qm-quant-search li button { width:100%; padding:6px 8px; border:0; border-radius:6px; background:none; color:var(--c-ink); font:inherit; font-size:12.5px; text-align:left; cursor:pointer; }
+.qm-quant-search li button:hover { background:var(--c-subtle); }
+.qm-quant-search li small { color:var(--c-faint); }
+.qm-quant-side { display:flex; flex:none; gap:3px; }
+.qm-quant-side button { height:28px; padding:0 9px; border:1px solid var(--c-line); border-radius:7px; background:var(--c-surface); color:var(--c-sub); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+.qm-quant-side button.on.buy { border-color:var(--c-up); background:var(--c-up); color:#fff; }
+.qm-quant-side button.on.sell { border-color:var(--c-down); background:var(--c-down); color:#fff; }
+.qm-quant .qm-chip { flex:1; min-width:0; }

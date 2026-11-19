@@ -1259,3 +1259,11 @@ details.ws-ladder { padding:10px 12px; }
 .ws-plan .ws-ladder ul li > .ws-ladder-kind { min-width:36px; font-size:11.5px; }
 .ws-plan .ws-ladder-chips { gap:3px; }
 .ws-plan .ws-ladder-chips button { padding:0 6px; font-size:11px; }
+.ws-plan .ws-ladder ul li.far { opacity:.45; }
+/* AI 노트 (판단 근거 칸) 제목 */
+.ws-memo-head .ws-memo-title { font-size:13px; font-weight:700; color:var(--c-ink); }
+.ws-memo-head .ws-memo-title + small { margin-left:auto; }
+/* 차트 노트 선 목록: 지우기 */
+.ws-plan .ws-ladder-del { flex:none; width:20px; height:20px; padding:0; border:0; background:none; color:var(--c-faint); font-size:11px; cursor:pointer; opacity:0; }
+.ws-plan .ws-ladder ul li:hover .ws-ladder-del, .ws-plan .ws-ladder-del:focus-visible { opacity:1; }
+.ws-plan .ws-ladder-del:hover { color:var(--c-down); }
