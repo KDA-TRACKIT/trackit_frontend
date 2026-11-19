@@ -130,7 +130,8 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-modal-foot .mk-ghost { border:0; background:none; color:var(--c-sub); }
 
 /* 상세 */
-.mk-back { display:inline-block; margin-bottom:14px; color:var(--c-sub); font-size:13px; text-decoration:none; }
+/* 위쪽 '‹ 트레이더 목록' · '‹ 전략 쇼핑': 본문(15~16px)보다 작아 잘 안 보이던 것 → 16px 굵게 + 아이콘 화살표, 누를 자리도 넓게 */
+.mk-back { display:inline-flex; align-items:center; gap:2px; margin:0 0 14px -5px; padding:4px 8px 4px 0; color:var(--c-sub); font-size:16px; font-weight:600; text-decoration:none; }
 .mk-back:hover { color:var(--c-ink); }
 .mk-hero { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; }
 .mk-profile { padding:16px 22px; }
@@ -492,7 +493,6 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-sim strong { font-size:15px; }
 .mk-sim p { margin:0; overflow:hidden; color:var(--c-sub); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
 .mk-sim span { font-size:14px; }
-.mk-back { font-size:14px; }
 @media (max-width:760px) { .mk-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .mk-kpi { border-left:0 !important; border-top:1px solid var(--c-line); } }
 
 /* 월별 전략 보기: 작은 글씨 키우기 */
