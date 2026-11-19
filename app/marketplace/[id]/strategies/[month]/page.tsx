@@ -90,10 +90,8 @@ export default function StrategyView() {
               </span>
             )}
           </div>
-          {/* 원본은 그대로 보존, 정정 · 사후 해설은 따로 (이용 정책) */}
-          <p className="mk-sim-origin">
-            ✓ 최초 확정본 그대로 · 정정 0건 · <Link href="/marketplace/policy">이용 정책</Link>
-          </p>
+          {/* 원본은 그대로 보존, 정정 · 사후 해설은 따로 (열람권 구매 정책) */}
+          <p className="mk-sim-origin">✓ 최초 확정본 그대로 · 정정 0건</p>
         </section>
 
         {!unlocked ? (

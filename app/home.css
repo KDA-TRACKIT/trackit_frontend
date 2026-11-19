@@ -158,77 +158,9 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
   padding-top:12px;
   border-top:1px solid var(--c-line);
 }
-.home-policy-links button,
-.home-policy-dialog button {
-  border:0;
-  border-radius:6px;
-  background:transparent;
-  color:inherit;
-  font:inherit;
-  cursor:pointer;
-}
-.home-policy-links button { padding:8px; color:var(--c-sub); font-size:13px; }
+.home-policy-links button { padding:8px; border:0; border-radius:6px; background:transparent; color:var(--c-sub); font:inherit; font-size:13px; cursor:pointer; }
 .home-policy-links button:hover { color:var(--c-ink); text-decoration:underline; }
-.home-policy-dialog {
-  position:fixed;
-  inset:0;
-  margin:auto;
-  width:min(680px, calc(100% - 32px));
-  max-height:min(760px, calc(100dvh - 32px));
-  padding:0;
-  overflow:hidden;
-  border:1px solid var(--c-line);
-  border-radius:16px;
-  background:var(--c-surface);
-  color:var(--c-ink);
-  box-shadow:0 16px 52px rgb(0 0 0 / 20%);
-}
-.home-policy-dialog[open] { display:flex; flex-direction:column; }
-.home-policy-dialog::backdrop { background:rgb(0 0 0 / 48%); }
-html:has(.home-policy-dialog[open]) { overflow:hidden; }
-.home-policy-dialog header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:14px clamp(16px, 4vw, 28px);
-  border-bottom:1px solid var(--c-line);
-}
-.home-policy-dialog h2 { margin:0; font-size:clamp(16px, 4vw, 20px); }
-.home-policy-dialog button { display:grid; flex:none; place-items:center; width:40px; height:40px; }
-.home-policy-dialog button:hover { background:var(--c-hover); }
-.home-policy-body {
-  overflow:auto;
-  overscroll-behavior:contain;
-  padding:20px clamp(16px, 4vw, 28px) 24px;
-  color:var(--c-ink-2);
-  font-size:14px;
-  line-height:1.7;
-  overflow-wrap:anywhere;
-}
-.home-policy-body:focus-visible { outline-offset:-3px; }
-.home-policy-body section + section,
-.home-policy-body > section + p,
-.home-policy-body > p + section { margin-top:20px; }
-.home-policy-body h3 { margin:0 0 6px; color:var(--c-ink); font-size:15px; }
-.home-policy-body p, .home-policy-body ol, .home-policy-body ul { margin:0; }
-.home-policy-body p + p,
-.home-policy-body p + ul,
-.home-policy-body p + ol,
-.home-policy-body ul + p,
-.home-policy-body table + p { margin-top:8px; }
-.home-policy-body ol { padding-inline-start:24px; list-style:decimal; }
-.home-policy-body ul { padding-inline-start:22px; list-style:disc; }
-.home-policy-body li + li { margin-top:4px; }
-.home-policy-body table { width:100%; border-collapse:collapse; }
-.home-policy-body th, .home-policy-body td {
-  padding:6px 8px;
-  border:1px solid var(--c-line);
-  text-align:left;
-  vertical-align:top;
-}
-.home-policy-body thead { background:var(--c-subtle); }
-.home-policy-body tbody th { width:29%; font-weight:600; }
+/* 정책 팝업 모양은 policy-dialog.css (PolicyDialog: 홈 정책 3종 · 전략 마켓 '정책 자세히') */
 
 .trader-carousel { position:relative; }
 .trader-grid { display:grid; grid-auto-flow:column; grid-auto-columns:max(175px,calc((100% - 48px) / 5)); gap:12px; margin:0; padding:0; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; list-style:none; }

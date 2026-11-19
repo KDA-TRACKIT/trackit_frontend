@@ -1,0 +1,69 @@
+/* 정책 팝업 (PolicyDialog): 홈 화면 아래 이용약관 · 개인정보처리방침 · 환불정책, 전략 마켓 '정책 자세히' */
+.policy-dialog button {
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+}
+.policy-dialog {
+  position:fixed;
+  inset:0;
+  margin:auto;
+  width:min(680px, calc(100% - 32px));
+  max-height:min(760px, calc(100dvh - 32px));
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--c-line);
+  border-radius:16px;
+  background:var(--c-surface);
+  color:var(--c-ink);
+  box-shadow:0 16px 52px rgb(0 0 0 / 20%);
+}
+.policy-dialog[open] { display:flex; flex-direction:column; }
+.policy-dialog::backdrop { background:rgb(0 0 0 / 48%); }
+html:has(.policy-dialog[open]) { overflow:hidden; }
+.policy-dialog header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px clamp(16px, 4vw, 28px);
+  border-bottom:1px solid var(--c-line);
+}
+.policy-dialog h2 { margin:0; font-size:clamp(16px, 4vw, 20px); }
+.policy-dialog button { display:grid; flex:none; place-items:center; width:40px; height:40px; }
+.policy-dialog button:hover { background:var(--c-hover); }
+.policy-body {
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:20px clamp(16px, 4vw, 28px) 24px;
+  color:var(--c-ink-2);
+  font-size:14px;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+}
+.policy-body:focus-visible { outline-offset:-3px; }
+.policy-body section + section,
+.policy-body > section + p,
+.policy-body > p + section { margin-top:20px; }
+.policy-body h3 { margin:0 0 6px; color:var(--c-ink); font-size:15px; }
+.policy-body p, .policy-body ol, .policy-body ul { margin:0; }
+.policy-body p + p,
+.policy-body p + ul,
+.policy-body p + ol,
+.policy-body ul + p,
+.policy-body table + p { margin-top:8px; }
+.policy-body ol { padding-inline-start:24px; list-style:decimal; }
+.policy-body ul { padding-inline-start:22px; list-style:disc; }
+.policy-body li + li { margin-top:4px; }
+.policy-body table { width:100%; border-collapse:collapse; }
+.policy-body th, .policy-body td {
+  padding:6px 8px;
+  border:1px solid var(--c-line);
+  text-align:left;
+  vertical-align:top;
+}
+.policy-body thead { background:var(--c-subtle); }
+.policy-body tbody th { width:29%; font-weight:600; }

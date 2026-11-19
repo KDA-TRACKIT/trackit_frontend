@@ -265,9 +265,6 @@ function MarketplaceList() {
           </ul>
         )}
         <Pager page={cur} pages={pages} onPage={(p) => (setPage(p), window.scrollTo({ top: 0, behavior: "smooth" }))} />
-        <p className="mk-policy-foot">
-          <Link href="/marketplace/policy">이용 정책</Link>
-        </p>
       </div>
 
       {open && (
