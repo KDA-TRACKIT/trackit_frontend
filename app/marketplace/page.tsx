@@ -268,7 +268,7 @@ function MarketplaceList() {
                   </div>
                   <div className="mk-tcard-stat">
                     <small>
-                      {periodLabel} 수익률
+                      {periodLabel} 실시간 수익률
                       {period === "all" && t.monthly.length > 0 && <em className="mk-span">{spanOf(t)}</em>}
                     </small>
                     {oneStock(t, period) ? (

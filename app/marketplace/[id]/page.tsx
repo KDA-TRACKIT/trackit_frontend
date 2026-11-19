@@ -26,7 +26,10 @@ export default function TraderPage() {
   const { id } = useParams<{ id: string }>();
   const t = traderById(id);
   const { notify, node } = useNotice();
-  const passLeft = unusedPasses(usePasses(), id).length;
+  const passes = usePasses();
+  const passLeft = unusedPasses(passes, id).length;
+  // 수익률: 열람권을 산 적 없으면 실시간 수익률(계좌 전체), 샀으면 전략 직결 수익률(그 달 전략대로 한 매매만)
+  const bought = passes.some((p) => p.traderId === id);
   const fb = useFeedback(id);
   const router = useRouter();
   if (!t) {
@@ -46,7 +49,9 @@ export default function TraderPage() {
   }
   const list = strategiesOf(t);
   const first = list[list.length - 1];
-  const total = Math.round(t.monthly.reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
+  // 전략 직결 = 달별 전략 수익률을 이어 붙인 값, 실시간 = 계좌 수익 곡선(전체 기간)
+  const linkedTotal = Math.round(t.monthly.reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
+  const total = bought ? linkedTotal : t.returns.all;
   // 마지막으로 기록한 달 (성과 카드 설명: "2026년 · 11월까지")
   const [lastYear, lastMonth] = t.monthly[t.monthly.length - 1].month.split("-").map(Number);
   const similar = TRADERS.filter((o) => o.id !== t.id && listed(o) && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
@@ -111,7 +116,7 @@ export default function TraderPage() {
         {/* 시안: 남색 카드 4개 (누적 수익률 · 전략 이행률 · 최대 낙폭 · 구매한 사람) */}
         <div className="mk-kpis-navy">
           <div>
-            <span>누적 수익률</span>
+            <span title={bought ? "산 전략대로 한 매매만 모은 수익률" : "트레이더 계좌의 실시간 수익률 (전략을 사면 전략 직결 수익률로 보여요)"}>{bought ? "전략 직결 수익률" : "실시간 수익률"}</span>
             <strong>{pct(total)}</strong>
             <small>{t.since.replace("-", "년 ")}월부터</small>
           </div>
