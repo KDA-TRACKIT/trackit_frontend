@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
-import { PURCHASE_NOTICE } from "./policy";
+import PolicyDialog from "../PolicyDialog";
+import { POLICY, POLICY_FOOT, POLICY_LEAD, POLICY_TITLE, PURCHASE_NOTICE } from "./policy";
 // 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 열람권 구매 · 열람권으로 열기
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState, type Ref } from "react";
 import { useRouter } from "next/navigation";
 import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { startCheckout } from "../../lib/api/payments";
@@ -248,6 +249,7 @@ export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: str
   const [draft, setDraft] = useState<string | null>(null);
   /** 구매 전 안내(환불 · 유효기간 · 월 기준)를 확인했는지 */
   const [agreed, setAgreed] = useState(false);
+  const policy = useRef<HTMLDialogElement>(null);
   return (
     <div className="mk-passbox">
       <div className="mk-qty" role="group" aria-label="열람권 수량">
@@ -287,12 +289,35 @@ export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: str
         <span>
           {PURCHASE_NOTICE}
           <br />
-          <Link href="/marketplace/policy" onClick={(e) => e.stopPropagation()}>
+          {/* label 안의 버튼은 체크박스를 건드리지 않음 (팝업은 body 에 붙어 있어 안을 눌러도 마찬가지) */}
+          <button type="button" className="mk-policy-link" aria-haspopup="dialog" onClick={(e) => (e.preventDefault(), policy.current?.showModal())}>
             정책 자세히
-          </Link>
+          </button>
         </span>
       </label>
+      <PurchasePolicyDialog ref={policy} />
       <PassBuyButton trader={trader} quantity={qty} label={qty > 1 ? `열람권 ${qty}장 구매하기` : "열람권 구매하기"} notify={notify} disabled={!agreed} />
     </div>
+  );
+}
+
+/** '정책 자세히' 팝업: 열람권 구매 정책 (모양은 홈 화면 이용약관 · 환불정책 팝업과 같음) */
+function PurchasePolicyDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
+  const titleId = useId();
+  return (
+    <PolicyDialog ref={ref} titleId={titleId} title={POLICY_TITLE}>
+      <p>{POLICY_LEAD}</p>
+      {POLICY.map((sec) => (
+        <section key={sec.title}>
+          <h3>{sec.title}</h3>
+          <ul>
+            {sec.items.map((it) => (
+              <li key={it}>{it}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      <p>{POLICY_FOOT}</p>
+    </PolicyDialog>
   );
 }

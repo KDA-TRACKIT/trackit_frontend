@@ -408,19 +408,13 @@ html[data-theme="dark"] .mk-sim-legend i.doodle { border-top-color:#f1f3f7; }
 .mk-guess-result b.gain { color:var(--mk-gain); } .mk-guess-result b.loss { color:var(--mk-loss); }
 .mk-sim-trades .who i.kind.carry { background:var(--c-accent-soft); color:var(--mk-primary); }
 .mk-apply { display:inline-flex; margin-top:10px; height:34px; font-size:12.5px; }
-/* 이용 정책 · 구매 전 확인 */
-.mk-policy-lead { margin:-8px 0 14px; color:var(--c-sub); font-size:14px; }
-.mk-policy { margin-top:10px; padding:16px 20px; }
-.mk-policy h2 { margin:0 0 6px; font-size:16px; font-weight:800; }
-.mk-policy ul { margin:0; padding-left:18px; }
-.mk-policy li { margin:4px 0; color:var(--c-ink); font-size:13.5px; line-height:1.6; }
+/* 구매 전 확인 ('정책 자세히'는 팝업 버튼: PolicyDialog) */
 .mk-agree { display:flex; align-items:flex-start; gap:6px; margin:2px 0 4px; color:var(--c-sub); font-size:11.5px; line-height:1.5; cursor:pointer; }
 .mk-agree input { margin-top:2px; }
-.mk-agree a { color:var(--mk-primary); font-weight:700; }
+.mk-agree a, .mk-agree .mk-policy-link { color:var(--mk-primary); font-weight:700; }
+.mk-page .mk-policy-link { padding:0; border:0; background:none; font:inherit; font-weight:700; cursor:pointer; }
+.mk-page .mk-policy-link:hover { text-decoration:underline; text-underline-offset:2px; }
 .mk-sim-origin { margin:8px 0 0 !important; color:var(--c-up) !important; font-size:12px !important; }
-.mk-sim-origin a { color:var(--mk-primary); }
-.mk-policy-foot { margin:14px 0 0; color:var(--c-faint); font-size:12px; text-align:center; }
-.mk-policy-foot a { color:var(--mk-primary); font-weight:700; }
 /* 다크 모드 성과 카드: 밝은 파랑 통째 칠 대신 진한 파랑 바탕 + 버튼색 테두리 · 라벨, 숫자는 흰색 (눈부심 줄임) */
 html[data-theme="dark"] .mk-stat { border:1px solid color-mix(in srgb, var(--mk-primary) 38%, transparent); background:color-mix(in srgb, var(--mk-primary) 14%, #12161f); color:#f1f4fa; }
 html[data-theme="dark"] .mk-stat small { color:var(--mk-primary); opacity:1; font-weight:600; }
@@ -455,9 +449,6 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-cell.big:not(.gain):not(.loss) { color:var(--c-sub); }
 .mk-row-spark { justify-self:end; width:110px; }
 .mk-row-spark .mk-spark { margin:0; }
-.mk-policy-foot { margin-top:18px; }
-.mk-policy-foot { font-size:13px; }
-.mk-policy-foot a { color:var(--c-sub); font-weight:500; text-decoration:underline; text-underline-offset:2px; }
 @media (max-width:760px) {
   .mk-thead { display:none; }
   .mk-row { grid-template-columns:36px minmax(0,1fr) auto; row-gap:2px; }
@@ -550,7 +541,6 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-tcard:hover { border-color:var(--c-line-strong); box-shadow:0 4px 14px rgba(15,35,103,.06); }
 .mk-tcard-who small { color:var(--c-sub); font-size:11.5px; font-weight:600; }
 .mk-tcard-who strong { display:flex; align-items:center; gap:6px; margin:4px 0 3px; font-size:17px; font-weight:800; }
-.mk-tcard-who p { margin:0; overflow:hidden; color:var(--c-sub); font-size:12.5px; white-space:nowrap; text-overflow:ellipsis; }
 .mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
 .mk-tcard-stat small, .mk-tcard-spark small { display:block; margin-bottom:4px; color:var(--c-sub); font-size:11.5px; }
 .mk-tcard-stat b { font-size:15px; font-weight:700; white-space:nowrap; }

@@ -1,6 +1,7 @@
 "use client";
 // 전략보관함 첫 화면 = 구매한 전략의 트레이더 (시안 Trackit (3) "전략보관함-구매한 전략 (열람권 시각화)")
 //   열람권을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 열람권(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
+//   보유 열람권 티켓은 장수만큼 겹쳐 '보유 열람권' 글자 끝에 맞춰 끝나고, 7장부터 가운데 ⋯ (PassTickets)
 //   카드를 누르면 그 트레이더의 월별 전략 (/archive/purchases/[id])
 //   열람권 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
 //   실제 판매 등록을 산 것(서버 GET /market/purchases)은 있으면 아래에 따로
@@ -14,6 +15,7 @@ import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, tone, traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
 import HoneyPot from "../../HoneyPot";
+import { PassTickets } from "../../PassTicket";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
 
@@ -32,17 +34,6 @@ const won = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "");
 const STATUS: Record<string, string> = { PAID: "결제 완료", PENDING: "결제 대기", REFUNDED: "환불", FAILED: "실패" };
 const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
-
-/** 열람권 한 장 (노란 티켓) */
-function Ticket() {
-  return (
-    <svg className="ar-ticket" width="32" height="20" viewBox="0 0 32 20" aria-hidden focusable="false">
-      <path d="M3 1h26a2 2 0 0 1 2 2v4a3 3 0 0 0 0 6v4a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-4a3 3 0 0 0 0-6V3a2 2 0 0 1 2-2z" fill="#f2b10c" />
-      <path d="M12 3.5v13" stroke="#fff" strokeWidth="1.2" strokeDasharray="1.6 1.6" />
-      <circle cx="20" cy="10" r="2.6" fill="#fff" />
-    </svg>
-  );
-}
 
 export default function PurchasesPage() {
   const passes = usePasses();
@@ -103,20 +94,10 @@ export default function PurchasesPage() {
                           )}
                         </strong>
                       </div>
-                      <div className="ar-trader-stat">
+                      <div className={`ar-trader-stat${g.count > 0 ? " ar-pass-stat" : ""}`} title={g.count ? `열람권 ${g.count}장` : undefined}>
                         <small>보유 열람권</small>
-                        <b className="ar-tickets" title={`열람권 ${g.count}장`}>
-                          {g.count ? (
-                            <>
-                              {Array.from({ length: Math.min(g.count, 3) }, (_, i) => (
-                                <Ticket key={i} />
-                              ))}
-                              {g.count}개
-                            </>
-                          ) : (
-                            "무료 전략"
-                          )}
-                        </b>
+                        <PassTickets count={g.count} />
+                        <b>{g.count ? `${g.count}개` : "무료 전략"}</b>
                       </div>
                       <div className="ar-trader-stat">
                         <small>전략 이행률</small>

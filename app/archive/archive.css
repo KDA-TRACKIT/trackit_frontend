@@ -498,9 +498,23 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-trader-who small { display:block; color:var(--c-sub); font-size:12px; font-weight:600; }
 .ar-trader-who strong { display:flex; align-items:center; gap:8px; margin:6px 0 4px; font-size:21px; font-weight:800; }
 .ar-heart { display:inline-flex; align-items:center; gap:3px; vertical-align:middle; color:#b9770e; font-size:12px; font-weight:600; }
-.ar-trader-who p { margin:0; color:var(--c-sub); font-size:13px; }
 .ar-trader-stat small { display:block; color:var(--c-sub); font-size:12px; }
 .ar-trader-stat b { display:block; margin-top:6px; font-size:18px; font-weight:700; white-space:nowrap; }
+/* 보유 열람권: 1열 = '보유 열람권' 글자 너비. 티켓 묶음은 그 너비에 딱 맞게 겹치고, 장수는 오른쪽 2열 */
+.ar-trader-stat.ar-pass-stat { display:grid; grid-template-columns:max-content max-content; justify-content:start; align-items:center; column-gap:8px; row-gap:6px; }
+.ar-pass-stat > small { grid-column:1; grid-row:1; white-space:nowrap; }
+.ar-trader-stat.ar-pass-stat > b { grid-column:2; grid-row:2; margin-top:0; }
+.pass-stack { grid-column:1; grid-row:2; display:flex; align-items:center; width:0; min-width:100%; height:20px; }
+.pass-ticket { display:block; flex:none; overflow:visible; }
+/* 2~6장: n장을 칸 너비 안에 고르게 겹침 (뒤 티켓일수록 아래) */
+.pass-stack > .pass-ticket + .pass-ticket { margin-left:calc((100% - var(--n) * 32px) / (var(--n) - 1)); }
+/* 7장 이상: 7장을 그대로 겹쳐 그리고 가운데에 ⋯ — ⋯ 바로 뒤 작은 부분만 흐리게(가장자리는 부드럽게), 점은 티켓과 같은 꿀색 */
+.pass-stack.is-short { position:relative; }
+.pass-stack.is-short > .pass-ticket:last-of-type { position:relative; z-index:2; }
+.pass-more { position:absolute; top:0; bottom:0; left:calc((100% - 32px) / 3); right:32px; z-index:1; display:grid; place-items:center; color:#e8a400; pointer-events:none; }
+.pass-more > * { grid-area:1 / 1; }
+.pass-more-blur { width:20px; height:14px; -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); -webkit-mask:radial-gradient(closest-side, #000 55%, #0000); mask:radial-gradient(closest-side, #000 55%, #0000); }
+.pass-more svg { display:block; position:relative; }
 .ar-trader-stat b.gain { color:#d64545; } .ar-trader-stat b.loss { color:#2f64c4; }
 @media (max-width:800px) { .ar-trader { grid-template-columns:1fr 1fr; } .ar-trader-who { grid-column:1 / -1; } }
 /* 구매한 전략 → 트레이더 (시안) */
@@ -550,12 +564,6 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 .ar-symbol-list { display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
 .ar-symbol-list a { display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid var(--c-line-strong); border-radius:8px; color:var(--c-ink); font-size:14px; font-weight:700; text-decoration:none; }
 .ar-symbol-list a:hover { border-color:var(--c-accent); color:var(--c-accent); }
-
-/* 트레이더 카드 · 보유 열람권 티켓 (시안 Trackit (3)) */
-.ar-trader-stat b.ar-tickets { display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:4px; white-space:nowrap; }
-.ar-tickets svg { display:inline-block; }
-.ar-tickets .ar-ticket { flex:none; }
-.ar-tickets .ar-ticket:last-of-type { margin-right:4px; }
 
 /* 트레이더 상세 · 달 고르기 (기본 select 대신) */
 .ar-mp { position:relative; display:inline-block; }
