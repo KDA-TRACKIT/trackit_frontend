@@ -1377,3 +1377,8 @@ details.ws-ladder { padding:10px 12px; }
 .ws-review-dropped { margin:0 0 8px; padding:8px 12px; border-radius:8px; background:var(--c-warn-soft, #fff3e6); color:var(--c-ink-2); font-size:12.5px; line-height:19px; word-break:keep-all; }
 .ws-review-dropped b { margin-right:6px; color:var(--c-warn, #d97706); }
 .ws-review-merged { margin:0 0 8px; color:var(--c-sub); font-size:12.5px; line-height:18px; word-break:keep-all; }
+/* 저장 확인 창: 매매 계획 4칸 */
+.ws-review-plan { display:flex; flex-direction:column; gap:4px; margin:0; padding:10px 14px; border:1px solid var(--c-line); border-radius:10px; list-style:none; }
+.ws-review-plan li { display:grid; grid-template-columns:44px minmax(0,1fr); gap:10px; font-size:13.5px; line-height:21px; word-break:keep-all; }
+.ws-review-plan b { color:var(--c-sub); font-weight:700; }
+.ws-review-plan em { color:var(--c-faint); font-style:normal; }

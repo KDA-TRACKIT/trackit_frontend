@@ -22,7 +22,8 @@ import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, memoText, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanConfirm";
-import { noteLines, type NoteLine } from "./lineLadder";
+import { autoFillPlan, consolidateStrategy, strategyKind } from "../../lib/strategyText";
+import { buildLadder, noteLines, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
 import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { suggestLink, type Execution } from "../../lib/ai-link";
@@ -349,7 +350,26 @@ export default function WorkshopPage() {
   /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
   const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
   /** AI 가 쌓인 전략과 합친 정리본이 있으면 이번 저장이 종목 전략 전체를 대신함 */
-  const consolidating = !!aiMemoResult?.strategy?.trim() && strategyRecords.length > 0;
+  // 종목 전략 정리본: 쌓인 전략(투자자가 쓴 문장만) + 이번 Memo. 다시 쓴 칸만 바꾸고 나머지는 이어받음 (규칙, AI 가 말을 바꾸지 않게)
+  const merged = consolidateStrategy(strategyRecords.map((r) => memoText(r.text)), noteText);
+  const consolidating = strategyRecords.length > 0 && !!merged.text;
+  /** 매매 계획: 그은 선에서 고른 매매 + Memo 문장, 빈 칸(손절 · 목표 · 매도)은 정한 가격 기준으로 그은 선에서 채움 */
+  const fullPlan = () => {
+    const { rungs, groups } = buildLadder(drawings, bars[bars.length - 1]?.time, bars);
+    const prices = [...rungs.map((r) => r.price), ...groups.flatMap((g) => (g.kind === "zone" ? [g.low, g.high] : g.levels.map((l) => l.price)))];
+    return autoFillPlan(withMemo(plan, noteText), prices, money, today?.close);
+  };
+  /** 확인 창에 보여 줄 매매 계획 4칸 */
+  const planRows = () => {
+    const fp = fullPlan();
+    const conds = fp.condition.split(" / ").map((x) => x.trim()).filter(Boolean);
+    return [
+      { label: "매수", text: conds.filter((c) => strategyKind(c) === "buy").join(" / ") },
+      { label: "매도", text: conds.filter((c) => strategyKind(c) !== "buy").join(" / ") },
+      { label: "손절", text: fp.stop },
+      { label: "목표", text: fp.target },
+    ];
+  };
 
   /** AI 분석 (그은 선 + Memo). 결과가 들어오면 true */
   async function saveToRecord(): Promise<boolean> {
@@ -382,10 +402,6 @@ export default function WorkshopPage() {
             : []),
         ],
         // 이 종목에 쌓인 종목 전략 → AI 가 이번 노트와 합쳐 하나로 정리 (바뀐 관점만 빼고 이어받음)
-        previousStrategy: strategyRecords
-          .slice(-60)
-          .map((r) => ({ at: `${r.date} ${r.noteTime.slice(0, 5)}`, text: memoText(r.text).slice(0, 4000) }))
-          .filter((r) => r.text.trim()),
         mode: "ai",
         provider: "openai",
         currency: us ? "USD" : "KRW",
@@ -461,7 +477,7 @@ export default function WorkshopPage() {
     setConfirmBusy(true);
     setConfirmError(null);
     // 계획 = 그은 선에서 고른 매매 + Memo 에 쓴 매수 · 손절 · 목표 문장
-    const fp = withMemo(plan, noteText);
+    const fp = fullPlan();
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
     const result = await addRecord({
       date: kstNow().date,
@@ -540,11 +556,9 @@ export default function WorkshopPage() {
   /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 분석 정리(머리표 없이) + 고른 매매 */
   //   매매 계획 줄([노트 종류] · [매수 조건] …)은 체결과 연결됐을 때만 (연결 안 되면 매매 계획으로 치지 않음)
   const savedText = () =>
-    // AI 가 쌓인 전략과 합친 정리본이 있으면 그게 이번 종목 전략 (예전 전략 + 이번 Memo, 바뀐 관점만 뺌). 없으면 Memo + AI 정리
-    (aiMemoResult?.strategy?.trim()
-      ? [aiMemoResult.strategy.trim()]
-      : [noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""]
-    ).concat(linkedExecution ? planText(withMemo(plan, noteText)) : "").filter(Boolean).join("\n\n");
+    // 종목 전략 정리본(투자자가 쓴 문장 그대로) + AI 분석 문단(참고용, 다음 정리 때는 전략으로 안 침) + 체결과 연결되면 계획 줄
+    //   맨 위 줄은 저장할 때의 현재가 (나중에 그때 가격을 바로 보게. '[' 로 시작해 다음 정리 때 전략 문장으로 안 침)
+    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].concat(linkedExecution ? planText(fullPlan()) : "").filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {
@@ -834,6 +848,9 @@ ${t}` : t))}
                   ai={aiMemoResult}
                   records={strategyRecords}
                   consolidating={consolidating}
+                  planRows={planRows()}
+                  current={today?.close ? money(today.close) : undefined}
+                  dropped={consolidating ? merged.dropped : []}
                   linked={!!linkedExecution}
                   busy={confirmBusy}
                   error={confirmError}

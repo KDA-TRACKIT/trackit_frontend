@@ -17,6 +17,9 @@ export default function SaveReview({
   ai,
   records,
   consolidating = false,
+  planRows = [],
+  current,
+  dropped = [],
   linked,
   busy,
   error,
@@ -35,6 +38,12 @@ export default function SaveReview({
   records: TradeRecord[];
   /** 이번 저장이 AI 가 쌓인 전략과 합친 정리본 → 예전 메모는 따로 안 보이고 정리본 하나로 */
   consolidating?: boolean;
+  /** 매매 계획 4칸 (매수 · 매도 · 손절 · 목표). 빈 칸을 그은 선으로 채운 건 '(자동 …)' 표시 */
+  planRows?: { label: string; text: string }[];
+  /** 저장할 때의 현재가 (글로) */
+  current?: string;
+  /** 이번 Memo 로 바뀌어 정리본에서 뺀 예전 전략 문장 */
+  dropped?: string[];
   /** 체결과 연결됐는지 (아니면 검증 대기로 저장) */
   linked: boolean;
   busy: boolean;
@@ -139,15 +148,32 @@ export default function SaveReview({
             </section>
           )}
 
+          {/* 매매 계획: 정한 칸 + 빈 칸은 정한 가격 기준으로 그은 선에서 자동 (아무것도 안 정했으면 매매 계획 없음) */}
+          {planRows.some((r) => r.text) ? (
+            <section>
+              <h3>
+                매매 계획 <span>{current ? `현재가 ${current} · ` : ""}{linked ? "체결과 연결돼 매매 계획으로 저장" : "체결과 연결되면 매매 계획으로 쳐요"}</span>
+              </h3>
+              <ul className="ws-review-plan">
+                {planRows.map((r) => (
+                  <li key={r.label}>
+                    <b>{r.label}</b>
+                    {r.text ? <span>{r.text}</span> : <em>정하지 않음 · 맞는 선이 없어 비워 둠</em>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분(AI 가 쌓인 전략과 합친 정리본)을 합친 모습 */}
           <section>
             <h3>
               종목 전략 <span>{consolidating ? 1 : records.length + (pendingText.trim() ? 1 : 0)}개 · 저장 후 · 눌러서 고치기</span>
             </h3>
             {/* AI 가 쌓인 전략과 합치며 뺀 예전 항목 (이번 Memo 로 관점이 바뀐 것) */}
-            {ai?.strategy && ai.dropped?.length ? (
+            {dropped.length ? (
               <p className="ws-review-dropped">
-                <b>이번에 바뀌어 뺀 예전 전략</b> {ai.dropped.join(" · ")}
+                <b>이번에 바뀌어 뺀 예전 전략</b> {dropped.join(" · ")}
               </p>
             ) : null}
             {consolidating && (

@@ -1205,6 +1205,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         eraseAt(x, y);
         return;
       }
+      // 드로잉을 고른 채로 빈 곳을 누르면: 고른 것만 풀고 새로 그리지 않음 (다음 누름부터 그림)
+      if (layerRef.current?.selected() && pendingRef.current.length === 0) {
+        selectDrawing(null);
+        return;
+      }
       if (tool.mode !== "free") {
         // 점 찍는 도구: 누른 자리를 기억하고, 누르는 동안 차트가 움직이지 않게 (손떨림으로 클릭이 끌기가 되어 점이 안 찍히던 것)
         //   예전엔 스마트 그리기를 끄면 브라우저 click 에서 찍었는데, 조금만 움직여도 차트가 끌려 클릭이 사라졌다

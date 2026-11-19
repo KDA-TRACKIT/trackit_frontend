@@ -9,6 +9,8 @@
 //   - 손절 기준이 비어 있으면 "손절 기준이 있나요?" 라고 물음
 //   - AI 요약은 '제안'으로만 보여 주고, 넣을지는 투자자가 고름
 import { useMemo } from "react";
+import { memoKind } from "../../lib/strategyText";
+export { memoKind };
 import type { Drawing } from "../../lib/drawing";
 import { buildLadder, classify, roleKey, roleOf, type LastBar, type Role } from "./lineLadder";
 import { NEAREST_LINES } from "../../lib/strategy";
@@ -57,27 +59,6 @@ export const EMPTY_PLAN: Plan = {
 export const KIND_LABEL: Record<NoteKind, string> = { trade: "매매 계획", hold: "보유 관리", view: "분석·전망", review: "회고" };
 
 /** 확정할 때 메모 뒤에 붙는 구조화된 계획 (투자자가 확인한 것만) */
-// Memo 문장 → 계획 칸 판단용 표현 (손절 · 목표 같은 말을 안 써도 비슷한 말로 알아봄)
-const SELL_WORDS = /매도|팔[기고아면자겠았]|판다|팜|정리|청산|던[지짐져]|빼[기고]|뺀다|털[기고어]|비중\s*(?:축소|줄)|차익/;
-const DOWN_WORDS = /이탈|깨지|깨면|깨질|깨져|무너지|붕괴|하회|밑으로|아래로|빠지면|빠질|내려가|내려오|떨어지|하락하면|못\s*지키|안\s*지키|지지\s*실패/;
-const UP_WORDS = /도달|가면|오면|올라가|올라오|오르면|돌파|넘으면|넘기면|넘어가|터치|찍으면|닿으면|상승하면|저항\s*(?:에서|까지)/;
-const BUY_WORDS = /매수|사[기고자]|살\s|산다|삼|사야|담[기고아는]|줍[기고]|주워|진입|들어가|들어감|탑승|불타기|물타기|추매|분할\s*매수|베팅/;
-
-/**
- * 문장이 어느 계획 칸인지
- *   손절: '손절 · 스탑' 또는 떨어지는 말(이탈 · 깨지면 · 밑으로 …) + 파는 말(팔기 · 정리 · 던짐 …)
- *   목표: '목표 · 익절 · 수익 실현' 또는 오르는 말(도달 · 가면 · 돌파 …) + 파는 말
- *   매수 조건: 사는 말(사기 · 담기 · 줍기 · 진입 …) 또는 방향 없이 파는 말
- */
-export function memoKind(t: string): "stop" | "target" | "condition" | null {
-  if (/손절|손실\s*(?:컷|제한)|스탑|스톱/.test(t)) return "stop";
-  if (/목표|익절|수익\s*실현|차익\s*실현/.test(t)) return "target";
-  const sell = SELL_WORDS.test(t);
-  if (sell && DOWN_WORDS.test(t)) return "stop";
-  if (sell && UP_WORDS.test(t)) return "target";
-  return sell || BUY_WORDS.test(t) ? "condition" : null;
-}
-
 /**
  * Memo 에 쓴 매매 문장을 계획 칸으로 (AI 가 지어내지 않고 투자자가 쓴 말 그대로)
  *   어느 칸인지는 memoKind (비슷한 말까지). 숫자는 천 단위 쉼표
