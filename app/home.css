@@ -39,16 +39,14 @@
 .home-leaderboard { padding:37px 0 75px; background:#f7f9fc; }
 .home-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; }
 .home-section-heading h2 { margin:0; color:var(--c-ink,#151515); font-size:27px; line-height:34px; font-weight:600; letter-spacing:-.6px; }
-/* 남색 버튼(전략 마켓 · 거래 기록 열기 · 내 노트 열기)은 글자 길이와 상관없이 같은 크기: 가장 긴 '내 노트 열기 →'가 들어가는 162×38 */
-.home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:10px; min-width:162px; height:38px; padding:0 16px; border-radius:10px; background:#0f2367; color:#fff; font-size:15px; font-weight:600; }
+/* 남색 버튼(전략 마켓 · 내 노트)은 글자 길이와 상관없이 같은 크기 152×38 */
+.home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:10px; min-width:152px; height:38px; padding:0 20px; border-radius:10px; background:#0f2367; color:#fff; font-size:15px; font-weight:600; }
 .home-action:hover { background:#203777; }
 /* 리더보드 제목 줄: 버튼을 제목 윗줄에 맞춤 (Figma) */
 .home-leaderboard .home-section-heading { align-items:flex-start; }
 .home-leaderboard .home-action { margin-top:2px; }
-/* 트레이더 리더보드 제목을 살짝 위로 → 아래 정렬 버튼과 간격 */
-.home-leaderboard .home-section-heading h2 { position:relative; top:-8px; }
-/* 제목 → 정렬 탭 → 카드 간격 (Figma) */
-.home-leaderboard-tabs { display:flex; flex-wrap:wrap; gap:7px; margin:-4px 0 10px; }
+/* 제목 → 정렬 탭 → 카드 간격 (제목 글자 아래 20 · 탭 아래 20, 카드끼리 간격 20 과 맞춤) */
+.home-leaderboard-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 20px; }
 /* 정렬 버튼 3개: 같은 너비 · 가운데 글자 (글자 길이가 달라도 한 줄로 고르게) */
 .home-leaderboard-tabs button { display:inline-flex; align-items:center; justify-content:center; min-width:128px; height:38px; padding:0 16px; border:1px solid var(--home-line); border-radius:12px; background:var(--c-surface,#fff); color:var(--home-navy); font:inherit; font-size:15px; font-weight:600; cursor:pointer; }
 .home-leaderboard-tabs button[aria-pressed="true"] { border-color:#0f2367; background:#0f2367; color:#fff; }
@@ -90,11 +88,9 @@
 .home-note-dots i,.home-day-note > i { display:block; flex:none; width:9px; height:9px; border-radius:50%; }
 .home-redesign i.trade { background:#7653ed; }.home-redesign i.market { background:#697e9e; }.home-redesign i.news { background:#2196f3; }
 .home-note-dots small { color:var(--home-muted); font-size:10px; }
-.home-day-detail { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; margin-top:16px; padding-top:16px; border-top:1px solid var(--home-line); }
-.home-day-detail-head { margin-bottom:8px; padding-right:12px; }
+.home-day-detail { margin-top:16px; padding-top:16px; border-top:1px solid var(--home-line); }
+.home-day-detail-head { margin-bottom:8px; }
 .home-day-detail-head > p { margin:0; color:var(--home-muted); font-size:14px; line-height:22px; font-weight:600; }
-.home-notes-action { margin-top:12px; } /* 크기는 .home-action 과 같음 */
-.home-day-detail > :is(.home-day-note,.home-detail-empty) { grid-column:1 / -1; }
 .home-day-trade { display:flex; align-items:center; gap:28px; min-height:34px; color:var(--home-ink); font-size:18px; }
 .home-day-trade strong { font-weight:600; }.home-day-trade > span { color:var(--home-muted); font-size:14px; }
 .home-day-note { display:flex; align-items:center; gap:10px; min-height:40px; color:var(--home-ink); }
@@ -124,7 +120,6 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
   .home-redesign .trader-grid { gap:12px; }.home-weekly { padding-top:36px; }
   .home-weekly-card { padding:14px; }.home-week-nav h3 { font-size:15px; }
   .home-week-days { gap:7px; overflow-x:auto; grid-template-columns:repeat(7,minmax(80px,1fr)); padding-bottom:8px; }
-  .home-day-detail { grid-template-columns:1fr; }.home-notes-action { justify-self:start; margin:0 0 8px; }
   .home-day-trade { flex-wrap:wrap; gap:8px; padding-right:0; font-size:16px; }
   .home-day-note { flex-wrap:wrap; gap:6px; padding:8px 0; }.home-day-note strong { font-size:15px; }.home-day-note > span { flex-basis:100%; padding-left:15px; }
   .home-detail-empty { margin:20px 0; }
