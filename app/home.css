@@ -85,6 +85,7 @@
 .home-redesign :is(a,button):focus-visible { outline:2px solid #557ab5; outline-offset:3px; }
 html[data-theme="dark"] .home-redesign { --home-line:var(--c-line); --home-muted:var(--c-sub); --home-navy:var(--c-accent); --home-ink:var(--c-ink); background:var(--c-bg); }
 html[data-theme="dark"] .home-redesign :is(.home-leaderboard,.home-week-day,.home-trader-tag) { background:var(--c-subtle); }
+html[data-theme="dark"] .home-redesign .home-trader-tag { color:var(--c-accent); }
 html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(--c-accent-soft); border-color:var(--c-accent); }
 @media (max-width:1050px) {
   .home-overview { grid-template-columns:1.1fr 1fr; }

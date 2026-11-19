@@ -251,6 +251,8 @@ const SMART_DRAW_STORE = "trackit:smart-draw";
 const HOLD_SNAP_MS = 450;
 /** 이만큼(px) 안에서 누르고 떼면 클릭으로 본다 (손떨림·펜 흔들림 허용). 넘으면 끌어서 그리기 */
 const CLICK_SLOP = 10;
+/** 스마트 그리기 꺼짐: 이만큼 넘게 움직이면 클릭이 아니라 차트 끌기 */
+const PLAIN_CLICK_SLOP = 4;
 /** 다점 도구(경로 등): 이 시간(ms) 안에 같은 자리를 또 누르면 완성 */
 const DOUBLE_TAP_MS = 400;
 const DEFAULT_INSTANCES: IndicatorInstance[] = [{ uid: "volume", id: "volume", params: { ma: 20 }, visible: true }];
@@ -952,7 +954,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
 
     // 기존 드로잉 고르기 · 옮기기: 도구가 없을 때, 또는 도구를 들고 있어도 아직 첫 점을 안 찍었을 때.
     // 첫 점을 찍은 뒤엔 누름은 항상 "다음 점" (다른 드로잉 위를 눌러도 고르지 않고 점이 찍힌다)
-    const canPick = () => !noteModeRef.current && (!activeToolRef.current || pendingRef.current.length === 0);
+    // 스마트 켜짐: 도구를 든 동안엔 기존 드로잉을 안 고름 (그리려다 옆 선이 잡히지 않게). 꺼짐: 원래대로 점 찍기 전이면 고름
+    const canPick = () => !noteModeRef.current && (!activeToolRef.current || (!smartRef.current && pendingRef.current.length === 0));
     const handleCaptureDown = (event: PointerEvent) => {
       if (!canPick() || event.button !== 0) return;
       const layer = layerRef.current;
@@ -1202,6 +1205,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         if (!point) return;
         if (layerRef.current?.selected()) selectDrawing(null); // 새로 그리기 시작하면 고른 드로잉은 풀기
         press = { x, y, point, dragging: false };
+        // 스마트 꺼짐(원래 방식): 끌면 차트가 움직이고 점은 안 찍힘 → 차트를 잠그지 않음
+        if (!smartRef.current) return;
         chart.applyOptions({ handleScroll: false });
         try {
           container.setPointerCapture(event.pointerId);
@@ -1234,6 +1239,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       if (press && tool && tool.mode !== "free") {
         // 누른 채 끌기: 첫 점에서 커서까지 미리 보기 (놓으면 그 자리가 끝점)
         const { x, y } = localXY(event);
+        if (!smartRef.current) {
+          // 원래 방식: 조금이라도 끌면 차트 이동 (점 안 찍음)
+          if (Math.hypot(x - press.x, y - press.y) > PLAIN_CLICK_SLOP) press = null;
+          return;
+        }
         if (!press.dragging && Math.hypot(x - press.x, y - press.y) <= CLICK_SLOP) return;
         if (pendingRef.current.length > 0 || tool.pointCount < 2 || tool.mode === "multi") return;
         press.dragging = true;
@@ -2145,8 +2155,8 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           aria-pressed={smartDraw}
           title={
             smartDraw
-              ? "스마트 그리기 켜짐: 끌어서 선 긋기 · 흔들려도 클릭 · 곧게 그은 브러시는 직선으로. 누르면 원래 방식으로"
-              : "스마트 그리기 꺼짐: 원래 방식(클릭으로 점 찍기 · 브러시는 손그림 그대로). 누르면 켜짐"
+              ? "스마트 그리기 켜짐: 끌어서 선 긋기 · 흔들려도 클릭 · 도구를 든 동안 그은 선 안 고름 · 곧게 그은 브러시는 직선으로. 누르면 원래 방식으로"
+              : "스마트 그리기 꺼짐: 원래 방식(클릭으로만 점 찍기 · 끌면 차트 이동 · 도구를 들고도 그은 선 고르기 · 브러시는 손그림 그대로). 누르면 켜짐"
           }
         >
           스마트 {smartDraw ? "ON" : "OFF"}

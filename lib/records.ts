@@ -159,7 +159,8 @@ export async function addRecord(
 ): Promise<{ ok: boolean; error?: string }> {
   const { drawings, plan, ...record } = input;
   const list = read();
-  if (list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
+  // 같은 노트·체결 조합은 한 번만. 고친 메모(replaces)는 같은 초에 여러 개 고쳐도 다 남김
+  if (!record.replaces && list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
   if (source === "server") {
     try {
       await saveNote({
