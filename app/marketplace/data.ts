@@ -149,83 +149,6 @@ export type Verify = {
   claimed?: number;
 };
 
-// 같은 결과가 나오게 고정 시드
-function rand(seed: number) {
-  // mulberry32
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const NAMES: [string, string, string][] = [
-  ["차트메이트", "지지선에서 기회를 찾는 단타 트레이더", "지지선에서 기회를 찾고, 정한 원칙을 지킵니다."],
-  ["파동노트", "거래량을 보고 추세 추종 트레이더", "파동이 꺾이기 전까지는 흔들리지 않습니다."],
-  ["원트로그", "눌림목 매매만 하는 스윙 트레이더", "기다린 만큼만 들어가고, 정한 만큼만 나옵니다."],
-  ["모멘텀랩", "이동평균선을 보는 중장기 트레이더", "추세는 친구, 손절은 보험입니다."],
-  ["트렌드픽", "박스권 돌파를 노리는 트레이더", "박스를 깨는 순간에만 움직입니다."],
-  ["시그널맵", "RSI 과매도 구간을 노리는 트레이더", "숫자가 말할 때만 삽니다."],
-  ["밸류버스", "실적 시즌에 강한 가치 투자자", "싸게 사서 오래 기다리는 연습을 합니다."],
-  ["캔들로그", "캔들 패턴으로 진입하는 단타 트레이더", "캔들 하나에도 이유를 붙입니다."],
-  ["볼밴헌터", "볼린저 밴드 하단을 노리는 트레이더", "밴드 밖은 기회, 밴드 안은 휴식."],
-  ["갭업클럽", "갭 상승 종목만 보는 단타 트레이더", "아침 10분에 하루를 겁니다."],
-  ["스윙도크", "주봉으로 길게 보는 스윙 트레이더", "주봉이 정한 방향만 따릅니다."],
-  ["리스크제로", "손절 원칙이 엄격한 트레이더", "잃지 않는 것이 먼저입니다."],
-  ["나스닥워커", "미국 기술주 추세 추종", "큰 흐름 위에서만 탑니다."],
-  ["코스닥러너", "코스닥 테마 단타", "테마의 첫날과 둘째 날만 봅니다."],
-  ["바닥탐험가", "낙폭 과대 반등 노리는 트레이더", "모두가 팔 때 조금씩 삽니다."],
-];
-
-const HEAD = ["매수", "추세", "캔들", "돌파", "눌림", "박스", "갭"];
-const TAIL = ["노트", "로그", "러너", "헌터", "메이커", "스쿨"];
-
-function makeTrader(i: number): Trader {
-  const r = rand(i * 977 + 13);
-  const [baseName, tagline, quote] = NAMES[i % NAMES.length];
-  // 15명 뒤로는 이름이 겹치지 않게 앞뒤 말을 섞어 만든다
-  const name = i < NAMES.length ? baseName : `${HEAD[i % HEAD.length]}${TAIL[Math.floor(i / HEAD.length) % TAIL.length]}`;
-  const id = `t${i + 1}`;
-  const base = (r() - 0.35) * 6; // 월 평균
-  const monthly: { month: string; ret: number }[] = [];
-  for (let k = 23; k >= 0; k--) {
-    const d = new Date(2026, 10 - k, 1);
-    const ret = Math.round((base + (r() - 0.5) * 9) * 100) / 100;
-    monthly.push({ month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, ret });
-  }
-  const sum = (n: number) => Math.round(monthly.slice(-n).reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
-  const styles = [STYLES[i % STYLES.length], STYLES[(i * 3 + 2) % STYLES.length]].filter((v, k, a) => a.indexOf(v) === k);
-  const indicators = [INDICATORS[i % INDICATORS.length], INDICATORS[(i * 2 + 1) % INDICATORS.length]].filter((v, k, a) => a.indexOf(v) === k);
-  const year = 2023 + (i % 3);
-  return {
-    id,
-    name,
-    tagline,
-    intro: `${tagline.replace(/ 트레이더$| 투자자$/, "")}. 매달 전략과 결과를 함께 공개합니다.`,
-    quote,
-    bio: [
-      `${i % 4 === 3 || i === 12 ? "미국" : "국내"} 주식의 ${indicators[0]}과 ${indicators[1] ?? "거래량"} 변화를 중심으로 매매합니다.`,
-      "진입 전에 손절 기준을 정하고, 계획과 실제 행동을 비교해 기록합니다.",
-    ],
-    since: `${year}-${String((i % 12) + 1).padStart(2, "0")}`,
-    likes: 40 + Math.round(r() * 160),
-    price: [9900, 12900, 19900, 8900, 29900, 100900][i % 6],
-    buyers: 30 + Math.round(r() * 300),
-    follow: 80 + Math.round(r() * 18),
-    mdd: -Math.round((2 + r() * 14) * 100) / 100,
-    styles,
-    indicators,
-    type: TYPES[i % TYPES.length].key,
-    market: i % 4 === 3 || i === 12 ? "해외 주식" : "국내 주식",
-    returns: { "1m": sum(1), "3m": sum(3), "6m": sum(6), "1y": sum(12), "2y": sum(24), all: sum(24) },
-    monthly,
-    verify: { months: 24, trades: 0, preRate: 0 },
-  };
-}
-
 /** 실제 일봉으로 돌린 결과(sim.json)로 수익률 · 낙폭 · 이행률 · 매매 수를 채운다 (이름 · 가격 · 소개는 그대로) */
 function withSim(t: Trader): Trader {
   const s = sim(t.id);
@@ -271,13 +194,6 @@ function stocksOf(months: SimTrader["months"]) {
 //   (2026-11-20) 한 종목이어도 가리지 않고 보여 줌 → 항상 false. 부르는 곳은 그대로 둠
 export const oneStock = (_t: Trader, _p: Period) => false;
 
-/** 최근 n개월 (2026-11 까지) 월 목록 */
-function lastMonths(n: number, rets: number[]) {
-  return rets.map((ret, k) => {
-    const d = new Date(2026, 10 - (n - 1 - k), 1);
-    return { month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, ret };
-  });
-}
 function sumOf(monthly: { ret: number }[], n: number) {
   return Math.round(monthly.slice(-n).reduce((a, m) => a * (1 + m.ret / 100), 1) * 10000 - 10000) / 100;
 }
@@ -286,41 +202,40 @@ function returnsOf(monthly: { ret: number }[]): Record<Period, number> {
 }
 
 /**
- * 차트 밈 예시 — "기영이 머리 차트"(뾰족한 고점이 짧게 여러 번 반복되는 모양)를 실전에 적용해 기록으로 수익을 보인 트레이더.
- * TRACKIT 은 방법(밈 · 지표 · 감)을 따지지 않는다. 장난으로 파는 전략을 거르는 기준은 팀에서 따로 만든다
+ * 데모 판매자 9명 (2026-11-20: 예시 41명 → 섹터별 9명). 숫자 · 매매 · 노트는 sim.json t1~t9 / data/market-sim/t1~t9.json
+ *   (scripts/market-sim/demo_build.py 가 실제 일봉으로 만듦: 한 사람 = 한 섹터 · 한 규칙, 2023-01 ~ 2026-11)
  */
-
-const MEME_REAL_MONTHLY = lastMonths(18, [2.1, -1.4, 3.6, 1.2, 4.8, -2.2, 2.9, 0.8, 3.3, -0.9, 5.1, 1.7, -1.8, 2.6, 3.9, 0.6, 2.2, 4.1]);
-const MEME_TRADERS: Trader[] = [
-  {
-    id: "t41",
-    name: "기영이머리연구소",
-    tagline: "기영이 머리 차트를 실전에서 검증한 트레이더",
-    intro: "밈으로 불리는 기영이 머리 차트를 2년 동안 실전에 적용하고 결과를 공개합니다.",
-    quote: "모양은 밈이어도, 기준은 진지하게.",
-    bio: [
-      "뾰족한 고점이 짧은 간격으로 세 번 넘게 반복되는 '기영이 머리' 모양을 고점 분산 신호로 보고 비중을 줄입니다.",
-      "모양만 보고 팔지 않고, 거래량이 줄고 직전 저점을 깨는 걸 확인한 뒤에만 움직여요. 매달 계획을 먼저 잠그고 결과를 공개했어요.",
-    ],
-    since: "2025-06",
-    likes: 214,
-    price: 14900,
-    buyers: 188,
-    follow: 93,
-    mdd: -4.2,
-    styles: ["스윙", "돌파 매매"],
-    indicators: ["거래량", "지지·저항"],
-    type: "추세 추종",
-    market: "국내 주식",
-    returns: returnsOf(MEME_REAL_MONTHLY),
-    monthly: MEME_REAL_MONTHLY,
-    verify: { months: 18, trades: 126, preRate: 91 },
-    strategyTitles: [
-      ["기영이 머리 세 번째 봉우리에서 비중 줄이기", "봉우리 간격 · 거래량으로 거른 실제 매매 기록"],
-      ["가짜 기영이 머리 걸러내기", "거래량이 줄지 않으면 패턴으로 보지 않은 달"],
-      ["봉우리 이탈 뒤 다시 사는 기준", "직전 저점을 회복하는 걸 확인하고 나눠 산 기록"],
-    ],
-  },
+const demo = (id: string, name: string, sector: string, market: "국내 주식" | "해외 주식", type: string, styles: string[], indicators: string[], price: number): Trader => ({
+  id,
+  name,
+  tagline: sector,
+  intro: "",
+  quote: "",
+  bio: [],
+  since: "2023-01",
+  likes: 0,
+  price,
+  buyers: 0,
+  follow: 0,
+  mdd: 0,
+  styles,
+  indicators,
+  type,
+  market,
+  returns: { "1m": 0, "3m": 0, "6m": 0, "1y": 0, "2y": 0, all: 0 },
+  monthly: [],
+  verify: { months: 0, trades: 0, preRate: 0 },
+});
+const DEMO: Trader[] = [
+  demo("t1", "깃발러너", "반도체", "국내 주식", "추세 추종", ["스윙", "돌파 매매"], ["추세선", "거래량"], 19900),
+  demo("t2", "트렌드픽", "2차전지", "국내 주식", "추세 추종", ["돌파 매매"], ["지지·저항", "거래량"], 14900),
+  demo("t3", "밸류버스", "바이오", "국내 주식", "스윙", ["가치 투자", "중장기"], ["이동평균선", "RSI"], 12900),
+  demo("t4", "원트로그", "자동차", "국내 주식", "스윙", ["눌림목 매매"], ["이동평균선"], 9900),
+  demo("t5", "황금비노트", "방산 · 조선", "국내 주식", "스윙", ["스윙"], ["추세선", "지지·저항"], 19900),
+  demo("t6", "MACD리버설", "금융", "국내 주식", "추세 추종", ["스윙"], ["MACD"], 14900),
+  demo("t7", "볼밴헌터", "인터넷 · 게임", "국내 주식", "단기 매매", ["단타", "스윙"], ["볼린저 밴드"], 9900),
+  demo("t8", "스윙도크", "미국 빅테크", "해외 주식", "스윙", ["스윙"], ["추세선"], 14900),
+  demo("t9", "모멘텀랩", "미국 헬스케어", "해외 주식", "추세 추종", ["중장기", "추세 추종"], ["이동평균선"], 12900),
 ];
 
 /**
@@ -349,7 +264,7 @@ const EOJIN: Trader = {
   verify: { months: 0, trades: 0, preRate: 0 },
 };
 
-export const TRADERS: Trader[] = [...Array.from({ length: 40 }, (_, i) => makeTrader(i)), ...MEME_TRADERS, EOJIN].map(withSim);
+export const TRADERS: Trader[] = [...DEMO, EOJIN].map(withSim);
 
 /**
  * 판매 심사: 어떤 방법이든 기록으로 통하는 게 확인되면 판매, 아니면 판매 보류 (목록에서 숨기고 구독 판매 안 함)

@@ -8,7 +8,9 @@ import os, sys, json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..", "..")
-CANDLES = os.path.join(ROOT, "data", "market-sim-eojin", "candles")
+# 데모 판매자 9명은 TRACKIT_CANDLES(일봉 폴더) · TRACKIT_MKT(시장 기준 종목) 로 바꿔 씀 (기본 = 어진냥이)
+CANDLES = os.environ.get("TRACKIT_CANDLES") or os.path.join(ROOT, "data", "market-sim-eojin", "candles")
+MKT = os.environ.get("TRACKIT_MKT") or "QQQ"
 SIM_SRC = open(os.path.join(HERE, "sim.py"), encoding="utf-8").read()
 
 # sim.py 맨 아래 41명 생성 루프(summary = {}) 앞까지만
@@ -29,11 +31,13 @@ while (y, m) <= (2026, 11):
 NS["MONTHS"] = MONTHS
 NS["START"] = MONTHS[0] + "-01"
 
-# 쉬는 돈 = QQQ (그날 종가 등락)
-QQQ = NS["BARS"]["QQQ"]
-NS["IDLE_RET"] = {"US": {QQQ[k]["d"]: QQQ[k]["c"] / QQQ[k - 1]["c"] - 1 for k in range(1, len(QQQ))}, "KR": {}}
-# 증시 메모 바스켓 · 종목 풀에서 지수는 뺌
-NS["US_POOL"] = [c for c in NS["US_POOL"] if c != "QQQ"]
+# 쉬는 돈 = 시장 기준 종목(어진냥이 QQQ) 그날 종가 등락. 국내 · 미국 같은 표에 넣음
+_M = NS["BARS"][MKT]
+_idle = {_M[k]["d"]: _M[k]["c"] / _M[k - 1]["c"] - 1 for k in range(1, len(_M))}
+NS["IDLE_RET"] = {"US": _idle, "KR": _idle}
+# 증시 메모 바스켓 · 종목 풀에서 시장 기준 종목은 뺌
+NS["US_POOL"] = [c for c in NS["US_POOL"] if c not in (MKT, "TQQQ")]
+NS["KR_POOL"] = [c for c in NS["KR_POOL"] if c != MKT]
 
 AI = ["NVDA", "AMD", "AVGO", "MSFT", "META", "PLTR", "GOOGL"]
 BIO_THEME = ["MRNA", "NVAX", "BNTX", "PLUG", "LCID", "AMC", "GME"]

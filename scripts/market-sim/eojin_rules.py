@@ -16,7 +16,7 @@ for code in BARS:
     IND[code]["ma200"] = sma(IND[code]["c"], 200)
 
 # ── 시장 하락 구간 (QQQ): 60일 고점 대비 -10% 이하이거나, 20거래일 수익률 -5% 이하 ──
-Q = BARS["QQQ"]
+Q = BARS[E.MKT]
 QC = [x["c"] for x in Q]
 DOWN = {}
 for k in range(len(Q)):
@@ -119,7 +119,7 @@ def combo(gc, mak):
 #   맥점은 나스닥100(QQQ) 차트에 긋고(지수의 핵심 지지), 사는 건 TQQQ. QQQ 가 맥점에 닿은 뒤 양봉으로 지지하면 그날 TQQQ 종가에 매수
 #   손절: QQQ 가 맥점 3% 아래로 마감하면(TQQQ 로는 약 -9%) → TQQQ 진입가 × 0.91
 #   목표: QQQ 가 하락 시작점(직전 60일 고점)으로 돌아가는 만큼의 3배
-QB, QI = BARS["QQQ"], IND["QQQ"]
+QB, QI = BARS[E.MKT], IND[E.MKT]
 QIDX = {x["d"]: k for k, x in enumerate(QB)}
 
 def _qqq_level(kind, k):

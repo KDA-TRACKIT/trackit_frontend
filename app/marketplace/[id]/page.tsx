@@ -75,7 +75,7 @@ export default function TraderPage() {
                 </h1>
               </div>
             </div>
-            <blockquote>“{t.quote}”</blockquote>
+            {t.quote && <blockquote>“{t.quote}”</blockquote>}
             {t.bio.map((b) => (
               <p key={b}>{b}</p>
             ))}

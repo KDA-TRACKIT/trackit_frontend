@@ -1,9 +1,7 @@
 "use client";
 import Link from "next/link";
-import PolicyDialog from "../PolicyDialog";
-import { POLICY, POLICY_FOOT, POLICY_LEAD, POLICY_TITLE, PURCHASE_NOTICE } from "./policy";
 // 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 월 구독
-import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { startCheckout } from "../../lib/api/payments";
@@ -210,51 +208,15 @@ export function StrategyButton({ trader, strategy, className = "mk-primary", not
   return <PassBuyButton trader={trader} className={className} notify={notify} />;
 }
 
-/** 월 구독 상자: 월 구독료 + (구독 중이면 끝나는 날) + 안내 확인 + 구독 버튼. 결제 1번 = 30일 */
+/** 월 구독 상자: (구독 중이면 끝나는 날) + 구독 버튼. 결제 1번 = 30일 */
 export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: string) => void }) {
   const passes = usePasses();
   const end = subscriptionEnd(passes, trader.id);
   const active = subscribed(passes, trader.id);
-  /** 구독 전 안내(환불 · 기간)를 확인했는지 */
-  const [agreed, setAgreed] = useState(false);
-  const policy = useRef<HTMLDialogElement>(null);
   return (
     <div className="mk-passbox">
       {active && end && <p className="mk-sub-until">{end.toLocaleDateString("ko-KR")}까지 구독 중</p>}
-      <label className="mk-agree">
-        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-        <span>
-          {PURCHASE_NOTICE}
-          <br />
-          {/* label 안의 버튼은 체크박스를 건드리지 않음 (팝업은 body 에 붙어 있어 안을 눌러도 마찬가지) */}
-          <button type="button" className="mk-policy-link" aria-haspopup="dialog" onClick={(e) => (e.preventDefault(), policy.current?.showModal())}>
-            정책 자세히
-          </button>
-        </span>
-      </label>
-      <PurchasePolicyDialog ref={policy} />
-      <PassBuyButton trader={trader} label={active ? "30일 연장하기" : "구독하기"} notify={notify} disabled={!agreed} />
+      <PassBuyButton trader={trader} label={active ? "30일 연장하기" : "구독하기"} notify={notify} />
     </div>
-  );
-}
-
-/** '정책 자세히' 팝업: 구독 정책 (모양은 홈 화면 이용약관 · 환불정책 팝업과 같음) */
-function PurchasePolicyDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
-  const titleId = useId();
-  return (
-    <PolicyDialog ref={ref} titleId={titleId} title={POLICY_TITLE}>
-      <p>{POLICY_LEAD}</p>
-      {POLICY.map((sec) => (
-        <section key={sec.title}>
-          <h3>{sec.title}</h3>
-          <ul>
-            {sec.items.map((it) => (
-              <li key={it}>{it}</li>
-            ))}
-          </ul>
-        </section>
-      ))}
-      <p>{POLICY_FOOT}</p>
-    </PolicyDialog>
   );
 }
