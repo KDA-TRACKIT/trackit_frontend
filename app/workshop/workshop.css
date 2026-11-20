@@ -1398,3 +1398,31 @@ details.ws-ladder { padding:10px 12px; }
 .ws-strat-history { margin-top:10px; }
 .ws-strat-history > summary { cursor:pointer; color:var(--c-sub); font-size:13px; font-weight:600; padding:4px 2px; }
 .ws-strat-history[open] > summary { margin-bottom:8px; }
+
+/* 산 전략 겹치기 */
+.ws-ov-open { width:100%; margin-bottom:10px; padding:9px 12px; border:1px dashed #8b5cf6; border-radius:10px; background:transparent; color:#8b5cf6; font-size:13px; font-weight:800; cursor:pointer; }
+.ws-ov-open:disabled { border-color:var(--c-line); color:var(--c-faint); cursor:default; }
+.ws-ov { margin-bottom:10px; border-color:#8b5cf6; }
+.ws-ov-head { display:flex; align-items:center; justify-content:space-between; }
+.ws-ov-head h2 { margin:0; color:#8b5cf6; }
+.ws-ov-head button { border:0; background:none; color:var(--c-faint); cursor:pointer; }
+.ws-ov select { width:100%; margin:8px 0; padding:6px 8px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font-size:13px; }
+.ws-ov-desc, .ws-ov-empty { margin:4px 0 8px; color:var(--c-sub); font-size:12px; }
+.ws-ov-list { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; max-height:260px; overflow:auto; }
+.ws-ov-list label { display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+.ws-ov-list b { min-width:54px; font-weight:800; white-space:nowrap; }
+.ws-ov-list b.up { color:var(--c-up); }
+.ws-ov-list b.down { color:var(--c-down, #d4380d); }
+.ws-ov-list small { color:var(--c-faint); font-size:11.5px; }
+.ws-ov-why { display:block; margin-left:24px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.ws-ov-import { width:100%; margin-top:10px; padding:8px; border:0; border-radius:8px; background:#8b5cf6; color:#fff; font-size:13px; font-weight:800; cursor:pointer; }
+.ws-ov-import:disabled { opacity:.5; cursor:default; }
+.ws-ov-rule { margin:4px 0 8px; padding:8px 10px; border-radius:8px; background:var(--c-subtle); }
+.ws-ov-rule b { font-size:13px; }
+.ws-ov-rule p { margin:3px 0 0; color:var(--c-sub); font-size:12px; line-height:1.5; }
+.ws-ov-verdict { margin:6px 0; padding:6px 10px; border-radius:8px; background:var(--c-subtle); color:var(--c-sub); font-size:12.5px; font-weight:800; }
+.ws-ov-verdict.ok { background:#8b5cf6; color:#fff; }
+.ws-ov-checks { margin:0 0 8px; padding:0; list-style:none; font-size:12.5px; line-height:1.7; color:var(--c-faint); }
+.ws-ov-checks li.ok { color:var(--c-ink); font-weight:700; }
+.ws-ov-checks span { display:inline-block; width:16px; color:#8b5cf6; }
+.ws-ov-checks small { color:var(--c-faint); font-weight:500; }

@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import MonthPicker from "./MonthPicker";
+import UseStrategy from "./UseStrategy";
 import { usePasses } from "../../../../lib/purchases";
 import { fetchStrategyMonth } from "../../../../lib/strategy-data";
 import { fetchBars } from "../../../../lib/market-data";
@@ -235,6 +236,8 @@ export default function PurchasedTraderPage() {
                 <b>{m.follow}%</b>
               </div>
             </div>
+
+            <UseStrategy traderId={id} traderName={t?.name ?? id} months={months} current={month} />
           </>
         )}
       </div>

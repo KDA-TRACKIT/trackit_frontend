@@ -1,10 +1,11 @@
 "use client";
-// 전략보관함 · 전략 분석: 열람권으로 연 전략의 트레이더를 나란히 비교
+// 전략보관함 · 전략 분석: 위 AI 전략 분석(데이터로 답하는 질문 · 답) + 열람권으로 연 전략의 트레이더를 나란히 비교
 //   트레이더마다 평균 월 수익률 · 수익 난 달 비율 · 가장 좋았던/나빴던 달 · 최대 낙폭 · 이행률, 연 달의 수익률은 평균과 비교
 //   월별 수익률은 전략 마켓 데이터(예시) 기준
 import Link from "next/link";
 import { useMemo } from "react";
 import SiteHeader from "../../SiteHeader";
+import AskPanel from "./AskPanel";
 import { usePasses, usePassesLoaded } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { monthLabel, pct, tone, traderById, type Trader } from "../../marketplace/data";
@@ -64,6 +65,9 @@ export default function AnalysisPage() {
         <div className="ar-title-row">
           <h1 className="mk-title">전략 분석</h1>
         </div>
+
+        {/* 쓰론처럼 데이터로 답하는 질문 · 답 (내 종목 전략 · 산 전략) */}
+        <AskPanel />
 
         {!rows.length && !loaded ? (
           // 산 열람권을 서버에서 읽는 동안엔 '없음' 화면 대신

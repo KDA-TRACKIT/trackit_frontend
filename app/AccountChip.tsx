@@ -162,7 +162,7 @@ function NotificationBell() {
               {items.map((n) => (
                 <li key={n.id}>
                   <Link href={n.href} role="menuitem" className={!prevSeen || n.at > prevSeen ? "new" : ""} onClick={() => setOpen(false)}>
-                    <span className={`gnb-noti-kind ${n.kind}`}>{n.kind === "sale" ? "판매" : "즐겨찾기"}</span>
+                    <span className={`gnb-noti-kind ${n.kind}`}>{n.kind === "sale" ? "판매" : n.kind === "match" ? "비슷한 자리" : "즐겨찾기"}</span>
                     <b>{n.title}</b>
                     <small>{n.body}</small>
                     <time dateTime={n.at}>{ago(n.at)}</time>

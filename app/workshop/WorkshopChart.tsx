@@ -206,6 +206,12 @@ type Props = {
   onDrawingsChange?: (drawings: Drawing[]) => void;
   /** 밖(차트 노트의 선 목록)에서 선을 지울 수 있게 지우기 함수를 넘겨 줌 */
   registerRemove?: (remove: (ids: string[]) => void) => void;
+  /** 바깥에서 드로잉 더하기 (산 전략의 선을 내 드로잉으로 가져오기). 되돌리기로 뺄 수 있게 commit */
+  registerAdd?: (add: (drawings: Drawing[]) => void) => void;
+  /** 산 전략 겹치기: 내 드로잉이 아닌 보기용 가격선 (저장 · AI 분석에 안 들어감) */
+  overlayLines?: { price: number; title: string }[];
+  /** 산 전략 겹치기: 기울어진 선(추세선 · 채널 위아래). 봉 시각 사이를 이어 그림 (보기용, 저장 안 함) */
+  overlaySegments?: { title: string; a: { time: number; price: number }; b: { time: number; price: number }; extend?: boolean }[];
   /** 저장 확인 창에 보여 줄 차트 그림: 지금 차트(드로잉 포함)를 찍고 선 가격마다 지지 · 저항 라벨을 얹어 PNG 로 */
   registerSnapshot?: (snap: (marks: { price: number; text: string; color: string }[]) => Promise<string | null>) => void;
   /** 저장본에서 불러온 드로잉. key가 바뀔 때만 차트에 넣는다 (실행 취소 기록도 비움) */
@@ -379,7 +385,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -455,6 +461,50 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     if (avgLineRef.current) avgLineRef.current.applyOptions(options);
     else avgLineRef.current = candle.createPriceLine(options);
   }, [avgPrice, lastClose, showAvg]);
+
+  // 산 전략 겹치기 선 (보라 점선, 축에 가격)
+  const overlayRef = useRef<IPriceLine[]>([]);
+  const overlaySig = JSON.stringify(overlayLines ?? []);
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    for (const l of overlayRef.current) candle.removePriceLine(l);
+    overlayRef.current = (overlayLines ?? []).map((l) =>
+      candle.createPriceLine({ price: l.price, color: "#8b5cf6", lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, axisLabelColor: "#8b5cf6", axisLabelTextColor: "#fff", title: l.title }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlaySig, dataKey, lastClose === undefined]);
+
+  // 기울어진 겹치기 선: 봉마다 그 시각의 선 가격 (봉 밖 시각은 만들지 않아 차트 시간축이 안 흔들림)
+  const segRef = useRef<ISeriesApi<"Line">[]>([]);
+  const segSig = JSON.stringify(overlaySegments ?? []);
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    for (const sr of segRef.current) {
+      try {
+        chart.removeSeries(sr);
+      } catch {
+        // 차트를 새로 만들었으면 이미 없음
+      }
+    }
+    segRef.current = [];
+    const list = barsRef.current;
+    if (!list.length) return;
+    const last = list[list.length - 1].time;
+    for (const seg of overlaySegments ?? []) {
+      const [a, b] = seg.a.time <= seg.b.time ? [seg.a, seg.b] : [seg.b, seg.a];
+      if (b.time === a.time) continue;
+      const slope = (b.price - a.price) / (b.time - a.time);
+      const end = seg.extend ? last : Math.min(b.time, last);
+      const data = list.filter((x) => x.time >= a.time && x.time <= end).map((x) => ({ time: x.time as Time, value: a.price + slope * (x.time - a.time) }));
+      if (data.length < 2) continue;
+      const sr = chart.addSeries(LineSeries, { color: "#8b5cf6", lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true, title: seg.title, crosshairMarkerVisible: false });
+      sr.setData(data);
+      segRef.current.push(sr);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segSig, dataKey, bars.length]);
 
   /** 시나리오: 만든 시점의 종목·간격(dataKey) 에서만 보인다 */
   const [scenarioState, setScenarioState] = useState<{ key: string; base: string; list: Scenario[] } | null>(null);
@@ -1815,6 +1865,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     registerRemove?.((ids) => {
       const next = drawingsRef.current.filter((d) => !ids.includes(d.id));
       if (next.length !== drawingsRef.current.length) commit(next);
+    });
+  });
+
+  useEffect(() => {
+    registerAdd?.((list) => {
+      if (list.length) commit([...drawingsRef.current, ...list]);
     });
   });
 

@@ -7,12 +7,13 @@
 //   제목 줄은 전략보관함 다른 화면(구매한 전략 · 전략 분석)과 같은 자리 · 크기(ar-title-row), 설명 줄은 다른 화면처럼 없음
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, List, PenLine, Pin, Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, History, Link2, List, PenLine, Pin, Search, X } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
 import { initRecordSource, useRecords } from "../../../lib/records";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
+import ReviewView from "./ReviewView";
 import {
   KINDS,
   addDays,
@@ -41,7 +42,7 @@ import "../../marketplace/marketplace.css";
 import "../archive.css";
 import "./memos.css";
 
-type View = "list" | "calendar" | "stock";
+type View = "list" | "calendar" | "stock" | "review";
 type KindFilter = "all" | MemoKind | "pinned";
 type Range = "1w" | "1m" | "3m" | "all";
 type Sort = "new" | "old";
@@ -50,6 +51,7 @@ const VIEWS: { key: View; label: string; icon: typeof List }[] = [
   { key: "list", label: "리스트형", icon: List },
   { key: "calendar", label: "달력형", icon: CalendarDays },
   { key: "stock", label: "종목형", icon: ChartLine },
+  { key: "review", label: "복기형", icon: History },
 ];
 const RANGES: { key: Range; label: string; days: number }[] = [
   { key: "1w", label: "최근 1주", days: 7 },
@@ -220,6 +222,19 @@ export default function MemosPage() {
               투자작업실 열기
             </Link>
           </div>
+        ) : view === "review" ? (
+          <ReviewView
+            records={records}
+            stock={stock}
+            onOpenNote={(id) => {
+              // 그때 쓴 노트를 리스트형 오른쪽에 크게
+              setView("list");
+              setRange("all");
+              setQ("");
+              setKind("all");
+              setSel(id);
+            }}
+          />
         ) : view === "calendar" ? (
           <CalendarView
             memos={filtered}
