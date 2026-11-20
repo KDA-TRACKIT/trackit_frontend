@@ -79,7 +79,9 @@ export default function MemosPage() {
   const [sel, setSel] = useState<string | null>(null);
   // 리스트형 · 종목형 오른쪽 크게 보기: 처음 열릴 때는 목록이 줄면서 밀려 들어오고, 다른 노트로 바꿀 때는 내용만 빠르게 바뀜
   const [enter, setEnter] = useState<"open" | "switch">("open");
+  // 같은 노트를 한 번 더 누르면 크게 보기를 닫음 (목록이 다시 넓어짐). 크게 보기 안 '다른 노트'는 늘 다른 노트라 그대로 바뀜
   const pick = (id: string) => {
+    if (id === sel) return setSel(null);
     setEnter(sel ? "switch" : "open");
     setSel(id);
   };
@@ -334,7 +336,7 @@ function MemoRow({ m, pinned, on, onSelect, mode = "time" }: { m: Memo; pinned: 
   const ex = execInfo(m);
   return (
     <article className={`mm-row${on ? " on" : ""}`}>
-      <button type="button" className="mm-row-hit" aria-label={`${m.subject} ${mode === "date" ? shortDate(m.date) : m.time} 노트 크게 보기`} aria-current={on || undefined} onClick={() => onSelect(m.id)} />
+      <button type="button" className="mm-row-hit" aria-label={`${m.subject} ${mode === "date" ? shortDate(m.date) : m.time} 노트 ${on ? "크게 보기 닫기" : "크게 보기"}`} aria-current={on || undefined} onClick={() => onSelect(m.id)} />
       <div className="mm-row-top">
         <span className="mm-row-who">
           <KindBadge kind={m.kind} />
