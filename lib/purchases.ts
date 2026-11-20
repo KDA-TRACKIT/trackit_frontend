@@ -1,7 +1,7 @@
 "use client";
 // 전략 구독 결제 기록 — 계정(서버 strategy_passes)에 저장. 토스 결제가 서버에서 승인되면 한 건씩 생기고,
-//   한 건 = 그 트레이더 30일 구독 (lib/subscription). 예전 열람권으로 연 달도 계속 보임
-//   예전에 이 브라우저에만 저장했던 열람권은 처음 불러올 때 서버로 옮김 (서버가 토스에 승인됐는지 다시 확인)
+//   한 건 = 그 트레이더 30일 구독 (lib/subscription). 예전 구독으로 연 달도 계속 보임
+//   예전에 이 브라우저에만 저장했던 구독은 처음 불러올 때 서버로 옮김 (서버가 토스에 승인됐는지 다시 확인)
 import { useSyncExternalStore } from "react";
 import { accessToken, apiRequest } from "./api/client";
 
@@ -14,7 +14,7 @@ export type Pass = {
   amount: number;
   approvedAt: string | null;
   receiptUrl: string | null;
-  /** 이 열람권으로 연 전략 (아직 안 썼으면 null) */
+  /** 이 구독으로 연 전략 (아직 안 썼으면 null) */
   used: { month: string; title: string; at: string } | null;
 };
 
@@ -28,7 +28,7 @@ const notify = () => listeners.forEach((l) => l());
 
 type OldPass = { id?: string; orderId?: string; traderId: string; traderName?: string; title?: string; month?: string; approvedAt?: string | null; used?: { month: string; title: string; at: string } | null };
 
-/** 이 브라우저에만 있던 예전 열람권 → 서버로 (토스 승인 확인은 서버가) */
+/** 이 브라우저에만 있던 예전 구독 → 서버로 (토스 승인 확인은 서버가) */
 async function importOld() {
   const orders = new Map<string, { orderId: string; traderId: string; traderName: string; used: { month: string; title: string; at: string }[] }>();
   for (const key of OLD_KEYS) {
@@ -82,19 +82,19 @@ export function usePasses() {
   return useSyncExternalStore(subscribe, () => list, () => EMPTY);
 }
 
-/** 서버에서 열람권을 한 번이라도 다 읽었는지 (읽기 전엔 '없음' 대신 불러오는 중으로) */
+/** 서버에서 구독을 한 번이라도 다 읽었는지 (읽기 전엔 '없음' 대신 불러오는 중으로) */
 export function usePassesLoaded() {
   return useSyncExternalStore(subscribe, () => loaded, () => false);
 }
 
 /** 월 구독 (lib/subscription): 구독 중이면 그 트레이더 전략을 다 봄 */
 export { SUB_DAYS, subscriptionEnd, subscribed } from "./subscription";
-/** 이 트레이더의 이 달 전략을 볼 수 있는지 (구독 중이거나 예전 열람권으로 연 달) */
+/** 이 트레이더의 이 달 전략을 볼 수 있는지 (구독 중이거나 예전 구독으로 연 달) */
 export { canView as opened } from "./subscription";
-/** 아직 안 쓴 이 트레이더 열람권 */
+/** 아직 안 쓴 이 트레이더 구독 */
 export const unusedPasses = (passes: Pass[], traderId: string) => passes.filter((p) => p.traderId === traderId && !p.used);
 
-/** 열람권 1장으로 전략 하나 열기 (서버). 실패하면 이유를 throw */
+/** 구독 1장으로 전략 하나 열기 (서버). 실패하면 이유를 throw */
 export async function redeem(traderId: string, month: string, title: string): Promise<void> {
   await apiRequest("/me/passes/redeem", { method: "POST", body: JSON.stringify({ traderId, month, title }) });
   await refreshPasses();

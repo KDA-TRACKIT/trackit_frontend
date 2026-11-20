@@ -296,9 +296,9 @@ export default function BoardView({
 
       <div className="ar-section-title">
         <h3>
-          구매한 전략 <small>열어 본 전략 {items.filter((i) => i.kind === "strategy").length}개</small>
+          구독한 전략 <small>열어 본 전략 {items.filter((i) => i.kind === "strategy").length}개</small>
         </h3>
-        <Link href="/archive/purchases">전략 구매 관리 ›</Link>
+        <Link href="/archive/purchases">구독 목록 ›</Link>
       </div>
       <PurchasedCards
         items={items.filter((i) => i.kind === "strategy")}

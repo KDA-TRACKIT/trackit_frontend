@@ -1,5 +1,5 @@
 "use client";
-// 전략보관함 한 곳에 모으는 재료: 구매한 전략(열람권으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
+// 전략보관함 한 곳에 모으는 재료: 구매한 전략(구독으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
 //   기록은 lib/records (로그인 = 서버 확정 노트, 아니면 이 브라우저). 지어낸 기록 없이 있는 것만 보여 줌
 import { useEffect, useMemo, useState } from "react";
 import { classify, daysAgo, initRecordSource, recordSource, useRecords, type TradeRecord } from "../../lib/records";
@@ -9,7 +9,7 @@ import { monthLabel, strategiesOf, traderById } from "../marketplace/data";
 
 export type ItemKind = "strategy" | "journal" | "note" | "chart" | "news";
 export const KINDS: { key: ItemKind; label: string; short: string }[] = [
-  { key: "strategy", label: "구매한 전략", short: "전" },
+  { key: "strategy", label: "구독한 전략", short: "전" },
   { key: "journal", label: "매매 일지", short: "일" },
   { key: "note", label: "일반 노트", short: "노" },
   { key: "chart", label: "차트 노트", short: "차" },
@@ -109,7 +109,7 @@ export function useArchive() {
           follow: s?.follow,
         };
       });
-    // 무료로 본 전략 (열람권으로도 연 달이면 하나만)
+    // 무료로 본 전략 (구독으로도 연 달이면 하나만)
     const free: Item[] = freeViews
       .filter((v) => !passes.some((p) => p.traderId === v.traderId && p.used?.month === v.month))
       .map((v) => {

@@ -1,5 +1,5 @@
 "use client";
-// 트레이더 상세: 소개 · 열람권 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(꿀) · 구매자 후기(익명) · 비슷한 트레이더
+// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(꿀) · 구매자 후기(익명) · 비슷한 트레이더
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ export default function TraderPage() {
   const t = traderById(id);
   const { notify, node } = useNotice();
   const passes = usePasses();
-  // 수익률: 열람권을 산 적 없으면 계좌 누적 수익률(지금까지), 샀으면 전략 직결 수익률(그 달 전략대로 한 매매만)
+  // 수익률: 구독을 산 적 없으면 계좌 누적 수익률(지금까지), 샀으면 전략 직결 수익률(그 달 전략대로 한 매매만)
   const bought = passes.some((p) => p.traderId === id);
   const fb = useFeedback(id);
   const router = useRouter();

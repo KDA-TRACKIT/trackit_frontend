@@ -1,6 +1,6 @@
 "use client";
 // 정산 내역 (시안 2026-11-18): 정산 예정 · 완료 · 대기 건수, 달별 정산 (GET /market/royalties, 모의 정산 — 실제 지급 없음)
-//   아래에 판매자 등급 · 수수료 · 열람권 가격 범위 (조건 기준값은 보여 주지 않음)
+//   아래에 판매자 등급 · 수수료 · 구독 가격 범위 (조건 기준값은 보여 주지 않음)
 import { useMemo, useState } from "react";
 import { Card, Empty, FilterChips, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
 import { useSeller, type Sale } from "../data";

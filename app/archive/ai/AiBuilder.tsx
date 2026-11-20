@@ -84,9 +84,9 @@ export default function AiBuilder({ initialPick = [] }: { initialPick?: string[]
               <>
                 <div className="ar-section-title">
                   <h3>
-                    구매한 전략 <small>{chosen.filter((i) => i.kind === "strategy").length}개 담음</small>
+                    구독한 전략 <small>{chosen.filter((i) => i.kind === "strategy").length}개 담음</small>
                   </h3>
-                  <Link href="/archive/purchases">전략 구매 관리 ›</Link>
+                  <Link href="/archive/purchases">구독 목록 ›</Link>
                 </div>
                 <PurchasedCards items={items.filter((i) => i.kind === "strategy")} picked={picked} onPick={(id) => pick([id], !picked.has(id))} cta="shop" />
               </>

@@ -7,7 +7,7 @@ import { filterComment } from "../../lib/comment-filter";
 import { postComment, removeComment, toggleLike, type TraderFeedback } from "../../lib/feedback";
 import { monthLabel, type Trader } from "./data";
 
-/** 전략 하나(달)의 꿀 — 열람권으로 연 사람만 누를 수 있음 */
+/** 전략 하나(달)의 꿀 — 구독으로 연 사람만 누를 수 있음 */
 export function LikeButton({ trader, month, fb, notify }: { trader: Trader; month: string; fb: TraderFeedback | null; notify: (m: string) => void }) {
   const [busy, setBusy] = useState(false);
   const count = fb?.likesByMonth[month] ?? 0;

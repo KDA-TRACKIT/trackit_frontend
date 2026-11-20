@@ -1,10 +1,10 @@
 "use client";
 // 전략보관함 첫 화면 = 구독한 트레이더 (구독 중이면 끝나는 날, 그 트레이더 전략 전부)
-//   열람권을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 열람권(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
-//   보유 열람권 = 아직 안 쓴 열람권만 (전략을 연 열람권은 '보유 전략'의 달로 보임). 다 썼으면 0개
-//   보유 열람권 티켓은 장수만큼 겹쳐 '보유 열람권' 글자 끝에 맞춰 끝나고, 7장부터 가운데 ⋯ (PassTickets)
+//   구독을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 구독(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
+//   보유 구독 = 아직 안 쓴 구독만 (전략을 연 구독은 '보유 전략'의 달로 보임). 다 썼으면 0개
+//   보유 구독 티켓은 장수만큼 겹쳐 '보유 구독' 글자 끝에 맞춰 끝나고, 7장부터 가운데 ⋯ (PassTickets)
 //   카드를 누르면 그 트레이더의 월별 전략 (/archive/purchases/[id])
-//   열람권 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
+//   구독 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
 //   실제 판매 등록을 산 것(서버 GET /market/purchases)은 있으면 아래에 따로
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -33,7 +33,6 @@ type ServerPurchase = {
 const won = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "");
 const STATUS: Record<string, string> = { PAID: "결제 완료", PENDING: "결제 대기", REFUNDED: "환불", FAILED: "실패" };
-const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`;
 
 export default function PurchasesPage() {
   const passes = usePasses();
@@ -69,12 +68,12 @@ export default function PurchasesPage() {
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
         <div className="ar-title-row">
-          <h1 className="mk-title">구매한 전략</h1>
+          <h1 className="mk-title">구독 목록</h1>
         </div>
         {error && <p className="ar-note">{error}</p>}
 
         {nothing && !loaded ? (
-          // 산 열람권을 서버에서 읽는 동안엔 '없음' 화면 대신
+          // 산 구독을 서버에서 읽는 동안엔 '없음' 화면 대신
           <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : nothing ? (
           <div className="mk-card mk-empty">
@@ -113,10 +112,6 @@ export default function PurchasesPage() {
                       <div className="ar-trader-stat">
                         <small title="산 전략대로 한 매매만 모은 수익률 (최근 1개월)">전략 직결 수익률 · 1개월</small>
                         <b className={g.ret === null ? "" : tone(g.ret)}>{g.ret === null ? "—" : pct(g.ret)}</b>
-                      </div>
-                      <div className="ar-trader-stat">
-                        <small>보유 전략</small>
-                        <b>{g.months.length ? g.months.slice(0, 2).map(shortMonth).join(" · ") + (g.months.length > 2 ? ` 외 ${g.months.length - 2}` : "") : "—"}</b>
                       </div>
                     </Link>
                   </li>

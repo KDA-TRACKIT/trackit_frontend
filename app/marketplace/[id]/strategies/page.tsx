@@ -1,5 +1,5 @@
 "use client";
-// 트레이더의 월별 전략 전체 (최근 것부터, 쪽 나눔). 열람권을 사서 그 열람권으로 전략 하나를 골라 엶
+// 트레이더의 월별 전략 전체 (최근 것부터, 쪽 나눔). 구독을 사서 그 구독으로 전략 하나를 골라 엶
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";

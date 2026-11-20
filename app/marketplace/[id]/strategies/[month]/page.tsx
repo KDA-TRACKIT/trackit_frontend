@@ -1,8 +1,8 @@
 "use client";
 // 월별 전략 보기: 매매 규칙 · 그 달 차트에 그은 선(지지선 · 채널 · 피보나치 · 엘리어트 파동 …) · 매수/매도 · 계획대로 했는지
 //   전략 하나에는 매매 기록 여러 건 + 매매가 아닌 증시 메모 · 종목 노트도 들어감 → 날짜순 한 줄 기록으로
-//   내용은 서버만 읽는 data/market-sim/{id}.json → /strategy-data/{id}/{달} 이 열람권을 확인하고 그 달 것만 보냄 (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
-//   열람권으로 연 달이나 무료 첫 전략만 내용을 보여 주고, 아니면 잠금 + 열람권 버튼
+//   내용은 서버만 읽는 data/market-sim/{id}.json → /strategy-data/{id}/{달} 이 구독을 확인하고 그 달 것만 보냄 (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
+//   구독으로 연 달이나 무료 첫 전략만 내용을 보여 주고, 아니면 잠금 + 구독 버튼
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,7 +24,7 @@ export default function StrategyView() {
   const { notify, node } = useNotice();
   const dark = useDark();
   const [detail, setDetail] = useState<{ id: string; data: SimDetail | null } | null>(null);
-  // 열람권으로 이 달을 열면 다시 받음 (서버가 열람권을 확인하고 그 달 것만 줌)
+  // 구독으로 이 달을 열면 다시 받음 (서버가 구독을 확인하고 그 달 것만 줌)
   const isOpen = !!t && opened(passes, t.id, month);
   const key = `${id}/${month}/${isOpen}`;
 
@@ -40,7 +40,7 @@ export default function StrategyView() {
 
   const list = t ? strategiesOf(t) : [];
   const s = list.find((x) => x.month === month);
-  // 무료 전략을 열면 전략보관함에 남김 (열람권 없이 본 것도)
+  // 무료 전략을 열면 전략보관함에 남김 (구독 없이 본 것도)
   const freeKey = t && s?.free ? `${t.id}|${t.name}|${month}|${s.title}` : "";
   useEffect(() => {
     if (!freeKey) return;
@@ -90,7 +90,7 @@ export default function StrategyView() {
               </span>
             )}
           </div>
-          {/* 원본은 그대로 보존, 정정 · 사후 해설은 따로 (열람권 구매 정책) */}
+          {/* 원본은 그대로 보존, 정정 · 사후 해설은 따로 (구독 구매 정책) */}
           <p className="mk-sim-origin">✓ 최초 확정본 그대로 · 정정 0건</p>
         </section>
 

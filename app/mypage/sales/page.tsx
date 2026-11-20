@@ -1,5 +1,5 @@
 "use client";
-// 전략 판매 관리 (시안 2026-11-18): 판매 현황 + 전략 및 열람권 관리 (GET /strategies + /market/royalties)
+// 전략 판매 관리 (시안 2026-11-18): 판매 현황 + 전략 및 구독 관리 (GET /strategies + /market/royalties)
 import Link from "next/link";
 import { useState } from "react";
 import { Card, PageHead } from "../ui";

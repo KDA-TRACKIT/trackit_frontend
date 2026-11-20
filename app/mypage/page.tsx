@@ -21,7 +21,7 @@ export default function MyPage() {
       {ready && n > 0 ? n.toLocaleString("ko-KR") : "—"} <small>{unit}</small>
     </strong>
   );
-  // 시안(2026-11-19): 공개 전략 · 유료 열람권 · 판매 내역 · 정산 내역 4칸
+  // 시안(2026-11-19): 공개 전략 · 유료 구독 · 판매 내역 · 정산 내역 4칸
   const SALES = [
     { title: "공개 전략", sub: "무료 열람", href: "/mypage/sales/strategies" },
     { title: "월 구독", sub: "구독료 관리", href: "/mypage/sales" },

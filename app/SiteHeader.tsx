@@ -25,7 +25,7 @@ const MENU: Menu[] = [
     //   (예전 '내 전략'(/archive/mine, 판매 등록 · AI 초안)은 메뉴에선 빠지고 마이페이지 판매 · AI 전략 만들기에서 들어감)
     sub: [
       { label: "내 노트", href: "/archive/notes", desc: "작성한 노트 모아 보기" },
-      { label: "구매한 전략", href: "/archive/purchases", desc: "결제한 전략" },
+      { label: "구독 목록", href: "/archive/purchases", desc: "구독한 트레이더" },
       { label: "전략 분석", href: "/archive/analysis", desc: "AI 에게 내 전략 · 매매 묻기" },
     ],
   },

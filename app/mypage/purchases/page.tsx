@@ -1,7 +1,7 @@
 "use client";
 // 마이페이지 · 구매 내역: 구매한 트레이더 전략과 이용 기간
-//   전략 마켓 열람권 (GET /me/passes) + 판매 등록된 전략 구매 (GET /market/purchases)
-//   열람권으로 연 전략과 산 전략은 기간 제한 없이 계속 볼 수 있음 → 이용 기간 = 연(산) 날부터 계속
+//   전략 마켓 구독 (GET /me/passes) + 판매 등록된 전략 구매 (GET /market/purchases)
+//   구독으로 연 전략과 산 전략은 기간 제한 없이 계속 볼 수 있음 → 이용 기간 = 연(산) 날부터 계속
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../../lib/api/client";
@@ -49,7 +49,7 @@ export default function PurchasesPage() {
   }, []);
 
   const rows = useMemo<Row[]>(() => {
-    // 결제 한 건 = 그 트레이더 30일 구독 (예전 열람권으로 연 달은 그 달 전략으로)
+    // 결제 한 건 = 그 트레이더 30일 구독 (예전 구독으로 연 달은 그 달 전략으로)
     const fromPasses: Row[] = passes.map((p) => {
       const from = p.approvedAt ? Date.parse(p.approvedAt) : NaN;
       const to = Number.isNaN(from) ? null : new Date(from + SUB_DAYS * 86_400_000).toISOString();

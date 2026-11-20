@@ -1,7 +1,7 @@
 // 전략 마켓 예시 데이터 (백엔드 API 가 생기기 전까지 화면만 먼저)
 //   수익률은 % 숫자, 가격은 원. 수익은 초록 · 손실은 빨강 (차트의 양봉 초록 · 음봉 빨강과 같게)
 //   월별 수익률 · 최대 낙폭 · 매매 수 · 이행률은 sim.json: 실제 일봉(키움, 2024-06~2026-11)에 트레이더마다 규칙을 돌려 만든 값
-//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 열람권 확인 뒤 그 달만)
+//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 구독 확인 뒤 그 달만)
 import SIM from "./sim.json";
 // 등급제는 없앰 (2026-11-20 기획): grades.ts · lib/grade 는 나중을 위해 남기고 마켓에서는 호출하지 않음
 import type { GradeResult } from "../../lib/grade";
@@ -109,7 +109,7 @@ export type Trader = {
   asOf?: string;
   /** 확인된 사실 */
   facts?: Facts;
-  /** 판매자 등급 · 열람권 가격 · 수수료 (lib/grade, 2026-11-17 회의 공식). F · 일반이면 신규 판매 안 함 */
+  /** 판매자 등급 · 구독 가격 · 수수료 (lib/grade, 2026-11-17 회의 공식). F · 일반이면 신규 판매 안 함 */
   grade?: GradeResult;
   /** 기간마다 매매한 종목 수 (0 · 1 종목이면 수익률 · 추이를 "-" 로) */
   stocks?: Record<Period, number>;
@@ -333,7 +333,7 @@ const EOJIN: Trader = {
   tagline: "하락에서 살아남기",
   intro: "",
   quote: "하락에서 살아남기",
-  bio: [],
+  bio: ["높은 수익보단 적은 손실"],
   since: "2023-01",
   likes: 0,
   price: 19900,
@@ -352,7 +352,7 @@ const EOJIN: Trader = {
 export const TRADERS: Trader[] = [...Array.from({ length: 40 }, (_, i) => makeTrader(i)), ...MEME_TRADERS, EOJIN].map(withSim);
 
 /**
- * 판매 심사: 어떤 방법이든 기록으로 통하는 게 확인되면 판매, 아니면 판매 보류 (목록에서 숨기고 열람권 판매 안 함)
+ * 판매 심사: 어떤 방법이든 기록으로 통하는 게 확인되면 판매, 아니면 판매 보류 (목록에서 숨기고 구독 판매 안 함)
  *   기준: 공개한 달 3개월 이상 · 증권사 체결로 확인된 매매 20건 이상 · 체결 전에 계획이 있던 매매 50% 이상 · 전략 이행률 60% 이상
  */
 export const SCREEN_RULES = [

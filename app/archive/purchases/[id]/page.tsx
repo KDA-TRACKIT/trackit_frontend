@@ -1,7 +1,7 @@
 "use client";
 // 전략보관함 · 구매한 전략 → 트레이더를 누르면 (시안 2026-11-18 "구매한 전략 － 트레이더 클릭 시")
-//   열람권으로 연 달 중 하나를 골라: 거래 내역(종목 고르기) · 전체/사전 노트 · 종목 차트 + 차트 메모 · 기타 정보
-//   내용은 /strategy-data/{id}/{달} (열람권을 서버가 확인), 그 달 대표 종목이 아닌 종목 차트는 일봉을 따로 받음
+//   구독으로 연 달 중 하나를 골라: 거래 내역(종목 고르기) · 전체/사전 노트 · 종목 차트 + 차트 메모 · 기타 정보
+//   내용은 /strategy-data/{id}/{달} (구독을 서버가 확인), 그 달 대표 종목이 아닌 종목 차트는 일봉을 따로 받음
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -27,7 +27,7 @@ export default function PurchasedTraderPage() {
   const t = traderById(id);
   const passes = usePasses();
   const dark = useDark();
-  // 열람권으로 연 달 + 누구나 보는 무료 첫 전략
+  // 구독으로 연 달 + 누구나 보는 무료 첫 전략
   const months = useMemo(
     () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).map((s) => s.month) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).map((s) => s.month) : [])])].sort().reverse(),
     [passes, id, t],

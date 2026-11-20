@@ -5,7 +5,7 @@ import { accessToken, apiRequest } from "./client";
 
 export type PayItem =
   | { type: "strategy"; strategyId: string; kind: "MONTH" | "ALL"; month?: string }
-  | { type: "sample"; traderId: string; traderName: string; price: number; quantity: number }; // 예시 트레이더 열람권 quantity장 (1장 가격 price)
+  | { type: "sample"; traderId: string; traderName: string; price: number; quantity: number }; // 트레이더 구독 (quantity = 30일 묶음 수, 한 번 가격 price)
 
 type Checkout = { clientKey: string; testMode: boolean; customerKey: string; orderId: string; orderName: string; amount: number; token: string };
 export type Confirmed = {

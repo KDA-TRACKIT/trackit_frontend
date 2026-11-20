@@ -122,7 +122,7 @@ export default function ChartView({
               .map((k) => `${k.label} ${none.filter((i) => i.kind === k.key).length}`)
               .join(" · ") || "없음"}
           </p>
-          <small>구매한 전략 · 일반 노트 · 뉴스</small>
+          <small>구독한 전략 · 일반 노트 · 뉴스</small>
         </button>
       </div>
 
@@ -208,9 +208,9 @@ export default function ChartView({
         <>
           <div className="ar-section-title">
             <h3>
-              구매한 전략 <small>열어 본 전략 {items.filter((i) => i.kind === "strategy").length}개</small>
+              구독한 전략 <small>열어 본 전략 {items.filter((i) => i.kind === "strategy").length}개</small>
             </h3>
-            <Link href="/archive/purchases">전략 구매 관리 ›</Link>
+            <Link href="/archive/purchases">구독 목록 ›</Link>
           </div>
           <PurchasedCards items={items.filter((i) => i.kind === "strategy")} cta="ai" />
         </>

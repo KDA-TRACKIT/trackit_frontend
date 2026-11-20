@@ -1,5 +1,5 @@
 "use client";
-// 무료로 본 전략 (트레이더의 첫 공개 전략): 열람권 없이 열어 본 것도 전략보관함에 남도록 이 브라우저에 기록
+// 무료로 본 전략 (트레이더의 첫 공개 전략): 구독 없이 열어 본 것도 전략보관함에 남도록 이 브라우저에 기록
 //   전략 상세(/marketplace/[id]/strategies/[month])에서 무료 전략을 열면 한 번 기록, 같은 전략은 처음 본 시각 그대로
 import { useSyncExternalStore } from "react";
 

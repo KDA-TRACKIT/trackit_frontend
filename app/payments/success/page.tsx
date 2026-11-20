@@ -1,5 +1,5 @@
 "use client";
-// 토스 결제창에서 성공하면 돌아오는 곳: 서버에 승인 요청 → 승인되면 "결제 완료" + 열람권 1장 (예시 트레이더) / 전략 구매 (실제 판매 등록)
+// 토스 결제창에서 성공하면 돌아오는 곳: 서버에 승인 요청 → 승인되면 "결제 완료" + 구독 1장 (예시 트레이더) / 전략 구매 (실제 판매 등록)
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import SiteHeader from "../../SiteHeader";
@@ -27,7 +27,7 @@ export default function PaymentSuccess() {
     confirmCheckout(paymentKey, orderId, amount)
       .then(({ result, back }) => {
         if (result.item.type === "sample") {
-          void refreshPasses(); // 열람권은 서버가 승인할 때 계정에 넣음
+          void refreshPasses(); // 구독은 서버가 승인할 때 계정에 넣음
         }
         setState({ phase: "done", result, back });
       })
