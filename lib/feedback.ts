@@ -10,6 +10,8 @@ export type TraderFeedback = {
   likesByMonth: Record<string, number>;
   myLikes: string[];
   openedMonths: string[];
+  /** 지금 이 트레이더를 구독 중인지 (그러면 모든 달에 꿀 · 후기) */
+  subscribed?: boolean;
   comments: Comment[];
 };
 

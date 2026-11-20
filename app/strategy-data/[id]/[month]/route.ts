@@ -13,7 +13,7 @@ const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace
 const noStore = { "Cache-Control": "private, no-store" };
 
 
-/** 구독 중이거나 예전에 연 달인지 (구독 = /me/subscriptions, 예전 기록 = /me/passes · lib/subscription 과 같은 계산) */
+/** 구독 중인지 (/me/subscriptions · lib/subscription 과 같은 계산) */
 async function opened(auth: string, traderId: string, month: string) {
   const get = async <T,>(p: string): Promise<T[]> => {
     const res = await fetch(`${API}/api/v1${p}`, { headers: { Authorization: auth }, cache: "no-store" });
@@ -21,8 +21,7 @@ async function opened(auth: string, traderId: string, month: string) {
     const body = (await res.json()) as { data?: T[] } | T[];
     return Array.isArray(body) ? body : (body.data ?? []);
   };
-  const [legacy, subs] = await Promise.all([get<Legacy>("/me/passes"), get<Subscription>("/me/subscriptions")]);
-  return canView(toRecords(subs, legacy), traderId, month);
+  return canView(toRecords(await get<Subscription>("/me/subscriptions"), [] as Legacy[]), traderId, month);
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; month: string }> }) {

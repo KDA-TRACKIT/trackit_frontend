@@ -5,14 +5,14 @@ import { useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { filterComment } from "../../lib/comment-filter";
 import { postComment, removeComment, toggleLike, type TraderFeedback } from "../../lib/feedback";
-import { monthLabel, type Trader } from "./data";
+import { monthLabel, strategiesOf, type Trader } from "./data";
 
 /** 전략 하나(달)의 꿀 — 구독으로 연 사람만 누를 수 있음 */
 export function LikeButton({ trader, month, fb, notify }: { trader: Trader; month: string; fb: TraderFeedback | null; notify: (m: string) => void }) {
   const [busy, setBusy] = useState(false);
   const count = fb?.likesByMonth[month] ?? 0;
   const liked = !!fb?.myLikes.includes(month);
-  const canLike = !!fb?.openedMonths.includes(month);
+  const canLike = !!fb?.subscribed || !!fb?.openedMonths.includes(month);
   return (
     <button
       type="button"
@@ -49,7 +49,7 @@ const ago = (iso: string) => {
 
 /** 트레이더 상세 "구매자 후기": 익명 목록 + 연 전략이 있으면 쓰기 */
 export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback | null; notify: (m: string) => void }) {
-  const opened = fb?.openedMonths ?? [];
+  const opened = fb?.subscribed ? strategiesOf(trader).map((s) => s.month).sort() : (fb?.openedMonths ?? []);
   const [month, setMonth] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
