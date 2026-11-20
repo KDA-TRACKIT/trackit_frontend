@@ -6,7 +6,7 @@
 //   AI 는 그 근거만으로 답하고(서버가 근거 밖 숫자 문장을 버림), AI 가 없으면 같은 근거로 규칙대로 답함
 //   답: 결론(조건 체크) 먼저 → 설명 → 출처 칩(누르면 그 근거) · 관련 종목 칩과 차트 · 참고한 데이터
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { MessageSquare, Plus, Send } from "lucide-react";
+import { MessageSquare, Plus, RotateCcw, Send } from "lucide-react";
 import Link from "next/link";
 import { initRecordSource, useRecords } from "../../../lib/records";
 import { usePasses } from "../../../lib/purchases";
@@ -14,7 +14,7 @@ import { askStrategy } from "../../../lib/api/ai";
 import { getQuotes } from "../../../lib/api/insights";
 import { searchAllSymbols } from "../../../lib/market-data";
 import { accessToken } from "../../../lib/api/client";
-import { loadChat, saveChatMsg, type StoredMsg } from "../../../lib/api/strategy-chat";
+import { clearChat, loadChat, saveChatMsg, type StoredMsg } from "../../../lib/api/strategy-chat";
 import { INTENTS, answerLocally, detectIntent, detectTarget, type Reply, type Target } from "../../../lib/strategy-chat";
 import { briefing } from "../../../lib/strategy-briefing";
 import StrategyChart from "../../marketplace/StrategyChart";
@@ -219,6 +219,25 @@ export default function AskPanel() {
 
   // 채팅을 열면 그날 첫 브리핑 (오늘 브리핑이 이미 있으면 안 함)
   const briefed = useRef(new Set<string>());
+  /** 새 대화: 이 채팅 기록을 지우고 처음 묻는 것처럼 (로그인했으면 서버 기록도, 브리핑은 다시 안 띄움) */
+  async function newChat() {
+    if (busy || !msgs.length) return;
+    if (!window.confirm("이 채팅의 지난 대화를 지울까요? 지운 대화는 되돌릴 수 없어요.")) return;
+    const key = thread;
+    briefed.current.add(key);
+    if (server.current) await clearChat(key).catch(() => {});
+    setAll((prev) => {
+      const next = { ...prev, [key]: [] };
+      if (!server.current) {
+        try {
+          localStorage.setItem(STORE, JSON.stringify(next));
+        } catch {
+          // 기록 저장만 못 함
+        }
+      }
+      return next;
+    });
+  }
   useEffect(() => {
     if (!loaded || (!records.length && !passes.length)) return;
     const today = kstDay(new Date().toISOString());
@@ -258,7 +277,9 @@ export default function AskPanel() {
       const local = await answerLocally(question, intent, target, records);
       const ai = await askStrategy({ question, subject: target.name, evidence: local.evidence }).catch(() => null);
       const useAi = !!ai?.answer && ai.points.length > 0;
-      const reply: Reply = useAi ? { ...local, answer: ai!.answer, points: ai!.points } : local;
+      // 매매 전 체크는 조건 체크리스트가 기준: AI 는 요약 한 단락만, 조건별 설명은 체크리스트를 그대로 따르는 규칙 문장으로
+      //   (AI 가 미충족 조건을 "1%에 해당하는 지역에 있고"처럼 흐리게 옮겨 쓰는 일이 있어서)
+      const reply: Reply = useAi ? (local.checks?.length ? { ...local, answer: ai!.answer } : { ...local, answer: ai!.answer, points: ai!.points }) : local;
       update(key, (m) => m.map((x) => (x.id === waitId ? { id: waitId, at: x.at, role: "bot", reply, ai: useAi, cautions: useAi ? ai!.cautions : [] } : x)));
     } catch {
       update(key, (m) => m.map((x) => (x.id === waitId ? { id: waitId, at: x.at, role: "wait", text: "데이터를 불러오지 못했어요. 잠시 뒤 다시 물어봐 주세요." } : x)));
@@ -319,6 +340,11 @@ export default function AskPanel() {
       </nav>
 
       <div className="ask-main">
+        {!!msgs.length && (
+          <button type="button" className="ask-new" onClick={() => void newChat()} disabled={busy} title="이 채팅의 지난 대화를 지우고 새로 시작">
+            <RotateCcw size={13} aria-hidden /> 새 대화
+          </button>
+        )}
         <div className="ask-log" aria-live="polite">
           {!msgs.length && (
             <div className="ask-hello">

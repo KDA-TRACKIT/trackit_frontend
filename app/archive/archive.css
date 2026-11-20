@@ -804,3 +804,8 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .mm-rp-track button.on { background:var(--c-subtle); outline:2px solid var(--c-ink); }
 .mm-rp-track button.later { opacity:.45; }
 @media (max-width:900px) { .mm-rp-body { grid-template-columns:1fr; } .mm-rp-card { height:auto; } .mm-rp-card blockquote { max-height:220px; } }
+
+/* 전략 분석 채팅: 새 대화 (지난 대화 지우기) */
+.ask-main { position:relative; }
+.ask-new { position:absolute; top:10px; right:16px; z-index:3; display:inline-flex; align-items:center; gap:5px; height:28px; padding:0 10px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-sub); font-size:12px; font-weight:700; cursor:pointer; }
+.ask-new:hover:not(:disabled) { border-color:var(--c-ink); color:var(--c-ink); }
