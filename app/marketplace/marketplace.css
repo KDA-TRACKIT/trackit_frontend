@@ -603,6 +603,8 @@ html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0
 .mk-trader-span { display:block; color:var(--c-sub); font-size:11px; line-height:14px; white-space:nowrap; }
 .mk-trader-grade .mk-grade { display:inline; min-width:0; height:auto; padding:0; border:0; background:none; box-shadow:none; text-shadow:none; color:var(--mk-trader-grade-color,var(--mk-primary)); font-size:22px; font-weight:600; vertical-align:baseline; }
 .mk-trader-grade .mk-grade::after { content:none; }
+/* 등급 열: 머리글 "등급"과 A · B · C · D · F 를 같은 가운데 선에 맞춤 (시안 2165:4079) */
+.mk-trader-columns > :last-child,.mk-trader-grade { text-align:center; }
 .mk-trader-grade .g-B { --mk-trader-grade-color:#31427c; }
 .mk-trader-grade .g-C { --mk-trader-grade-color:#49588b; }
 .mk-trader-grade .g-D { --mk-trader-grade-color:#616e9b; }
@@ -628,6 +630,7 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
   .mk-trader-name { font-size:18px; }
   .mk-trader-metric,.mk-trader-grade .mk-grade { font-size:17px; line-height:22px; }
   .mk-trader-metric-label { position:static; display:block; width:auto; height:auto; clip-path:none; color:var(--c-sub); font-size:12px; line-height:17px; }
+  .mk-trader-grade { text-align:left; } /* 좁은 화면: 다른 지표처럼 이름표 아래 왼쪽 */
 }
 /* 트레이더 상세 지표: 남색 카드 4개 (시안) */
 .mk-kpis-navy { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
