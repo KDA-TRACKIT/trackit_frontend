@@ -8,7 +8,6 @@ import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../parts";
-import { GradeBadge } from "../GradeParts";
 import HoneyPot from "../../HoneyPot";
 import { unusedPasses, usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
@@ -73,7 +72,7 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} /> <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  {t.name} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
                 </h1>
               </div>
             </div>
@@ -90,7 +89,7 @@ export default function TraderPage() {
 
           <aside className="mk-card mk-buy">
             <small>
-              <b>{t.name}</b> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />의 전략 열람권
+              <b>{t.name}</b>의 전략 열람권
             </small>
             <strong>
               {won(t.price)} <span>/ 1장 · 전략 1개</span>
@@ -113,27 +112,27 @@ export default function TraderPage() {
           </aside>
         </div>
 
-        {/* 시안: 남색 카드 4개 (누적 수익률 · 전략 이행률 · 최대 낙폭 · 구매한 사람) */}
+        {/* 시안 1275:6904: 남색 카드 5개 (등급 · 누적 수익률 · 일관성 · 전략 이행률 · 최대 낙폭) */}
         <div className="mk-kpis-navy">
+          <div>
+            <span>등급</span>
+            <strong title={!t.grade || t.grade.unrated ? "아직 판매 등급 없음" : undefined}>{!t.grade || t.grade.unrated ? "—" : t.grade.grade}</strong>
+          </div>
           <div>
             <span title={bought ? "산 전략대로 한 매매만 모은 수익률" : "처음부터 지금까지 쌓인 수익률 (전략을 사면 전략 직결 수익률로 보여요)"}>{bought ? "전략 직결 수익률" : "누적 수익률"}</span>
             <strong>{pct(total)}</strong>
-            <small>{t.since.replace("-", "년 ")}월부터</small>
           </div>
           <div>
-            <span>전략 이행률</span>
+            <span title="이번 전략이 직전 전략을 얼마나 이어 가는지 (lib/grade 일관성 지표)">일관성</span>
+            <strong>{t.grade ? `${Math.round(t.grade.metrics.C * 100)}%` : "—"}</strong>
+          </div>
+          <div>
+            <span title={t.facts ? `매매 ${t.facts.wins + t.facts.losses}건 기준` : "계획대로 한 비율"}>전략 이행률</span>
             <strong>{t.follow}%</strong>
-            <small>{t.facts ? `매매 ${t.facts.wins + t.facts.losses}건 기준` : "계획대로 한 비율"}</small>
           </div>
           <div>
-            <span>최대 낙폭</span>
+            <span title="기간 중 가장 크게 빠진 폭">최대 낙폭</span>
             <strong>{pct(t.mdd)}</strong>
-            <small>기간 중 가장 크게 빠진 폭</small>
-          </div>
-          <div>
-            <span>구매한 사람</span>
-            <strong>{t.buyers.toLocaleString("ko-KR")}명</strong>
-            <small>누적 구매자 수</small>
           </div>
         </div>
 
@@ -182,7 +181,7 @@ export default function TraderPage() {
             {similar.map((o) => (
               <Link key={o.id} href={`/marketplace/${o.id}`} className="mk-card mk-sim">
                 <strong>
-                  {o.name} <GradeBadge grade={o.grade?.grade} unrated={o.grade?.unrated} small />
+                  {o.name}
                 </strong>
                 <p>{o.tagline}</p>
                 <span className={oneStock(o, "3m") ? "" : tone(o.returns["3m"])}>3개월 {oneStock(o, "3m") ? "-" : pct(o.returns["3m"])}</span>
