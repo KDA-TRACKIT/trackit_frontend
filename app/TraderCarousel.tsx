@@ -1,12 +1,13 @@
 "use client";
 // 홈 "트레이더 보드": 전략 마켓 트레이더를 가로로 넘겨 보기 (Yoonsojj 님 a03132f 의 슬라이드 · 좌우 버튼을 옮겨 옴)
-//   카드: 프로필 · 이름 · 한 달 수익률 · 전략 이행률 · 받은 꿀
+//   카드: 프로필 · 이름 · 한 달 수익률 · 판매 등급 · 전략 이행률 · 받은 꿀
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
 import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
+import { GradeBadge } from "./marketplace/GradeParts";
 
 
 export default function TraderCarousel() {
@@ -67,12 +68,18 @@ export default function TraderCarousel() {
               <h3>
                 <b className="home-trader-rank">{index + 1}</b>
                 <span className="home-trader-avatar" aria-hidden="true"><Image src="/home/leaderboard-avatar.svg" alt="" width={30} height={30} /><Image src="/home/leaderboard-avatar-icon.svg" alt="" width={18} height={18} /></span>
-                <span className="home-trader-name" title={t.name}>{t.name}</span>
+                <span>{t.name}</span> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
               </h3>
               <span className="home-trader-tag">{t.rule?.name ?? t.styles[0] ?? t.type}</span>
               <div className="home-trader-metrics">
-                <p className="home-trader-metric-label">한 달 수익률</p>
-                <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
+                <div>
+                  <p className="home-trader-metric-label">실시간 수익률</p>
+                  <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
+                </div>
+                <div>
+                  <p className="home-trader-metric-label">등급</p>
+                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} />
+                </div>
               </div>
               <div className="home-trader-footer">
                 <span>이행률 {t.follow}%</span>
