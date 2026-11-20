@@ -26,7 +26,7 @@ const MENU: Menu[] = [
     sub: [
       { label: "내 노트", href: "/archive/notes", desc: "작성한 노트 모아 보기" },
       { label: "구매한 전략", href: "/archive/purchases", desc: "결제한 전략" },
-      { label: "전략 분석", href: "/archive/analysis", desc: "연 전략의 트레이더 비교" },
+      { label: "전략 분석", href: "/archive/analysis", desc: "AI 에게 내 전략 · 매매 묻기" },
     ],
   },
 ];

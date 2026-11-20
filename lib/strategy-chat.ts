@@ -10,14 +10,18 @@
 //   AI 가 없거나 실패하면 같은 근거로 규칙대로 답함 (숫자는 모두 근거에서)
 import type { TradeRecord } from "./records";
 import { recentTrades, type Trade } from "./api/performance";
-import { fetchBars, type UsExchange } from "./market-data";
+import { fetchBars, searchAllSymbols, type UsExchange } from "./market-data";
 import { fetchStrategyMonth } from "./strategy-data";
 import { checkRule } from "./trader-method";
 import { pairTrades, statsOf, type MyRound } from "./strategy-use";
 import { habits, planChanges, reviewRounds } from "./self-review";
 import { gatherStock, localAnswer } from "./strategy-evidence";
+import { getQuotes } from "./api/insights";
+import { currentRecords, symbolRecords } from "./strategy";
+import { ownItems, priceIn } from "./strategyText";
 import type { StrategyEvidence } from "./api/ai";
-import type { SimDetail } from "../app/marketplace/GuessFirst";
+import type { SimDetail, SimMonth } from "../app/marketplace/GuessFirst";
+import type { SimCandle, SimInd, SimNote, SimTrade } from "../app/marketplace/StrategyChart";
 import type { Bar } from "./mock/workshop";
 
 export type Intent = "about" | "adherence" | "changes" | "check" | "fit";
@@ -29,7 +33,53 @@ export const INTENTS: { key: Intent; label: string; ask: string }[] = [
   { key: "fit", label: "나와 맞나", ask: "내가 이 전략 잘 활용할 수 있을까?" },
 ];
 export type Target = { key: string; kind: "stock" | "trader"; id: string; name: string; months?: string[] };
-export type Reply = { intent: Intent; target: Target; evidence: StrategyEvidence[]; answer: string; points: { text: string; refs: string[] }[] };
+/** 답에 붙는 종목 · 차트 (종목 칩을 누르면 그 종목 차트) */
+export type ReplyStock = { code: string; name: string; ret?: number; date?: string };
+export type ReplyChart = { code: string; candles: SimCandle[]; trades: SimTrade[]; notes?: SimNote[]; ind?: SimInd };
+/** 매매 전 체크 결과: 조건마다 충족 · 미충족 · 판단 불가(null) — AI 답과 상관없이 항상 보여 줌 */
+export type ReplyCheck = { label: string; ok: boolean | null; detail?: string };
+export type Reply = { intent: Intent; target: Target; evidence: StrategyEvidence[]; answer: string; points: { text: string; refs: string[] }[]; stocks?: ReplyStock[]; charts?: ReplyChart[]; currency?: "KRW" | "USD"; checks?: ReplyCheck[]; verdict?: string };
+
+/** 체크 결과 한 줄 */
+export function verdictOf(checks: ReplyCheck[], what = "매수 조건") {
+  const judged = checks.filter((c) => c.ok !== null);
+  const ok = judged.filter((c) => c.ok).length;
+  if (!judged.length) return `${what}을 판단할 수 없어요`;
+  if (ok === judged.length) return `${what} ${judged.length}개 모두 충족`;
+  return `${what} ${judged.length}개 중 ${ok}개 충족 · 미충족: ${judged.filter((c) => !c.ok).map((c) => c.label).join(", ")}`;
+}
+
+/**
+ * 내 종목 전략의 매수 조건을 지금 가격으로 확인 (내가 쓴 문장만)
+ *   '돌파 · 넘으면 · 위로'  → 지금가가 그 가격 위
+ *   '돌파 후 지지 · 눌림'    → 최근 20일 안에 그 가격 위로 간 적이 있고, 지금 그 가격 -1% ~ +3%
+ *   '지지 · 근처 · 오면 · 이하' → 지금가(또는 오늘 저가)가 그 가격 +1% 안까지 내려옴, -3% 넘게 깨지진 않음
+ *   가격이 없는 문장은 그은 선(바로 아래 지지 · 바로 위 저항)으로, 그것도 없으면 '판단 불가'
+ *   손절선: 지금가가 손절선 위인지
+ */
+export function myConditions(text: string[], now: number, todayLow: number, recentHigh: number, lines: { support: number | null; resistance: number | null }, stop: number | null, fmt: (n: number) => string): ReplyCheck[] {
+  const out: ReplyCheck[] = [];
+  const buys = text.flatMap((t) => ownItems(t)).filter((i) => i.kind === "buy");
+  const diff = (p: number) => `지금가 ${fmt(now)} · 기준 대비 ${now >= p ? "+" : ""}${((now / p - 1) * 100).toFixed(1)}%`;
+  for (const b of buys) {
+    let p = priceIn(b.text);
+    const up = /돌파|넘으면|넘기면|넘어|위로|올라|상향/.test(b.text);
+    const hold = /지지|눌림|근처|오면|도달|터치|내려|이하|아래|닿으면|찍으면/.test(b.text);
+    if (p === null) p = hold ? lines.support : up ? lines.resistance : null;
+    const label = b.text.length > 40 ? `${b.text.slice(0, 40)}…` : b.text;
+    if (p === null) {
+      out.push({ label, ok: null, detail: "가격이 없고 기준이 될 선도 없어 판단 불가" });
+      continue;
+    }
+    if (up && hold) out.push({ label, ok: recentHigh > p && now >= p * 0.99 && now <= p * 1.03, detail: `${recentHigh > p ? `20일 안 ${fmt(p)} 위로 간 적 있음` : `아직 ${fmt(p)} 돌파 전`} · ${diff(p)}` });
+    else if (up) out.push({ label, ok: now > p, detail: diff(p) });
+    else if (hold) out.push({ label, ok: Math.min(now, todayLow) <= p * 1.01 && now >= p * 0.97, detail: `${now < p * 0.97 ? "기준을 3% 넘게 깨고 내려감 · " : ""}${diff(p)}` });
+    else out.push({ label, ok: Math.abs(now / p - 1) <= 0.01, detail: diff(p) });
+  }
+  if (!buys.length) out.push({ label: "내 종목 전략에 매수 조건 문장이 없어요", ok: null, detail: "종목 전략에 '○○원 지지 확인 후 매수'처럼 적어 두면 확인해요" });
+  if (stop !== null) out.push({ label: `손절선 ${fmt(stop)} 위`, ok: now > stop, detail: diff(stop) });
+  return out;
+}
 
 export function detectIntent(q: string): Intent {
   if (/충족|지금\s*(?:사|매수|들어가)|진입\s*조건.*(?:됐|맞)|살\s*(?:때|타이밍)|매수해도|들어가도/.test(q)) return "check";
@@ -51,6 +101,7 @@ const kst = (t: number) => new Date((t + 9 * 3600) * 1000).toISOString().slice(0
 let tradesCache: Promise<Trade[] | null> | null = null;
 const myTrades = () => (tradesCache ??= recentTrades().catch(() => null));
 const barsCache = new Map<string, Promise<Bar[]>>();
+const nameCache = new Map<string, Promise<string>>();
 function daily(code: string, market: string): Promise<Bar[]> {
   const key = `${market}:${code}`;
   if (!barsCache.has(key))
@@ -68,6 +119,22 @@ function daily(code: string, market: string): Promise<Bar[]> {
       })().catch(() => []),
     );
   return barsCache.get(key)!;
+}
+const toCandles = (bars: Bar[]): SimCandle[] => bars.map((b) => [kst(b.time), b.open, b.high, b.low, b.close, b.volume]);
+/** 그 달 전략 차트: 대표 종목은 전략에 든 봉, 다른 종목은 일봉에서 그 달 앞 60일 ~ 뒤 40일 */
+async function monthCharts(m: SimMonth, market: string): Promise<ReplyChart[]> {
+  const codes = [...new Set([m.symbol.code, ...m.trades.map((t) => t.code)])];
+  const out: ReplyChart[] = [];
+  for (const code of codes) {
+    if (code === m.symbol.code) out.push({ code, candles: m.candles, trades: m.trades, notes: m.notes, ind: m.ind });
+    else {
+      const from = new Date(Date.parse(`${m.month}-01T00:00:00Z`) - 60 * 86_400_000).toISOString().slice(0, 10);
+      const to = new Date(Date.parse(`${m.month}-01T00:00:00Z`) + 40 * 86_400_000).toISOString().slice(0, 10);
+      const candles = toCandles(await daily(code, market)).filter((c) => c[0] >= from && c[0] <= to);
+      if (candles.length) out.push({ code, candles, trades: m.trades, notes: m.notes });
+    }
+  }
+  return out;
 }
 const indexOn = (bars: Bar[], d: string) => {
   let k = -1;
@@ -96,7 +163,12 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
   const say = (text: string, ...refs: string[]) => points.push({ text, refs: refs.filter(Boolean) });
   const trades = await myTrades();
   const rounds: MyRound[] = trades ? pairTrades(trades) : [];
-  const nameOf = (c: string) => records.find((r) => r.symbol === c)?.symbolName ?? c;
+  // 종목 이름: 내 노트 → 산 전략 종목 → 종목 검색 (코드 대신 이름으로 답하게)
+  const names = new Map<string, string>();
+  for (const r of records) if (r.symbol && r.symbolName) names.set(r.symbol, r.symbolName);
+  const unknown = [...new Set(rounds.map((r) => r.symbol))].filter((c) => !names.has(c));
+  await Promise.all(unknown.map((c) => (nameCache.get(c) ?? searchAllSymbols(c).then((l) => l.find((x) => x.code === c)?.name ?? c).catch(() => c)).then((n) => (nameCache.set(c, Promise.resolve(n)), names.set(c, n)))));
+  const nameOf = (c: string) => names.get(c) ?? c;
 
   // ── 내 종목 전략 ──
   if (target.kind === "stock") {
@@ -124,7 +196,32 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
       const id = ref("내 종목 전략");
       say(evidence.find((e) => e.id === id)?.text ?? "종목 전략이 없어요.", id);
     } else localAnswer(q, g).points.forEach((p) => points.push(p));
-    return { intent, target, evidence, answer: "", points };
+    const bars = await daily(target.id, /^\d{6}$/.test(target.id) ? "KR" : "US");
+    let checks: ReplyCheck[] | undefined;
+    let verdict: string | undefined;
+    if (intent === "check" && bars.length) {
+      // 현재가: 실시간 시세(국내), 못 받으면 마지막 일봉 종가
+      const quote = /^\d{6}$/.test(target.id) ? await getQuotes([target.id]).then((r) => r.quotes.find((x) => x.code === target.id)?.price ?? null).catch(() => null) : null;
+      const now = quote ?? bars.at(-1)!.close;
+      const mineNotes = currentRecords(symbolRecords(records, target.id));
+      const fmtK = (n: number) => `${n.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원`;
+      checks = myConditions(mineNotes.map((r) => r.text ?? ""), now, Math.min(bars.at(-1)!.low, now), Math.max(...bars.slice(-20).map((b) => b.high)), { support: g.facts.support ?? null, resistance: g.facts.resistance ?? null }, g.facts.stop ?? null, fmtK);
+      verdict = verdictOf(checks);
+      add("현재가 · 조건 체크", `현재가 ${fmtK(now)}${quote ? " (실시간)" : " (마지막 종가)"}. ${checks.map((c) => `${c.ok === null ? "판단 불가" : c.ok ? "충족" : "미충족"} — ${c.label}${c.detail ? ` (${c.detail})` : ""}`).join(" / ")}. 결론: ${verdict}`);
+    }
+    const mineRounds = rounds.filter((r) => r.symbol === target.id);
+    return {
+      intent,
+      target,
+      evidence,
+      answer: "",
+      points,
+      stocks: [{ code: target.id, name: target.name, ...(mineRounds[0]?.ret != null ? { ret: mineRounds[0].ret! } : {}) }],
+      charts: bars.length ? [{ code: target.id, candles: toCandles(bars.slice(-80)), trades: [] }] : [],
+      currency: /^\d{6}$/.test(target.id) ? "KRW" : "USD",
+      checks,
+      verdict,
+    };
   }
 
   // ── 산 전략 (트레이더) ──
@@ -136,6 +233,7 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
   const ruleId = rule ? add("전략 원문", `${rule.name}: ${rule.desc}`) : "";
   const verId = add("적용 버전", months.length ? `연 전략 ${months.length}개 (${months.map((m) => m.month).join(", ")}). 최신 버전 ${months.at(-1)!.month}` : "연 전략이 없어요.");
   const fmt = (n: number) => n.toLocaleString("ko-KR", { maximumFractionDigits: market === "US" ? 2 : 0 });
+  let checkBest: { name: string; checks: ReplyCheck[]; now: number } | null = null;
 
   if (intent === "about") {
     const s = splitRule(rule?.desc ?? "");
@@ -159,7 +257,7 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
     const named = (details[0]?.symbols ?? []).filter((s) => q.includes(s.name));
     const cands = (named.length ? named : (details[0]?.symbols ?? [])).slice(0, 4);
     const rows: string[] = [];
-    let best: { name: string; ok: number; n: number; miss: string[] } | null = null;
+    let best: { name: string; ok: number; n: number; miss: string[]; checks: ReplyCheck[]; now: number } | null = null;
     for (const s of cands) {
       const bars = await daily(s.code, market);
       const r = rule ? checkRule(rule.key, bars, fmt) : null;
@@ -167,9 +265,10 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
       const ok = r.checks.filter((c) => c.ok).length;
       const miss = r.checks.filter((c) => !c.ok).map((c) => `${c.label}${c.detail ? ` (${c.detail})` : ""}`);
       rows.push(`${s.name} ${kst(bars.at(-1)!.time)}: 조건 ${r.checks.length}개 중 ${ok}개 충족${miss.length ? ` · 미충족: ${miss.join(", ")}` : ""}`);
-      if (!best || ok / r.checks.length > best.ok / best.n) best = { name: s.name, ok, n: r.checks.length, miss };
+      if (!best || ok / r.checks.length > best.ok / best.n) best = { name: s.name, ok, n: r.checks.length, miss, checks: r.checks.map((c) => ({ label: c.label, ok: c.ok, detail: c.detail })), now: bars.at(-1)!.close };
     }
     const id = add("오늘 조건 확인", rows.join(" / ") || "확인할 수 있는 종목이 없어요 (일봉 136개 이상 필요).");
+    checkBest = best;
     if (best) {
       say(best.ok === best.n ? `${best.name}은(는) 오늘 매수 조건 ${best.n}개를 모두 충족해요. 손절 기준까지 정한 뒤 판단하세요.` : `가장 가까운 ${best.name}도 조건 ${best.n}개 중 ${best.ok}개 충족이에요. 미충족: ${best.miss.join(", ")}.`, ruleId, id);
       if (rows.length > 1) say("다른 종목 결과는 근거에 있어요.", id);
@@ -211,5 +310,24 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
       if (kept < checked) say(`연 뒤 매매 ${checked}회 중 ${checked - kept}회는 이 전략의 진입 조건과 달랐어요. 조건이 다 맞을 때까지 기다리는 연습이 필요해요.`, myId);
     }
   }
-  return { intent, target, evidence, answer: "", points };
+  // 이 전략의 종목 · 차트: 최신 버전(마지막 연 달)의 매매 종목, 매매 전 체크면 조건을 본 종목의 최근 봉
+  const latest = months.at(-1);
+  let stocks: ReplyStock[] = latest ? [...new Map(latest.trades.map((t) => [t.code, { code: t.code, name: t.name, ret: t.ret, date: t.entry.d }])).values()] : [];
+  if (latest && !stocks.length) stocks = [{ code: latest.symbol.code, name: latest.symbol.name }];
+  let charts: ReplyChart[] = latest ? await monthCharts(latest, market) : [];
+  if (intent === "check") {
+    const named = (details[0]?.symbols ?? []).filter((s) => q.includes(s.name));
+    const cands = (named.length ? named : (details[0]?.symbols ?? [])).slice(0, 4);
+    stocks = cands.map((s) => ({ code: s.code, name: s.name }));
+    charts = (await Promise.all(cands.map(async (s) => ({ code: s.code, candles: toCandles((await daily(s.code, market)).slice(-80)), trades: [] as SimTrade[] })))).filter((c) => c.candles.length);
+  }
+  // 매매 전 체크: 가장 가까운 종목의 조건별 결과를 체크리스트로 (그 종목 차트가 먼저 보이게)
+  let checks: ReplyCheck[] | undefined;
+  let verdict: string | undefined;
+  if (intent === "check" && checkBest) {
+    checks = checkBest.checks;
+    verdict = `${checkBest.name} (${fmt(checkBest.now)}): ${verdictOf(checks, "이 전략의 매수 조건")}`;
+    stocks = [...stocks.filter((x) => x.name === checkBest!.name), ...stocks.filter((x) => x.name !== checkBest!.name)];
+  }
+  return { intent, target, evidence, answer: "", points, stocks, charts, currency: market === "US" ? "USD" : "KRW", checks, verdict };
 }
