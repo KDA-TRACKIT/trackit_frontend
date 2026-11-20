@@ -34,8 +34,17 @@ NS["IDLE_RET"] = CASH
 m1, _, t1, *_rest, eq1 = sim("t42", "volume", P1, 0.45, 7, start="2023-01-01", end="2023-10-31", close_at_end=True, months=M1, slots_n=4)
 e1 = eq1[-1][1]
 # ── 2기 ──
-NS["IDLE_RET"] = QQQ_IDLE
+# 3기 (2026-08~, 7월 급락 손실 복기 뒤 규칙 변경, 사용자 결정 11/20): 나스닥 급락 구간엔 새로 안 사고 쉬는 돈도 현금으로 관망
+T3 = "2026-08-01"
 KEY2 = R.combo_tqqq("ma", "swing")
+_fn2 = NS["RULES"][KEY2][0]
+def _fn3(c, i):
+    d = BARS[c][i]["d"]
+    if d >= T3 and R.DOWN.get(d): return None
+    return _fn2(c, i)
+NS["RULES"]["eojin3"] = (_fn3, NS["RULES"][KEY2][1], NS["RULES"][KEY2][2])
+NS["IDLE_RET"] = {"US": {d: (0.0 if d >= T3 and R.DOWN.get(d) else r) for d, r in QQQ_IDLE["US"].items()}, "KR": {}}
+KEY2 = "eojin3"
 m2, _, t2, *_rest, eq2 = sim("t42", KEY2, P2, 0.92, 11, start="2023-11-01", end="2026-11-30", cash0=e1, months=M2, slots_n=3)
 for t in t1: t["phase"] = 1
 for t in t2: t["phase"] = 2
@@ -125,6 +134,16 @@ for t in t2:
                         text=(f"손실 복기: {t['name']} {d_in} {money(t['entry']['px'])} → {d_out} {money(t['exit']['px'])} ({t['ret']:+.1f}%). "
                               f"같은 때 나스닥100 60일 고점 대비 {md:+.1f}% → {cause}. {kept}해서 손실은 {t['ret']:+.1f}%로 끝남. 다음엔 {nxt}.")))
 
+# ── 3기 전환 복기 (2026-07 말): 2기 동안 급락 구간에 산 매매 결과 → 급락 구간엔 관망 ──
+in_down = [t for t in t2 if t["entry"]["d"] < T3 and R.DOWN.get(t["entry"]["d"])]
+down_loss = [t for t in in_down if t["ret"] <= 0]
+other = [t for t in t2 if t["entry"]["d"] < T3 and not R.DOWN.get(t["entry"]["d"])]
+t3_day = max(x["d"] for x in QB if x["d"] < T3)
+jul = next(x["ret"] for x in monthly if x["month"] == "2026-07")
+turn3_text = (f"2기 복기 (2023-11 ~ 2026-07). 나스닥 급락 구간에 산 매매 {len(in_down)}건 중 {len(down_loss)}건이 손절, 손익 합은 {sum(t['ret'] for t in in_down):+.0f}%p. "
+              f"수익은 났지만 손절이 몰리면 계좌가 크게 흔들렸다 (7월에만 {jul:+.1f}%). 높은 수익보단 적은 손실: "
+              "8월부터는 급락 구간엔 새로 사지 않고 현금으로 관망한다. 급락이 끝나고 골든크로스가 다시 나올 때만 산다.")
+
 # ── 2기 종목 노트 (안 산 종목: 피보나치 · 수평선 · 추세선) ──
 FIBS = NS["FIB"]
 def note_p2(code, mth):
@@ -198,6 +217,8 @@ for mth in E.MONTHS:
                           text=(f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']}({money(t['entry']['px'])}) — {t['exit']['d']} {t['exit']['why']} ({t['ret']:+.2f}%)."
                                 if done else f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']} 계속 보유 (진입가 {money(t['entry']['px'])}).")))
     notes += [x for x in reviews if x["d"][:7] == mth]
+    if mth == t3_day[:7]:
+        notes.append(dict(type="review", d=t3_day, text=turn3_text))
     if mth == T1_END:
         notes.append(dict(type="review", d=eq1[-1][0], text=turn_text))
     notes.sort(key=lambda x: x["d"])
@@ -212,6 +233,8 @@ for mth in E.MONTHS:
         title = "신호가 없어 쉬어 간 달" if not p1 else "따라 살 급등이 없던 달"
     if mth == T1_END: title = "1기 복기: 급등 추격을 멈춘 달"
     if mth == "2023-11": title = "AI 기술주 골든크로스로 다시 시작"
+    if mth == t3_day[:7]: title = "2기 복기: 급락장 매수를 멈추기로 한 달"
+    if mth >= T3[:7] and not mt and any(R.DOWN.get(x["d"]) for x in QB if x["d"][:7] == mth): title = "급락 구간이라 관망한 달"
     summary = f"매매 {len(mt)}건 · 노트 {sum(1 for x in notes if x['type'] != 'carry')}개"
     follow_m = round(sum(t["followed"] for t in mt) / len(mt) * 100) if mt else 100
     months.append(dict(month=mth, title=title, summary=summary, ret=ret, follow=follow_m, phase=1 if p1 else 2,
@@ -227,7 +250,7 @@ follow = round(sum(t["followed"] for t in trades) / n * 100)
 def hold(t): return (date.fromisoformat(t["exit"]["d"]) - date.fromisoformat(t["entry"]["d"])).days
 best = max(trades, key=lambda t: t["ret"]); worst = min(trades, key=lambda t: t["ret"])
 RULE = "골든크로스 · 하락장 TQQQ 맥점"
-RULE_DESC = ("AI 기술주는 20일선이 60일선을 위로 뚫을 때 사고(손절 -7%, 종가가 20일선 아래면 정리), "
+RULE_DESC = ("AI 기술주는 20일선이 60일선을 위로 뚫을 때 사고(손절 -7%, 종가가 20일선 아래면 정리), 나스닥 급락 구간엔 새로 사지 않고 관망. 예전(2026-07까지)엔 "
              "나스닥이 급락하면 나스닥100 직전 스윙 저점(맥점)에서 양봉 지지를 확인하고 TQQQ를 산다(손절 -9%, 직전 고점 회복이 목표).")
 syms = [META[c]["name"] for c in P2]
 summary = dict(persona=None, eq=eq, mIdx=m_idx, asOf=eq_hist[-1][0], monthly=monthly, mdd=mdd_of(eq_hist), trades=n, follow=follow,
@@ -242,7 +265,7 @@ summary = dict(persona=None, eq=eq, mIdx=m_idx, asOf=eq_hist[-1][0], monthly=mon
 detail = dict(id="t42", market="US", rule=dict(key=KEY2, name=RULE, desc=RULE_DESC), symbols=[dict(code=c, name=META[c]["name"]) for c in P2],
               phases=[dict(n=1, from_="2023-01", to=T1_END, label="바이오 · 테마 급등 추격", symbols=[META[c]["name"] for c in P1]),
                       dict(n=2, from_="2023-11", to="2026-11", label="AI 기술주 골든크로스 · TQQQ 맥점", symbols=syms)],
-              revisions=[dict(d="2023-11-01", kind="UPDATE", text=turn_text)],
+              revisions=[dict(d="2023-11-01", kind="UPDATE", text=turn_text), dict(d=T3, kind="UPDATE", text=turn3_text)],
               months=months)
 
 ROOT = E.ROOT
