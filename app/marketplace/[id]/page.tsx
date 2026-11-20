@@ -7,7 +7,7 @@ import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
-import { FavButton, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../parts";
+import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
@@ -135,16 +135,14 @@ export default function TraderPage() {
             {list.slice(0, 3).map((s) => (
               <article key={s.id} className="mk-card mk-strat">
                 <small>{monthLabel(s.month)}</small>
-                <h3>{s.title}</h3>
+                <h3>
+                  <Link href={`/marketplace/${t.id}/strategies/${s.month}`}>{s.title}</Link>
+                </h3>
                 <StrategyStatsRow strategy={s} />
                 <div className="mk-strat-num">
                   <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
                   <span>이행률 {s.follow}%</span>
                   <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
-                </div>
-                <strong>{won(s.price)}</strong>
-                <div className="mk-buyrow">
-                  <StrategyButton trader={t} strategy={s} className="mk-soft" notify={notify} />
                 </div>
               </article>
             ))}

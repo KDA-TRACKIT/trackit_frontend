@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
-import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
-import { Pager, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../../parts";
+import { monthLabel, pct, strategiesOf, tone, traderById } from "../../data";
+import { Pager, PassBuyBox, StrategyStatsRow, useNotice } from "../../parts";
 import { useFeedback } from "../../../../lib/feedback";
 import { LikeButton } from "../../feedback";
 import "../../marketplace.css";
@@ -54,19 +54,15 @@ export default function StrategiesPage() {
             <li key={s.id} className="mk-card mk-srow">
               <div>
                 <small>{monthLabel(s.month)}</small>
-                <strong>{s.title}</strong>
+                <strong>
+                  <Link href={`/marketplace/${t.id}/strategies/${s.month}`}>{s.title}</Link>
+                </strong>
                 <StrategyStatsRow strategy={s} />
               </div>
               <div className="mk-srow-num">
                 <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
                 <small>이행률 {s.follow}%</small>
                 <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
-              </div>
-              <div className="mk-srow-buy">
-                <strong>{won(s.price)}</strong>
-                <div className="mk-buyrow">
-                  <StrategyButton trader={t} strategy={s} notify={notify} />
-                </div>
               </div>
             </li>
           ))}
