@@ -53,23 +53,17 @@
 .home-redesign .trader-grid { grid-auto-columns:calc((100% - 80px) / 5); gap:20px; }
 .home-redesign .trader-card { display:block; height:205px; min-height:0; padding:12px 13px; border:1px solid var(--home-line); border-radius:12px; background:var(--c-surface,#fff); }
 .home-redesign .trader-card h3 { display:flex; gap:8px; align-items:center; height:30px; margin:0; color:var(--home-ink); font-size:14px; font-weight:600; letter-spacing:0; }
+.home-trader-name { flex:1; min-width:0; }
 .home-trader-rank { display:grid; place-items:center; flex:none; width:24px; height:24px; border-radius:7px; background:#edf1fa; color:#0f2367 !important; font-size:14px; }
 .home-trader-avatar { position:relative; display:block; flex:none; width:30px; height:30px; }
 .home-trader-avatar img { position:absolute; max-width:none; }
 .home-trader-avatar img:last-child { top:6px; left:6px; }
 .home-trader-tag { display:block; width:fit-content; max-width:100%; margin-top:18px; padding:6px 9px; overflow:hidden; border-radius:8px; background:#f7f9fc; color:#0f2367; font-size:14px; line-height:17px; white-space:nowrap; text-overflow:ellipsis; }
-.home-trader-metrics { display:flex; justify-content:space-between; gap:8px; margin:14px 10px 0; }
-.home-trader-metrics > div:last-child { text-align:right; }
+.home-trader-metrics { margin:15px 9px 0; }
 .home-redesign .trader-card .home-trader-metric-label { display:block; margin:0 0 5px; color:var(--home-muted); font-size:12px; line-height:14px; }
 .home-trader-return { display:block; color:var(--home-navy); font-size:24px; line-height:29px; font-weight:600; font-variant-numeric:tabular-nums; }
 .home-trader-return.gain { color:#1f9d55; }.home-trader-return.loss { color:#ff3030; }
-.home-redesign .home-trader-metrics .mk-grade { display:block; min-width:0; height:auto; padding:0; border:0; background:transparent; box-shadow:none; text-shadow:none; color:var(--home-grade-color,var(--home-navy)); font-size:24px; line-height:29px; font-weight:600; }
-.home-redesign .home-trader-metrics .mk-grade::after { content:none; }
-.home-trader-metrics .g-F { --home-grade-color:#d03f3f; }
-.home-trader-metrics .g-D { --home-grade-color:#616e9b; }
-.home-trader-metrics .g-B { --home-grade-color:#31427c; }
-.home-trader-metrics .g-C { --home-grade-color:#49588b; }
-.home-trader-footer { display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding:6px 0 0 10px; border-top:1px solid var(--home-line); color:var(--home-muted); font-size:12px; line-height:15px; }
+.home-trader-footer { display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding:6px 0 0 9px; border-top:1px solid var(--home-line); color:var(--home-muted); font-size:12px; line-height:15px; }
 .home-trader-honey { display:flex; align-items:center; gap:4px; height:26px; padding:0 8px; border:1px solid #fff5ce; border-radius:13px; color:#a56809; font-size:14px; font-weight:600; }
 .home-trader-honey img { width:11.42px; height:14.3401px; }
 .home-weekly { padding-top:43px; }
@@ -101,7 +95,6 @@ html[data-theme="dark"] .home-redesign { --home-line:var(--c-line); --home-muted
 html[data-theme="dark"] .home-redesign :is(.home-leaderboard,.home-week-day,.home-trader-tag) { background:var(--c-subtle); }
 html[data-theme="dark"] .home-redesign .home-trader-tag { color:var(--c-accent); }
 html[data-theme="dark"] .home-trader-honey { border-color:#8b6900; color:#ffd45c; }
-html[data-theme="dark"] .home-redesign .home-trader-metrics .mk-grade { color:var(--c-ink); }
 html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(--c-accent-soft); border-color:var(--c-accent); }
 @media (max-width:1050px) {
   .home-overview { grid-template-columns:1.1fr 1fr; }
