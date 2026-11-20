@@ -11,7 +11,6 @@ import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, pct, strategiesOf, tone, traderById } from "../../../data";
 import { StrategyButton, useNotice } from "../../../parts";
 import StrategyChart from "../../../StrategyChart";
-import { GradeBadge } from "../../../GradeParts";
 import { useDark, type SimDetail } from "../../../GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import { markFreeView } from "../../../../../lib/free-views";
@@ -70,7 +69,7 @@ export default function StrategyView() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-narrow">
         <Link href={`/marketplace/${t.id}`} className="mk-back">
-          ‹ {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+          ‹ {t.name}
         </Link>
         <section className="mk-card mk-sim-head">
           <small>
@@ -171,7 +170,7 @@ export default function StrategyView() {
                     ) : "n" in row && row.n ? (
                       <li key={row.k} className={`note ${row.n.type}`}>
                         <div className="who">
-                          <i className={`kind ${row.n.type}`}>{row.n.type === "market" ? "증시 노트" : row.n.type === "carry" ? "이어진 보유" : "종목 노트"}</i>
+                          <i className={`kind ${row.n.type}`}>{row.n.type === "market" ? "증시 노트" : row.n.type === "carry" ? "이어진 보유" : row.n.type === "review" ? "복기" : "종목 노트"}</i>
                           {row.n.name && <b>{row.n.name}</b>}
                           <time>{row.n.d}</time>
                         </div>

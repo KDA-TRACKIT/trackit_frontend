@@ -1,0 +1,146 @@
+{
+ "NVDA": {
+  "name": "엔비디아",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "AMD": {
+  "name": "AMD",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "AVGO": {
+  "name": "브로드컴",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "MSFT": {
+  "name": "마이크로소프트",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "META": {
+  "name": "메타",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "PLTR": {
+  "name": "팔란티어",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "GOOGL": {
+  "name": "알파벳",
+  "group": "AI",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "MRNA": {
+  "name": "모더나",
+  "group": "BIO",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "NVAX": {
+  "name": "노바백스",
+  "group": "BIO",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "BNTX": {
+  "name": "바이오엔테크",
+  "group": "BIO",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "PLUG": {
+  "name": "플러그파워",
+  "group": "THEME",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "LCID": {
+  "name": "루시드",
+  "group": "THEME",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "AMC": {
+  "name": "AMC",
+  "group": "THEME",
+  "exchange": "NY",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "GME": {
+  "name": "게임스탑",
+  "group": "THEME",
+  "exchange": "NY",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "QQQ": {
+  "name": "나스닥100 ETF",
+  "group": "INDEX",
+  "exchange": "ND",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120",
+  "market": "US"
+ },
+ "TQQQ": {
+  "name": "나스닥100 3배 ETF",
+  "group": "LEVER",
+  "exchange": "ND",
+  "market": "US",
+  "n": 1124,
+  "from": "20220601",
+  "to": "20261120"
+ }
+}

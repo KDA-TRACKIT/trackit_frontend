@@ -11,7 +11,13 @@ type Bench = { KR: [string, number][]; US: [string, number][] };
 const bench = BENCH as unknown as Bench;
 const START = "2024-12-01";
 
-export function gradeOfSim(sim: { eq: number[]; mIdx: Record<string, number>; months: SimMonthInfo[] }, market: "KR" | "US"): GradeResult | null {
+export function gradeOfSim(sim0: { eq: number[]; mIdx: Record<string, number>; months: SimMonthInfo[] }, market: "KR" | "US"): GradeResult | null {
+  // 2024-12 전부터 기록이 있으면(어진냥이 2023-01~) 시장 기준이 있는 2024-12부터, 시장 기준 마지막 날까지만 평가
+  const off = sim0.mIdx["2024-12"] ?? 0;
+  const benchDays = bench[market].filter(([d]) => d >= START).length;
+  const sim = off
+    ? { ...sim0, eq: sim0.eq.slice(off, off + benchDays), mIdx: Object.fromEntries(Object.entries(sim0.mIdx).filter(([m]) => m >= "2024-12").map(([m, k]) => [m, k - off])) }
+    : sim0;
   const series = bench[market].filter(([d]) => d >= START).slice(0, sim.eq.length);
   if (series.length !== sim.eq.length) return null; // 거래일이 안 맞으면 계산하지 않음
   const dates = series.map(([d]) => d);

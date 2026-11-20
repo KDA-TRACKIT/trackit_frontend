@@ -3,8 +3,8 @@
 //   월별 수익률 · 최대 낙폭 · 매매 수 · 이행률은 sim.json: 실제 일봉(키움, 2024-06~2026-11)에 트레이더마다 규칙을 돌려 만든 값
 //     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 열람권 확인 뒤 그 달만)
 import SIM from "./sim.json";
-import { gradeOfSim } from "./grades";
-import { formulaPrice, roundPrice, type GradeResult } from "../../lib/grade";
+// 등급제는 없앰 (2026-11-20 기획): grades.ts · lib/grade 는 나중을 위해 남기고 마켓에서는 호출하지 않음
+import type { GradeResult } from "../../lib/grade";
 
 type SimTrader = {
   /** 작도(채널 · 피보나치 · 엘리어트)로 매매하는 트레이더면 소개를 규칙에 맞게 바꿈 */
@@ -232,12 +232,9 @@ function withSim(t: Trader): Trader {
   if (!s) return t;
   const p = s.persona;
   const live = s.eq?.length ? monthStartReturns(s.eq, s.mIdx) : null;
-  const grade = s.eq?.length ? gradeOfSim(s, t.market === "해외 주식" ? "US" : "KR") ?? undefined : undefined;
   return {
     ...t,
-    // 열람권 가격은 등급 공식대로 (docs/formulas-2026-11-19.md 2장)
-    //   판매 중지(F · 일반) · 등급 전이면 공식가(성적 점수 E 보간)만 보여 주고 팔지 않음 — 예전엔 견본 가격(9,900 · 100,900원 …)이 남아 있었음
-    ...(grade && { grade, price: grade.price ?? roundPrice(formulaPrice(grade.E)) }),
+    // 월 구독료는 판매자가 정한 값 (t.price)
     ...(live && { curves: live.curves, asOf: s.asOf }),
     ...(p && {
       name: p.name ?? t.name,
@@ -250,8 +247,7 @@ function withSim(t: Trader): Trader {
     monthly: s.monthly,
     returns: live?.returns ?? returnsOf(s.monthly),
     mdd: s.mdd,
-    // 전략 이행률 = 공식의 보정 이행률 A_adj (건수가 적으면 0.5 쪽으로, 등급 · 가격에 쓰는 값과 같음). 달별 전략의 이행률은 그 달 그대로
-    follow: grade ? Math.round(grade.metrics.A * 100) : s.follow,
+    follow: s.follow,
     verify: { months: s.monthly.length, trades: s.trades, preRate: 100 },
     rule: { name: s.rule, desc: s.ruleDesc, symbols: s.symbols },
     facts: s.facts,
@@ -272,7 +268,8 @@ function stocksOf(months: SimTrader["months"]) {
 }
 
 /** 고른 기간에 매매가 없거나 한 종목만 매매했으면 수익률 · 추이를 보여 주지 않음 (비교 의미 없음) */
-export const oneStock = (t: Trader, p: Period) => t.stocks !== undefined && t.stocks[p] <= 1;
+//   (2026-11-20) 한 종목이어도 가리지 않고 보여 줌 → 항상 false. 부르는 곳은 그대로 둠
+export const oneStock = (_t: Trader, _p: Period) => false;
 
 /** 최근 n개월 (2026-11 까지) 월 목록 */
 function lastMonths(n: number, rets: number[]) {
@@ -326,7 +323,33 @@ const MEME_TRADERS: Trader[] = [
   },
 ];
 
-export const TRADERS: Trader[] = [...Array.from({ length: 40 }, (_, i) => makeTrader(i)), ...MEME_TRADERS].map(withSim);
+/**
+ * 데모 판매자 어진냥이 (2026-11-20): 2023-01부터 미국 주식. 숫자 · 매매 · 노트는 sim.json t42 / data/market-sim/t42.json
+ *   (scripts/market-sim/eojin_build.py 가 실제 일봉으로 만듦: 1기 바이오 · 테마 급등 추격 → 2기 AI 기술주 골든크로스 · 급락 때 TQQQ 맥점)
+ */
+const EOJIN: Trader = {
+  id: "t42",
+  name: "어진냥이",
+  tagline: "하락에서 살아남기",
+  intro: "",
+  quote: "하락에서 살아남기",
+  bio: [],
+  since: "2023-01",
+  likes: 0,
+  price: 19900,
+  buyers: 0,
+  follow: 0,
+  mdd: 0,
+  styles: ["스윙", "추세 추종"],
+  indicators: ["이동평균선", "MACD", "RSI", "추세선", "지지·저항"],
+  type: "스윙",
+  market: "해외 주식",
+  returns: { "1m": 0, "3m": 0, "6m": 0, "1y": 0, "2y": 0, all: 0 },
+  monthly: [],
+  verify: { months: 0, trades: 0, preRate: 0 },
+};
+
+export const TRADERS: Trader[] = [...Array.from({ length: 40 }, (_, i) => makeTrader(i)), ...MEME_TRADERS, EOJIN].map(withSim);
 
 /**
  * 판매 심사: 어떤 방법이든 기록으로 통하는 게 확인되면 판매, 아니면 판매 보류 (목록에서 숨기고 열람권 판매 안 함)
@@ -345,15 +368,11 @@ export function screen(t: Trader): Screening {
   return { verified: checks.every((c) => c.ok), checks };
 }
 export const isVerified = (t: Trader) => screen(t).verified;
-/**
- * 전략 마켓 목록 · 비슷한 트레이더 · 홈 보드에 보이는 트레이더 (주소로 들어오면 상세는 열림, 이미 산 전략은 계속 열람)
- *   - 판매 등급을 아직 못 받았으면 안 보임: 가입 후 3개월이 지나야 비즈니스 계정으로 바꿀 수 있고, 등급(D 이상)을 받아야 판매가 열림
- *   - 비즈니스 → 일반 계정으로 바뀐 트레이더(F 3개월)도 안 보임
- */
-export const listed = (t: Trader) => !!t.grade && !t.grade.unrated && t.grade.grade !== "일반";
+/** 전략 마켓 목록 · 비슷한 트레이더 · 홈 보드에 보이는 트레이더: 실제 기록(매매 · 월별 전략)이 있는 사람 (등급제 없음) */
+export const listed = (t: Trader) => t.verify.months > 0 && t.price > 0;
 
-/** 등급을 받았고 F · 일반이 아니어야 신규 판매 (열람권 구매 가능) */
-export const sellable = (t: Trader) => !!t.grade && !t.grade.unrated && t.grade.grade !== "F" && t.grade.grade !== "일반";
+/** 구독할 수 있는 트레이더 (월 구독료가 있음) */
+export const sellable = listed;
 export const traderById = (id: string) => TRADERS.find((t) => t.id === id);
 
 const TITLES: [string, string][] = [

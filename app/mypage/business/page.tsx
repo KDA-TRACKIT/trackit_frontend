@@ -2,8 +2,8 @@
 // 비즈니스 프로필 전환 (시안 2026-11-18):
 //   전략 판매 시작하기 → 판매 약관 동의 → 정산 정보 입력 → 프로필 정보 공개 안내(동의) → 완료
 //   판매자 API 가 생기기 전까지 전환 상태는 이 브라우저에만. 정산 계좌는 끝 4자리만 저장 (전체 번호는 남기지 않음)
-//   전환 자격은 사람이 심사하지 않고 서버가 처음 3개월 기록으로 자동 판정 (GET /me/business-eligibility, 2026-11-17 기준을 더미 데이터로 조정)
-//     조건을 다 채우면 '계정 전환'이 켜지고 약관 · 정산 · 공개 동의 뒤 바로 비즈니스 프로필. 못 채우면 남은 조건과 3개월 되는 날을 보여 줌
+//   전환 자격은 서버가 자동 판정 (GET /me/business-eligibility): 최근 30일 메모 5개 이상 (2026-11-20 기획 변경, 유지 조건도 같음)
+//     조건을 채우면 '계정 전환'이 켜지고 약관 · 정산 · 공개 동의 뒤 바로 비즈니스 프로필
 import { useEffect, useState } from "react";
 import { apiRequest, errorMessage } from "../../../lib/api/client";
 import { readInvestment } from "../investment/InvestmentFields";
@@ -46,7 +46,7 @@ function amount(c: Eligibility["criteria"][number]) {
   if (c.key === "period") return `${c.value}일 / ${c.need}일`;
   if (c.key === "adherence") return `${c.value}${c.value === "—" ? "" : "%"} / ${c.need}% 이상`;
   if (c.key === "gap") return `${c.value}개월 / ${c.need}개월 이하`;
-  const unit = c.key === "trades" ? "건" : c.key === "days" ? "일" : "개";
+  const unit = c.key === "trades" ? "건" : c.key === "days" ? "일" : "개"; // recent(최근 30일 메모) 는 개
   return `${c.value}${unit} / ${c.need}${unit}`;
 }
 const ymd = (iso: string) => iso.slice(0, 10).replaceAll("-", ".");
@@ -187,7 +187,7 @@ export default function BusinessPage() {
               {check?.error
                 ? check.error
                 : check?.data
-                  ? `${check.data.typeLabel} 기준 · ${check.data.firstNoteAt ? `첫 노트 ${ymd(check.data.firstNoteAt)}` : "아직 노트가 없어요"}${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` · ${ymd(check.data.eligibleAt)}부터 기간 충족` : ""}`
+                  ? "최근 30일 동안 메모를 5개 이상 쓰면 전환할 수 있고, 계속 이 조건을 지켜야 유지돼요."
                   : "비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요."}
             </p>
           </div>
@@ -341,7 +341,7 @@ export default function BusinessPage() {
       {step === "done" && (
         <Modal label="전환 완료" onClose={close}>
           <h2>비즈니스 프로필로 전환했어요</h2>
-          <p className="mp-modal-desc">이제 내 전략을 판매할 수 있어요. 판매 관리에서 열람권 가격을 정해 주세요.</p>
+          <p className="mp-modal-desc">이제 내 전략을 판매할 수 있어요. 판매 관리에서 월 구독료를 정해 주세요.</p>
           <div className="mp-actions">
             <button type="button" className="mp-btn primary" style={{ minWidth: 88 }} onClick={close}>
               닫기

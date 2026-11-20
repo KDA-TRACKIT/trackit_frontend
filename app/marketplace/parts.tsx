@@ -2,13 +2,13 @@
 import Link from "next/link";
 import PolicyDialog from "../PolicyDialog";
 import { POLICY, POLICY_FOOT, POLICY_LEAD, POLICY_TITLE, PURCHASE_NOTICE } from "./policy";
-// 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 열람권 구매 · 열람권으로 열기
+// 전략 마켓 공통 조각: 작은 수익 곡선 · 쪽 번호 · 두 손잡이 범위 슬라이더 · 안내 · 즐겨찾기 · 월 구독
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { useRouter } from "next/navigation";
 import { isFavorite, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { startCheckout } from "../../lib/api/payments";
 import { errorMessage } from "../../lib/api/client";
-import { opened, redeem, unusedPasses, usePasses } from "../../lib/purchases";
+import { opened, subscribed, subscriptionEnd, usePasses } from "../../lib/purchases";
 import type { Strategy, Trader } from "./data";
 
 /** 누적 수익 곡선 (월 수익률을 이어 붙임). 끝이 위면 초록, 아래면 빨강 */
@@ -132,7 +132,7 @@ export function FavButton({ id, name, label = false, outlineIcon }: { id: string
   );
 }
 
-/** 열람권 구매 (토스 결제창 → 성공하면 /payments/success 에서 승인 · 열람권 quantity장). 로그인 전이면 로그인으로 */
+/** 월 구독 결제 (토스 결제창 → 성공하면 /payments/success 에서 승인 → 30일 구독). 로그인 전이면 로그인으로 */
 export function PassBuyButton({
   trader,
   quantity = 1,
@@ -168,7 +168,7 @@ export function PassBuyButton({
         }
       }}
     >
-      {busy ? "결제창 여는 중…" : (label ?? "열람권 구매하기")}
+      {busy ? "결제창 여는 중…" : (label ?? "구독하기")}
     </button>
   );
 }
@@ -197,117 +197,30 @@ export function StrategyStatsRow({ strategy, className = "mk-strat-stats" }: { s
   );
 }
 
-/**
- * 월별 전략 버튼: 연 전략이면 "열람 중 ✓", 남은 열람권이 있으면 "열람권으로 열기"(확인 뒤 1장 사용), 없으면 "열람권 구매하기"
- */
+/** 월별 전략 버튼: 구독 중이거나 무료 첫 전략이면 "보기", 아니면 "구독하기" */
 export function StrategyButton({ trader, strategy, className = "mk-primary", notify }: { trader: Trader; strategy: Strategy; className?: string; notify: (m: string) => void }) {
   const passes = usePasses();
-  const [busy, setBusy] = useState(false);
-  const [asking, setAsking] = useState(false);
   if (opened(passes, trader.id, strategy.month) || strategy.free) {
-    // 연 전략 · 무료 첫 전략: 내용(그은 선 · 매매 · 차트) 보러 가기
     return (
       <Link href={`/marketplace/${trader.id}/strategies/${strategy.month}`} className={`${className} mk-owned`} aria-label={`${strategy.title} 보기`}>
-        {strategy.free ? "무료로 보기 ›" : "열람 중 · 보기 ›"}
+        {strategy.free ? "무료로 보기 ›" : "보기 ›"}
       </Link>
-    );
-  }
-  const left = unusedPasses(passes, trader.id).length;
-  if (left > 0) {
-    // 확인은 화면 안 팝업으로 (window.confirm 은 앱 안 브라우저 · 일부 환경에서 바로 '취소'로 처리돼 아무 일도 안 일어났음)
-    const open = async () => {
-      setAsking(false);
-      setBusy(true);
-      try {
-        await redeem(trader.id, strategy.month, strategy.title);
-        notify("전략을 열었어요");
-      } catch (e) {
-        notify(errorMessage(e));
-      } finally {
-        setBusy(false);
-      }
-    };
-    return (
-      <>
-        <button type="button" className={`${className} mk-redeem`} disabled={busy} onClick={() => setAsking(true)}>
-          {busy ? "여는 중…" : "열람권으로 열기"}
-        </button>
-        {asking && (
-          <div className="mk-overlay" role="dialog" aria-modal="true" aria-label="열람권으로 열기" onClick={() => setAsking(false)}>
-            <div className="mk-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="mk-modal-head">
-                <strong>열람권으로 열기</strong>
-                <button type="button" onClick={() => setAsking(false)} aria-label="닫기">
-                  ×
-                </button>
-              </div>
-              <p className="mk-redeem-ask">
-                열람권 1장으로 <b>&quot;{strategy.title}&quot;</b> ({strategy.month}) 전략을 열까요?
-                <br />
-                한 번 바꾸면 다른 전략으로 바꿀 수 없어요. (남은 열람권 {left}장)
-              </p>
-              <div className="mk-redeem-acts">
-                <button type="button" className="mk-ghost" onClick={() => setAsking(false)}>
-                  취소
-                </button>
-                <button type="button" className="mk-primary" onClick={() => void open()}>
-                  열기
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
     );
   }
   return <PassBuyButton trader={trader} className={className} notify={notify} />;
 }
 
-/** 열람권 몇 장 살지 (1~999) + 합계 + 구매 버튼. 미리 여러 장 사 두고 나중에 전략을 골라 열 수 있음 */
-/** 한 번에 살 수 있는 열람권 장수 (백엔드 checkout 과 같게) */
-const MAX_PASSES = 999;
-
+/** 월 구독 상자: 월 구독료 + (구독 중이면 끝나는 날) + 안내 확인 + 구독 버튼. 결제 1번 = 30일 */
 export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: string) => void }) {
-  const [qty, setQty] = useState(1);
-  /** 직접 입력 중인 글자 (입력 중이 아니면 null) */
-  const [draft, setDraft] = useState<string | null>(null);
-  /** 구매 전 안내(환불 · 유효기간 · 월 기준)를 확인했는지 */
+  const passes = usePasses();
+  const end = subscriptionEnd(passes, trader.id);
+  const active = subscribed(passes, trader.id);
+  /** 구독 전 안내(환불 · 기간)를 확인했는지 */
   const [agreed, setAgreed] = useState(false);
   const policy = useRef<HTMLDialogElement>(null);
   return (
     <div className="mk-passbox">
-      <div className="mk-qty" role="group" aria-label="열람권 수량">
-        <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="한 장 빼기">
-          −
-        </button>
-        {/* 숫자를 눌러 직접 입력 (1~999, 벗어나면 맞춰 줌). 칸 너비는 자릿수에 맞춰 늘어남 */}
-        <label className="mk-qty-input" style={{ ["--len" as string]: Math.max(1, (draft ?? String(qty)).length) }}>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={draft ?? String(qty)}
-            onFocus={(e) => (setDraft(String(qty)), e.currentTarget.select())}
-            onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
-            onBlur={() => {
-              const n = Number(draft);
-              if (draft && Number.isFinite(n)) setQty(Math.min(MAX_PASSES, Math.max(1, Math.round(n))));
-              setDraft(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") (setDraft(null), e.currentTarget.blur());
-              if (e.key === "ArrowUp") (e.preventDefault(), setQty((q) => Math.min(MAX_PASSES, q + 1)), setDraft(null));
-              if (e.key === "ArrowDown") (e.preventDefault(), setQty((q) => Math.max(1, q - 1)), setDraft(null));
-            }}
-            aria-label="열람권 장수 (1~999)"
-          />
-          장
-        </label>
-        <button type="button" onClick={() => setQty((q) => Math.min(MAX_PASSES, q + 1))} disabled={qty >= MAX_PASSES} aria-label="한 장 더하기">
-          +
-        </button>
-        <b>₩{(trader.price * qty).toLocaleString("ko-KR")}</b>
-      </div>
+      {active && end && <p className="mk-sub-until">{end.toLocaleDateString("ko-KR")}까지 구독 중</p>}
       <label className="mk-agree">
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
         <span>
@@ -320,12 +233,12 @@ export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: str
         </span>
       </label>
       <PurchasePolicyDialog ref={policy} />
-      <PassBuyButton trader={trader} quantity={qty} label={qty > 1 ? `열람권 ${qty}장 구매하기` : "열람권 구매하기"} notify={notify} disabled={!agreed} />
+      <PassBuyButton trader={trader} label={active ? "30일 연장하기" : "구독하기"} notify={notify} disabled={!agreed} />
     </div>
   );
 }
 
-/** '정책 자세히' 팝업: 열람권 구매 정책 (모양은 홈 화면 이용약관 · 환불정책 팝업과 같음) */
+/** '정책 자세히' 팝업: 구독 정책 (모양은 홈 화면 이용약관 · 환불정책 팝업과 같음) */
 function PurchasePolicyDialog({ ref }: { ref: Ref<HTMLDialogElement> }) {
   const titleId = useId();
   return (

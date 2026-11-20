@@ -9,7 +9,7 @@ import SiteHeader from "../../SiteHeader";
 import { TRADERS, listed, monthLabel, oneStock, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
-import { unusedPasses, usePasses } from "../../../lib/purchases";
+import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Reviews } from "../feedback";
 import "../marketplace.css";
@@ -26,7 +26,6 @@ export default function TraderPage() {
   const t = traderById(id);
   const { notify, node } = useNotice();
   const passes = usePasses();
-  const passLeft = unusedPasses(passes, id).length;
   // 수익률: 열람권을 산 적 없으면 계좌 누적 수익률(지금까지), 샀으면 전략 직결 수익률(그 달 전략대로 한 매매만)
   const bought = passes.some((p) => p.traderId === id);
   const fb = useFeedback(id);
@@ -89,42 +88,29 @@ export default function TraderPage() {
 
           <aside className="mk-card mk-buy">
             <small>
-              <b>{t.name}</b>의 전략 열람권
+              <b>{t.name}</b> 월 구독
             </small>
             <strong>
-              {won(t.price)} <span>/ 1장 · 전략 1개</span>
+              {won(t.price)} <span>/ 30일 · 전략 전체</span>
             </strong>
             {sellable(t) ? (
               <PassBuyBox trader={t} notify={notify} />
             ) : (
               <p className="mk-stopped">
-                {!t.grade || t.grade.unrated
-                  ? "아직 판매 등급이 없어 전략 마켓에 올라가지 않았어요. 가입 3개월 뒤 비즈니스 계정으로 바꾸고 등급을 받으면 판매가 열려요."
-                  : !listed(t)
-                    ? "일반 계정으로 바뀌어 전략 마켓에서 내려간 트레이더예요. 이미 산 전략은 계속 볼 수 있어요."
-                    : `판매 등급이 ${t.grade?.grade}라 새 열람권 판매가 멈췄어요. 이미 산 전략은 계속 볼 수 있어요.`}
+                지금은 구독을 받지 않는 트레이더예요.
               </p>
             )}
-            {passLeft > 0 && <p className="mk-pass-left">남은 열람권 {passLeft}장 · 아래 월별 전략에서 골라 여세요</p>}
             <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-ghost">
               첫 번째 전략 무료로 보기
             </Link>
           </aside>
         </div>
 
-        {/* 시안 1275:6904: 남색 카드 5개 (등급 · 누적 수익률 · 일관성 · 전략 이행률 · 최대 낙폭) */}
+        {/* 남색 카드: 누적 수익률 · 전략 이행률 · 최대 낙폭 (등급 · 일관성은 등급제와 함께 뺌) */}
         <div className="mk-kpis-navy">
-          <div>
-            <span>등급</span>
-            <strong title={!t.grade || t.grade.unrated ? "아직 판매 등급 없음" : undefined}>{!t.grade || t.grade.unrated ? "—" : t.grade.grade}</strong>
-          </div>
           <div>
             <span title={bought ? "산 전략대로 한 매매만 모은 수익률" : "처음부터 지금까지 쌓인 수익률 (전략을 사면 전략 직결 수익률로 보여요)"}>{bought ? "전략 직결 수익률" : "누적 수익률"}</span>
             <strong>{pct(total)}</strong>
-          </div>
-          <div>
-            <span title="이번 전략이 직전 전략을 얼마나 이어 가는지 (lib/grade 일관성 지표)">일관성</span>
-            <strong>{t.grade ? `${Math.round(t.grade.metrics.C * 100)}%` : "—"}</strong>
           </div>
           <div>
             <span title={t.facts ? `매매 ${t.facts.wins + t.facts.losses}건 기준` : "계획대로 한 비율"}>전략 이행률</span>

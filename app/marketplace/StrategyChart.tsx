@@ -27,9 +27,9 @@ export type SimTrade = {
 };
 /** 매매가 아닌 기록: 증시 메모(시장 전체) · 종목 노트(안 산 종목 관찰, 기다리는 자리에 선) */
 /** carry: 앞 달 전략에서 산 매매가 이 달로 이어진 것 (매수 근거는 진입한 달에) */
-export type SimNote = { type: "market" | "stock" | "carry"; d: string; text: string; code?: string; name?: string; lines?: SimLine[] };
+export type SimNote = { type: "market" | "stock" | "carry" | "review"; d: string; text: string; code?: string; name?: string; lines?: SimLine[] };
 /** 차트 아래 보조지표 창: 봉과 같은 순서의 값 (규칙이 쓰는 것만) */
-export type SimInd = { rsi?: (number | null)[]; macd?: number[]; signal?: number[]; volume?: boolean };
+export type SimInd = { rsi?: (number | null)[]; macd?: number[]; signal?: number[]; volume?: boolean; /** 이동평균선 (기간 → 봉마다 값) */ ma?: Record<string, (number | null)[]> };
 /** [날짜, 시가, 고가, 저가, 종가, 거래량] */
 export type SimCandle = [string, number, number, number, number, number];
 
@@ -173,6 +173,9 @@ export default function StrategyChart({
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, rightOffset: 3 },
       localization: { locale: "ko-KR" },
+      // 구독자가 보는 전략 차트는 고정 (끌기 · 확대 없이 그 전략 구간만)
+      handleScroll: false,
+      handleScale: false,
     });
     const candle = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false, priceLineVisible: false, lastValueVisible: false });
     candle.setData(candles.map(([d, o, h, l, c]) => ({ time: d as Time, open: o, high: h, low: l, close: c })));
@@ -192,6 +195,13 @@ export default function StrategyChart({
         },
       });
       candle.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.04 } });
+    }
+
+    // 이동평균선 5개 (5 · 20 · 60 · 120 · 200일, 가늘게)
+    const MA_COLOR: Record<string, string> = { "5": "#f59f00", "20": "#e03131", "60": "#2f9e44", "120": "#7048e8", "200": "#868e96" };
+    for (const [n, vals] of Object.entries(ind.ma ?? {})) {
+      const s = chart.addSeries(LineSeries, { color: MA_COLOR[n] ?? "#999", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+      s.setData(vals.flatMap((v, x) => (v === null || !candles[x] ? [] : [{ time: candles[x][0] as Time, value: v }])));
     }
 
     // 선 (이름은 차트 안에 안 쓰고 범례로)

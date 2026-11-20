@@ -5,9 +5,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../../lib/api/client";
-import { usePasses } from "../../../lib/purchases";
+import { SUB_DAYS, subscribed, usePasses } from "../../../lib/purchases";
 import { monthLabel, traderById } from "../../marketplace/data";
-import { GradeBadge } from "../../marketplace/GradeParts";
 import { day, won } from "../sales/data";
 import { Card, Empty, FilterChips, PageHead, Stat, Table } from "../ui";
 
@@ -33,10 +32,10 @@ type Row = {
   price: number;
   boughtAt: string | null;
   period: string;
-  state: "열람 중" | "미사용" | "결제 대기" | "환불";
+  state: "열람 중" | "끝남" | "결제 대기" | "환불";
 };
 
-const FILTERS = ["전체", "열람 중", "미사용"] as const;
+const FILTERS = ["전체", "열람 중", "끝남"] as const;
 
 export default function PurchasesPage() {
   const passes = usePasses();
@@ -50,33 +49,14 @@ export default function PurchasesPage() {
   }, []);
 
   const rows = useMemo<Row[]>(() => {
-    const fromPasses: Row[] = passes.map((p) =>
-      p.used
-        ? {
-            id: p.id,
-            trader: p.traderName,
-            traderHref: `/marketplace/${p.traderId}`,
-            traderId: p.traderId,
-            title: p.used.title,
-            scope: `${monthLabel(p.used.month)} 전략`,
-            price: p.amount,
-            boughtAt: p.approvedAt,
-            period: `${day(p.used.at)} ~ 계속`,
-            state: "열람 중",
-          }
-        : {
-            id: p.id,
-            trader: p.traderName,
-            traderHref: `/marketplace/${p.traderId}`,
-            traderId: p.traderId,
-            title: "열람권 (아직 안 씀)",
-            scope: "월별 전략 1개",
-            price: p.amount,
-            boughtAt: p.approvedAt,
-            period: "쓰는 날부터 계속",
-            state: "미사용",
-          },
-    );
+    // 결제 한 건 = 그 트레이더 30일 구독 (예전 열람권으로 연 달은 그 달 전략으로)
+    const fromPasses: Row[] = passes.map((p) => {
+      const from = p.approvedAt ? Date.parse(p.approvedAt) : NaN;
+      const to = Number.isNaN(from) ? null : new Date(from + SUB_DAYS * 86_400_000).toISOString();
+      return p.used
+        ? { id: p.id, trader: p.traderName, traderHref: `/marketplace/${p.traderId}`, traderId: p.traderId, title: p.used.title, scope: `${monthLabel(p.used.month)} 전략`, price: p.amount, boughtAt: p.approvedAt, period: `${day(p.used.at)} ~ 계속`, state: "열람 중" }
+        : { id: p.id, trader: p.traderName, traderHref: `/marketplace/${p.traderId}`, traderId: p.traderId, title: "월 구독", scope: "전략 전체", price: p.amount, boughtAt: p.approvedAt, period: `${day(p.approvedAt)} ~ ${day(to)}`, state: subscribed(passes, p.traderId) ? "열람 중" : "끝남" };
+    });
     const fromServer: Row[] = (server ?? []).map((p) => ({
       id: p.id,
       trader: "-",
@@ -99,7 +79,7 @@ export default function PurchasesPage() {
       <Card>
         <div className="mp-stats">
           <Stat boxed label="열람 중인 전략" value={rows.filter((r) => r.state === "열람 중").length} unit="개" />
-          <Stat boxed label="남은 열람권" value={rows.filter((r) => r.state === "미사용").length} unit="장" />
+          <Stat boxed label="구독 중인 트레이더" value={new Set(passes.filter((p) => subscribed(passes, p.traderId)).map((p) => p.traderId)).size} unit="명" />
           <Stat boxed label="결제 합계" value={rows.filter((r) => r.state !== "환불" && r.state !== "결제 대기").reduce((a, r) => a + r.price, 0)} unit="원" />
         </div>
         <p className="mp-muted" style={{ margin: "12px 0 0", fontSize: 12 }}>
@@ -116,7 +96,7 @@ export default function PurchasesPage() {
             <div key={r.id} className="mp-tr">
               <span className="clip">
                 {r.traderHref ? <Link href={r.traderHref}>{r.trader}</Link> : r.trader}
-                {r.traderId && <> <GradeBadge grade={traderById(r.traderId)?.grade?.grade} unrated={traderById(r.traderId)?.grade?.unrated} small /></>}
+                
               </span>
               <span className="clip" title={r.title}>
                 <strong>{r.title}</strong>
@@ -126,7 +106,7 @@ export default function PurchasesPage() {
               <span className="num">{day(r.boughtAt)}</span>
               <span className="num">{r.period}</span>
               <span>
-                <em className={`mp-state ${r.state === "열람 중" ? "on" : r.state === "미사용" ? "pause" : "off"}`}>{r.state}</em>
+                <em className={`mp-state ${r.state === "열람 중" ? "on" : r.state === "끝남" ? "pause" : "off"}`}>{r.state}</em>
               </span>
             </div>
           ))}

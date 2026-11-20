@@ -19,9 +19,9 @@ export function LikeButton({ trader, month, fb, notify }: { trader: Trader; mont
       className={`mk-heart${liked ? " on" : ""}`}
       disabled={busy}
       aria-pressed={liked}
-      title={canLike ? (liked ? "꿀 취소" : "이 전략에 꿀 주기") : "열람권으로 이 전략을 연 사람만 꿀을 줄 수 있어요"}
+      title={canLike ? (liked ? "꿀 취소" : "이 전략에 꿀 주기") : "구독한 사람만 꿀을 줄 수 있어요"}
       onClick={async () => {
-        if (!canLike) return notify("열람권으로 이 전략을 연 사람만 꿀을 줄 수 있어요");
+        if (!canLike) return notify("구독한 사람만 꿀을 줄 수 있어요");
         setBusy(true);
         try {
           await toggleLike(trader.id, month);

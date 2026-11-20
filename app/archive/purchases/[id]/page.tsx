@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import MonthPicker from "./MonthPicker";
 import UseStrategy from "./UseStrategy";
-import { usePasses } from "../../../../lib/purchases";
+import { subscribed, usePasses } from "../../../../lib/purchases";
 import { fetchStrategyMonth } from "../../../../lib/strategy-data";
 import { fetchBars } from "../../../../lib/market-data";
 import { pct, strategiesOf, tone, traderById } from "../../../marketplace/data";
@@ -29,7 +29,7 @@ export default function PurchasedTraderPage() {
   const dark = useDark();
   // 열람권으로 연 달 + 누구나 보는 무료 첫 전략
   const months = useMemo(
-    () => [...new Set([...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).map((s) => s.month) : [])])].sort().reverse(),
+    () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).map((s) => s.month) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).map((s) => s.month) : [])])].sort().reverse(),
     [passes, id, t],
   );
   const [pick, setPick] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export default function PurchasedTraderPage() {
         </div>
 
         {!month ? (
-          <p className="mk-card mk-empty">이 트레이더의 열람권으로 연 전략이 없어요.</p>
+          <p className="mk-card mk-empty">이 트레이더를 구독하면 전략을 볼 수 있어요.</p>
         ) : !m ? (
           detail ? <p className="mk-card mk-empty">전략을 불러오지 못했어요.</p> : <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : (

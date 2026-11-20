@@ -1,6 +1,6 @@
 "use client";
-// 전략 열람권 — 계정(서버 strategy_passes)에 저장. 토스 결제가 서버에서 승인되면 장수만큼 생기고,
-//   1장으로 그 트레이더의 월별 전략 하나를 골라 연다 (한 번 연 건 되돌릴 수 없음). 어느 기기 · 주소에서나 같음
+// 전략 구독 결제 기록 — 계정(서버 strategy_passes)에 저장. 토스 결제가 서버에서 승인되면 한 건씩 생기고,
+//   한 건 = 그 트레이더 30일 구독 (lib/subscription). 예전 열람권으로 연 달도 계속 보임
 //   예전에 이 브라우저에만 저장했던 열람권은 처음 불러올 때 서버로 옮김 (서버가 토스에 승인됐는지 다시 확인)
 import { useSyncExternalStore } from "react";
 import { accessToken, apiRequest } from "./api/client";
@@ -87,8 +87,10 @@ export function usePassesLoaded() {
   return useSyncExternalStore(subscribe, () => loaded, () => false);
 }
 
-/** 이 트레이더의 이 달 전략을 이미 열었는지 */
-export const opened = (passes: Pass[], traderId: string, month: string) => passes.some((p) => p.traderId === traderId && p.used?.month === month);
+/** 월 구독 (lib/subscription): 구독 중이면 그 트레이더 전략을 다 봄 */
+export { SUB_DAYS, subscriptionEnd, subscribed } from "./subscription";
+/** 이 트레이더의 이 달 전략을 볼 수 있는지 (구독 중이거나 예전 열람권으로 연 달) */
+export { canView as opened } from "./subscription";
 /** 아직 안 쓴 이 트레이더 열람권 */
 export const unusedPasses = (passes: Pass[], traderId: string) => passes.filter((p) => p.traderId === traderId && !p.used);
 

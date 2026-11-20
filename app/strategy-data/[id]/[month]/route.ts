@@ -1,22 +1,22 @@
-// 전략 마켓 월별 전략 내용 (매매 · 그은 선 · 그 달 차트) — 열람권을 확인한 뒤 그 달 것만 보냄
+// 전략 마켓 월별 전략 내용 (매매 · 그은 선 · 그 달 차트) — 구독을 확인한 뒤 그 달 것만 보냄
 //   원본은 공개 폴더(public)가 아니라 서버만 읽는 data/market-sim/{id}.json 에 둠 → 주소로 통째로 받아 갈 수 없음
-//   무료(첫 번째) 전략은 누구나, 나머지는 로그인한 사람이 그 달을 열람권으로 연 경우만 (백엔드 /me/passes 로 확인)
+//   무료(첫 번째) 전략은 누구나, 나머지는 로그인한 사람이 그 트레이더를 구독 중일 때만 (백엔드 /me/passes 결제 기록, lib/purchases 와 같은 계산)
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { strategiesOf, traderById } from "../../../marketplace/data";
+import { canView, type PaidRecord as FullPass } from "../../../../lib/subscription";
 
 const DIR = path.join(process.cwd(), "data", "market-sim");
 const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const noStore = { "Cache-Control": "private, no-store" };
 
-type Pass = { traderId: string; used: { month: string } | null };
 
 async function opened(auth: string, traderId: string, month: string) {
   const res = await fetch(`${API}/api/v1/me/passes`, { headers: { Authorization: auth }, cache: "no-store" });
   if (!res.ok) return false;
-  const body = (await res.json()) as { data?: Pass[] } | Pass[];
+  const body = (await res.json()) as { data?: FullPass[] } | FullPass[];
   const passes = Array.isArray(body) ? body : (body.data ?? []);
-  return passes.some((p) => p.traderId === traderId && p.used?.month === month);
+  return canView(passes, traderId, month);
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; month: string }> }) {
@@ -28,8 +28,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
   if (!strategy.free) {
     const auth = request.headers.get("authorization");
-    if (!auth?.startsWith("Bearer ")) return Response.json({ error: "로그인하고 열람권으로 연 전략만 볼 수 있어요." }, { status: 401, headers: noStore });
-    if (!(await opened(auth, id, month))) return Response.json({ error: "이 달 전략을 열람권으로 열지 않았어요." }, { status: 403, headers: noStore });
+    if (!auth?.startsWith("Bearer ")) return Response.json({ error: "로그인하고 구독하면 볼 수 있어요." }, { status: 401, headers: noStore });
+    if (!(await opened(auth, id, month))) return Response.json({ error: "구독 중이 아니에요." }, { status: 403, headers: noStore });
   }
 
   let detail: { id: string; market: string; rule: unknown; symbols: unknown; months: { month: string }[] };

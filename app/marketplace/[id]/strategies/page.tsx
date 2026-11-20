@@ -5,9 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
-import { GradeBadge } from "../../GradeParts";
 import { Pager, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../../parts";
-import { unusedPasses, usePasses } from "../../../../lib/purchases";
 import { useFeedback } from "../../../../lib/feedback";
 import { LikeButton } from "../../feedback";
 import "../../marketplace.css";
@@ -19,7 +17,6 @@ export default function StrategiesPage() {
   const t = traderById(id);
   const [page, setPage] = useState(1);
   const { notify, node } = useNotice();
-  const passLeft = unusedPasses(usePasses(), id).length;
   const fb = useFeedback(id);
   if (!t) {
     return (
@@ -43,17 +40,12 @@ export default function StrategiesPage() {
       <SiteHeader active="marketplace" />
       <div className="mk-wrap mk-narrow">
         <Link href={`/marketplace/${t.id}`} className="mk-back">
-          ‹ {t.name} <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />
+          ‹ {t.name}
         </Link>
         <h1 className="mk-sub-title">
-          <b>{t.name}</b> <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} small />의 월별 전략
+          <b>{t.name}</b>의 월별 전략
         </h1>
         <p className="mk-sub-desc">한 달의 매매 기준, 진입 · 청산 기록, 원칙을 지켰는지 회고를 함께 담았어요.</p>
-        {passLeft > 0 && (
-          <p className="mk-pass-bar on">
-            남은 열람권 <b>{passLeft}장</b> · 열어 볼 전략의 &quot;열람권으로 열기&quot;를 누르세요
-          </p>
-        )}
         <div className="mk-passbox-row">
           <PassBuyBox trader={t} notify={notify} />
         </div>

@@ -7,7 +7,6 @@ import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
 import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
-import { GradeBadge } from "./marketplace/GradeParts";
 
 
 export default function TraderCarousel() {
@@ -75,10 +74,6 @@ export default function TraderCarousel() {
                 <div>
                   <p className="home-trader-metric-label">실시간 수익률</p>
                   <strong className={`home-trader-return ${t.returns["1m"] > 0 ? "gain" : t.returns["1m"] < 0 ? "loss" : ""}`}>{oneStock(t, "1m") ? "—" : pct(t.returns["1m"])}</strong>
-                </div>
-                <div>
-                  <p className="home-trader-metric-label">등급</p>
-                  <GradeBadge grade={t.grade?.grade} unrated={t.grade?.unrated} />
                 </div>
               </div>
               <div className="home-trader-footer">

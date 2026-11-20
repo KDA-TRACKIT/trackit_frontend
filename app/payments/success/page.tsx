@@ -7,7 +7,6 @@ import { confirmCheckout, type Confirmed } from "../../../lib/api/payments";
 import { errorMessage } from "../../../lib/api/client";
 import { refreshPasses } from "../../../lib/purchases";
 import { traderById } from "../../marketplace/data";
-import { GradeBadge } from "../../marketplace/GradeParts";
 import "../payments.css";
 import BeeLoader from "../../BeeLoader";
 
@@ -54,9 +53,9 @@ export default function PaymentSuccess() {
             <h1>결제 완료</h1>
             {state.result.item.type === "sample" ? (
               <p>
-                <b>{state.result.item.traderName}</b> <GradeBadge grade={traderById(state.result.item.traderId ?? "")?.grade?.grade} unrated={traderById(state.result.item.traderId ?? "")?.grade?.unrated} small /> 전략 열람권 {state.result.item.quantity ?? 1}장을 샀어요.
+                <b>{state.result.item.traderName}</b> 구독을 시작했어요.
                 <br />
-                1장으로 월별 전략 하나를 골라 열 수 있어요. 남은 열람권은 나중에 써도 돼요.
+                30일 동안 전략을 모두 볼 수 있어요.
               </p>
             ) : (
               <p>

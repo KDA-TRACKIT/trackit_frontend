@@ -12,7 +12,6 @@ import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
-import { GradeText } from "./GradeParts";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
@@ -142,7 +141,7 @@ function MarketplaceList() {
     out.sort(
       (a, b) =>
         fav(b) - fav(a) ||
-        // 지금 살 수 있는(등급 D 이상) 트레이더 먼저
+        // 지금 구독할 수 있는 트레이더 먼저
         Number(sellable(b)) - Number(sellable(a)) ||
         (sortAsc(sort) ? -1 : 1) *
           (sortKey(sort) === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : sortKey(sort) === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sortKey(sort) === "price" ? b.price - a.price : score(b) - score(a)),
@@ -249,7 +248,7 @@ function MarketplaceList() {
         ) : (
           <div className="mk-trader-panel">
             <div className="mk-trader-columns" aria-hidden="true">
-              <span>트레이더</span><span>수익률 추이</span><span>수익률</span><span>이행률</span><span>열람권 가격</span><span>등급</span>
+              <span>트레이더</span><span>수익률 추이</span><span>수익률</span><span>이행률</span><span>월 구독료</span>
             </div>
             <ul className="mk-trader-rows">
               {shown.map((trader) => (
@@ -305,11 +304,7 @@ function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; per
           {period === "all" && trader.monthly.length > 0 && <small className="mk-trader-span">{spanOf(trader)}</small>}
         </div>
         <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{trader.follow}%</b></div>
-        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">열람권 가격</span><b>{sellable(trader) ? won(trader.price) : "판매 중지"}</b></div>
-        <div className="mk-trader-metric mk-trader-grade">
-          <span className="mk-trader-metric-label">등급</span>
-          {trader.grade ? <GradeText grade={trader.grade.grade} unrated={trader.grade.unrated} /> : <b>—</b>}
-        </div>
+        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b></div>
       </Link>
     </li>
   );

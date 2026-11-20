@@ -100,7 +100,7 @@ export function useArchive() {
           symbol: null,
           symbolName: null,
           title: `${monthLabel(p.used!.month)} · ${s?.title ?? p.used!.title}`,
-          sub: `${p.traderName} · 남은 열람권 ${left(p.traderId)}장`,
+          sub: p.traderName,
           text: s?.summary ?? t?.rule?.desc ?? "",
           href: `/marketplace/${p.traderId}/strategies/${p.used!.month}`,
           traderId: p.traderId,

@@ -18,7 +18,7 @@ export default function SalesPage() {
   const dash = (v: string | null) => (loading || v === null ? "—" : v);
   return (
     <>
-      <PageHead title="전략 판매 관리" desc="열람권 판매 및 정산 현황을 관리하세요." />
+      <PageHead title="전략 판매 관리" desc="구독 판매 및 정산 현황을 관리하세요." />
       <Card title="판매 현황" desc="내 전략의 판매·열람 현황입니다.">
         <div className="mp-three">
           <div>
@@ -36,8 +36,8 @@ export default function SalesPage() {
         </div>
       </Card>
       <Card
-        title="전략 및 열람권 관리"
-        desc="무료 열람과 유료 열람권을 구분해 관리합니다."
+        title="전략 및 구독 관리"
+        desc="무료로 보이는 전략과 구독 전략을 구분해 관리합니다."
         action={
           <Link className="mp-btn primary small" href={registerHref}>
             전략 등록
