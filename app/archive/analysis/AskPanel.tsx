@@ -1,6 +1,6 @@
 "use client";
 // 전략 분석 채팅 (2026-11-20, 쓰론 채팅을 참고)
-//   왼쪽: 채팅 목록 — 기본 채팅 · 산 전략 채팅 · 종목 채팅(오늘 등락률). 채팅마다 기록은 이 브라우저에 남음
+//   왼쪽: 채팅 목록 — 기본 채팅 · 산 전략 채팅 · 종목 채팅(오늘 등락률). 기록은 로그인했으면 서버에 사람마다(최근 40개), 아니면 이 브라우저
 //   채팅을 열면 그날 첫 메시지로 비서가 먼저 브리핑(기본: 내 종목 시세 · 이번 주 일정 / 전략 · 종목: 오늘 매수 조건 체크)
 //   질문하면 lib/strategy-chat 이 질문 종류 · 대상을 정하고, 관련 전략 · 버전 · 노트 · 매매 기록 · 시세를 근거로 모음
 //   AI 는 그 근거만으로 답하고(서버가 근거 밖 숫자 문장을 버림), AI 가 없으면 같은 근거로 규칙대로 답함
@@ -12,6 +12,8 @@ import { initRecordSource, useRecords } from "../../../lib/records";
 import { usePasses } from "../../../lib/purchases";
 import { askStrategy } from "../../../lib/api/ai";
 import { getQuotes } from "../../../lib/api/insights";
+import { accessToken } from "../../../lib/api/client";
+import { loadChat, saveChatMsg, type StoredMsg } from "../../../lib/api/strategy-chat";
 import { INTENTS, answerLocally, detectIntent, detectTarget, type Reply, type Target } from "../../../lib/strategy-chat";
 import { briefing } from "../../../lib/strategy-briefing";
 import StrategyChart from "../../marketplace/StrategyChart";
@@ -66,21 +68,39 @@ export default function AskPanel() {
   // 채팅 목록: 기본 채팅 + 전략 · 종목 채팅. 채팅마다 기록은 이 브라우저에
   const [thread, setThread] = useState("basic");
   const threadTarget = targets.find((t) => t.key === thread) ?? null;
+  // 기록: 로그인했으면 서버(사람마다), 아니면 이 브라우저
   const [all, setAll] = useState<Record<string, Msg[]>>({});
   const [loaded, setLoaded] = useState(false);
+  const server = useRef(false);
   useEffect(() => {
-    setAll(readAll());
-    setLoaded(true);
+    let alive = true;
+    (async () => {
+      const token = await accessToken().catch(() => null);
+      const fromServer = token ? await loadChat().catch(() => null) : null;
+      if (!alive) return;
+      server.current = !!fromServer;
+      setAll(fromServer ? (fromServer.threads as unknown as Record<string, Msg[]>) : readAll());
+      setLoaded(true);
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
   const msgs = all[thread] ?? [];
   const update = (key: string, f: (m: Msg[]) => Msg[]) =>
     setAll((prev) => {
-      const next = { ...prev, [key]: f(prev[key] ?? []) };
-      try {
-        // 기다리는 메시지는 저장하지 않음
-        localStorage.setItem(STORE, JSON.stringify(Object.fromEntries(Object.entries(next).map(([k, v]) => [k, v.filter((m) => m.role !== "wait").slice(-MAX)]))));
-      } catch {
-        // 저장 공간이 모자라면 기록만 안 남김
+      const before = prev[key] ?? [];
+      const next = { ...prev, [key]: f(before) };
+      if (server.current) {
+        // 새로 생기거나 바뀐 메시지만 서버로 (기다리는 메시지는 안 보냄)
+        const old = new Map(before.map((m) => [m.id, JSON.stringify(m)]));
+        for (const m of next[key]) if (m.role !== "wait" && old.get(m.id) !== JSON.stringify(m)) void saveChatMsg(key, m as unknown as StoredMsg).catch(() => {});
+      } else {
+        try {
+          localStorage.setItem(STORE, JSON.stringify(Object.fromEntries(Object.entries(next).map(([k, v]) => [k, v.filter((m) => m.role !== "wait").slice(-MAX)]))));
+        } catch {
+          // 저장 공간이 모자라면 기록만 안 남김
+        }
       }
       return next;
     });

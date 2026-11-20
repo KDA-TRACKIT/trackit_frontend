@@ -1,0 +1,29 @@
+/* 홈 꿀벌 안내 */
+.bee-guide { position:fixed; inset:0; z-index:1000; }
+.bee-dim { position:fixed; inset:0; background:rgba(8,12,20,.62); }
+/* 비춘 곳 바깥만 어둡게 (큰 그림자로) */
+.bee-spot { position:fixed; border-radius:12px; box-shadow:0 0 0 9999px rgba(8,12,20,.62), 0 0 0 2px #f5c542; pointer-events:none; transition:left .25s, top .25s, width .25s, height .25s; }
+.bee-bubble { position:fixed; padding:18px 18px 14px 18px; border-radius:16px; background:#fffdf5; color:#1b1f2a; box-shadow:0 18px 48px rgba(0,0,0,.35); border:2px solid #f5c542; animation:bee-pop .22s ease-out; }
+.bee-bubble.center { text-align:center; }
+.bee-face { position:absolute; top:-58px; left:14px; width:84px; height:84px; object-fit:contain; animation:bee-float 2.4s ease-in-out infinite; filter:drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+.bee-bubble.center .bee-face { left:50%; margin-left:-42px; }
+.bee-count { display:block; text-align:right; color:#a07a10; font-size:11.5px; font-weight:800; }
+.bee-bubble h3 { margin:6px 0 6px; font-size:17px; font-weight:800; color:#1b1f2a; }
+.bee-bubble p { margin:0; color:#3c4250; font-size:14px; line-height:1.65; word-break:keep-all; }
+.bee-actions { display:flex; align-items:center; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.bee-bubble.center .bee-actions { justify-content:center; }
+.bee-dots { display:flex; gap:4px; margin-right:auto; }
+.bee-bubble.center .bee-dots { margin-right:0; }
+.bee-dots i { width:6px; height:6px; border-radius:50%; background:#e7dcc0; }
+.bee-dots i.on { width:16px; border-radius:3px; background:#f5b301; }
+.bee-primary, .bee-ghost, .bee-text { height:34px; padding:0 14px; border-radius:9px; font-size:13.5px; font-weight:800; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+.bee-primary { border:0; background:#f5b301; color:#1b1f2a; }
+.bee-primary:hover { background:#e6a700; }
+.bee-ghost { border:1px solid #e1d6b8; background:#fff; color:#3c4250; }
+.bee-text { border:0; background:none; color:#8a8f9c; padding:0 6px; }
+.bee-replay { position:fixed; right:22px; bottom:22px; z-index:900; width:56px; height:56px; padding:4px; border:2px solid #f5c542; border-radius:50%; background:#fffdf5; box-shadow:0 8px 20px rgba(0,0,0,.25); cursor:pointer; transition:transform .15s; }
+.bee-replay:hover { transform:translateY(-2px) rotate(-6deg); }
+.bee-replay img { width:44px; height:44px; object-fit:contain; }
+@keyframes bee-float { 0%,100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-6px) rotate(3deg); } }
+@keyframes bee-pop { from { opacity:0; transform:translateY(6px) scale(.98); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { .bee-face, .bee-bubble, .bee-spot { animation:none; transition:none; } }
