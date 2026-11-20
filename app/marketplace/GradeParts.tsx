@@ -21,4 +21,18 @@ export function GradeBadge({ grade, unrated, small }: { grade?: Shown; unrated?:
   );
 }
 
+/**
+ * 전략 마켓 목록 등급 열: 시안 '트레이더 평가 / 등급 배지'(Figma 2096:3920) — 배경 · 테두리 없이 등급별 색 글자
+ *   위 GradeBadge(그라데이션 배지)와 클래스를 나눠, CSS 가 실리는 순서에 따라 배지 모양이 섞여 나오지 않게
+ */
+export function GradeText({ grade, unrated }: { grade?: Shown; unrated?: boolean }) {
+  if (!grade) return null;
+  const g = unrated ? "U" : grade === "일반" ? "N" : grade;
+  return (
+    <span className={`mk-grade-text g-${g}`} title={unrated ? "아직 판매 등급 없음" : grade === "F" || grade === "일반" ? "신규 판매 중지" : `판매 등급 ${grade}`}>
+      {unrated ? "–" : grade}
+    </span>
+  );
+}
+
 export const gradeRank = (g?: Shown) => (g === "일반" || !g ? -1 : GRADES.indexOf(g));

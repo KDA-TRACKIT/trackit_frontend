@@ -16,3 +16,12 @@
 @media (prefers-reduced-motion: reduce) { .mk-grade.g-VIP::after, .mk-grade.g-A::after, .mk-grade.g-B::after { animation:none; } }
 .mk-gradecard { display:flex; flex-direction:column; gap:14px; }
 .mk-grade.g-U { background:var(--c-subtle); color:var(--c-faint); }
+/* 등급 글자 (시안 2096:3920 '트레이더 평가 / 등급 배지'): Pretendard SemiBold 24 · 등급별 색, 다크 모드는 같은 색을 밝게 */
+.mk-grade-text { display:inline-block; color:var(--mk-grade-c,#0f2367); font-size:24px; line-height:29px; font-weight:600; letter-spacing:0; white-space:nowrap; }
+.mk-grade-text.g-VIP, .mk-grade-text.g-A { --mk-grade-c:#0f2367; }
+.mk-grade-text.g-B { --mk-grade-c:#006d77; }
+.mk-grade-text.g-C { --mk-grade-c:#6e3aa5; }
+.mk-grade-text.g-D { --mk-grade-c:#8b6900; }
+.mk-grade-text.g-F, .mk-grade-text.g-N { --mk-grade-c:#c62828; }
+.mk-grade-text.g-U { --mk-grade-c:var(--c-sub); }
+html[data-theme="dark"] .mk-grade-text { color:color-mix(in srgb,var(--mk-grade-c,#0f2367) 45%,#fff); }

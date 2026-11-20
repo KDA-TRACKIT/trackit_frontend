@@ -12,7 +12,7 @@ import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
-import { GradeBadge } from "./GradeParts";
+import { GradeText } from "./GradeParts";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
@@ -308,7 +308,7 @@ function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; per
         <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">열람권 가격</span><b>{sellable(trader) ? won(trader.price) : "판매 중지"}</b></div>
         <div className="mk-trader-metric mk-trader-grade">
           <span className="mk-trader-metric-label">등급</span>
-          {trader.grade ? <GradeBadge grade={trader.grade.grade} unrated={trader.grade.unrated} /> : <b>—</b>}
+          {trader.grade ? <GradeText grade={trader.grade.grade} unrated={trader.grade.unrated} /> : <b>—</b>}
         </div>
       </Link>
     </li>
