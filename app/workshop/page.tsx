@@ -834,7 +834,7 @@ ${t}` : t))}
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
-                  placeholder="선만 그어도 AI가 판단해요. 판단 근거, 조건(예: 저항이 지지로 바뀌면 매수), 분할 매수 · 분할 매도 계획(예: 190,000원에 절반, 185,000원에 나머지)을 적으면 AI 분석 때 같이 분석해요."
+                  placeholder="판단 근거, 조건(예: 저항이 지지로 바뀌면 매수), 분할 매수 · 분할 매도 계획(예: 190,000원에 절반, 185,000원에 나머지)을 적으면 AI 분석 때 같이 분석해요."
                   aria-label="차트 노트"
                 />
               </div>

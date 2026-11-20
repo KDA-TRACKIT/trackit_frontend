@@ -333,9 +333,6 @@ export default function PlanConfirm({
         {above.length > 0 && <ul>{above.map(row)}</ul>}
         {current ? <div className="ws-ladder-now">현재가 {money(current)}</div> : null}
         {below.length > 0 && <ul>{below.map(row)}</ul>}
-        <p className="ws-ladder-hint">
-          선마다 지지 · 저항이 자동으로 정해지고, 눌러서 매수 · 손절 · 목표 · 매도를 고를 수 있어요. “저항이 지지로 바뀌면 매수”, “지지가 깨져 저항이 되면 매도” 같은 조건이나 분할 매수 · 분할 매도 계획은 아래 Memo 에 적어 주세요.
-        </p>
       </div>
     </div>
   );

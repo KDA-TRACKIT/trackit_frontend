@@ -11,6 +11,7 @@ import { searchAllSymbols } from "../../../lib/market-data";
 import { pairTrades, type MyRound } from "../../../lib/strategy-use";
 import { habits, planChanges, reviewRounds, type RoundReview } from "../../../lib/self-review";
 import { shortDate } from "./model";
+import ReplayView from "./ReplayView";
 
 const won = (n: number | null) => (n === null ? "—" : n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 }));
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
@@ -63,8 +64,13 @@ export default function ReviewView({ records, stock, onOpenNote }: { records: Tr
   const wins = closed.filter((r) => (r.round.ret ?? 0) > 0).length;
   const rate = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 
+  // 재생할 종목: 노트를 남겼거나 매매한 종목 (이름 기준으로 위의 '종목' 고르기와 맞춤)
+  const replayStocks = [...new Set([...records.flatMap((r) => (r.symbol ? [r.symbol] : r.target ? [r.target.code] : [])), ...(rounds ?? []).map((r) => r.symbol)])].map((c) => ({ code: c, name: nameOf(c) }));
+  const picked = stock === "all" ? undefined : replayStocks.find((x) => x.name === stock)?.code;
+
   return (
     <div className="mm-rv">
+      {!!replayStocks.length && <ReplayView records={records} stocks={replayStocks} initial={picked} onOpenNote={onOpenNote} />}
       {failed && <p className="mm-card mm-rv-empty">로그인하고 증권사를 연결하면 실제 체결과 비교해요. 지금은 노트만 보여요.</p>}
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>
