@@ -286,8 +286,6 @@ function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; per
         <div className="mk-trader-who">
           <div className="mk-trader-name-line">
             <strong className="mk-trader-name">{trader.name}</strong>
-            {/* 이름 바로 오른쪽에 등급, 그 오른쪽에 꿀단지 */}
-            <GradeBadge grade={trader.grade?.grade} unrated={trader.grade?.unrated} small />
             <span className="mk-trader-honey" title="받은 꿀 합계">
               <Image src="/home/leaderboard-honey.svg" alt="받은 꿀" width={11.42} height={14.3401} />
               {honey}
