@@ -13,23 +13,26 @@ import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import { GradeBadge } from "./GradeParts";
+import { GRADES } from "../../lib/grade";
 import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
 import { useLikeTotals } from "../../lib/feedback";
 import { isFavorite, useFavorites } from "../../lib/favorites";
 
-// 정렬 4가지 × 높은순(↓) · 낮은순(↑) (시안: 정렬 드롭다운 8가지). 주소에는 "ret" · "ret-asc"
-type SortKey = "rec" | "pop" | "ret" | "price";
+// 정렬 5가지 × 높은순(↓) · 낮은순(↑). 주소에는 "ret" · "ret-asc" · "grade"
+type SortKey = "rec" | "pop" | "ret" | "grade" | "price";
 type Sort = SortKey | `${SortKey}-asc`;
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "rec", label: "추천순" },
   { key: "pop", label: "인기순" },
   { key: "ret", label: "수익률순" },
+  { key: "grade", label: "등급순" },
   { key: "price", label: "가격순" },
 ];
-// 추천 · 인기 · 수익률은 높은 순만 (뒤집어 볼 일이 거의 없음), 가격만 낮은 순 · 높은 순 둘 다
-const SORT_ALL: Sort[] = ["rec", "pop", "ret", "price-asc", "price"];
+// 추천 · 인기 · 수익률 · 등급은 높은 순만 (뒤집어 볼 일이 거의 없음), 가격만 낮은 순 · 높은 순 둘 다
+const SORT_ALL: Sort[] = ["rec", "pop", "ret", "grade", "price-asc", "price"];
+const PRICE_FROM = SORT_ALL.indexOf("price-asc"); // 가격 정렬 위 구분선
 const sortKey = (s: Sort) => s.replace(/-asc$/, "") as SortKey;
 const sortAsc = (s: Sort) => s.endsWith("-asc");
 const sortLabel = (s: Sort) => (s === "price-asc" ? "가격 낮은 순" : s === "price" ? "가격 높은 순" : SORTS.find((x) => x.key === sortKey(s))!.label);
@@ -137,6 +140,9 @@ function MarketplaceList() {
     // 추천순: 내 투자 정보(매매 방식 · 참고 지표 · 시장 · 기간)와 트레이더가 겹칠수록 위로. 투자 정보가 없으면 좋아요 · 이행률 · 수익률
     const base = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
     const score = (t: Trader) => (mine ? similarity(mine, t) * 1000 : 0) + base(t);
+    // 등급순: A → B → C → D → F, 같은 등급 안에서는 성적 점수(E)가 높은 순
+    const gradeRank = (t: Trader) => (t.grade && t.grade.grade !== "일반" ? GRADES.indexOf(t.grade.grade) : -1);
+    const byGrade = (a: Trader, b: Trader) => gradeRank(b) - gradeRank(a) || (b.grade?.E ?? 0) - (a.grade?.E ?? 0);
     // 즐겨찾기한 트레이더를 맨 위에, 그 안에서는 고른 정렬대로
     const fav = (t: Trader) => (isFavorite(favs, t.id) ? 1 : 0);
     out.sort(
@@ -145,7 +151,7 @@ function MarketplaceList() {
         // 지금 살 수 있는(등급 D 이상) 트레이더 먼저
         Number(sellable(b)) - Number(sellable(a)) ||
         (sortAsc(sort) ? -1 : 1) *
-          (sortKey(sort) === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : sortKey(sort) === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sortKey(sort) === "price" ? b.price - a.price : score(b) - score(a)),
+          (sortKey(sort) === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : sortKey(sort) === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sortKey(sort) === "price" ? b.price - a.price : sortKey(sort) === "grade" ? byGrade(a, b) : score(b) - score(a)),
     );
     return out;
   }, [query, period, sort, filter, likeTotals, favs, mine]);
@@ -225,7 +231,7 @@ function MarketplaceList() {
             })}
           </div>
           <div className="mk-tools">
-            {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 가격 낮은/높은 순) */}
+            {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 등급 · 가격 낮은/높은 순) */}
             <div className="mk-sortdd" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSortOpen(false)}>
               <button type="button" className="mk-sortdd-btn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
                 {sortLabel(sort)} <Image src="/marketplace/sort-chevron.svg" alt="" width={14} height={14} />
@@ -233,7 +239,7 @@ function MarketplaceList() {
               {sortOpen && (
                 <ul className="mk-sortdd-list" role="listbox" aria-label="정렬">
                   {SORT_ALL.map((k, i) => (
-                    <li key={k} className={i === 3 ? "sep" : ""}>
+                    <li key={k} className={i === PRICE_FROM ? "sep" : ""}>
                       <button type="button" role="option" aria-selected={sort === k} className={sort === k ? "on" : ""} onClick={() => (update({ sort: k, page: 1 }), setSortOpen(false))}>
                         {sortLabel(k)} {sort === k && <span aria-hidden>✓</span>}
                       </button>
