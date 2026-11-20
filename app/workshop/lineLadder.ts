@@ -262,12 +262,14 @@ export function classify(low: number, high: number, current: number | undefined,
     const [bLow, bHigh] = [Math.min(body.open, body.close), Math.max(body.open, body.close)];
     if (high < bLow) return "지지";
     if (low > bHigh) return "저항";
-    return null;
+  } else if (current) {
+    if (high < current * (1 - NEAR)) return "지지";
+    if (low > current * (1 + NEAR)) return "저항";
   }
-  if (!current) return null;
-  if (high < current * (1 - NEAR)) return "지지";
-  if (low > current * (1 + NEAR)) return "저항";
-  return null;
+  // 현재가(마지막 봉)와 겹치거나 아주 가까워도 미분류로 두지 않고 바로: 선 가운데가 현재가 이상이면 저항, 아래면 지지 (2026-11-19)
+  const ref = current ?? (body ? body.close : undefined);
+  if (!ref) return null;
+  return (low + high) / 2 >= ref ? "저항" : "지지";
 }
 
 /** 확정 노트에 남기는 선 하나 (서버 이행률 판정이 읽음) */
