@@ -1,22 +1,28 @@
 // 전략 마켓 월별 전략 내용 (매매 · 그은 선 · 그 달 차트) — 구독을 확인한 뒤 그 달 것만 보냄
 //   원본은 공개 폴더(public)가 아니라 서버만 읽는 data/market-sim/{id}.json 에 둠 → 주소로 통째로 받아 갈 수 없음
-//   무료(첫 번째) 전략은 누구나, 나머지는 로그인한 사람이 그 트레이더를 구독 중일 때만 (백엔드 /me/passes 결제 기록, lib/purchases 와 같은 계산)
+//   무료(첫 번째) 전략은 누구나, 나머지는 로그인한 사람이 그 트레이더를 구독 중일 때만 (백엔드 /me/subscriptions, lib/purchases 와 같은 계산)
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { strategiesOf, traderById } from "../../../marketplace/data";
-import { canView, type PaidRecord as FullPass } from "../../../../lib/subscription";
+import { canView, toRecords, type Subscription } from "../../../../lib/subscription";
+
+type Legacy = { id: string; traderId: string; traderName: string; orderId: string; amount: number; approvedAt: string | null; receiptUrl: string | null; used: { month: string; title: string; at: string } | null };
 
 const DIR = path.join(process.cwd(), "data", "market-sim");
 const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const noStore = { "Cache-Control": "private, no-store" };
 
 
+/** 구독 중이거나 예전에 연 달인지 (구독 = /me/subscriptions, 예전 기록 = /me/passes · lib/subscription 과 같은 계산) */
 async function opened(auth: string, traderId: string, month: string) {
-  const res = await fetch(`${API}/api/v1/me/passes`, { headers: { Authorization: auth }, cache: "no-store" });
-  if (!res.ok) return false;
-  const body = (await res.json()) as { data?: FullPass[] } | FullPass[];
-  const passes = Array.isArray(body) ? body : (body.data ?? []);
-  return canView(passes, traderId, month);
+  const get = async <T,>(p: string): Promise<T[]> => {
+    const res = await fetch(`${API}/api/v1${p}`, { headers: { Authorization: auth }, cache: "no-store" });
+    if (!res.ok) return [];
+    const body = (await res.json()) as { data?: T[] } | T[];
+    return Array.isArray(body) ? body : (body.data ?? []);
+  };
+  const [legacy, subs] = await Promise.all([get<Legacy>("/me/passes"), get<Subscription>("/me/subscriptions")]);
+  return canView(toRecords(subs, legacy), traderId, month);
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; month: string }> }) {

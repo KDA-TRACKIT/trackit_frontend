@@ -4,6 +4,7 @@
 //   예전에 이 브라우저에만 저장했던 구독은 처음 불러올 때 서버로 옮김 (서버가 토스에 승인됐는지 다시 확인)
 import { useSyncExternalStore } from "react";
 import { accessToken, apiRequest } from "./api/client";
+import { toRecords, type Subscription } from "./subscription";
 
 export type Pass = {
   id: string;
@@ -60,7 +61,9 @@ export function refreshPasses(): Promise<void> {
         return;
       }
       await importOld().catch(() => {}); // 못 옮기면 다음에 다시
-      list = await apiRequest<Pass[]>("/me/passes");
+      // 구독 기간은 구독 표(/me/subscriptions), 예전 결제 기록(/me/passes)은 예전에 연 달만 (lib/subscription toRecords)
+      const [legacy, subs] = await Promise.all([apiRequest<Pass[]>("/me/passes"), apiRequest<Subscription[]>("/me/subscriptions").catch(() => [] as Subscription[])]);
+      list = toRecords(subs, legacy);
     } catch {
       // 서버가 꺼져 있으면 그대로
     } finally {
