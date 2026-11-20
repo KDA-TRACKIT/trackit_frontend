@@ -59,7 +59,7 @@
 .home-trader-avatar img:last-child { top:6px; left:6px; }
 .home-trader-tag { display:block; width:fit-content; max-width:100%; margin-top:18px; padding:6px 9px; overflow:hidden; border-radius:8px; background:#f7f9fc; color:#0f2367; font-size:14px; line-height:17px; white-space:nowrap; text-overflow:ellipsis; }
 .home-trader-metrics { display:flex; justify-content:space-between; gap:8px; margin:14px 10px 0; }
-.home-trader-metrics > div:last-child { text-align:right; }
+.home-trader-metrics > div:last-child { text-align:center; }
 .home-redesign .trader-card .home-trader-metric-label { display:block; margin:0 0 5px; color:var(--home-muted); font-size:12px; line-height:14px; }
 .home-trader-return { display:block; color:var(--home-navy); font-size:24px; line-height:29px; font-weight:600; font-variant-numeric:tabular-nums; }
 .home-trader-return.gain { color:#1f9d55; }.home-trader-return.loss { color:#ff3030; }
