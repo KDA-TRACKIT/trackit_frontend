@@ -61,8 +61,22 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-tools .mm-pin { width:34px; height:34px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); }
 
 /* ── 리스트형 · 종목형: 목록 (+ 고르면 오른쪽 크게 보기) ── */
-.mm-split { display:grid; grid-template-columns:minmax(0, 1fr); gap:20px; align-items:start; }
-.mm-split.has-detail { grid-template-columns:404px minmax(0, 1fr); }
+/* 리스트형 · 종목형: 노트를 고르면 목록이 404px 로 부드럽게 줄고 오른쪽에 크게 보기가 나타남 (flex-basis 100% → 404px 를 이어서 바꿈) */
+.mm-split { display:flex; align-items:flex-start; gap:20px; }
+.mm-split > .mm-list { flex:0 1 100%; min-width:0; transition:flex-basis .32s cubic-bezier(.2, .8, .2, 1); } /* 늘어나는 힘(grow)은 0: 닫을 때도 404px → 100% 로 부드럽게 넓어지게 */
+.mm-split.has-detail > .mm-list { flex:0 1 404px; }
+/* 크게 보기는 목록을 내려도 화면 위에 붙어 따라옴. 화면보다 길면 크게 보기 안에서만 스크롤 */
+.mm-split > .mm-detail { position:sticky; top:24px; flex:1 1 0; max-height:calc(100vh - 48px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+/* 처음 열릴 때: 폭이 늘어나는 동안은 숨겼다가(글자가 좁게 접혔다 펴지는 게 안 보이게) 살짝 밀려 들어오며 나타남 */
+.mm-detail.enter-open { animation:mm-detail-open .4s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes mm-detail-open { 0%, 35% { opacity:0; transform:translateX(16px); } 100% { opacity:1; transform:none; } }
+/* 다른 노트로 바꿀 때: 내용만 빠르게 */
+.mm-detail.enter-switch { animation:mm-detail-switch .22s ease-out both; }
+@keyframes mm-detail-switch { from { opacity:.2; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mm-split > .mm-list { transition:none; }
+  .mm-detail.enter-open, .mm-detail.enter-switch { animation:none; }
+}
 .mm-list { overflow:hidden; }
 .mm-list-head { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:47px; padding:0 20px; border-bottom:1px solid #eef2f6; }
 .mm-list-head b { color:#1c212b; font-size:13px; font-weight:600; }
@@ -240,7 +254,11 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 
 /* ── 좁은 화면 ── */
 @media (max-width: 960px) {
-  .mm-split.has-detail, .mm-cal-layout { grid-template-columns:minmax(0, 1fr); }
+  .mm-cal-layout { grid-template-columns:minmax(0, 1fr); }
+  /* 좁은 화면: 목록 아래에 크게 보기 (따라오지 않음) */
+  .mm-split { flex-direction:column; align-items:stretch; }
+  .mm-split > .mm-list, .mm-split.has-detail > .mm-list { flex:none; transition:none; }
+  .mm-split > .mm-detail { position:static; flex:none; max-height:none; overflow:visible; }
   .mm-legend { flex-direction:column; align-items:flex-start; }
 }
 @media (max-width: 700px) {
