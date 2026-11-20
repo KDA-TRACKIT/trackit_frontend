@@ -42,6 +42,15 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
   }
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  /** 가져오는 중인 캘린더 노트 글: 서버 저장(AI 판정 · 다시 읽기)에 몇 초 걸려서, 누르자마자 종목 전략 밑에 먼저 보여 줌 */
+  const [pending, setPending] = useState<string | null>(null);
+  /** 다 가져왔다는 알림 (3초) */
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => setDone(false), 3000);
+    return () => clearTimeout(t);
+  }, [done]);
 
   /** 캘린더 메모 → 이 종목 메모로 남길 글 (같은 메모는 같은 글이 되어 중복을 알아봄) */
   //   용어를 '메모' → '노트'로 바꿈: 새로 가져오면 '[캘린더 노트 …]', 예전에 '[캘린더 메모 …]'로 가져온 것도 이미 가져온 것으로 봄
@@ -57,8 +66,11 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
     if (isImported(m)) return setMsg("이미 가져온 노트예요.");
     if (busy) return;
     setBusy(true);
+    setMsg(null);
+    setDone(false);
     const now = kstNow();
     const add = importText(m);
+    setPending(add);
     const r = await addRecord({
       date: now.date,
       noteTime: now.time,
@@ -69,7 +81,9 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
       ...(notes.length ? { consolidates: notes.map((x) => x.id) } : {}),
     });
     setBusy(false);
-    setMsg(r.ok ? null : (r.error ?? "가져오지 못했어요."));
+    setPending(null);
+    if (r.ok) setDone(true);
+    else setMsg(r.error ?? "가져오지 못했어요.");
   }
 
   return (
@@ -78,48 +92,61 @@ export default function RecordBoard({ symbol }: { symbol: SymbolInfo; lastExecut
         <h2>
           종목 전략 <span>{symbol.name}</span>
         </h2>
-        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={isImported} />
+        <CalendarMemos records={all} onPick={(m) => void importMemo(m)} isImported={isImported} busy={busy && pending !== null} />
       </header>
       {msg && <p className="ws-rec-error">{msg}</p>}
+      {done && !msg && (
+        <p className="ws-rec-done" role="status">
+          캘린더 노트를 종목 전략에 가져왔어요. 원래 노트는 그대로 남아요.
+        </p>
+      )}
       {/* 정리본 하나 (저장 확인 창과 같음). 눌러서 고치면 새 정리본으로 */}
-      {notes.length > 0 && (
+      {(notes.length > 0 || pending) && (
         <div className="ws-memo ws-strat-memo ws-strat-merged">
-          <div className="ws-strat-row">
-            <time>
-              {dateLabel(latest.date)} {latest.noteTime.slice(0, 5)}
-              <em className="ws-strat-merged-tag">정리본</em>
-            </time>
-            {mergedEdit !== null ? (
-              <div className="ws-strat-edit">
-                <textarea
-                  autoFocus
-                  value={mergedEdit}
-                  onChange={(e) => setMergedEdit(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setMergedEdit(null);
-                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void saveMerged();
-                  }}
-                  rows={Math.min(10, Math.max(3, mergedEdit.split(/\n/).length + 1))}
-                  aria-label="종목 전략 정리본 고치기"
-                />
-                <div>
-                  <button type="button" onClick={() => setMergedEdit(null)} disabled={busy}>
-                    취소
-                  </button>
-                  <button type="button" className="primary" onClick={() => void saveMerged()} disabled={busy || !mergedEdit.trim()}>
-                    {busy ? "저장 중…" : "저장"}
-                  </button>
+          {notes.length > 0 && (
+            <div className="ws-strat-row">
+              <time>
+                {dateLabel(latest.date)} {latest.noteTime.slice(0, 5)}
+                <em className="ws-strat-merged-tag">정리본</em>
+              </time>
+              {mergedEdit !== null ? (
+                <div className="ws-strat-edit">
+                  <textarea
+                    autoFocus
+                    value={mergedEdit}
+                    onChange={(e) => setMergedEdit(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setMergedEdit(null);
+                      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void saveMerged();
+                    }}
+                    rows={Math.min(10, Math.max(3, mergedEdit.split(/\n/).length + 1))}
+                    aria-label="종목 전략 정리본 고치기"
+                  />
+                  <div>
+                    <button type="button" onClick={() => setMergedEdit(null)} disabled={busy}>
+                      취소
+                    </button>
+                    <button type="button" className="primary" onClick={() => void saveMerged()} disabled={busy || !mergedEdit.trim()}>
+                      {busy ? "저장 중…" : "저장"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 정리본으로 남아요)" onClick={() => setMergedEdit(merged)} onKeyDown={(e) => e.key === "Enter" && setMergedEdit(merged)}>
-                {merged || "아직 쌓인 내용이 없어요. 눌러서 적거나 차트 노트에서 저장하세요."}
-              </p>
-            )}
-          </div>
+              ) : (
+                <p role="button" tabIndex={0} title="눌러서 고치기 (고치면 새 정리본으로 남아요)" onClick={() => setMergedEdit(merged)} onKeyDown={(e) => e.key === "Enter" && setMergedEdit(merged)}>
+                  {merged || "아직 쌓인 내용이 없어요. 눌러서 적거나 차트 노트에서 저장하세요."}
+                </p>
+              )}
+            </div>
+          )}
+          {pending && (
+            <div className="ws-strat-row ws-strat-pending" aria-live="polite">
+              <time>가져오는 중…</time>
+              <p>{pending}</p>
+            </div>
+          )}
         </div>
       )}
-      {notes.length === 0 && <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>}
+      {notes.length === 0 && !pending && <p className="ws-strat-empty">아직 쌓인 내용이 없어요.</p>}
     </section>
   );
 }
