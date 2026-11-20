@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import SiteHeader from "../../SiteHeader";
-import { usePasses } from "../../../lib/purchases";
+import { usePasses, usePassesLoaded } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { monthLabel, pct, tone, traderById, type Trader } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
@@ -27,6 +27,7 @@ const MONTHS = 12;
 
 export default function AnalysisPage() {
   const passes = usePasses();
+  const loaded = usePassesLoaded();
   const freeViews = useFreeViews();
 
   const rows: Row[] = useMemo(() => {
@@ -64,7 +65,10 @@ export default function AnalysisPage() {
           <h1 className="mk-title">전략 분석</h1>
         </div>
 
-        {!rows.length ? (
+        {!rows.length && !loaded ? (
+          // 산 열람권을 서버에서 읽는 동안엔 '없음' 화면 대신
+          <p className="mk-card mk-empty">불러오는 중…</p>
+        ) : !rows.length ? (
           <div className="mk-card mk-empty">
             아직 연 전략이 없어요. 열람권으로 전략을 열면 여기서 트레이더끼리 비교할 수 있어요.
             <br />

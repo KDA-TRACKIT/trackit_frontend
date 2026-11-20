@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { apiRequest } from "../../../lib/api/client";
-import { unusedPasses, usePasses } from "../../../lib/purchases";
+import { unusedPasses, usePasses, usePassesLoaded } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
 import { monthLabel, pct, tone, traderById } from "../../marketplace/data";
@@ -38,6 +38,7 @@ const shortMonth = (m: string) => `${m.slice(2, 4)}년 ${Number(m.slice(5))}월`
 
 export default function PurchasesPage() {
   const passes = usePasses();
+  const loaded = usePassesLoaded();
   const freeViews = useFreeViews();
   const likeTotals = useLikeTotals();
   const [server, setServer] = useState<ServerPurchase[] | null>(null);
@@ -72,7 +73,10 @@ export default function PurchasesPage() {
         </div>
         {error && <p className="ar-note">{error}</p>}
 
-        {nothing ? (
+        {nothing && !loaded ? (
+          // 산 열람권을 서버에서 읽는 동안엔 '없음' 화면 대신
+          <p className="mk-card mk-empty">불러오는 중…</p>
+        ) : nothing ? (
           <div className="mk-card mk-empty">
             아직 산 열람권이 없어요. 트레이더의 열람권을 사면 월별 전략 하나를 골라 열 수 있어요.
             <br />

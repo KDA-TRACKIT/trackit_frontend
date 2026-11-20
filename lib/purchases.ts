@@ -82,6 +82,11 @@ export function usePasses() {
   return useSyncExternalStore(subscribe, () => list, () => EMPTY);
 }
 
+/** 서버에서 열람권을 한 번이라도 다 읽었는지 (읽기 전엔 '없음' 대신 불러오는 중으로) */
+export function usePassesLoaded() {
+  return useSyncExternalStore(subscribe, () => loaded, () => false);
+}
+
 /** 이 트레이더의 이 달 전략을 이미 열었는지 */
 export const opened = (passes: Pass[], traderId: string, month: string) => passes.some((p) => p.traderId === traderId && p.used?.month === month);
 /** 아직 안 쓴 이 트레이더 열람권 */
