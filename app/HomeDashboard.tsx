@@ -19,6 +19,7 @@ import "./home.css";
 import TraderCarousel from "./TraderCarousel";
 import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
 import { weekDays } from "../lib/home-calendar";
+import BeeLoader from "./BeeLoader";
 
 /** 연결된 증권사 계좌 하나와 동기화 상태 */
 type BrokerAccount = { id: string; label: string; status: SyncStatus | null };
@@ -198,7 +199,7 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
           </div>
         </div>
       ) : (
-        <div className="chart chart-empty">{failed ? "수익률을 불러오지 못했습니다." : data === null ? "불러오는 중…" : series && series.length === 1 ? "청산한 거래가 하나뿐이에요" : "이 기간에 청산한 거래가 없어요"}</div>
+        <div className="chart chart-empty">{failed ? "수익률을 불러오지 못했습니다." : data === null ? <BeeLoader size="sm" /> : series && series.length === 1 ? "청산한 거래가 하나뿐이에요" : "이 기간에 청산한 거래가 없어요"}</div>
       )}
     </div>
   );

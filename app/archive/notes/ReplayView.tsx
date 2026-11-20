@@ -13,6 +13,7 @@ import { recentTrades, type Trade } from "../../../lib/api/performance";
 import { buildReplay, type ReplayStep } from "../../../lib/replay";
 import { fixZoomPointer } from "../../../lib/zoom-pointer";
 import { shortDate } from "./model";
+import BeeLoader from "../../BeeLoader";
 
 const won = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원`);
 
@@ -245,6 +246,6 @@ function ReplayChart({ code, steps, idx }: { code: string; steps: ReplayStep[]; 
   }, [bars, steps, idx]);
 
   if (!isKrCode(code)) return <div className="mm-rp-chart is-empty">이 종목은 차트를 불러올 수 없어요.</div>;
-  if (!bars) return <div className="mm-rp-chart is-empty">차트를 불러오는 중…</div>;
+  if (!bars) return <div className="mm-rp-chart is-empty"><BeeLoader size="sm" /></div>;
   return <div ref={el} className="mm-rp-chart" role="img" aria-label="그 순간까지의 일봉 · 그은 선 · 매매 표시" />;
 }

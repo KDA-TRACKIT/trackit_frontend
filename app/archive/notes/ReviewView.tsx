@@ -12,6 +12,7 @@ import { pairTrades, type MyRound } from "../../../lib/strategy-use";
 import { habits, planChanges, reviewRounds, type RoundReview } from "../../../lib/self-review";
 import { shortDate } from "./model";
 import ReplayView from "./ReplayView";
+import BeeLoader from "../../BeeLoader";
 
 const won = (n: number | null) => (n === null ? "—" : n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 }));
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
@@ -57,7 +58,7 @@ export default function ReviewView({ records, stock, onOpenNote }: { records: Tr
   const traded = new Set(reviews.map((r) => r.round.symbol));
   const waiting = codes.filter((c) => !traded.has(c));
 
-  if (!rounds) return <div className="mm-card mm-rv-empty">내 매매를 불러오는 중…</div>;
+  if (!rounds) return <div className="mm-card mm-rv-empty"><BeeLoader size="sm" label="내 매매" /></div>;
   const closed = reviews.filter((r) => r.round.exit);
   const planned = reviews.filter((r) => r.plan).length;
   const kept = closed.filter((r) => r.plan && !r.flags.some((f) => f.bad)).length;

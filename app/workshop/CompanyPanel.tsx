@@ -4,6 +4,7 @@
 // 아래 분기 실적 표는 DART 주요계정 (최근 6개 분기, /charts/{code}/earnings)
 import { useEffect, useState } from "react";
 import { fetchCompany, fetchEarnings, type CompanyInfo, type Earnings } from "../../lib/market-data";
+import BeeLoader from "../BeeLoader";
 
 const n = (v: number | null, digits = 0) => (v === null ? "—" : v.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits }));
 
@@ -45,7 +46,7 @@ export default function CompanyPanel({ code, price }: { code: string; price: num
     return (
       <section className="ws-company" aria-label="기업 정보">
         <h2>기업 정보</h2>
-        <p className="ws-company-msg">{failed ? "기업 정보를 불러오지 못했어요." : "불러오는 중…"}</p>
+        {failed ? <p className="ws-company-msg">기업 정보를 불러오지 못했어요.</p> : <BeeLoader size="sm" />}
       </section>
     );
   }
@@ -150,7 +151,7 @@ export default function CompanyPanel({ code, price }: { code: string; price: num
 
 /** 분기 실적 표 (DART, 최근 6개 분기). 원 → 억원 · 조 */
 function QuarterTable({ earn }: { earn: Earnings | null | undefined }) {
-  if (earn === undefined) return <p className="ws-company-msg">분기 실적을 불러오는 중…</p>;
+  if (earn === undefined) return <BeeLoader size="sm" label="분기 실적" />;
   const qs = earn?.quarters ?? [];
   if (!qs.length) return <p className="ws-company-msg">{earn?.missing?.length ? "분기 실적을 볼 수 없어요 (DART 키 없음)." : "DART 분기 실적이 없는 종목이에요."}</p>;
   const toEok = (v: number | null) => (v === null ? null : v / 1e8);

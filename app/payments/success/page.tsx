@@ -9,6 +9,7 @@ import { refreshPasses } from "../../../lib/purchases";
 import { traderById } from "../../marketplace/data";
 import { GradeBadge } from "../../marketplace/GradeParts";
 import "../payments.css";
+import BeeLoader from "../../BeeLoader";
 
 const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
 
@@ -40,7 +41,7 @@ export default function PaymentSuccess() {
       <section className="pay-card">
         {state.phase === "loading" && (
           <>
-            <span className="pay-spinner" aria-hidden />
+            <BeeLoader size="sm" />
             <h1>결제를 확인하는 중이에요</h1>
             <p>창을 닫지 말고 잠시 기다려 주세요.</p>
           </>

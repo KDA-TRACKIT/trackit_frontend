@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { KINDS, countBy, filterItems, topSymbols, type Item, type ItemKind } from "./items";
 import { ItemCard } from "./parts";
+import BeeLoader from "../BeeLoader";
 
 export const PERIOD_OPTS = [
   { key: 0, label: "전체" },
@@ -110,7 +111,7 @@ export default function ListView({ items, q, loading }: { items: Item[]; q: stri
           </button>
         </div>
         {loading && !items.length ? (
-          <div className="mk-card mk-empty">불러오는 중…</div>
+          <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : !shown.length ? (
           <div className="mk-card mk-empty">{items.length ? "이 조건에 맞는 기록이 없어요." : "아직 남긴 기록이 없어요. 트레이딩 로그나 오른쪽 아래 노트 버튼으로 남겨 보세요."}</div>
         ) : (

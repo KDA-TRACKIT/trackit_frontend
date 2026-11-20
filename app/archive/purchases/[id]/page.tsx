@@ -17,6 +17,7 @@ import StrategyChart, { type SimCandle } from "../../../marketplace/StrategyChar
 import { useDark, type SimDetail } from "../../../marketplace/GuessFirst";
 import "../../../marketplace/marketplace.css";
 import "../../archive.css";
+import BeeLoader from "../../../BeeLoader";
 
 const md = (d: string) => `${d.slice(5, 7)}.${d.slice(8, 10)}`;
 type Memo = { d: string; text: string; pre: boolean };
@@ -118,7 +119,7 @@ export default function PurchasedTraderPage() {
         {!month ? (
           <p className="mk-card mk-empty">이 트레이더의 열람권으로 연 전략이 없어요.</p>
         ) : !m ? (
-          <p className="mk-card mk-empty">{detail ? "전략을 불러오지 못했어요." : "불러오는 중…"}</p>
+          detail ? <p className="mk-card mk-empty">전략을 불러오지 못했어요.</p> : <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : (
           <>
             <section className="mk-card ar-pt-trades">

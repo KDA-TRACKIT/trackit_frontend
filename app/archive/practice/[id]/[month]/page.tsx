@@ -12,6 +12,7 @@ import GuessFirst, { useDark, type SimDetail } from "../../../../marketplace/Gue
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import "../../../../marketplace/marketplace.css";
 import "../../../archive.css";
+import BeeLoader from "../../../../BeeLoader";
 
 export default function PracticePage() {
   const { id, month } = useParams<{ id: string; month: string }>();
@@ -55,7 +56,7 @@ export default function PracticePage() {
             열람권으로 연 전략만 연습할 수 있어요. <Link href={`/marketplace/${t.id}/strategies/${month}`}>전략 보러 가기 ›</Link>
           </p>
         ) : detail?.id !== key ? (
-          <p className="mk-card mk-empty">불러오는 중…</p>
+          <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : !canPlay ? (
           <p className="mk-card mk-empty">이 달 전략에는 연습할 매매가 없어요.</p>
         ) : (

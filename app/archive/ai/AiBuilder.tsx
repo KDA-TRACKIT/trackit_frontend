@@ -12,6 +12,7 @@ import BoardView from "../BoardView";
 import ChartView from "../ChartView";
 import { compose, saveDraft, type Draft } from "../drafts";
 import { monthLabel } from "../../marketplace/data";
+import BeeLoader from "../../BeeLoader";
 
 const MAX = 10;
 
@@ -139,7 +140,7 @@ function PickList({ items, loading, picked, onPick, full }: { items: ReturnType<
         {full && <small className="ar-warn">최대 {MAX}개까지 고를 수 있어요</small>}
       </div>
       {loading && !items.length ? (
-        <div className="mk-card mk-empty">불러오는 중…</div>
+        <div className="mk-card mk-empty"><BeeLoader /></div>
       ) : !shown.length ? (
         <div className="mk-card mk-empty">고를 수 있는 기록이 없어요. 트레이딩 로그에서 기록을 남기거나 전략 마켓에서 전략을 열어 보세요.</div>
       ) : (

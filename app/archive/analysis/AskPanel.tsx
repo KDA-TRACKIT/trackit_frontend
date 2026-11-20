@@ -20,6 +20,7 @@ import { briefing } from "../../../lib/strategy-briefing";
 import StrategyChart from "../../marketplace/StrategyChart";
 import { useDark } from "../../marketplace/GuessFirst";
 import { traderById } from "../../marketplace/data";
+import BeeLoader from "../../BeeLoader";
 
 type Msg =
   | { id: number; at: string; role: "user"; text: string }
@@ -360,7 +361,7 @@ export default function AskPanel() {
                 {m.role === "user" ? (
                   <div className="ask-msg user">{m.text}</div>
                 ) : m.role === "wait" ? (
-                  <div className="ask-msg bot wait">{m.text}</div>
+                  <div className="ask-msg bot wait">{/중…$/.test(m.text) ? <BeeLoader size="sm" label={m.text.replace(/\s*…$/, "")} /> : m.text}</div>
                 ) : m.role === "pick" ? (
                   <div className="ask-msg bot">
                     <p>어떤 전략이나 종목에 대해 물어볼까요?</p>

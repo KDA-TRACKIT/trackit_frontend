@@ -2,6 +2,7 @@
 // 마이페이지 공통 조각: 제목, 카드, 숫자 칸, 빈 화면, 칩 선택, 모달
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import BeeLoader from "../BeeLoader";
 
 /**
  * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 설명 아래에 경로(상위 / 지금)를 작게 둔다 (시안: "판매 관리 / 판매 내역").
@@ -250,7 +251,8 @@ export function Stat({ label, value = 0, unit, boxed }: { label: string; value?:
 export function Empty({ text, children }: { text: string; children?: React.ReactNode }) {
   return (
     <div className="mp-empty">
-      <p>{text}</p>
+      {/* 불러오는 중이면 꿀벌 로딩 */}
+      {text.includes("불러오는 중") ? <BeeLoader size="sm" /> : <p>{text}</p>}
       {children}
     </div>
   );

@@ -60,7 +60,6 @@ export function toMemo(r: TradeRecord): Memo {
     ref = tag[1];
     body = body.slice(tag[0].length);
   }
-  if (r.symbol) ref = `${r.symbolName ?? r.symbol} · 가격 및 거래량 차트`;
   // 공시 노트의 항목 이름은 '회사 제목' → 앞 낱말이 회사
   const company = kind === "disclosure" && ref ? ref.split(" ")[0] : null;
   const subject = r.symbolName ?? r.target?.name ?? company ?? "시장 전반";

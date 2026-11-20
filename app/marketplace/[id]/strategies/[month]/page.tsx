@@ -16,6 +16,7 @@ import { useDark, type SimDetail } from "../../../GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import { markFreeView } from "../../../../../lib/free-views";
 import "../../../marketplace.css";
+import BeeLoader from "../../../../BeeLoader";
 
 export default function StrategyView() {
   const { id, month } = useParams<{ id: string; month: string }>();
@@ -119,7 +120,7 @@ export default function StrategyView() {
             </div>
           </section>
         ) : loading ? (
-          <p className="mk-card mk-empty">불러오는 중…</p>
+          <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : !m || !detail?.data ? (
           <p className="mk-card mk-empty">이 달의 전략 내용을 불러오지 못했어요.</p>
         ) : (
