@@ -12,6 +12,7 @@ import { useQuotes } from "../../../lib/live-quotes";
 import type { Portfolio } from "../../../lib/types/trading";
 import ConnectFlow from "./ConnectFlow";
 import { Card, Empty, PageHead, PeriodTabs, inPeriod, type Period } from "../ui";
+import BeeLoader from "../../BeeLoader";
 
 type Account = { id: string; broker: string; mode: "mock" | "real"; no: string; portfolio: Portfolio | null };
 const won = (n: number) => `${Math.round(n).toLocaleString("ko-KR")}원`;
@@ -386,7 +387,7 @@ function TradesCard() {
           );
         })}
       </div>
-      {trades === null && <p className="mp-muted">불러오는 중…</p>}
+      {trades === null && <BeeLoader size="sm" />}
       {trades && list.length === 0 && <Empty text={trades.length ? "조건에 맞는 거래가 없어요." : "거래 내역을 연결하면 매수·매도 기록과 관련 매매일지를 확인할 수 있습니다."} />}
     </Card>
   );

@@ -26,6 +26,7 @@ import {
   type EntryCase,
   type MyRound,
 } from "../../../../lib/strategy-use";
+import BeeLoader from "../../../BeeLoader";
 
 type Tab = "alert" | "review" | "ask";
 const TABS: { key: Tab; label: string; desc: string }[] = [
@@ -92,7 +93,7 @@ export default function UseStrategy({ traderId, traderName, months, current }: {
       </div>
       <p className="su-desc">{TABS.find((t) => t.key === tab)!.desc}</p>
       {!all ? (
-        <p className="su-empty">산 전략을 불러오는 중…</p>
+        <BeeLoader size="sm" label="산 전략" />
       ) : tab === "alert" ? (
         <Alert traderId={traderId} traderName={traderName} cases={cases} market={market} />
       ) : tab === "review" ? (
@@ -260,7 +261,7 @@ function Review({ detail, traderName }: { detail: SimDetail[]; traderName: strin
   return (
     <>
       {mine === null ? (
-        <p className="su-empty">내 체결을 불러오는 중…</p>
+        <BeeLoader size="sm" label="내 체결" />
       ) : (
         <>
           {err && <p className="su-msg">로그인하면 내 체결과 비교할 수 있어요.</p>}

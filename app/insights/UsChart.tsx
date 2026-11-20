@@ -10,6 +10,7 @@ import { errorMessage } from "../../lib/api/client";
 import { getUsBars, type UsBar, type UsBars } from "../../lib/api/insights";
 import { pct, price } from "./parts";
 import { fixZoomPointer } from "../../lib/zoom-pointer";
+import BeeLoader from "../BeeLoader";
 
 export type UsChartTarget = { code: string; name?: string; exchange?: string };
 type Period = "D" | "W" | "M";
@@ -227,7 +228,7 @@ export default function UsChart({ target, onClose }: { target: UsChartTarget; on
           <div ref={box} className="us-canvas" />
           {!data && !error && (
             <div className="ins-state overlay">
-              <span className="ins-spinner" aria-hidden />
+              <BeeLoader size="sm" />
             </div>
           )}
           {error && (

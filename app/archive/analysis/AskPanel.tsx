@@ -396,7 +396,7 @@ export default function AskPanel() {
             void send(q);
           }}
         >
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={threadTarget ? `${threadTarget.name}에 대해 물어보세요` : "예: 피보볼륨 전략 매수 조건이 뭐였지? · 삼성전자 지금 사도 돼?"} aria-label="질문" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={threadTarget ? `${threadTarget.name}에 대해 물어보세요` : "예: 삼성전자 지금 사도 돼?"} aria-label="질문" />
           <button type="submit" disabled={busy || !q.trim()} aria-label="보내기">
             <Send size={16} />
           </button>

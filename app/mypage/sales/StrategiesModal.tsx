@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Modal } from "../ui";
 import { day, saleState, type MyStrategy } from "./data";
+import BeeLoader from "../../BeeLoader";
 
 export default function StrategiesModal({ strategies, views, onClose }: { strategies: MyStrategy[] | null; views: Map<string, { buyers: number }>; onClose: () => void }) {
   return (
@@ -46,7 +47,7 @@ export default function StrategiesModal({ strategies, views, onClose }: { strate
             );
           })}
         </div>
-        {strategies === null && <p className="mp-muted">불러오는 중…</p>}
+        {strategies === null && <BeeLoader size="sm" />}
         {strategies?.length === 0 && <p className="mp-strat-empty">등록된 전략이 없습니다.</p>}
       </div>
     </Modal>

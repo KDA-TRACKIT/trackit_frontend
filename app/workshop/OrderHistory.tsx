@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { cancelOrder, modifyOrder, orderAccounts, todayOrders, type OrderAccount, type TodayOrder } from "../../lib/api/orders";
+import BeeLoader from "../BeeLoader";
 
 type Row = TodayOrder & { account: OrderAccount };
 type Action =
@@ -148,7 +149,7 @@ export default function OrderHistory({ symbol, refreshKey = 0 }: { symbol: strin
             {rows === null && (
               <tr>
                 <td colSpan={10} className="ws-orders-empty">
-                  주문 내역을 불러오는 중…
+                  <BeeLoader size="sm" label="주문 내역" />
                 </td>
               </tr>
             )}

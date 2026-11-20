@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { connectBroker, disconnectBroker, listConnections, type BrokerConnection } from "../../lib/api/orders";
+import BeeLoader from "../BeeLoader";
 
 export default function BrokerSection() {
   const [list, setList] = useState<BrokerConnection[] | null>(null);
@@ -61,7 +62,7 @@ export default function BrokerSection() {
       </div>
       <p className="mypage-muted">연결한 계좌로 매매 창에서 주문할 수 있어요. 처음엔 모의투자 계좌로 시험해 보세요.</p>
 
-      {list === null && !error && <p className="mypage-muted">불러오는 중…</p>}
+      {list === null && !error && <BeeLoader size="sm" />}
       {list && list.length === 0 && !adding && <p className="mypage-muted">연결한 계좌가 없어요.</p>}
       {list?.map((c) => (
         <div key={c.id} className="mypage-conn">

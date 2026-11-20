@@ -195,7 +195,7 @@ export default function PurchasedTraderPage() {
                 {candles.length ? (
                   <StrategyChart candles={candles} trades={trades} notes={m.notes} ind={cur === m.symbol.code ? m.ind : undefined} code={cur ?? ""} dark={dark} currency={detail?.data?.market === "US" ? "USD" : "KRW"} />
                 ) : (
-                  <p className="mk-empty">{cur !== m.symbol.code && extra?.code === cur ? "이 종목의 그 달 차트 데이터가 없어요." : "차트를 불러오는 중…"}</p>
+                  cur !== m.symbol.code && extra?.code === cur ? <p className="mk-empty">이 종목의 그 달 차트 데이터가 없어요.</p> : <BeeLoader size="sm" />
                 )}
               </div>
               <aside className="ar-pt-memos">

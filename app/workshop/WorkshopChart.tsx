@@ -40,6 +40,7 @@ import { fetchFlows, type FlowDay } from "../../lib/market-data";
 import { readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import { uuid } from "../../lib/uuid";
 import { fixZoomPointer } from "../../lib/zoom-pointer";
+import BeeLoader from "../BeeLoader";
 
 /** 캔들 색: 양봉 초록 · 음봉 빨강 (거래량·MACD 막대도 같은 색) */
 const UP = "#089981";
@@ -2404,7 +2405,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               ))}
             </div>
           ))}
-          {bars.length === 0 && emptyMessage && <div className="ws-empty">{emptyMessage}</div>}
+          {bars.length === 0 && emptyMessage && <div className="ws-empty">{emptyMessage === "차트를 불러오는 중…" ? <BeeLoader /> : emptyMessage}</div>}
           <div ref={containerRef} className={`ws-canvas${activeToolId || noteMode ? " drawing" : ""}`} />
 
           {noteMode && !noteDraft && <div className="ws-note-hint">노트를 남길 지점을 클릭하세요 · Esc 취소</div>}
@@ -2618,7 +2619,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                 <span className="ws-news-tag">AI 뉴스 · {kstDay(news.bar.time).replaceAll("-", ".")}</span>
                 <button onClick={() => setNews(null)} aria-label="뉴스 닫기">✕</button>
               </header>
-              {news.status === "loading" && <p className="ws-muted">뉴스를 불러오는 중…</p>}
+              {news.status === "loading" && <BeeLoader size="sm" label="뉴스" />}
               {news.status === "error" && <p className="ws-muted">뉴스를 불러오지 못했어요.</p>}
               {news.status === "done" && news.items.length === 0 && <p className="ws-muted">이 날짜의 뉴스가 없어요.</p>}
               {news.items.map((item) => (

@@ -1,5 +1,6 @@
 "use client";
 // 투자 정보 칸 공통 조각: 카드 머리 · 불러오는 중 · 오류 · 빠진 키 안내 · 숫자 형식
+import BeeLoader from "../BeeLoader";
 export const pct = (n: number | null, d = 2) => (n === null ? "—" : `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).toFixed(d)}%`);
 export const tone = (n: number | null) => (n === null || n === 0 ? "" : n > 0 ? "up" : "down");
 export const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
@@ -37,7 +38,7 @@ export function CardHead({ title, meta, children }: { title: string; meta?: Reac
 export function Loading({ height = 160 }: { height?: number }) {
   return (
     <div className="ins-state" style={{ height }}>
-      <span className="ins-spinner" aria-hidden />
+      <BeeLoader size="sm" />
     </div>
   );
 }

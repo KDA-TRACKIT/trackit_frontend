@@ -124,7 +124,7 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-detail-head h2 { margin:10px 0 0; color:#1c212b; font-size:22px; font-weight:600; letter-spacing:-.3px; }
 .mm-detail-head h2 small { margin-left:8px; color:#8791a3; font-size:13px; font-weight:500; letter-spacing:0; }
 .mm-chart { position:relative; height:253px; overflow:hidden; border-radius:10px; background:#f7f9fc; }
-.mm-chart.is-loading { background:linear-gradient(90deg, #f7f9fc 25%, #eef2f7 50%, #f7f9fc 75%) 0 0 / 200% 100%; animation:mm-shine 1.2s linear infinite; }
+.mm-chart.is-loading { display:grid; place-items:center; }
 .mm-chart.is-empty { display:grid; place-items:center; height:96px; color:#8791a3; font-size:13px; }
 @keyframes mm-shine { to { background-position:-200% 0; } }
 .mm-detail-text { margin:0; color:#1c212b; font-size:16px; font-weight:500; line-height:1.6; white-space:pre-line; word-break:keep-all; overflow-wrap:anywhere; }

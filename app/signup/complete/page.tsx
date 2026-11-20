@@ -9,6 +9,7 @@ import AuthHeader from "../../AuthHeader";
 import { startGoogle } from "../../auth-ui";
 import { getSupabaseBrowser } from "../../../lib/supabase-browser";
 import { DateField, TERMS_VERSION, TermsChecks } from "../../auth-forms";
+import BeeLoader from "../../BeeLoader";
 
 export default function SignupCompletePage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -67,7 +68,7 @@ export default function SignupCompletePage() {
       <AuthHeader title="회원가입" />
       <section className="signup-complete">
         {user === undefined && getSupabaseBrowser() ? (
-          <p className="mp-muted">불러오는 중…</p>
+          <BeeLoader />
         ) : !user ? (
           <>
             <h1>Google 계정으로 가입</h1>

@@ -11,6 +11,7 @@ import { getSectorMap, isUsMarket, kiwoomTicker, type SectorMap as SectorMapData
 import { squarify, type Rect } from "../../lib/treemap";
 import { MARKET_NAME, money, price } from "./parts";
 import type { UsChartTarget } from "./UsChart";
+import BeeLoader from "../BeeLoader";
 
 const HEIGHT = 560;
 /** 종목이 많은 S&P 500 · 코스피 · 코스닥은 더 높게 (칸이 커져야 티커가 보임) */
@@ -246,8 +247,7 @@ export default function SectorMap({ onData, onOpenUs }: { onData?: (data: Sector
           </div>
         ) : !data ? (
           <div className="ins-state">
-            <span className="ins-spinner" aria-hidden />
-            <p>{us ? "미국 시세를 처음 불러오는 중 (1분쯤)" : "업종 시세를 불러오는 중"}</p>
+            <BeeLoader size="sm" label={us ? "미국 시세 처음 불러오기 (1분쯤)" : "업종 시세"} />
           </div>
         ) : empty ? (
           <div className="ins-state" role="status">

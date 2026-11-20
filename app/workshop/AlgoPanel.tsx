@@ -12,6 +12,7 @@ import type {
   TradingRuleDetail,
 } from "../../lib/types/algo";
 import AlgoRuleEditor from "./AlgoRuleEditor";
+import BeeLoader from "../BeeLoader";
 
 const SIGNAL_STATUS: Record<string, string> = {
   PENDING: "대기",
@@ -231,7 +232,7 @@ export default function AlgoPanel({
             )}
             {openId === r.id && (
               <ul className="algo-signals">
-                {!detail && <li className="algo-note">불러오는 중…</li>}
+                {!detail && <li className="algo-note"><BeeLoader size="sm" /></li>}
                 {detail && detail.signals.length === 0 && (
                   <li className="algo-note">아직 신호가 없어요.</li>
                 )}

@@ -12,6 +12,7 @@ import { monthLabel } from "../../marketplace/data";
 import SymbolRecords from "./SymbolRecords";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
+import BeeLoader from "../../BeeLoader";
 
 type MyStrategy = {
   id: string;
@@ -121,7 +122,7 @@ export default function MyStrategiesPage() {
             </label>
           </div>
           {list === null ? (
-            <p className="ar-empty-s">불러오는 중…</p>
+            <BeeLoader size="sm" />
           ) : !rows.length ? (
             <div className="mk-empty">
               아직 만든 전략이 없어요. 전략보관함의 기록을 골라 AI로 전략을 만들어 보세요.

@@ -8,6 +8,7 @@ import { barDate, isKrCode, loadDaily } from "../bars";
 import type { Bar } from "../../../lib/interval";
 import type { NoteLine } from "../../workshop/lineLadder";
 import { fixZoomPointer } from "../../../lib/zoom-pointer";
+import BeeLoader from "../../BeeLoader";
 
 export default function MemoChart({ code, date, lines, side, color }: { code: string; date: string; lines?: NoteLine[]; side: "매수" | "매도" | null; color: string }) {
   const el = useRef<HTMLDivElement>(null);
@@ -84,7 +85,7 @@ export default function MemoChart({ code, date, lines, side, color }: { code: st
   }, [bars, date, lines, side, color]);
 
   if (!supported) return null;
-  if (!bars) return <div className="mm-chart is-loading" aria-label="차트 불러오는 중" />;
+  if (!bars) return <div className="mm-chart is-loading"><BeeLoader size="sm" /></div>;
   if (!bars.length) return <div className="mm-chart is-empty">이 종목은 지금 차트를 불러올 수 없어요.</div>;
   return <div ref={el} className="mm-chart" role="img" aria-label="노트를 쓴 날 앞뒤 일봉과 노트에 그은 가격선" />;
 }

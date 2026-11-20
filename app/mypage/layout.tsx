@@ -5,6 +5,7 @@ import SiteHeader from "../SiteHeader";
 import Sidebar from "./Sidebar";
 import { MypageProvider, useSupabaseUser } from "./context";
 import "./mypage.css";
+import BeeLoader from "../BeeLoader";
 
 export default function MypageLayout({ children }: { children: React.ReactNode }) {
   const { user, ready, setUser } = useSupabaseUser();
@@ -15,11 +16,7 @@ export default function MypageLayout({ children }: { children: React.ReactNode }
         <Sidebar />
         <div className="mp-content">
           {!ready ? (
-            <div className="mp-skel" aria-busy="true" aria-label="불러오는 중">
-              <span />
-              <span />
-              <span />
-            </div>
+            <BeeLoader />
           ) : !user ? (
             <section className="mp-card">
               <p className="mp-muted">
