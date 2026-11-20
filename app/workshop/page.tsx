@@ -1,6 +1,7 @@
 "use client";
 
 import { useWatchlist } from "../insights/useWatchlist";
+import ChartSymbolSide from "./ChartSymbolSide";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -762,6 +763,7 @@ export default function WorkshopPage() {
             currency={us ? "USD" : "KRW"}
             emptyMessage={emptyMessage}
             highlightId={hoverLine}
+            fullscreenSide={<ChartSymbolSide current={symbol.code} watch={watch.items} onPick={pickSymbol} />}
             onQuoteNews={(t) => setNoteText((v) => (v.includes(t) ? v : v.trim() ? `${v.trim()}
 ${t}` : t))}
           />

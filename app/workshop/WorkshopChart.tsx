@@ -234,6 +234,8 @@ type Props = {
   onQuoteNews?: (text: string) => void;
   /** 바깥(AI 노트의 선 목록)에서 마우스를 올린 드로잉 → 차트에서 강조 */
   highlightId?: string | null;
+  /** 전체 화면일 때 오른쪽에 붙는 칸 (종목 검색) */
+  fullscreenSide?: React.ReactNode;
 };
 
 /** 노트 입력창을 띄울 위치(차트 영역 기준 px)와 데이터 좌표 */
@@ -385,7 +387,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -2113,7 +2115,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   return (
     <section
       ref={sectionRef}
-      className={`ws-chart${fullscreen ? " expanded" : ""}`}
+      className={`ws-chart${fullscreen ? " expanded" : ""}${fullscreen && fullscreenSide ? " has-side" : ""}`}
       aria-label="차트"
     >
       <div className="ws-chart-toolbar">
@@ -2676,6 +2678,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
         </div>
         <span>KRW · {intervalLabel(interval).footer}</span>
       </div>
+      {fullscreen && fullscreenSide}
     </section>
   );
 }

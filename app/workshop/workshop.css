@@ -1445,3 +1445,16 @@ details.ws-ladder { padding:10px 12px; }
 .ws-company-quarters tbody th { text-align:left; color:var(--c-sub); font-weight:600; }
 .ws-company-quarters td { color:var(--c-ink); }
 .ws-company-quarters td.last { font-weight:800; background:var(--c-subtle); }
+
+/* 차트 전체 화면 오른쪽 종목 검색 */
+.ws-chart.expanded.has-side { width:calc(100 * var(--vw, 1vw) - 260px); }
+.ws-fs-side { position:fixed; z-index:201; top:0; right:0; display:flex; flex-direction:column; width:260px; height:calc(100 * var(--vh, 1vh)); box-sizing:border-box; padding:12px 10px; border-left:1px solid var(--ws-line); background:var(--c-surface); }
+.ws-fs-search input { width:100%; height:36px; box-sizing:border-box; padding:0 12px; border:1px solid var(--ws-line); border-radius:8px; background:var(--c-bg, transparent); color:inherit; font-size:13px; }
+.ws-fs-head { margin:12px 4px 6px; color:var(--ws-muted); font-size:12px; font-weight:700; }
+.ws-fs-list { flex:1; min-height:0; margin:0; padding:0; overflow-y:auto; list-style:none; }
+.ws-fs-list button { display:grid; width:100%; grid-template-columns:1fr auto; gap:2px 8px; padding:8px 10px; border-radius:6px; text-align:left; }
+.ws-fs-list button:hover, .ws-fs-list button[aria-selected="true"] { background:var(--ws-active); }
+.ws-fs-list strong { overflow:hidden; font-size:13.5px; white-space:nowrap; text-overflow:ellipsis; }
+.ws-fs-list span { grid-row:2; color:var(--ws-muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+.ws-fs-list small { grid-row:1 / 3; grid-column:2; align-self:center; color:var(--ws-muted); font-size:11px; }
+.ws-fs-empty { padding:10px; color:var(--ws-muted); font-size:12.5px; line-height:1.5; }
