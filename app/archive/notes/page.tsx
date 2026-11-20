@@ -77,6 +77,12 @@ export default function MemosPage() {
   const [range, setRange] = useState<Range>("1m");
   const [sort, setSort] = useState<Sort>("new");
   const [sel, setSel] = useState<string | null>(null);
+  // 리스트형 · 종목형 오른쪽 크게 보기: 처음 열릴 때는 목록이 줄면서 밀려 들어오고, 다른 노트로 바꿀 때는 내용만 빠르게 바뀜
+  const [enter, setEnter] = useState<"open" | "switch">("open");
+  const pick = (id: string) => {
+    setEnter(sel ? "switch" : "open");
+    setSel(id);
+  };
   const [month, setMonth] = useState(() => today.slice(0, 7));
   const [day, setDay] = useState(today);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -270,7 +276,7 @@ export default function MemosPage() {
               {!listed.length ? (
                 <Empty onReset={reset} />
               ) : view === "stock" ? (
-                <StockGroups memos={listed} pins={pins} sel={sel} onSelect={setSel} />
+                <StockGroups memos={listed} pins={pins} sel={sel} onSelect={pick} />
               ) : (
                 byDay(listed).map((g) => (
                   <div key={g.date} className="mm-group">
@@ -278,13 +284,13 @@ export default function MemosPage() {
                       {shortDate(g.date)} <small>{weekdayOf(g.date)}요일 · 노트 {g.items.length}개</small>
                     </div>
                     {g.items.map((m) => (
-                      <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={setSel} />
+                      <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={pick} />
                     ))}
                   </div>
                 ))
               )}
             </section>
-            {selected && <MemoDetail m={selected} all={memos} pinned={pins.has(selected.id)} onSelect={setSel} onClose={() => setSel(null)} />}
+            {selected && <MemoDetail key={selected.id} enter={enter} m={selected} all={memos} pinned={pins.has(selected.id)} onSelect={pick} onClose={() => setSel(null)} />}
           </div>
         )}
       </div>
@@ -397,6 +403,7 @@ function MemoDetail({
   onSelect,
   onClose,
   nav,
+  enter,
 }: {
   m: Memo;
   all: Memo[];
@@ -405,11 +412,13 @@ function MemoDetail({
   onClose: () => void;
   /** 달력형: 목록으로 돌아가기 + 그날 노트 사이 이동 */
   nav?: { index: number; total: number; prev: (() => void) | null; next: (() => void) | null };
+  /** 리스트형 · 종목형: 나타나는 방식 (memos.css .mm-detail.enter-open · enter-switch) */
+  enter?: "open" | "switch";
 }) {
   const ex = execInfo(m);
   const others = all.filter((o) => o.subject === m.subject && o.id !== m.id).sort(byNew).slice(0, 3);
   return (
-    <section className={`mm-card mm-detail${nav ? " in-side" : ""}`} aria-label={`${m.subject} 노트`}>
+    <section className={`mm-card mm-detail${nav ? " in-side" : ""}${enter ? ` enter-${enter}` : ""}`} aria-label={`${m.subject} 노트`}>
       {nav && (
         <div className="mm-detail-nav">
           <button type="button" className="mm-back" onClick={onClose}>
