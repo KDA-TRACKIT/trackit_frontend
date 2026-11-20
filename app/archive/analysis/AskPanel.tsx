@@ -1,6 +1,6 @@
 "use client";
 // 전략 분석 채팅 (2026-11-20, 쓰론 채팅을 참고)
-//   왼쪽: 채팅 목록 — 기본 채팅 · 산 전략 채팅 · 종목 채팅(오늘 등락률). 기록은 로그인했으면 서버에 사람마다(최근 40개), 아니면 이 브라우저
+//   왼쪽: 채팅 목록 — 기본 채팅 · 구매 전략(최근 3명, 전체에서 고르기) · 종목 채팅(최근 3개 + 종목 검색, 오늘 등락률). 기록은 로그인했으면 서버에 사람마다(최근 40개), 아니면 이 브라우저
 //   채팅을 열면 그날 첫 메시지로 비서가 먼저 브리핑(기본: 내 종목 시세 · 이번 주 일정 / 전략 · 종목: 오늘 매수 조건 체크)
 //   질문하면 lib/strategy-chat 이 질문 종류 · 대상을 정하고, 관련 전략 · 버전 · 노트 · 매매 기록 · 시세를 근거로 모음
 //   AI 는 그 근거만으로 답하고(서버가 근거 밖 숫자 문장을 버림), AI 가 없으면 같은 근거로 규칙대로 답함
@@ -12,6 +12,7 @@ import { initRecordSource, useRecords } from "../../../lib/records";
 import { usePasses } from "../../../lib/purchases";
 import { askStrategy } from "../../../lib/api/ai";
 import { getQuotes } from "../../../lib/api/insights";
+import { searchAllSymbols } from "../../../lib/market-data";
 import { accessToken } from "../../../lib/api/client";
 import { loadChat, saveChatMsg, type StoredMsg } from "../../../lib/api/strategy-chat";
 import { INTENTS, answerLocally, detectIntent, detectTarget, type Reply, type Target } from "../../../lib/strategy-chat";
@@ -49,25 +50,32 @@ export default function AskPanel() {
   useEffect(() => {
     void initRecordSource();
   }, []);
-  const targets: Target[] = useMemo(() => {
-    const traders = new Map<string, string[]>();
-    for (const p of passes) if (p.used) traders.set(p.traderId, [...(traders.get(p.traderId) ?? []), p.used.month]);
-    const stocks = new Map<string, string>();
-    for (const r of records) {
-      if (r.symbol) stocks.set(r.symbol, r.symbolName ?? r.symbol);
-      else if (r.target) stocks.set(r.target.code, r.target.name);
-    }
-    return [
-      ...[...traders].map(([id, months]) => ({ key: `t:${id}`, kind: "trader" as const, id, name: `${traderById(id)?.name ?? id} 전략`, months: [...new Set(months)].sort() })),
-      ...[...stocks].map(([code, name]) => ({ key: `s:${code}`, kind: "stock" as const, id: code, name })),
-    ];
-  }, [records, passes]);
-  const stockTargets = targets.filter((t) => t.kind === "stock");
-  const traders = targets.filter((t) => t.kind === "trader");
-
   // 채팅 목록: 기본 채팅 + 전략 · 종목 채팅. 채팅마다 기록은 이 브라우저에
   const [thread, setThread] = useState("basic");
-  const threadTarget = targets.find((t) => t.key === thread) ?? null;
+  /** 채팅을 마지막으로 연 시각 (전체 목록에서 고른 트레이더 · 검색으로 연 종목이 '최근'으로 올라가게, 이 브라우저에 기억) */
+  const [opened, setOpened] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      setOpened(JSON.parse(localStorage.getItem("trackit:strategy-chat-opened") ?? "{}"));
+    } catch {
+      // 없으면 빈 채로
+    }
+  }, []);
+  function openThread(key: string) {
+    setThread(key);
+    if (key === "basic") return;
+    setOpened((o) => {
+      const next = { ...o, [key]: new Date().toISOString() };
+      try {
+        localStorage.setItem("trackit:strategy-chat-opened", JSON.stringify(next));
+      } catch {
+        // 기억 못 해도 지금 화면은 그대로
+      }
+      return next;
+    });
+  }
+  /** 검색으로 새로 연 종목 (아직 노트 · 채팅 기록이 없는 것) */
+  const [extra, setExtra] = useState<{ code: string; name: string }[]>([]);
   // 기록: 로그인했으면 서버(사람마다), 아니면 이 브라우저
   const [all, setAll] = useState<Record<string, Msg[]>>({});
   const [loaded, setLoaded] = useState(false);
@@ -87,6 +95,67 @@ export default function AskPanel() {
     };
   }, []);
   const msgs = all[thread] ?? [];
+
+  // 대상: 구매 전략(최근에 산 · 연 순) · 종목(최근 노트 순, 검색으로 연 종목은 채팅 기록에서)
+  const targets: Target[] = useMemo(() => {
+    const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) || 0 : 0);
+    const traders = new Map<string, { months: string[]; at: number }>();
+    for (const p of passes) {
+      if (!p.used) continue;
+      const t = traders.get(p.traderId) ?? { months: [], at: 0 };
+      traders.set(p.traderId, { months: [...t.months, p.used.month], at: Math.max(t.at, ms(p.used.at), ms(p.approvedAt)) });
+    }
+    const stocks = new Map<string, { name: string; at: number }>();
+    for (const r of records) {
+      const code = r.symbol ?? r.target?.code;
+      const name = r.symbolName ?? r.target?.name ?? code;
+      if (!code || !name) continue;
+      const at = ms(`${r.date}T${r.noteTime}+09:00`);
+      if (!stocks.has(code) || stocks.get(code)!.at < at) stocks.set(code, { name, at });
+    }
+    for (const [key, list] of Object.entries(all)) {
+      if (!key.startsWith("s:") || stocks.has(key.slice(2))) continue;
+      const bot = list.find((m) => m.role === "bot") as Extract<Msg, { role: "bot" }> | undefined;
+      const last = list.at(-1);
+      if (bot && last) stocks.set(key.slice(2), { name: bot.reply.target.name, at: ms(last.at) });
+    }
+    for (const x of extra) if (!stocks.has(x.code)) stocks.set(x.code, { name: x.name, at: Date.now() });
+    return [
+      ...[...traders]
+        .map(([id, v]) => [id, { ...v, at: Math.max(v.at, ms(opened[`t:${id}`])) }] as const)
+        .sort((a, b) => b[1].at - a[1].at)
+        .map(([id, v]) => ({ key: `t:${id}`, kind: "trader" as const, id, name: `${traderById(id)?.name ?? id} 전략`, months: [...new Set(v.months)].sort() })),
+      ...[...stocks]
+        .map(([code, v]) => [code, { ...v, at: Math.max(v.at, ms(opened[`s:${code}`])) }] as const)
+        .sort((a, b) => b[1].at - a[1].at)
+        .map(([code, v]) => ({ key: `s:${code}`, kind: "stock" as const, id: code, name: v.name })),
+    ];
+  }, [records, passes, all, extra, opened]);
+  const stockTargets = targets.filter((t) => t.kind === "stock");
+  const traders = targets.filter((t) => t.kind === "trader");
+  const threadTarget = targets.find((t) => t.key === thread) ?? null;
+  /** 목록에 보이는 것: 최근 3개 + 지금 연 채팅 */
+  const top3 = (list: Target[]) => [...list.slice(0, 3), ...list.slice(3).filter((t) => t.key === thread)];
+  const [allTraders, setAllTraders] = useState(false);
+  // 종목 검색: 내 종목에서 먼저, 없으면 전체 국내 종목에서 찾아 새 종목 채팅으로
+  const [stockQ, setStockQ] = useState("");
+  const [hits, setHits] = useState<{ code: string; name: string }[]>([]);
+  useEffect(() => {
+    const term = stockQ.trim();
+    if (!term) return setHits([]);
+    const t = setTimeout(() => {
+      searchAllSymbols(term)
+        .then((list) => setHits(list.filter((x) => !x.exchange).slice(0, 6).map((x) => ({ code: x.code, name: x.name }))))
+        .catch(() => setHits([]));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [stockQ]);
+  const mineHits = stockQ.trim() ? stockTargets.filter((t) => t.name.includes(stockQ.trim()) || t.id.includes(stockQ.trim())) : [];
+  function openStock(code: string, name: string) {
+    if (!stockTargets.some((t) => t.id === code)) setExtra((e) => [...e.filter((x) => x.code !== code), { code, name }]);
+    openThread(`s:${code}`);
+    setStockQ("");
+  }
   const update = (key: string, f: (m: Msg[]) => Msg[]) =>
     setAll((prev) => {
       const before = prev[key] ?? [];
@@ -201,24 +270,49 @@ export default function AskPanel() {
   return (
     <section ref={boxRef} className="mk-card ask-wrap ask-chat" aria-label="전략 분석 채팅">
       <nav className="ask-side" aria-label="채팅 목록">
-        <button type="button" className={thread === "basic" ? "on" : ""} onClick={() => setThread("basic")}>
+        <button type="button" className={thread === "basic" ? "on" : ""} onClick={() => openThread("basic")}>
           <MessageSquare size={15} aria-hidden /> 기본 채팅
         </button>
-        {!!traders.length && <h4>산 전략</h4>}
-        {traders.map((t) => (
-          <button key={t.key} type="button" className={thread === t.key ? "on" : ""} onClick={() => setThread(t.key)}>
+        {!!traders.length && <h4>구매 전략</h4>}
+        {(allTraders ? traders : top3(traders)).map((t) => (
+          <button key={t.key} type="button" className={thread === t.key ? "on" : ""} onClick={() => (openThread(t.key), setAllTraders(false))}>
             <span className="dot t" aria-hidden />
             {t.name.replace(/ 전략$/, "")}
           </button>
         ))}
-        {!!stockTargets.length && <h4>종목 채팅</h4>}
-        {stockTargets.map((t) => (
-          <button key={t.key} type="button" className={thread === t.key ? "on" : ""} onClick={() => setThread(t.key)}>
+        {traders.length > 3 && (
+          <button type="button" className="ask-side-more" onClick={() => setAllTraders((v) => !v)}>
+            {allTraders ? "최근 3명만 보기" : `전체 ${traders.length}명 중 고르기`}
+          </button>
+        )}
+        {<h4>종목 채팅</h4>}
+        {top3(stockTargets).map((t) => (
+          <button key={t.key} type="button" className={thread === t.key ? "on" : ""} onClick={() => openThread(t.key)}>
             <span className="dot s" aria-hidden />
             {t.name}
             {chg[t.id] !== undefined && <em className={chg[t.id] >= 0 ? "gain" : "loss"}>{`${chg[t.id] >= 0 ? "+" : ""}${chg[t.id].toFixed(2)}%`}</em>}
           </button>
         ))}
+        <div className="ask-side-search">
+          <input value={stockQ} onChange={(e) => setStockQ(e.target.value)} placeholder={stockTargets.length > 3 ? `종목 검색 (내 종목 ${stockTargets.length}개)` : "종목 검색"} aria-label="종목 채팅 검색" />
+          {stockQ.trim() && (
+            <div className="ask-side-hits" role="listbox">
+              {mineHits.map((t) => (
+                <button key={t.key} type="button" role="option" aria-selected={false} onClick={() => openStock(t.id, t.name)}>
+                  {t.name} <small>내 종목</small>
+                </button>
+              ))}
+              {hits
+                .filter((h) => !mineHits.some((m) => m.id === h.code))
+                .map((h) => (
+                  <button key={h.code} type="button" role="option" aria-selected={false} onClick={() => openStock(h.code, h.name)}>
+                    {h.name} <small>{h.code}</small>
+                  </button>
+                ))}
+              {!mineHits.length && !hits.length && <p>찾는 종목이 없어요</p>}
+            </div>
+          )}
+        </div>
         <Link className="ask-side-new" href="/marketplace">
           <Plus size={14} aria-hidden /> 전략 더 열기
         </Link>

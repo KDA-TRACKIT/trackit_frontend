@@ -761,3 +761,12 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .ask-disclaimer { padding:0 20px 12px; color:var(--c-faint); font-size:11px; text-align:center; }
 .ask-main .ask-input { padding-bottom:6px; }
 @media (max-width:800px) { .ask-side { display:none; } }
+
+/* 전략 분석 채팅 목록: 구매 전략 전체에서 고르기 · 종목 검색 */
+.ask-side .ask-side-more { color:var(--c-faint); font-size:12px; font-weight:700; padding:6px 10px; }
+.ask-side-search { position:relative; margin:6px 2px 0; }
+.ask-side-search input { width:100%; height:32px; padding:0 10px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font-size:12.5px; }
+.ask-side-hits { position:absolute; left:0; right:0; top:36px; z-index:5; display:flex; flex-direction:column; padding:4px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 10px 24px rgba(0,0,0,.25); max-height:260px; overflow-y:auto; }
+.ask-side-hits button { justify-content:space-between; }
+.ask-side-hits small { color:var(--c-faint); font-size:11px; font-weight:600; }
+.ask-side-hits p { margin:6px 8px; color:var(--c-faint); font-size:12px; }

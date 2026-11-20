@@ -14,7 +14,7 @@ import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
 import { initRecordSource, useRecords } from "../lib/records";
-import { getSyncStatus, listConnections, syncNow, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
+import { getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
 import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
@@ -122,7 +122,6 @@ export default function HomeDashboard() {
         </div>
       </section>
       <HomeWeeklyRecords trades={recent} records={records} names={names} loading={!data && !error} failed={!!error} />
-      {!!data?.accounts.length && <div className="home-container"><SyncBar accounts={data.accounts} onSynced={load} compact /></div>}
       <div className="home-container"><HomePolicies /></div>
     </main>
   );
@@ -201,54 +200,6 @@ function ReturnChart({ data, failed = false }: { data: Loaded | null; failed?: b
       ) : (
         <div className="chart chart-empty">{failed ? "수익률을 불러오지 못했습니다." : data === null ? "불러오는 중…" : series && series.length === 1 ? "청산한 거래가 하나뿐이에요" : "이 기간에 청산한 거래가 없어요"}</div>
       )}
-    </div>
-  );
-}
-
-/** "11.12 14:00" (KST) */
-function stamp(iso: string) {
-  const d = new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString();
-  return `${d.slice(5, 7)}.${d.slice(8, 10)} ${d.slice(11, 16)}`;
-}
-
-/**
- * 증권사 체결 반영 상태 + 지금 불러오기.
- * 누르면 연결된 계좌마다 동기화를 바로 실행하고(서버 시간 예산 안에서), 끝나면 홈 숫자를 다시 읽는다.
- * 다 못 받으면 서버가 다시 대기로 돌려 두므로 한 번 더 누르면 이어 받는다
- */
-function SyncBar({ accounts, onSynced, compact }: { accounts: BrokerAccount[]; onSynced: () => void; compact?: boolean }) {
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-  const through = accounts
-    .map((a) => a.status?.syncedThrough?.EXECUTIONS ?? null)
-    .filter((v): v is string => !!v)
-    .sort()[0];
-  const running = accounts.some((a) => a.status?.active);
-
-  async function run() {
-    setBusy(true);
-    setNote(null);
-    try {
-      const results = await Promise.all(accounts.map((a) => syncNow(a.id)));
-      const more = results.some((r) => r.status === "QUEUED" || r.status === "RUNNING");
-      setNote(more ? "일부만 받았어요. 한 번 더 누르면 이어서 받아요" : null);
-      onSynced();
-    } catch (e) {
-      setNote(errorMessage(e));
-    }
-    setBusy(false);
-  }
-
-  return (
-    <div className={compact ? "home-sync compact" : "home-sync"}>
-      <span>
-        {accounts.map((a) => a.label).join(", ")} · {through ? `${stamp(through)}까지 반영` : "아직 불러온 적 없음"}
-        {running && !busy ? " · 불러오는 중" : ""}
-      </span>
-      <button type="button" onClick={() => void run()} disabled={busy}>
-        {busy ? "불러오는 중…" : compact ? "새로 불러오기" : "지금 불러오기"}
-      </button>
-      {note && <small>{note}</small>}
     </div>
   );
 }
