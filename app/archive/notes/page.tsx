@@ -516,11 +516,6 @@ function MemoDetail({
         </div>
       )}
 
-      <div className="mm-actions">
-        <Link href={`/archive/ai?memo=${encodeURIComponent(m.id)}`} className="mm-btn">
-          이 노트로 AI전략 만들기
-        </Link>
-      </div>
     </section>
   );
 }
