@@ -50,7 +50,8 @@ const DOWN_BAR = "rgba(242,54,69,0.45)";
 const DRAW_STYLE = { color: "#2962ff", width: 1.5 };
 
 // ---------- 시나리오 (반투명 미래 캔들) ----------
-const SCENARIO_ALPHA = { idle: 0.22, hover: 0.7, picked: 1 };
+// 고른 시나리오도 반투명 (실제 봉과 헷갈리지 않게)
+const SCENARIO_ALPHA = { idle: 0.2, hover: 0.55, picked: 0.45 };
 const scenarioColors = (alpha: number) => {
   const up = `rgba(8,153,129,${alpha})`;
   const down = `rgba(242,54,69,${alpha})`;
@@ -233,6 +234,8 @@ type Props = {
   saving?: boolean;
   /** 뉴스 창의 'AI 노트에 인용' (일봉에서 뉴스 있는 날을 축에 표시하고, 읽은 뉴스를 노트로) */
   onQuoteNews?: (text: string) => void;
+  /** 고른 시나리오 (없거나 닫으면 null) → AI 분석 · 저장에 같이 들어감 */
+  onScenarioPick?: (picked: (Scenario & { base: string }) | null) => void;
   /** 바깥(AI 노트의 선 목록)에서 마우스를 올린 드로잉 → 차트에서 강조 */
   highlightId?: string | null;
   /** 전체 화면일 때 오른쪽에 붙는 칸 (종목 검색) */
@@ -388,7 +391,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide }: Props) {
+export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide, onScenarioPick }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -566,6 +569,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       map.clear();
     };
   }, [scenarios, scenarioPick]);
+  // 고른 시나리오를 화면(작업실)에 알림 → AI 분석 후 저장에 반영
+  const onScenarioPickRef = useRef(onScenarioPick);
+  useEffect(() => {
+    onScenarioPickRef.current = onScenarioPick;
+  });
+  const pickedScenario = scenarioPick ? scenarios.find((s) => s.name === scenarioPick) : undefined;
+  const pickedBase = scenarioState?.base ?? "";
+  useEffect(() => {
+    onScenarioPickRef.current?.(pickedScenario ? { ...pickedScenario, base: pickedBase } : null);
+  }, [pickedScenario, pickedBase]);
   // 마우스가 올라간 시나리오만 진하게
   const hoverName = scenarioHover?.name ?? null;
   useEffect(() => {

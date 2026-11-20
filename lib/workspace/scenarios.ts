@@ -79,13 +79,18 @@ export function buildScenariosFor(bars: DayBar[], base: ScenarioBase): Scenario[
   const end = SCENARIO_DAYS - 1;
   const seedBase = `${last.time}|${c0}|${base.kind}|${base.key}`;
 
-  /** closeAt(k) 로 종가 경로를 정하면 시가 = 전날 종가, 꼬리는 ATR 의 10~35% */
+  /**
+   * closeAt(k) 로 종가 경로를 정하면 시가 = 전날 종가, 꼬리는 ATR 의 10~35%
+   *   하루 움직임은 전날 종가 ± ATR 1.2개까지 (기준선이 멀어도 첫 봉이 한 번에 뛰지 않게, 2026-11-20)
+   */
+  const DAY_MOVE = range * 1.2;
   const make = (name: string, closeAt: (k: number, rand: () => number) => number): DayBar[] => {
     const rand = seededRandom(hashSeed(`${seedBase}|${name}`));
     let prevClose = c0;
     return days.map((time, k) => {
       const open = prevClose;
-      const close = roundTick(Math.max(1, closeAt(k, rand)));
+      const want = closeAt(k, rand);
+      const close = roundTick(Math.max(1, Math.min(prevClose + DAY_MOVE, Math.max(prevClose - DAY_MOVE, want))));
       const high = roundTick(Math.max(open, close) + range * (0.1 + rand() * 0.25));
       const low = roundTick(Math.max(1, Math.min(open, close) - range * (0.1 + rand() * 0.25)));
       prevClose = close;
@@ -98,6 +103,52 @@ export function buildScenariosFor(bars: DayBar[], base: ScenarioBase): Scenario[
 
   if (base.kind === "line") {
     const levels = days.map(base.at);
+    // 기준선이 지금 가격에서 멀면(ATR 1.5개 넘게) '기준선에서 반등 · 이탈' 이 아니라 지금 가격 기준으로
+    if (Math.abs(c0 - levels[0]) > range * 1.5) {
+      const lineAbove = levels[0] > c0;
+      const flat: Scenario = {
+        name: "횡보",
+        direction: "NEUTRAL",
+        summary: `기준선(${won(levels[end])}) ${lineAbove ? "아래" : "위"}, 지금 가격 부근에서 횡보`,
+        candles: make("횡보", (_k, r) => c0 + jitter(r, range * 0.5)),
+      };
+      if (lineAbove) {
+        const upTarget = levels[end] + range;
+        const downTarget = Math.min(low20, c0 - range * 2);
+        return [
+          {
+            name: "상승",
+            direction: "LONG",
+            summary: `위쪽 기준선(${won(levels[end])}) 쪽으로 상승`,
+            candles: make("상승", (k, r) => toward(upTarget, k) + jitter(r, range * 0.3)),
+          },
+          {
+            name: "하락",
+            direction: "SHORT",
+            summary: `기준선 아래에서 밀려 최근 20일 저점(${won(downTarget)}) 쪽으로`,
+            candles: make("하락", (k, r) => toward(downTarget, k) + jitter(r, range * 0.3)),
+          },
+          flat,
+        ];
+      }
+      const upTarget = Math.max(high20, c0 + range * 2);
+      const downTarget = levels[end] - range;
+      return [
+        {
+          name: "상승",
+          direction: "LONG",
+          summary: `기준선 위에서 최근 20일 고점(${won(upTarget)}) 쪽으로`,
+          candles: make("상승", (k, r) => toward(upTarget, k) + jitter(r, range * 0.3)),
+        },
+        {
+          name: "하락",
+          direction: "SHORT",
+          summary: `아래쪽 기준선(${won(levels[end])}) 쪽으로 하락`,
+          candles: make("하락", (k, r) => toward(downTarget, k) + jitter(r, range * 0.3)),
+        },
+        flat,
+      ];
+    }
     const upTarget = Math.max(high20, levels[end] + range);
     const downTarget = Math.min(low20, levels[end] - range);
     return [

@@ -2,6 +2,7 @@
 
 import { useWatchlist } from "../insights/useWatchlist";
 import ChartSymbolSide from "./ChartSymbolSide";
+import type { Scenario } from "../../lib/workspace/scenarios";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -345,8 +346,13 @@ export default function WorkshopPage() {
 
   /** 기록으로 저장: 드로잉·노트를 일지에 저장하고, AI 정리 결과를 AI 노트 메모 칸에 넣는다 (확정은 사용자가 따로) */
   const [memoBusy, setMemoBusy] = useState(false);
+  /** 차트에서 고른 시나리오 (미래 5영업일 반투명 캔들) → AI 분석 · 저장 글에 같이 */
+  const [scenario, setScenario] = useState<(Scenario & { base: string }) | null>(null);
+  const scenarioLine = scenario
+    ? `[고른 시나리오] ${scenario.name}${scenario.base ? ` (기준: ${scenario.base})` : ""} · ${scenario.summary} · 5영업일 뒤 예상 ${money(scenario.candles[scenario.candles.length - 1]?.close ?? 0)}`
+    : "";
   /** AI 분석 대상: Memo + 그은 선 (이게 바뀌면 다시 분석해야 저장) */
-  const inputKey = JSON.stringify([noteText.trim(), drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
+  const inputKey = JSON.stringify([noteText.trim(), scenarioLine, drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
   const analyzed = !!aiMemoResult && analyzedKey === inputKey;
   /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
   const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
@@ -412,6 +418,8 @@ export default function WorkshopPage() {
           ...(noteText.trim() && bars.length
             ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자 판단 근거] ${noteText.trim()}` }]
             : []),
+          // 고른 시나리오: 투자자가 예상한 흐름으로 같이 분석
+          ...(scenarioLine && bars.length ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자가 고른 시나리오] ${scenarioLine.replace(/^\[고른 시나리오\] /, "")}` }] : []),
         ],
         // 이 종목에 쌓인 종목 전략 → AI 가 이번 노트와 합쳐 하나로 정리 (바뀐 관점만 빼고 이어받음)
         mode: "ai",
@@ -581,7 +589,7 @@ export default function WorkshopPage() {
     // 종목 전략 정리본(투자자가 쓴 문장 그대로) + AI 분석 문단(참고용, 다음 정리 때는 전략으로 안 침)
     //   매매 계획 4칸(자동 포함)은 확인 창에서 이 정리본의 '- 매수: …' 줄로 들어가고, 칸을 고치면 그 줄도 바뀜
     //   맨 위 줄은 저장할 때의 현재가 (나중에 그때 가격을 바로 보게. '[' 로 시작해 다음 정리 때 전략 문장으로 안 침)
-    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
+    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), scenarioLine, aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {
@@ -764,6 +772,7 @@ export default function WorkshopPage() {
             emptyMessage={emptyMessage}
             highlightId={hoverLine}
             fullscreenSide={<ChartSymbolSide current={symbol.code} watch={watch.items} onPick={pickSymbol} />}
+            onScenarioPick={setScenario}
             onQuoteNews={(t) => setNoteText((v) => (v.includes(t) ? v : v.trim() ? `${v.trim()}
 ${t}` : t))}
           />
