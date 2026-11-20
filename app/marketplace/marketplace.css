@@ -568,7 +568,6 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-trader-page .mk-result-head strong { font-size:20px; font-weight:600; }
 .mk-trader-page .mk-toolbar { margin-bottom:14px; }
 .mk-trader-page .mk-periods { gap:8px; }
-.mk-trader-page .mk-periods > span:first-child { display:inline; margin:0; color:var(--c-ink); font-size:15px; }
 .mk-trader-page .mk-periods button[role="radio"] { height:34px; padding-inline:14px; border-radius:12px; font-size:14px; font-weight:500; }
 .mk-trader-page .mk-periods button.on { font-weight:600; }
 .mk-trader-page .mk-sortdd-btn { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:104px; height:36px; padding:0 13px; border:0; border-radius:12px; background:var(--c-subtle); color:var(--c-accent); font-size:17px; }

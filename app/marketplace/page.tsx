@@ -194,7 +194,6 @@ function MarketplaceList() {
         </div>
         <div className="mk-toolbar">
           <div className="mk-periods" role="radiogroup" aria-label="수익률 기간">
-            <span>수익률 (%)</span>
             {PERIODS.map((p) => {
               const tab = (
                 <button key={p.key} type="button" role="radio" aria-checked={period === p.key} className={period === p.key ? "on" : ""} onClick={() => update({ period: p.key })}>
