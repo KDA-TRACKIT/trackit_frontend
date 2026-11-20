@@ -1,8 +1,9 @@
 "use client";
 // 매매 중 아래쪽: 기업 정보 (시가총액·밸류에이션·실적·52주 범위). 백엔드가 키움 ka10001로 조회
 // 시가총액·PER·PBR 은 지금 가격(실시간 체결)으로 다시 계산한다. EPS·BPS·실적은 키움이 주는 최근 결산 값 그대로
+// 아래 분기 실적 표는 DART 주요계정 (최근 6개 분기, /charts/{code}/earnings)
 import { useEffect, useState } from "react";
-import { fetchCompany, type CompanyInfo } from "../../lib/market-data";
+import { fetchCompany, fetchEarnings, type CompanyInfo, type Earnings } from "../../lib/market-data";
 
 const n = (v: number | null, digits = 0) => (v === null ? "—" : v.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits }));
 
@@ -20,6 +21,15 @@ function eok(v: number | null) {
 export default function CompanyPanel({ code, price }: { code: string; price: number | null }) {
   const [info, setInfo] = useState<CompanyInfo | null>(null);
   const [failed, setFailed] = useState(false);
+  // 분기 실적 (DART): 결산 값만으로는 최근 흐름을 못 봐서
+  const [earn, setEarn] = useState<{ code: string; data: Earnings | null } | null>(null);
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchEarnings(code, ac.signal)
+      .then((data) => setEarn({ code, data }))
+      .catch(() => !ac.signal.aborted && setEarn({ code, data: null }));
+    return () => ac.abort();
+  }, [code]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -132,6 +142,64 @@ export default function CompanyPanel({ code, price }: { code: string; price: num
             오늘 상한가 <b className="up">{n(info.upperLimit)}</b> · 하한가 <b className="down">{n(info.lowerLimit)}</b>
           </p>
         </div>
+      </div>
+      <QuarterTable earn={earn?.code === code ? earn.data : undefined} />
+    </section>
+  );
+}
+
+/** 분기 실적 표 (DART, 최근 6개 분기). 원 → 억원 · 조 */
+function QuarterTable({ earn }: { earn: Earnings | null | undefined }) {
+  if (earn === undefined) return <p className="ws-company-msg">분기 실적을 불러오는 중…</p>;
+  const qs = earn?.quarters ?? [];
+  if (!qs.length) return <p className="ws-company-msg">{earn?.missing?.length ? "분기 실적을 볼 수 없어요 (DART 키 없음)." : "DART 분기 실적이 없는 종목이에요."}</p>;
+  const toEok = (v: number | null) => (v === null ? null : v / 1e8);
+  const last = qs[qs.length - 1];
+  const yearAgo = qs.find((x) => x.year === last.year - 1 && x.q === last.q);
+  const yoy = (f: "revenue" | "operatingProfit") => (yearAgo?.[f] && last[f] !== null ? ((last[f]! / yearAgo[f]! - 1) * 100) : null);
+  const rows: [string, (x: (typeof qs)[number]) => string][] = [
+    ["매출액", (x) => eok(toEok(x.revenue))],
+    ["영업이익", (x) => eok(toEok(x.operatingProfit))],
+    ["순이익", (x) => eok(toEok(x.netIncome))],
+    ["영업이익률", (x) => (x.revenue && x.operatingProfit !== null ? `${((x.operatingProfit / x.revenue) * 100).toFixed(1)}%` : "—")],
+  ];
+  const yr = yoy("revenue");
+  const yo = yoy("operatingProfit");
+  return (
+    <section className="ws-company-quarters" aria-label="분기 실적">
+      <h3>
+        분기 실적 <small>DART · {last.fs === "CFS" ? "연결" : "별도"} · {last.reportedAt ? `${last.reportedAt.slice(5).replace("-", ".")} 공시` : ""}</small>
+        {(yr !== null || yo !== null) && (
+          <em>
+            {last.year % 100}년 {last.q}분기 전년 대비 매출 {yr === null ? "—" : `${yr >= 0 ? "+" : ""}${yr.toFixed(1)}%`} · 영업이익 {yo === null ? "—" : `${yo >= 0 ? "+" : ""}${yo.toFixed(1)}%`}
+          </em>
+        )}
+      </h3>
+      <div className="ws-q-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th />
+              {qs.map((x) => (
+                <th key={x.period}>
+                  {x.year % 100}.{x.q}Q
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([label, f]) => (
+              <tr key={label}>
+                <th>{label}</th>
+                {qs.map((x) => (
+                  <td key={x.period} className={x === last ? "last" : ""}>
+                    {f(x)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );

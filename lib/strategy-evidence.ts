@@ -1,10 +1,10 @@
 "use client";
 // 전략 분석 근거 모으기 (2026-11-20, 쓰론처럼 '데이터로 답하는' 질문 · 답의 재료)
 //   종목: 일봉 상황(RSI · 20일선 · 60일 범위 · 수익률) · 내 종목 전략(매수 · 손절 · 목표)과 지금 가격 거리 · 내가 그은 지지 · 저항
-//         · 기본 정보(PER · PBR · ROE · 실적 · 52주 고저) · 최근 공시 · 최근 뉴스
+//         · 기본 정보(PER · PBR · ROE · 실적 · 52주 고저) · 분기 실적(DART) · 최근 공시 · 최근 뉴스
 //   산 전략: 트레이더 규칙 전문 · 연 달 매매 결과 · 그 사람이 산 날 상황과 지금 관심 종목 상황
 //   AI 는 이 목록만 근거로 답하고, AI 가 없으면 localAnswer 가 같은 근거로 규칙대로 정리 (지어낸 말 없음)
-import { fetchBars, fetchCompany } from "./market-data";
+import { fetchBars, fetchCompany, fetchEarnings } from "./market-data";
 import { getDisclosures } from "./api/insights";
 import { fetchDailyNews, fetchNewsDays } from "./api/news";
 import type { TradeRecord } from "./records";
@@ -102,6 +102,19 @@ export async function gatherStock(code: string, name: string, records: TradeReco
     if (c) {
       const f = (v: number | null, unit = "") => (v === null ? "—" : `${v.toLocaleString("ko-KR")}${unit}`);
       add("기본 정보", `시가총액 ${f(c.marketCap, "억")} · PER ${f(c.per)} · PBR ${f(c.pbr)} · ROE ${f(c.roe, "%")} · 매출 ${f(c.sales, "억")} · 영업이익 ${f(c.operatingProfit, "억")} · 순이익 ${f(c.netIncome, "억")} · 외국인 비율 ${f(c.foreignRate, "%")} · 52주 고가 ${f(c.high250)} · 저가 ${f(c.low250)} (기준 ${c.asOf})`);
+    }
+    // 4-1) 분기 실적 (DART, 최근 6개 분기 · 전년 같은 분기 대비)
+    const e = await fetchEarnings(code).catch(() => null);
+    const qs = e?.quarters ?? [];
+    if (qs.length) {
+      const jo = (v: number | null) => (v === null ? "—" : Math.abs(v) >= 1e12 ? `${(v / 1e12).toFixed(2)}조` : `${Math.round(v / 1e8).toLocaleString("ko-KR")}억`);
+      const last = qs[qs.length - 1];
+      const ago = qs.find((x) => x.year === last.year - 1 && x.q === last.q);
+      const g = (f: "revenue" | "operatingProfit") => (ago?.[f] && last[f] !== null ? ` (전년 같은 분기 대비 ${(((last[f] as number) / (ago[f] as number) - 1) * 100).toFixed(1)}%)` : "");
+      add(
+        "분기 실적",
+        `DART ${last.fs === "CFS" ? "연결" : "별도"} 기준. 최근 ${last.year}년 ${last.q}분기(${last.reportedAt ?? "공시일 모름"} 공시): 매출 ${jo(last.revenue)}${g("revenue")} · 영업이익 ${jo(last.operatingProfit)}${g("operatingProfit")} · 순이익 ${jo(last.netIncome)}. 분기별 영업이익: ${qs.map((x) => `${x.year % 100}.${x.q}Q ${jo(x.operatingProfit)}`).join(", ")}`,
+      );
     }
     // 5) 최근 공시
     const d = await getDisclosures([code]).catch(() => null);

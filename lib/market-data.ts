@@ -90,6 +90,14 @@ export function fetchCosts(code: string, signal?: AbortSignal) {
   return get<CostInfo>(`/charts/${code}/costs`, signal);
 }
 
+/** 최근 분기 실적 (DART 주요계정, 원 단위). 4분기 = 1년 − 1~3분기 */
+export type Quarter = { period: string; year: number; q: 1 | 2 | 3 | 4; revenue: number | null; operatingProfit: number | null; netIncome: number | null; reportedAt: string | null; fs: "CFS" | "OFS" };
+export type Earnings = { code: string; corpName: string | null; quarters: Quarter[]; source: "DART"; missing?: string[] };
+
+export function fetchEarnings(code: string, signal?: AbortSignal) {
+  return get<Earnings>(`/charts/${code}/earnings`, signal);
+}
+
 export function fetchCompany(code: string, signal?: AbortSignal) {
   return get<CompanyInfo>(`/charts/${code}/company`, signal);
 }

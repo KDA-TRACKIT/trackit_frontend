@@ -1426,3 +1426,16 @@ details.ws-ladder { padding:10px 12px; }
 .ws-ov-checks li.ok { color:var(--c-ink); font-weight:700; }
 .ws-ov-checks span { display:inline-block; width:16px; color:#8b5cf6; }
 .ws-ov-checks small { color:var(--c-faint); font-weight:500; }
+
+/* 기업 정보 · 분기 실적 (DART) */
+.ws-company-quarters { margin-top:14px; padding-top:12px; border-top:1px solid var(--ws-line, var(--c-line)); }
+.ws-company-quarters h3 { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 8px; color:var(--c-sub); font-size:13px; font-weight:500; }
+.ws-company-quarters h3 small { color:var(--c-faint); font-size:11.5px; }
+.ws-company-quarters h3 em { margin-left:auto; font-style:normal; color:var(--c-ink); font-size:12px; font-weight:700; }
+.ws-q-scroll { overflow-x:auto; }
+.ws-company-quarters table { width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.ws-company-quarters th, .ws-company-quarters td { padding:5px 8px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--ws-line, var(--c-line)); }
+.ws-company-quarters thead th { color:var(--c-faint); font-weight:600; }
+.ws-company-quarters tbody th { text-align:left; color:var(--c-sub); font-weight:600; }
+.ws-company-quarters td { color:var(--c-ink); }
+.ws-company-quarters td.last { font-weight:800; background:var(--c-subtle); }
