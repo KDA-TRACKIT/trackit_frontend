@@ -275,7 +275,7 @@ export default function AskPanel() {
     ]);
     try {
       const local = await answerLocally(question, intent, target, records);
-      const ai = await askStrategy({ question, subject: target.name, evidence: local.evidence }).catch(() => null);
+      const ai = await askStrategy({ question, subject: target.name, evidence: local.evidence, currency: local.currency }).catch(() => null);
       const useAi = !!ai?.answer && ai.points.length > 0;
       // 매매 전 체크는 조건 체크리스트가 기준: AI 는 요약 한 단락만, 조건별 설명은 체크리스트를 그대로 따르는 규칙 문장으로
       //   (AI 가 미충족 조건을 "1%에 해당하는 지역에 있고"처럼 흐리게 옮겨 쓰는 일이 있어서)

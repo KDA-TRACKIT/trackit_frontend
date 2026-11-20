@@ -71,7 +71,7 @@ export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResul
 /** 전략 분석 질문: 화면이 모은 근거만으로 AI 가 답함 (POST /ai/strategy-ask). AI 가 꺼져 있으면 answer="" + aiFallback */
 export type StrategyEvidence = { id: string; label: string; text: string };
 export type StrategyAskResult = { answer: string; points: { text: string; refs: string[] }[]; cautions: string[]; followUps: string[]; provider?: string; model?: string; aiFallback?: string };
-export function askStrategy(body: { question: string; subject: string; evidence: StrategyEvidence[] }): Promise<StrategyAskResult> {
+export function askStrategy(body: { question: string; subject: string; evidence: StrategyEvidence[]; currency?: "KRW" | "USD" }): Promise<StrategyAskResult> {
   // 기본 백엔드로 (배포에선 AI 키가 있는 서버). 로컬 백엔드에 키가 없으면 aiFallback → 화면이 근거로 직접 정리
   return apiRequest("/ai/strategy-ask", { method: "POST", body: JSON.stringify(body) });
 }
