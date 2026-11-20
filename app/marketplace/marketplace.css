@@ -573,7 +573,8 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-trader-page .mk-sortdd-btn { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:104px; height:36px; padding:0 13px; border:0; border-radius:12px; background:var(--c-subtle); color:var(--c-accent); font-size:17px; }
 html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0) invert(1); }
 .mk-trader-panel { overflow:hidden; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); }
-.mk-trader-columns,.mk-trader-row-link { display:grid; grid-template-columns:minmax(0,332fr) minmax(0,201fr) minmax(0,163fr) minmax(0,106fr) minmax(0,160fr) minmax(0,50fr); align-items:center; padding-inline:23px; }
+.mk-trader-columns,.mk-trader-row-link { display:grid; grid-template-columns:minmax(0,437fr) minmax(0,160fr) minmax(0,152fr) minmax(0,65fr) minmax(0,160fr) minmax(0,48fr); align-items:center; padding-inline:23px 13px; }
+.mk-trader-columns > :not(:first-child),.mk-trader-row-link > :not(:first-child) { text-align:center; }
 .mk-trader-columns { min-height:47px; border-bottom:1px solid var(--c-line); background:var(--c-subtle); color:var(--mk-primary); font-size:16px; font-weight:600; }
 .mk-trader-columns > :first-child { font-size:14px; }
 .mk-trader-rows { margin:0; padding:0; list-style:none; }
@@ -590,7 +591,7 @@ html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0
 .mk-trader-who small { display:block; overflow:hidden; margin-top:4px; color:var(--c-sub); font-size:12px; line-height:20px; text-overflow:ellipsis; white-space:nowrap; }
 .mk-trader-honey { display:inline-flex; flex:none; align-items:center; gap:4px; height:26px; padding-inline:8px; border:1px solid #fff5ce; border-radius:13px; color:var(--mk-like); font-size:14px; font-weight:600; }
 .mk-trader-honey img { width:11.42px; height:14.3401px; }
-.mk-trader-trend .mk-spark { margin:0; max-width:calc(100% - 12px); }
+.mk-trader-trend .mk-spark { margin:0 auto; max-width:calc(100% - 12px); }
 .mk-trader-trend .mk-spark :is(.area,.dot) { display:none; }
 .mk-trader-trend .mk-spark .base { stroke:var(--c-line); stroke-dasharray:none; opacity:1; }
 .mk-trader-trend .mk-spark.gain .ln { stroke:var(--mk-gain); }
@@ -600,9 +601,6 @@ html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0
 .mk-trader-metric b { font-weight:600; white-space:nowrap; }
 .mk-trader-metric-label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .mk-trader-span { display:block; color:var(--c-sub); font-size:11px; line-height:14px; white-space:nowrap; }
-/* 등급 열 글자는 grade.css .mk-grade-text (시안 2096:3920) */
-/* 등급 열: 머리글 "등급"과 A · B · C · D · F 를 같은 가운데 선에 맞춤 (시안 2165:4079) */
-.mk-trader-columns > :last-child,.mk-trader-grade { text-align:center; }
 html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--mk-like) 50%,transparent); }
 .mk-trader-page .mk-pager { gap:0; }
 .mk-trader-page .mk-pager button { min-width:42px; height:36px; border-radius:12px; font-size:14px; }
@@ -616,13 +614,13 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
   .mk-trader-page .mk-periods button[role="radio"] { padding-inline:10px; }
   .mk-trader-columns,.mk-trader-trend { display:none; }
   .mk-trader-row-link { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px 16px; }
+  .mk-trader-row-link > :not(:first-child) { text-align:left; }
   .mk-trader-row + .mk-trader-row::before { inset-inline:16px; }
   .mk-trader-row > .mk-fav { top:14px; left:16px; }
   .mk-trader-who { grid-column:1 / -1; padding-right:0; }
   .mk-trader-name { font-size:18px; }
   .mk-trader-metric,.mk-trader-grade .mk-grade-text { font-size:17px; line-height:22px; }
   .mk-trader-metric-label { position:static; display:block; width:auto; height:auto; clip-path:none; color:var(--c-sub); font-size:12px; line-height:17px; }
-  .mk-trader-grade { text-align:left; } /* 좁은 화면: 다른 지표처럼 이름표 아래 왼쪽 */
 }
 /* 트레이더 상세 지표: 남색 카드 5개 (시안 1275:6904 · 등급 · 누적 수익률 · 일관성 · 전략 이행률 · 최대 낙폭) */
 .mk-kpis-navy { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; margin:48px 0; }
