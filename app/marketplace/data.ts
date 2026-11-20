@@ -22,7 +22,7 @@ type SimTrader = {
   rule: string;
   ruleDesc: string;
   symbols: string[];
-  months: { month: string; title: string; summary: string; follow: number; trades?: number; symbols?: string[]; sample?: string }[];
+  months: { month: string; title: string; summary: string; follow: number; trades?: number; symbols?: string[]; sample?: string; stats?: StrategyStats }[];
   facts?: Facts;
 };
 const sim = (id: string) => (SIM as Record<string, SimTrader>)[id];
@@ -47,6 +47,9 @@ export const TYPES = [
 ] as const;
 export const MARKETS = ["국내 주식", "해외 주식"] as const;
 
+/** 카드에 보일 숫자: 작성일수(노트 · 진입 · 청산이 있던 날) · 매매 · 종목 노트 · 증시 메모 */
+export type StrategyStats = { days: number; trades: number; stock: number; market: number };
+
 export type Strategy = {
   id: string;
   month: string; // 2026-10
@@ -60,6 +63,7 @@ export type Strategy = {
   trades?: number;
   symbols?: string[];
   sample?: string;
+  stats?: StrategyStats;
 };
 
 /** 확인된 사실 (수익률만이 아니라 몇 건으로 냈는지, 손실 사례까지) */
@@ -366,7 +370,7 @@ export function strategiesOf(t: Trader): Strategy[] {
   const months = new Map((sim(t.id)?.months ?? []).map((m) => [m.month, m]));
   const list: Strategy[] = [...t.monthly].reverse().map((m, k) => {
     const s = months.get(m.month);
-    if (s) return { id: `${t.id}-${m.month}`, month: m.month, title: s.title, summary: s.summary, ret: m.ret, follow: s.follow, price: t.price, trades: s.trades, symbols: s.symbols, sample: s.sample };
+    if (s) return { id: `${t.id}-${m.month}`, month: m.month, title: s.title, summary: s.summary, ret: m.ret, follow: s.follow, price: t.price, trades: s.trades, symbols: s.symbols, sample: s.sample, stats: s.stats };
     const titles = t.strategyTitles ?? TITLES;
     const [title, summary] = titles[(k + Number(t.id.slice(1))) % titles.length];
     return { id: `${t.id}-${m.month}`, month: m.month, title, summary, ret: m.ret, follow: Math.min(99, t.follow - 3 + ((k * 7) % 9)), price: t.price };

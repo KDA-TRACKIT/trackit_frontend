@@ -173,6 +173,30 @@ export function PassBuyButton({
   );
 }
 
+/** 월별 전략 카드의 숫자 줄: 작성 N일 · 매매 N건 · 노트 N개 (숫자가 없는 예전 전략은 요약 문장) */
+export function StrategyStatsRow({ strategy, className = "mk-strat-stats" }: { strategy: Strategy; className?: string }) {
+  const st = strategy.stats;
+  if (!st) return <p>{strategy.summary.replace(/\s*\([^)]*\)/g, "")}</p>;
+  const notes = st.stock + st.market;
+  return (
+    <ul className={className} aria-label="이 달 기록">
+      <li>
+        작성 <b>{st.days}</b>일
+      </li>
+      <li>
+        매매 <b>{st.trades}</b>건
+      </li>
+      {/* 올리면 종목 노트 · 증시 메모로 나눠 보여 줌 (title 툴팁은 늦게 뜨거나 안 떠서 직접 그림) */}
+      <li className="mk-tip" tabIndex={0} aria-label={`노트 ${notes}개: 종목 노트 ${st.stock}개 · 증시 메모 ${st.market}개`}>
+        노트 <b>{notes}</b>개
+        <span className="mk-tip-box" role="tooltip">
+          종목 노트 {st.stock}개 · 증시 메모 {st.market}개
+        </span>
+      </li>
+    </ul>
+  );
+}
+
 /**
  * 월별 전략 버튼: 연 전략이면 "열람 중 ✓", 남은 열람권이 있으면 "열람권으로 열기"(확인 뒤 1장 사용), 없으면 "열람권 구매하기"
  */

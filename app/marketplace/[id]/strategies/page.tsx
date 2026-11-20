@@ -6,7 +6,7 @@ import { useState } from "react";
 import SiteHeader from "../../../SiteHeader";
 import { monthLabel, pct, strategiesOf, tone, traderById, won } from "../../data";
 import { GradeBadge } from "../../GradeParts";
-import { Pager, PassBuyBox, StrategyButton, useNotice } from "../../parts";
+import { Pager, PassBuyBox, StrategyButton, StrategyStatsRow, useNotice } from "../../parts";
 import { unusedPasses, usePasses } from "../../../../lib/purchases";
 import { useFeedback } from "../../../../lib/feedback";
 import { LikeButton } from "../../feedback";
@@ -63,7 +63,7 @@ export default function StrategiesPage() {
               <div>
                 <small>{monthLabel(s.month)}</small>
                 <strong>{s.title}</strong>
-                <p>{s.summary}</p>
+                <StrategyStatsRow strategy={s} />
               </div>
               <div className="mk-srow-num">
                 <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>

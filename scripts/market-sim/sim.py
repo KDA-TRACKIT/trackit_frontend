@@ -723,6 +723,14 @@ def month_candles(code, mth, back=25):
     lo, hi = max(0, ks[0] - back), ks[-1]
     return [[x["d"], px(code, x["o"]), px(code, x["h"]), px(code, x["l"]), px(code, x["c"]), int(x["v"])] for x in b[lo:hi + 1]]
 
+def month_stats(x):
+    """카드에 보일 숫자: 작성일수(그 달 노트 · 진입 · 청산이 있던 날) · 매매 수 · 종목 노트 · 증시 메모"""
+    m = x["month"]
+    ds = {n["d"] for n in x["notes"] if n.get("d", "")[:7] == m}
+    ds |= {d for t in x["trades"] for k in ("entry", "exit") if (d := (t.get(k) or {}).get("d", ""))[:7] == m}
+    return dict(days=len(ds), trades=len(x["trades"]), stock=sum(n["type"] == "stock" for n in x["notes"]), market=sum(n["type"] == "market" for n in x["notes"]))
+
+
 # ── 매매가 아닌 기록: 증시 메모(시장 전체) · 종목 노트(안 산 종목 관찰) — 모두 실제 일봉에서 ──
 def basket_days(market, mth):
     """그 시장 종목 전체를 같은 비중으로 묶은 바스켓의 하루 등락 (날짜, %, 그날 가장 오른 · 내린 종목)"""
@@ -922,7 +930,7 @@ for i in range(41):
     json.dump(detail, open(os.path.join(OUT, "traders", f"{tid}.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     persona = dict(name=PNAME.get(i), tagline=PERSONA[i][1], quote=PERSONA[i][2], indicators=PERSONA[i][3]) if i in PERSONA else None
     summary[tid] = dict(persona=persona, eq=eq, mIdx=m_idx, asOf=eq_hist[-1][0], monthly=monthly, mdd=mdd, trades=n, follow=follow, rule=rule_name, ruleDesc=rule_desc, symbols=[META[c]["name"] for c in pool],
-                        months=[dict(month=x["month"], title=x["title"], summary=x["summary"], follow=x["follow"],
+                        months=[dict(month=x["month"], title=x["title"], summary=x["summary"], follow=x["follow"], stats=month_stats(x),
                                      trades=len(x["trades"]), symbols=sorted({t["name"] for t in x["trades"]}),
                                      sample=(x["trades"][0]["entry"]["why"] if x["trades"] else next((n["text"] for n in x["notes"] if n["type"] == "stock"), "")))
                                 for x in months],
