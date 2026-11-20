@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { classify, dateLabel, type TradeRecord } from "../../lib/records";
 
-export default function CalendarMemos({ records, onPick, disabled, isImported }: { records: TradeRecord[]; onPick: (memo: TradeRecord) => void; disabled?: boolean; /** 이미 가져온 메모 (다시 못 고름) */ isImported?: (memo: TradeRecord) => boolean }) {
+export default function CalendarMemos({ records, onPick, disabled, isImported, busy }: { records: TradeRecord[]; onPick: (memo: TradeRecord) => void; disabled?: boolean; /** 이미 가져온 메모 (다시 못 고름) */ isImported?: (memo: TradeRecord) => boolean; /** 가져오는 중 (버튼 막음) */ busy?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const memos = records
@@ -21,11 +21,12 @@ export default function CalendarMemos({ records, onPick, disabled, isImported }:
 
   return (
     <div className="ws-cal-memos" ref={ref}>
-      <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled} aria-expanded={open}>
-        캘린더 노트 가져오기
+      <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled || busy} aria-expanded={open}>
+        {busy ? "가져오는 중…" : "캘린더 노트 가져오기"}
       </button>
       {open && (
         <div className="ws-cal-memos-list" role="listbox" aria-label="증시 캘린더 노트">
+          {memos.length > 0 && <small className="ws-cal-memos-hint">고르면 지금 종목 전략 밑에 덧붙여요 (원래 노트는 그대로)</small>}
           {memos.length === 0 ? (
             <p>증시 캘린더에서 쓴 노트가 없어요.</p>
           ) : (
