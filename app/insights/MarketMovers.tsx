@@ -17,6 +17,7 @@ import { Failed, Loading, money, pct, price, tone } from "./parts";
 import { useLoad } from "./useLoad";
 import { useWatchlist } from "./useWatchlist";
 import { fixZoomPointer } from "../../lib/zoom-pointer";
+import { normalizeLogo, type NormalizedLogo } from "../../lib/stock-logo";
 
 const MARKETS: [SectorMarket, string][] = [
   ["kospi", "코스피"],
@@ -69,71 +70,80 @@ function hue(code: string) {
   for (const c of code) h = (h * 31 + c.charCodeAt(0)) % 360;
   return h;
 }
-/** 로고가 없던 종목 (다시 부르지 않음) */
-const noLogo = new Set<string>();
-/** 흰색 로고 (투명 배경) → 어두운 칸에 */
-const lightLogo = new Set<string>();
-
-/**
- * 로고 색 보기: 비자 · IBM · 디즈니 · 보잉처럼 투명 배경에 흰색으로만 그린 로고는 흰 칸에서 안 보인다.
- *   blank = 보이는 점이 없음(빈 그림), light = 투명한 곳이 있고 보이는 점이 거의 다 흰색
- *   로고는 같은 주소(/api/v1/insights/logo → rewrites)라 캔버스로 읽을 수 있다. 못 읽으면 그대로 둔다
- */
-function logoTone(img: HTMLImageElement): "blank" | "light" | "ok" {
-  try {
-    const n = 24;
-    const canvas = document.createElement("canvas");
-    canvas.width = n;
-    canvas.height = n;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return "ok";
-    ctx.drawImage(img, 0, 0, n, n);
-    const px = ctx.getImageData(0, 0, n, n).data;
-    let seen = 0;
-    let white = 0;
-    for (let i = 0; i < px.length; i += 4) {
-      if (px[i + 3] < 40) continue;
-      seen++;
-      if (px[i] > 225 && px[i + 1] > 225 && px[i + 2] > 225) white++;
-    }
-    if (seen === 0) return "blank";
-    return seen < n * n * 0.97 && white / seen > 0.85 ? "light" : "ok";
-  } catch {
-    return "ok";
+/** 로고 주소 판 번호: 출처 · 정리 방식을 바꾸면 올려서 브라우저 · CDN 에 남은 예전 응답(없음 404 포함)을 건너뜀 */
+const LOGO_VERSION = 2;
+/** 받아서 정리한 로고 (종목별, 페이지를 옮겨 다녀도 다시 그리지 않음). 'none' = 로고 없음 → 첫 글자 */
+type Logo = NormalizedLogo | { url: string; mode: "raw"; fill: string } | "none";
+const logos = new Map<string, { logo: Logo; at: number }>();
+/** '없음'은 10분만 기억 (잠깐 실패가 세션 내내 첫 글자로 굳지 않게) */
+const NONE_TTL = 10 * 60_000;
+const cachedLogo = (key: string): Logo | null => {
+  const hit = logos.get(key);
+  if (!hit) return null;
+  if (hit.logo === "none" && Date.now() - hit.at > NONE_TTL) {
+    logos.delete(key);
+    return null;
   }
+  return hit.logo;
+};
+
+/** 로고 받기: 실패하면 1.5초 · 3초 뒤 두 번 더 (서버가 잠깐 503 · 시간 초과일 때), 그래도 안 되면 '없음' */
+function useStockLogo(code: string, m: "kospi" | "kosdaq" | "us" | null): Logo | "loading" {
+  const key = `${m}:${code}`;
+  const [logo, setLogo] = useState<Logo | "loading">(() => (m ? (cachedLogo(key) ?? "loading") : "none"));
+  useEffect(() => {
+    if (!m || logo !== "loading") return;
+    let alive = true;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const done = (v: Logo) => {
+      logos.set(key, { logo: v, at: Date.now() });
+      if (alive) setLogo(v);
+    };
+    const attempt = () => {
+      const img = new Image();
+      const src = `/api/v1/insights/logo?symbol=${encodeURIComponent(code)}&market=${m}&v=${LOGO_VERSION}${tries ? `&r=${tries}` : ""}`;
+      img.onload = () => {
+        try {
+          done(normalizeLogo(img) ?? "none");
+        } catch {
+          done({ url: src, mode: "raw", fill: "#fff" }); // 캔버스로 못 읽으면 원본을 여백만 두고
+        }
+      };
+      img.onerror = () => {
+        tries++;
+        if (tries <= 2) timer = setTimeout(attempt, 1500 * tries);
+        else done("none");
+      };
+      img.src = src;
+    };
+    attempt();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [key, code, m, logo]);
+  return logo;
 }
 
-/** 종목 동그라미: 로고(백엔드 /insights/logo 가 받아 보관)가 있으면 로고, 없으면 이름 첫 글자 */
+/** 종목 동그라미: 로고(백엔드 /insights/logo 가 받아 보관 → lib/stock-logo 로 가운데 정리)가 있으면 로고, 없으면 이름 첫 글자 */
 function Avatar({ code, name, market, size = 30 }: { code: string; name: string; market?: SectorMarket; size?: number }) {
   const m = !market ? null : market === "kospi" || market === "kosdaq" ? market : "us";
-  const key = `${m}:${code}`;
-  const [failed, setFailed] = useState(() => !m || noLogo.has(key));
-  const [dark, setDark] = useState(() => lightLogo.has(key));
-  if (m && !failed)
+  // 종목이 바뀌면 상태를 새로 (오른쪽 요약처럼 같은 자리에서 종목만 바뀌어도 앞 종목의 '없음' · 어두운 칸이 남지 않게)
+  return <StockAvatar key={`${m}:${code}`} code={code} name={name} m={m} size={size} />;
+}
+function StockAvatar({ code, name, m, size }: { code: string; name: string; m: "kospi" | "kosdaq" | "us" | null; size: number }) {
+  const logo = useStockLogo(code, m);
+  if (logo === "loading") return <span className="ins-mv-avatar logo" style={{ width: size, height: size }} aria-hidden />;
+  if (logo !== "none")
     return (
-      <span className={`ins-mv-avatar logo${dark ? " dark" : ""}`} style={{ width: size, height: size }} aria-hidden>
-        {/* eslint-disable-next-line @next/next/no-img-element -- 작은 외부 로고, 서버가 이미 캐시 */}
-        <img
-          src={`/api/v1/insights/logo?symbol=${encodeURIComponent(code)}&market=${m}`}
-          alt=""
-          width={size}
-          height={size}
-          loading="lazy"
-          onLoad={(e) => {
-            const tone = logoTone(e.currentTarget);
-            if (tone === "blank") {
-              noLogo.add(key);
-              setFailed(true);
-            } else if (tone === "light") {
-              lightLogo.add(key);
-              setDark(true);
-            }
-          }}
-          onError={() => {
-            noLogo.add(key);
-            setFailed(true);
-          }}
-        />
+      <span
+        className={`ins-mv-avatar logo ${logo.mode}`}
+        style={{ width: size, height: size, ...(logo.mode === "tile" ? { background: logo.fill, borderColor: logo.fill } : null) }}
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- 작은 로고(정리한 data URL), 서버가 이미 캐시 */}
+        <img src={logo.url} alt="" width={size} height={size} />
       </span>
     );
   return (

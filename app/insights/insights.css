@@ -166,8 +166,10 @@ li.ins-mv-row.on { background:var(--c-subtle); }
 .ins-mv-table.novol .ins-mv-row .vol { display:none; }
 .ins-mv-table.novol .ins-mv-row .opt:not(.vol) { display:block; }
 .ins-mv-detail .fav[hidden] { display:none; }
-/* 종목 로고: 흰 동그라미 안에 맞춰 (다크 모드도 흰 바탕이라 로고 색이 그대로 보임) */
-.ins-mv-avatar.logo { overflow:hidden; border:1px solid var(--c-line); background:#fff; } /* 로고가 대부분 네모라 둥근 네모로 꽉 채움 */
+/* 종목 로고: lib/stock-logo 가 정사각형 가운데에 같은 여백으로 다시 그린 그림을 칸에 꽉 채움 (다크 모드도 흰 바탕이라 로고 색 그대로) */
+.ins-mv-avatar.logo { overflow:hidden; border:1px solid var(--c-line); background:#fff; }
 .ins-mv-avatar.logo img { display:block; width:100%; height:100%; object-fit:contain; }
-/* 흰색 로고(투명 배경)는 흰 칸에서 안 보여 어두운 칸에 (비자 · IBM · 디즈니 · 보잉 · 나이키 …) */
-.ins-mv-avatar.logo.dark { border-color:#1d2330; background:#1d2330; }
+/* 흰색으로만 그린 로고(비자 · IBM · 디즈니 · 보잉 · 나이키 …)는 어두운 칸에 (색은 lib/stock-logo LIGHT_LOGO_BG 와 같게) */
+.ins-mv-avatar.logo.light { border-color:#1d2330; background:#1d2330; }
+/* 정리하지 못한 원본(캔버스로 못 읽을 때): 모서리에 안 잘리게 여백만 */
+.ins-mv-avatar.logo.raw img { box-sizing:border-box; padding:14%; }
