@@ -33,7 +33,7 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
     <section className="home-weekly home-container" aria-labelledby="weekly-records-title">
       <div className="home-section-heading">
         <h2 id="weekly-records-title">이번 주 거래기록 · 노트</h2>
-        <Link className="home-action" href="/mypage/activity/trades">거래 기록 <span aria-hidden="true">→</span></Link>
+        <Link className="home-action" href="/archive/notes">내 노트 <span aria-hidden="true">→</span></Link>
       </div>
       <div className="home-weekly-card">
         <div className="home-week-nav">
