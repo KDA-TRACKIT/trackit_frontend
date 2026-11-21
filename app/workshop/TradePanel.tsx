@@ -611,13 +611,13 @@ export default function TradePanel({
                     : undefined
                 }
               >
-                수수료{ratesKnown && <small> {pctText(rates.fee)}</small>}
+                {ratesKnown ? `수수료\u00a0(${pctText(rates.fee)})` : "수수료"}
               </dt>
               <dd>{ratesKnown ? `${won(cost.fee)}원` : "—"}</dd>
               {side === "매도" && (
                 <>
                   <dt title="증권거래세 + 농어촌특별세">
-                    세금{ratesKnown && <small> {pctText(rates.sellTax)}</small>}
+                    {ratesKnown ? `세금\u00a0(${pctText(rates.sellTax)})` : "세금"}
                   </dt>
                   <dd>{ratesKnown ? `${won(cost.tax)}원` : "—"}</dd>
                 </>
