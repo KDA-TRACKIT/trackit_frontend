@@ -13,6 +13,7 @@ import type { Bar } from "../../../../lib/mock/workshop";
 import {
   addHits,
   bestCase,
+  closeLabel,
   closeness,
   describe,
   entryCases,
@@ -170,7 +171,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           <span>비슷한 자리가 나오면 알림</span>
         </label>
         <label className="su-min">
-          비슷한 정도
+          알림 기준
           <select
             value={min}
             onChange={(e) => {
@@ -181,7 +182,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           >
             {[65, 75, 85].map((v) => (
               <option key={v} value={v}>
-                {v}점 이상
+                {v === 65 ? "조금 비슷해도" : v === 75 ? "비슷할 때" : "매우 비슷할 때만"}
               </option>
             ))}
           </select>
@@ -198,7 +199,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
       {msg && <p className="su-msg">{msg}</p>}
       {rows && !!rows.length && (
         <p className="su-msg">
-          점수는 그 종목의 오늘 상황이 {traderName}님이 샀던 날과 얼마나 비슷한지예요 (100점 만점 · RSI, 20일선과의 거리, 최근 20일 등락, 거래량, 60일 범위 안 위치로 계산). {min}점 이상이면 비슷한 자리로 봐요.
+          관심 종목의 오늘 상황(RSI, 20일선과의 거리, 최근 20일 등락, 거래량, 60일 범위 안 위치)을 {traderName}님이 샀던 날과 견줘요. 가장 비슷한 매매를 함께 보여 줘요.
         </p>
       )}
       {rows && (
@@ -207,7 +208,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
             <li key={r.code} className={r.score >= min ? "hit" : ""}>
               <div>
                 <span>
-                  <strong>{r.name}</strong> <b className="su-score">비슷한 정도 {r.score}점</b>
+                  <strong>{r.name}</strong> <b className="su-score">{closeLabel(r.score)}</b>
                 </span>
                 <small>오늘: {r.today}</small>
                 <small>
@@ -228,7 +229,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           <ul>
             {hits.slice(0, 5).map((h) => (
               <li key={h.id}>
-                {md(h.at.slice(0, 10))} · {h.name} {h.score}점 <small>({h.caseName} {md(h.caseDate)} 매수와 비슷)</small>
+                {md(h.at.slice(0, 10))} · {h.name} <small>({h.caseName} {md(h.caseDate)} 매수와 비슷)</small>
               </li>
             ))}
           </ul>
@@ -394,7 +395,7 @@ function Ask({ traderName, cases, months, market }: { traderName: string; cases:
             {answer.picks.map(({ c, score }) => (
               <li key={`${c.trade.code}:${c.trade.entry.d}`}>
                 <div>
-                  <b className="su-score">{score}점</b> {c.trade.name} · {md(c.trade.entry.d)} 매수 {c.trade.entry.px.toLocaleString("ko-KR")}
+                  <b className="su-score">{closeLabel(score)}</b> {c.trade.name} · {md(c.trade.entry.d)} 매수 {c.trade.entry.px.toLocaleString("ko-KR")}
                 </div>
                 <q>{c.trade.entry.why}</q>
                 <small>
