@@ -59,9 +59,6 @@ export function closeness(a: Situation, b: Situation) {
   return Math.round(parts.reduce((s, [d, tol], k) => s + w[k] * Math.max(0, 1 - d / tol), 0) * 100);
 }
 
-/** 비슷한 정도를 말로 (2026-11-21: 화면에는 점수 숫자 대신 이 말만) */
-export const closeLabel = (score: number) => (score >= 85 ? "매우 비슷" : score >= 75 ? "비슷" : score >= 65 ? "조금 비슷" : "비슷하지 않음");
-
 /** 상황 한 줄 (사람이 읽는 말) */
 export function describe(s: Situation) {
   const rsi = s.rsi >= 70 ? "과열" : s.rsi <= 30 ? "과매도" : s.rsi >= 55 ? "강한 편" : s.rsi <= 45 ? "약한 편" : "중립";
