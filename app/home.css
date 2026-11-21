@@ -22,7 +22,7 @@
 .home-stat-card { display:block; min-width:0; height:118px; padding:16px 19px; border:1px solid var(--home-line); border-radius:12px; background:var(--c-surface,#fff); }
 .home-redesign :is(.home-stat-card,.home-week-memos) h2 { margin:0; color:var(--home-ink); font-size:15px; font-weight:600; line-height:19px; }
 .home-stat-value { display:flex; align-items:baseline; gap:12px; margin-top:7px; white-space:nowrap; }
-.home-stat-value strong { color:var(--home-navy); font-size:31px; line-height:37px; font-weight:600; }
+.home-stat-value strong { color:var(--home-navy); font-size:32px; line-height:37px; font-weight:600; }
 .home-stat-value > span { overflow:hidden; color:var(--home-muted); font-size:11px; text-overflow:ellipsis; }
 .home-progress { height:6px; margin-top:9px; overflow:hidden; border-radius:3px; background:#edf1fa; }
 .home-progress > span { display:block; height:100%; border-radius:inherit; background:var(--home-navy); }
@@ -38,7 +38,7 @@
 .home-data-notice button { flex:none; border:1px solid var(--home-line); border-radius:8px; padding:6px 12px; background:var(--c-surface,#fff); color:var(--home-navy); cursor:pointer; }
 .home-leaderboard { padding:37px 0 75px; background:#f7f9fc; }
 .home-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-.home-section-heading h2 { margin:0; color:var(--c-ink,#151515); font-size:27px; line-height:34px; font-weight:600; letter-spacing:-.6px; }
+.home-section-heading h2 { margin:0; color:var(--c-ink,#151515); font-size:26px; line-height:34px; font-weight:600; letter-spacing:-.6px; }
 /* 남색 버튼(전략 마켓 · 내 노트)은 글자 길이와 상관없이 같은 크기 152×38 */
 .home-action { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:10px; min-width:152px; height:38px; padding:0 20px; border-radius:10px; background:#0f2367; color:#fff; font-size:15px; font-weight:600; }
 .home-action:hover { background:#203777; }
@@ -82,12 +82,12 @@
 .home-week-day { display:flex; flex-direction:column; align-items:flex-start; height:116px; min-width:0; padding:10px 12px; border:1px solid var(--home-line); border-radius:12px; background:#f7f9fc; text-align:left; font:inherit; cursor:pointer; }
 .home-week-day.selected { border:1.5px solid #0f2367; background:#edf1fa; padding:9.5px 11.5px; }
 .home-week-day > span:first-child { color:var(--home-muted); font-size:14px; line-height:17px; }
-.home-week-day > strong { margin-top:3px; color:var(--home-ink); font-size:25px; line-height:30px; font-weight:600; }
+.home-week-day > strong { margin-top:3px; color:var(--home-ink); font-size:24px; line-height:30px; font-weight:600; }
 .home-week-day > b { margin-top:7px; color:var(--home-navy); font-size:14px; line-height:17px; font-weight:600; white-space:nowrap; }
 .home-note-dots { display:flex; align-items:center; gap:5px; min-height:9px; margin-top:7px; }
 .home-note-dots i,.home-day-note > i { display:block; flex:none; width:9px; height:9px; border-radius:50%; }
 .home-redesign i.trade { background:#7653ed; }.home-redesign i.market { background:#697e9e; }.home-redesign i.news { background:#2196f3; }
-.home-note-dots small { color:var(--home-muted); font-size:10px; }
+.home-note-dots small { color:var(--home-muted); font-size:11px; }
 .home-day-detail { margin-top:16px; padding-top:16px; border-top:1px solid var(--home-line); }
 .home-day-detail-head { margin-bottom:8px; }
 .home-day-detail-head > p { margin:0; color:var(--home-muted); font-size:14px; line-height:22px; font-weight:600; }
@@ -106,7 +106,7 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
 @media (max-width:1050px) {
   .home-overview { grid-template-columns:1.1fr 1fr; }
   .home-stat-row { gap:12px; }.home-stat-card { padding:16px 12px; }
-  .home-stat-value { gap:8px; }.home-stat-value > span { font-size:10px; }
+  .home-stat-value { gap:8px; }.home-stat-value > span { font-size:11px; }
   .home-redesign .trader-grid { grid-auto-columns:196px; }
   .home-week-days { gap:8px; }.home-week-day { padding-inline:9px; }.home-week-day.selected { padding-inline:8.5px; }
 }
@@ -114,7 +114,7 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
   .home-redesign { padding-bottom:80px; }
 
   .home-container { width:calc(100% - 32px); }.home-overview { grid-template-columns:1fr; margin-top:24px; margin-bottom:24px; }
-  .home-section-heading { align-items:flex-start; }.home-section-heading h2 { font-size:21px; line-height:28px; word-break:keep-all; }
+  .home-section-heading { align-items:flex-start; }.home-section-heading h2 { font-size:20px; line-height:28px; word-break:keep-all; }
   .home-action,.home-leaderboard .home-action { min-width:128px; height:36px; padding:0 12px; font-size:12px; gap:8px; }
   .home-leaderboard { padding:32px 0; }.home-leaderboard-tabs { margin-top:14px; }.home-leaderboard-tabs button { flex:1 1 0; min-width:0; height:34px; padding:0 8px; font-size:14px; }
   .home-redesign .trader-grid { gap:12px; }.home-weekly { padding-top:36px; }
@@ -187,7 +187,7 @@ html[data-theme="dark"] .home-redesign .home-week-day.selected { background:var(
 /* 카드 (시안): 흰 둥근 카드 · 프로필 일러스트 + 굵은 이름 · 수익률(네이비) · 전략이행률 · 꿀통 + 좋아요 */
 .trader-card { display:flex; flex-direction:column; gap:6px; min-height:132px; padding:12px 14px 14px; border:1px solid #e3e8ef; border-radius:14px; background:#fff; color:#3b4052; font-size:15px; text-decoration:none; transition:border-color .15s, box-shadow .15s, transform .15s; }
 .trader-card:hover { border-color:#cfd8e6; box-shadow:0 6px 18px rgba(15,35,103,.08); transform:translateY(-2px); }
-.trader-card h3 { display:flex; align-items:center; gap:10px; margin:0 0 4px; color:#141a2b; font-size:19px; font-weight:800; letter-spacing:-.4px; }
+.trader-card h3 { display:flex; align-items:center; gap:10px; margin:0 0 4px; color:#141a2b; font-size:18px; font-weight:800; letter-spacing:-.4px; }
 .trader-card h3 span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .trader-face { flex:none; border-radius:50%; }
 .trader-card p { display:flex; align-items:center; gap:6px; margin:0; color:#3b4052; line-height:1.4; font-variant-numeric:tabular-nums; }

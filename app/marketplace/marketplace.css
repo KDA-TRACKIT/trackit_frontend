@@ -9,10 +9,10 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-wrap { width:min(1040px, calc(100% - 48px)); margin:0 auto; padding:36px 0 72px; }
 .mk-narrow { width:min(900px, calc(100% - 48px)); }
 .mk-card { border:1px solid var(--c-line); border-radius:14px; background:var(--c-surface); }
-.mk-title { margin:0 0 18px; color:var(--mk-primary); font-size:28px; font-weight:800; letter-spacing:-.5px; }
+.mk-title { margin:0 0 18px; color:var(--mk-primary); font-size:26px; font-weight:800; letter-spacing:-.5px; }
 .mk-primary { height:42px; padding:0 18px; border:0; border-radius:10px; background:var(--mk-primary); color:var(--mk-primary-ink); font-size:14px; font-weight:700; }
 .mk-primary:hover { filter:brightness(1.12); }
-.mk-ghost, .mk-soft { height:40px; padding:0 16px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink-2); font-size:13.5px; font-weight:600; }
+.mk-ghost, .mk-soft { height:40px; padding:0 16px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink-2); font-size:14px; font-weight:600; }
 .mk-soft { border-color:transparent; background:var(--c-subtle); }
 .mk-ghost:hover, .mk-soft:hover { background:var(--c-hover); }
 .mk-like { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
@@ -32,7 +32,7 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 .mk-detail { margin-top:12px; padding:18px 20px 8px; }
 .mk-detail-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .mk-detail-head strong { font-size:15px; }
-.mk-detail-head button { border:0; background:none; color:var(--c-sub); font-size:12.5px; }
+.mk-detail-head button { border:0; background:none; color:var(--c-sub); font-size:13px; }
 .mk-chiprow { padding:8px 0 12px; }
 .mk-chiprow > span { display:block; margin-bottom:8px; color:var(--c-ink-2); font-size:13px; font-weight:700; }
 .mk-chiprow small { margin-left:6px; color:var(--c-faint); font-weight:400; }
@@ -43,15 +43,15 @@ html[data-theme="dark"] .mk-page { --mk-gain:#4fd18b; --mk-loss:#ff6b6b; --mk-pr
 
 /* 결과 머리 · 기간 · 필터 */
 .mk-result-head { display:flex; justify-content:space-between; align-items:baseline; margin:28px 0 12px; }
-.mk-result-head strong { font-size:17px; }
+.mk-result-head strong { font-size:18px; }
 .mk-result-head em { color:var(--mk-primary); font-style:normal; }
 .mk-result-head small { color:var(--c-faint); font-size:12px; }
-.mk-clear { margin-left:10px; padding:0; border:0; background:none; color:var(--c-sub); font-size:12.5px; font-weight:500; text-decoration:underline; text-underline-offset:3px; }
+.mk-clear { margin-left:10px; padding:0; border:0; background:none; color:var(--c-sub); font-size:13px; font-weight:500; text-decoration:underline; text-underline-offset:3px; }
 .mk-clear:hover { color:var(--c-ink); }
 .mk-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
 .mk-periods { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .mk-periods > span { margin-right:4px; color:var(--c-sub); font-size:13px; font-weight:600; }
-.mk-periods button { height:30px; padding:0 13px; border:0; border-radius:16px; background:var(--c-subtle); color:var(--c-sub); font-size:12.5px; font-weight:600; }
+.mk-periods button { height:30px; padding:0 13px; border:0; border-radius:16px; background:var(--c-subtle); color:var(--c-sub); font-size:13px; font-weight:600; }
 .mk-periods button:hover { color:var(--c-ink); }
 .mk-periods button.on { background:var(--mk-primary); color:var(--mk-primary-ink); }
 /* '전체' 기간 도움말: 탭 오른쪽 위 작은 ? (Figma '기록 작성률 도움말'과 같은 모양) — 올리거나 누르면(초점) 위에 남색 말풍선 */
@@ -85,7 +85,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-row:hover { border-color:var(--c-line-strong); box-shadow:var(--c-shadow); transform:translateY(-1px); }
 .mk-row-who { min-width:0; }
 .mk-row-who small { display:block; color:var(--c-faint); font-size:12px; }
-.mk-row-who strong { display:block; margin:3px 0; font-size:19px; font-weight:800; }
+.mk-row-who strong { display:block; margin:3px 0; font-size:18px; font-weight:800; }
 .mk-row-who p { margin:0; overflow:hidden; color:var(--c-sub); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
 .mk-row-num { margin:0; }
 .mk-row-num dt { color:var(--c-faint); font-size:12px; }
@@ -118,10 +118,10 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-overlay { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:var(--c-overlay); }
 .mk-modal { width:min(420px,100%); max-height:calc(calc(100 * var(--vh, 1vh)) - 40px); overflow:auto; padding:22px 24px; border-radius:16px; background:var(--c-surface); box-shadow:var(--c-shadow); }
 .mk-modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.mk-modal-head strong { font-size:18px; }
+.mk-modal-head strong { font-size:20px; }
 .mk-modal-head button { width:30px; height:30px; border:0; border-radius:8px; background:none; color:var(--c-sub); }
 .mk-modal-head button:hover { background:var(--c-hover); }
-.mk-range-label { display:block; margin:16px 0 8px; color:var(--c-sub); font-size:12.5px; font-weight:600; }
+.mk-range-label { display:block; margin:16px 0 8px; color:var(--c-sub); font-size:13px; font-weight:600; }
 .mk-seg { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
 .mk-seg button { height:34px; border:0; border-radius:9px; background:var(--c-subtle); color:var(--c-ink-2); font-size:13px; }
 .mk-seg button.on { background:var(--mk-primary); color:var(--mk-primary-ink); font-weight:700; }
@@ -153,27 +153,27 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-profile h1 { margin:0; color:var(--c-ink); font-size:26px; font-weight:900; letter-spacing:-.5px; }
 .mk-profile-top small { color:var(--c-faint); font-size:12px; }
 .mk-profile blockquote { margin:10px 0 6px; color:var(--c-ink); font-size:18px; font-weight:700; }
-.mk-profile p { margin:2px 0; color:var(--c-sub); font-size:13.5px; line-height:1.65; }
+.mk-profile p { margin:2px 0; color:var(--c-sub); font-size:14px; line-height:1.65; }
 .mk-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
 .mk-tags span { padding:5px 12px; border-radius:8px; background:var(--c-subtle); color:var(--c-ink-2); font-size:12px; }
 .mk-buy { display:flex; flex-direction:column; gap:6px; padding:14px 18px; background:linear-gradient(160deg, var(--c-accent-soft), var(--c-surface) 70%); }
-.mk-buy > small { color:var(--c-sub); font-size:12.5px; }
+.mk-buy > small { color:var(--c-sub); font-size:13px; }
 .mk-buy > small b { color:var(--c-ink); }
 .mk-buy > strong { color:var(--mk-primary); font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; }
 .mk-buy > strong span { color:var(--c-faint); font-size:12px; font-weight:500; }
-.mk-buy > p { margin:0 0 6px; color:var(--c-sub); font-size:12.5px; }
+.mk-buy > p { margin:0 0 6px; color:var(--c-sub); font-size:13px; }
 /* 성과 카드 (시안: 남색 바탕 · 흰 글씨) */
 .mk-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:12px; }
 /* 색은 열람권 구매하기 버튼과 같게 (라이트: 남색 · 흰 글씨, 다크: 밝은 파랑 · 어두운 글씨) */
 .mk-stat { display:flex; flex-direction:column; gap:6px; padding:18px 20px 20px; border-radius:12px; background:var(--mk-primary); color:var(--mk-primary-ink); }
 .mk-stat small { color:inherit; font-size:14px; font-weight:500; opacity:.92; }
 .mk-stat strong { display:block; margin:2px 0 0; color:inherit; font-size:26px; font-weight:800; letter-spacing:-.3px; font-variant-numeric:tabular-nums; }
-.mk-stat p { margin:0; color:inherit; font-size:12.5px; opacity:.92; }
+.mk-stat p { margin:0; color:inherit; font-size:13px; opacity:.92; }
 
 /* 월별 수익률 */
 .mk-chart { margin-top:12px; padding:14px 18px 10px; }
 .mk-chart-head { display:flex; align-items:center; gap:12px; }
-.mk-chart-head h2 { margin:0; font-size:17px; font-weight:800; }
+.mk-chart-head h2 { margin:0; font-size:18px; font-weight:800; }
 .mk-chart-sum { font-size:13px; font-weight:700; }
 .mk-chart-head select { margin-left:auto; }
 .mk-chart-box { position:relative; margin-top:12px; }
@@ -189,11 +189,11 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-chart-tip { position:absolute; z-index:2; display:flex; flex-direction:column; align-items:center; padding:5px 10px; transform:translate(-50%, calc(-100% - 8px)); border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); box-shadow:var(--c-shadow); font-size:11px; white-space:nowrap; pointer-events:none; }
 .mk-chart-tip span { color:var(--c-faint); }
 .mk-chart-tip b { font-size:14px; font-variant-numeric:tabular-nums; }
-.mk-chart-note { margin:6px 0 0; color:var(--c-faint); font-size:11.5px; }
+.mk-chart-note { margin:6px 0 0; color:var(--c-faint); font-size:12px; }
 
 /* 월별 전략 */
 .mk-section { margin-top:36px; }
-.mk-section h2, .mk-sub-title { margin:0; font-size:19px; font-weight:700; }
+.mk-section h2, .mk-sub-title { margin:0; font-size:18px; font-weight:700; }
 .mk-section h2 b, .mk-sub-title b { color:var(--mk-primary); font-weight:900; }
 .mk-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:12px; }
 .mk-section-head p, .mk-sub-desc { margin:4px 0 0; color:var(--c-sub); font-size:13px; }
@@ -205,22 +205,22 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 /* 전략 제목을 누르면 그 전략으로 (카드마다 있던 구독 버튼 · 가격은 뺌: 구독은 작성자 단위) */
 .mk-strat h3 a, .mk-srow strong a { color:inherit; text-decoration:none; }
 .mk-strat h3 a:hover, .mk-srow strong a:hover { text-decoration:underline; }
-.mk-strat p { flex:1; margin:0; color:var(--c-sub); font-size:12.5px; }
+.mk-strat p { flex:1; margin:0; color:var(--c-sub); font-size:13px; }
 /* 작성 N일 · 매매 N건 · 노트 N개 */
 .mk-strat-stats { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 0; padding:0; list-style:none; }
 .mk-strat > .mk-strat-stats { flex:1; align-content:flex-start; }
 .mk-strat-stats li { padding:3px 9px; border-radius:999px; background:var(--c-subtle); color:var(--c-sub); font-size:12px; line-height:1.4; white-space:nowrap; }
 .mk-strat-stats b { margin:0 1px; color:var(--c-ink); font-weight:800; }
 .mk-strat-stats .mk-tip { position:relative; cursor:help; outline:none; }
-.mk-strat-stats .mk-tip-box { position:absolute; left:50%; bottom:calc(100% + 6px); z-index:20; transform:translateX(-50%); padding:5px 9px; border-radius:6px; background:var(--c-ink); color:var(--c-surface); font-size:11.5px; font-weight:600; white-space:nowrap; pointer-events:none; opacity:0; visibility:hidden; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+.mk-strat-stats .mk-tip-box { position:absolute; left:50%; bottom:calc(100% + 6px); z-index:20; transform:translateX(-50%); padding:5px 9px; border-radius:6px; background:var(--c-ink); color:var(--c-surface); font-size:12px; font-weight:600; white-space:nowrap; pointer-events:none; opacity:0; visibility:hidden; box-shadow:0 4px 12px rgba(0,0,0,.25); }
 .mk-strat-stats .mk-tip:hover .mk-tip-box,
 .mk-strat-stats .mk-tip:focus-visible .mk-tip-box { opacity:1; visibility:visible; }
-.mk-strat-num { display:flex; gap:10px; margin:12px 0 6px; font-size:12.5px; font-weight:700; }
+.mk-strat-num { display:flex; gap:10px; margin:12px 0 6px; font-size:13px; font-weight:700; }
 .mk-strat-num span:last-child { color:var(--c-faint); font-weight:500; }
-.mk-strat > strong { margin-bottom:10px; color:var(--mk-primary); font-size:19px; font-weight:800; }
+.mk-strat > strong { margin-bottom:10px; color:var(--mk-primary); font-size:18px; font-weight:800; }
 .mk-free { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:10px; padding:10px 16px; border-color:transparent; background:var(--c-accent-soft); }
 .mk-free strong { color:var(--mk-primary); font-size:15px; }
-.mk-free p { margin:3px 0 0; color:var(--c-sub); font-size:12.5px; }
+.mk-free p { margin:3px 0 0; color:var(--c-sub); font-size:13px; }
 .mk-free .mk-primary { flex:none; }
 
 /* 비슷한 트레이더 (작게) */
@@ -230,7 +230,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-sim { display:flex; flex-direction:column; gap:2px; padding:12px 14px; color:inherit; text-decoration:none; }
 .mk-sim:hover { border-color:var(--c-line-strong); }
 .mk-sim strong { font-size:14px; }
-.mk-sim small { overflow:hidden; color:var(--c-faint); font-size:11.5px; text-overflow:ellipsis; white-space:nowrap; }
+.mk-sim small { overflow:hidden; color:var(--c-faint); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .mk-sim span { margin-top:4px; font-size:12px; font-weight:700; }
 
 /* 월별 전략 전체 */
@@ -239,14 +239,14 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-srow { display:grid; grid-template-columns:minmax(0,1fr) 120px 200px; align-items:center; gap:16px; padding:16px 20px; }
 .mk-srow small { color:var(--c-faint); font-size:12px; }
 .mk-srow strong { display:block; margin:2px 0; font-size:16px; font-weight:800; }
-.mk-srow p { margin:0; color:var(--c-sub); font-size:12.5px; }
+.mk-srow p { margin:0; color:var(--c-sub); font-size:13px; }
 .mk-srow-num span { display:block; font-size:13px; font-weight:700; }
 .mk-srow-buy { display:flex; flex-direction:column; gap:6px; }
 .mk-srow-buy strong { color:var(--mk-primary); font-size:18px; }
 .mk-srow-buy .mk-primary { height:36px; }
 
 /* 안내 */
-.mk-toast { position:fixed; left:50%; bottom:32px; z-index:70; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--c-ink); color:var(--c-surface); font-size:13.5px; font-weight:600; box-shadow:var(--c-shadow); }
+.mk-toast { position:fixed; left:50%; bottom:32px; z-index:70; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--c-ink); color:var(--c-surface); font-size:14px; font-weight:600; box-shadow:var(--c-shadow); }
 
 @media (max-width:800px) {
   .mk-row { grid-template-columns:1fr 1fr 1fr; }
@@ -292,7 +292,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-review-form-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
 .mk-review-form-top select { height:30px; padding:0 8px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; }
 .mk-review-form-top small { color:var(--c-faint); font-size:12px; font-variant-numeric:tabular-nums; }
-.mk-review-form textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-bg); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:1.55; resize:vertical; outline:0; }
+.mk-review-form textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-bg); color:var(--c-ink); font:inherit; font-size:14px; line-height:1.55; resize:vertical; outline:0; }
 .mk-review-form textarea:focus { border-color:var(--c-focus); }
 .mk-review-form-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
 .mk-review-form-foot small { color:var(--c-faint); font-size:12px; }
@@ -300,21 +300,21 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-review-warn { color:var(--c-err) !important; font-weight:600; }
 .mk-review-list { display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none; }
 .mk-review { padding:12px 16px; }
-.mk-review-top { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+.mk-review-top { display:flex; align-items:center; gap:8px; font-size:13px; }
 .mk-review-top b { color:var(--c-ink); }
 .mk-review-month { padding:1px 7px; border-radius:6px; background:var(--c-accent-soft); color:var(--mk-primary); font-size:11px; font-weight:700; }
 .mk-review-top time { color:var(--c-faint); }
 .mk-review-del { margin-left:auto; padding:0; border:0; background:none; color:var(--c-faint); font:inherit; font-size:12px; cursor:pointer; }
 .mk-review-del:hover { color:var(--c-err); }
-.mk-review p { margin:6px 0 0; color:var(--c-ink-2); font-size:13.5px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+.mk-review p { margin:6px 0 0; color:var(--c-ink-2); font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
 .mk-review-empty { padding:24px; }
 
 /* 판매 심사 */
-.mk-verified, .mk-held { display:inline-block; padding:1px 6px; border-radius:5px; font-size:10.5px; font-weight:700; vertical-align:middle; }
+.mk-verified, .mk-held { display:inline-block; padding:1px 6px; border-radius:5px; font-size:11px; font-weight:700; vertical-align:middle; }
 .mk-verified { background:color-mix(in srgb, var(--c-up) 14%, transparent); color:var(--c-up); }
 .mk-held { background:var(--c-warn-soft); color:var(--c-warn); }
-.mk-held-note { display:flex; align-items:center; gap:8px; margin:-4px 0 12px; color:var(--c-faint); font-size:12.5px; }
-.mk-held-note button { padding:0; border:0; background:none; color:var(--mk-primary); font-size:12.5px; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+.mk-held-note { display:flex; align-items:center; gap:8px; margin:-4px 0 12px; color:var(--c-faint); font-size:13px; }
+.mk-held-note button { padding:0; border:0; background:none; color:var(--mk-primary); font-size:13px; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
 .mk-hold-box { display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:var(--c-warn-soft); }
 .mk-hold-box b { color:var(--c-warn); font-size:14px; }
 .mk-hold-box p { margin:0; color:var(--c-sub); font-size:12px; line-height:1.5; }
@@ -332,16 +332,16 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-screen li span { grid-row:span 3; font-weight:800; }
 .mk-screen li.ok span { color:var(--c-up); }
 .mk-screen li.no span { color:var(--c-down); }
-.mk-screen li b { color:var(--c-sub); font-size:11.5px; font-weight:600; }
+.mk-screen li b { color:var(--c-sub); font-size:12px; font-weight:600; }
 .mk-screen li em { color:var(--c-ink); font-size:16px; font-style:normal; font-weight:800; font-variant-numeric:tabular-nums; }
 .mk-screen li small { color:var(--c-faint); font-size:11px; }
 @media (max-width:800px) { .mk-screen ul { grid-template-columns:1fr 1fr; } }
 
 /* 월별 전략 보기 (그은 선 · 매매 기록) */
 .mk-narrow .mk-sim-head { padding:18px 22px; }
-.mk-sim-head small { color:var(--c-faint); font-size:12.5px; font-weight:600; }
+.mk-sim-head small { color:var(--c-faint); font-size:13px; font-weight:600; }
 .mk-sim-head h1 { margin:4px 0 6px; font-size:22px; font-weight:800; letter-spacing:-.3px; }
-.mk-sim-head p { margin:0; color:var(--c-sub); font-size:13.5px; }
+.mk-sim-head p { margin:0; color:var(--c-sub); font-size:14px; }
 .mk-sim-nums { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:12px; color:var(--c-sub); font-size:13px; }
 .mk-sim-nums b { margin-left:4px; color:var(--c-ink); font-weight:800; }
 .mk-sim-nums b.gain { color:var(--mk-gain); } .mk-sim-nums b.loss { color:var(--mk-loss); }
@@ -350,7 +350,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-sim-rule, .mk-sim-chart-card, .mk-sim-trades { margin-top:12px; padding:16px 20px; }
 .mk-sim-rule h2, .mk-sim-chart-card h2, .mk-sim-trades h2 { margin:0 0 8px; font-size:16px; font-weight:800; }
 .mk-sim-chart-card h2 small, .mk-sim-trades h2 small { margin-left:6px; color:var(--c-faint); font-size:12px; font-weight:600; }
-.mk-sim-rule p { margin:0 0 6px; color:var(--c-ink); font-size:13.5px; line-height:1.6; }
+.mk-sim-rule p { margin:0 0 6px; color:var(--c-ink); font-size:14px; line-height:1.6; }
 .mk-sim-rule small { color:var(--c-faint); font-size:12px; }
 .mk-sim-chart { width:100%; height:380px; border-radius:8px; overflow:hidden; }
 .mk-sim-trades ul { display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none; }
@@ -363,9 +363,9 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-sim-trades .who span { margin-left:auto; padding:2px 8px; border-radius:9px; font-size:11px; font-weight:700; }
 .mk-sim-trades .who span.ok { background:color-mix(in srgb, var(--c-up) 14%, transparent); color:var(--c-up); }
 .mk-sim-trades .who span.no { background:var(--c-warn-soft); color:var(--c-warn); }
-.mk-sim-trades p { margin:2px 0; color:var(--c-sub); font-size:12.5px; font-variant-numeric:tabular-nums; }
+.mk-sim-trades p { margin:2px 0; color:var(--c-sub); font-size:13px; font-variant-numeric:tabular-nums; }
 .mk-sim-trades p span { display:inline-block; width:30px; color:var(--c-ink); font-weight:700; }
-.mk-sim-trades li small { display:block; margin-top:6px; color:var(--c-faint); font-size:11.5px; }
+.mk-sim-trades li small { display:block; margin-top:6px; color:var(--c-faint); font-size:12px; }
 a.mk-owned, a.mk-primary, a.mk-ghost, a.mk-soft { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
 .mk-page a.mk-owned { border:1px solid var(--c-up); background:color-mix(in srgb, var(--c-up) 12%, transparent); color:var(--c-up); font-weight:700; }
 .mk-page a.mk-owned:hover { background:color-mix(in srgb, var(--c-up) 20%, transparent); }
@@ -383,7 +383,7 @@ html[data-theme="dark"] .mk-sim-trades .who i.kind.stock { color:#b794f6; }
 .mk-sim-legend li { display:inline-flex; align-items:center; gap:6px; }
 .mk-sim-legend i { width:18px; border-top-width:2px; }
 .mk-sim-legend b { color:var(--c-ink); font-weight:700; font-variant-numeric:tabular-nums; }
-.mk-sim-panes { margin:6px 0 0; color:var(--c-faint); font-size:11.5px; }
+.mk-sim-panes { margin:6px 0 0; color:var(--c-faint); font-size:12px; }
 .mk-asof { margin:-6px 0 12px; color:var(--c-faint); font-size:12px; }
 /* 매수 · 매도 가격 글씨 (화살표 옆, 봉 · 선을 피해 자리 잡음) */
 .mk-sim-chart-wrap { position:relative; }
@@ -409,10 +409,10 @@ html[data-theme="dark"] .mk-sim-legend i.doodle { border-top-color:#f1f3f7; }
 .mk-facts li span { color:var(--c-sub); font-size:12px; }
 .mk-facts li b { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
 .mk-facts li b.gain { color:var(--mk-gain); } .mk-facts li b.loss { color:var(--mk-loss); }
-.mk-facts li small { color:var(--c-faint); font-size:11.5px; }
+.mk-facts li small { color:var(--c-faint); font-size:12px; }
 .mk-facts > p { margin:10px 0 0; color:var(--c-faint); font-size:12px; }
 @media (max-width:800px) { .mk-facts ul { grid-template-columns:1fr 1fr; } }
-.mk-row-facts { display:block; margin-top:2px; color:var(--c-up); font-size:11.5px; font-weight:600; }
+.mk-row-facts { display:block; margin-top:2px; color:var(--c-up); font-size:12px; font-weight:600; }
 .mk-strat-peek { margin:4px 0 0 !important; color:var(--c-faint) !important; font-size:12px !important; }
 /* 구매 전 미리 보기 · 먼저 판단해 보기 · 이어진 보유 · 내 종목에 적용 */
 .mk-sim-peek { display:grid; grid-template-columns:1fr 2fr; gap:8px; width:100%; margin:4px 0; padding:0; list-style:none; }
@@ -432,9 +432,9 @@ html[data-theme="dark"] .mk-sim-legend i.doodle { border-top-color:#f1f3f7; }
 .mk-guess-result p { margin:0; font-size:13px; line-height:1.6; }
 .mk-guess-result b.gain { color:var(--mk-gain); } .mk-guess-result b.loss { color:var(--mk-loss); }
 .mk-sim-trades .who i.kind.carry { background:var(--c-accent-soft); color:var(--mk-primary); }
-.mk-apply { display:inline-flex; margin-top:10px; height:34px; font-size:12.5px; }
+.mk-apply { display:inline-flex; margin-top:10px; height:34px; font-size:13px; }
 /* 구매 전 확인 ('정책 자세히'는 팝업 버튼: PolicyDialog) */
-.mk-agree { display:flex; align-items:flex-start; gap:6px; margin:2px 0 4px; color:var(--c-sub); font-size:11.5px; line-height:1.5; cursor:pointer; }
+.mk-agree { display:flex; align-items:flex-start; gap:6px; margin:2px 0 4px; color:var(--c-sub); font-size:12px; line-height:1.5; cursor:pointer; }
 .mk-agree input { margin-top:2px; }
 .mk-agree a, .mk-agree .mk-policy-link { color:var(--mk-primary); font-weight:700; }
 .mk-page .mk-policy-link { padding:0; border:0; background:none; font:inherit; font-weight:700; cursor:pointer; }
@@ -446,9 +446,9 @@ html[data-theme="dark"] .mk-stat small { color:var(--mk-primary); opacity:1; fon
 html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 
 /* ───────── 톤 다듬기: 실제 서비스처럼 (표 한 장 · 회색 보조 글자 · 색은 숫자에만) ───────── */
-.mk-title { color:var(--c-ink); font-size:24px; letter-spacing:-.4px; }
+.mk-title { color:var(--c-ink); font-size:26px; letter-spacing:-.4px; }
 .mk-search { height:48px; border-radius:12px; padding-left:16px; }
-.mk-search input { font-size:14.5px; }
+.mk-search input { font-size:15px; }
 .mk-result-head { align-items:baseline; margin:24px 0 10px; }
 .mk-result-head strong { font-size:15px; }
 .mk-result-head em { color:var(--c-ink); }
@@ -483,7 +483,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 
 /* 트레이더 상세: 지표 한 판 · 설명 줄 없이 · 작은 글씨 줄이기 */
 .mk-profile h1 { font-size:24px; font-weight:800; }
-.mk-profile blockquote { font-size:17px; }
+.mk-profile blockquote { font-size:18px; }
 .mk-profile p { font-size:15px; line-height:1.6; }
 .mk-tags span { font-size:13px; }
 .mk-buy { background:var(--c-surface); }
@@ -497,7 +497,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-kpi strong { color:var(--c-ink); font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
 .mk-kpi strong.gain { color:var(--mk-gain); }
 .mk-kpi strong.loss { color:var(--mk-loss); }
-.mk-section-head h2 { font-size:19px; }
+.mk-section-head h2 { font-size:18px; }
 .mk-strat { padding:16px 18px; }
 .mk-strat small { font-size:13px; }
 .mk-strat p { font-size:14px; line-height:1.55; }
@@ -513,12 +513,12 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 
 /* 월별 전략 보기: 작은 글씨 키우기 */
 .mk-sim-head small, .mk-sim-rule small, .mk-sim-panes, .mk-sim-legend, .mk-sim-trades li small, .mk-sim-trades .who time { font-size:13px; }
-.mk-sim-head p, .mk-sim-rule p, .mk-sim-trades p, .mk-sim-trades li.note p.text { font-size:14.5px; }
+.mk-sim-head p, .mk-sim-rule p, .mk-sim-trades p, .mk-sim-trades li.note p.text { font-size:15px; }
 .mk-sim-nums { font-size:14px; }
 .mk-sim-trades .who b { font-size:15px; }
 .mk-sim-peek span { font-size:13px; }
 .mk-sim-peek b { font-size:15px; }
-.mk-similar h2, .mk-chart-head h2 { font-size:19px; }
+.mk-similar h2, .mk-chart-head h2 { font-size:18px; }
 .mk-agree { font-size:13px; }
 .mk-agree input { margin-top:3px; }
 
@@ -529,8 +529,8 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-page .gnb, .mk-page .gnb * { word-break:normal; overflow-wrap:normal; text-wrap:wrap; }
 
 /* 판매자 등급 (GradeParts.tsx) */
-.mk-grade { display:inline-grid; min-width:26px; height:20px; place-items:center; padding:0 5px; border-radius:5px; font-size:11.5px; font-weight:800; letter-spacing:0; vertical-align:2px; }
-.mk-grade.small { min-width:22px; height:18px; font-size:10.5px; }
+.mk-grade { display:inline-grid; min-width:26px; height:20px; place-items:center; padding:0 5px; border-radius:5px; font-size:12px; font-weight:800; letter-spacing:0; vertical-align:2px; }
+.mk-grade.small { min-width:22px; height:18px; font-size:11px; }
 /* 판매 등급 배지: 높을수록 화려하게 — D 회색 테두리 · C 브론즈 · B 실버(가끔 반짝) · A 골드(반짝) · VIP 블랙골드(빛 + 반짝) */
 .mk-grade.g-VIP, .mk-grade.g-A, .mk-grade.g-B, .mk-grade.g-C { position:relative; overflow:hidden; }
 .mk-grade.g-VIP { min-width:34px; background:linear-gradient(135deg,#0b1020 0%,#1b2a4a 55%,#0b1020 100%); color:#f8dc8c; border:1px solid #d4a843; box-shadow:0 0 0 1px rgba(212,168,67,.25), 0 2px 8px rgba(212,168,67,.45); text-shadow:0 0 6px rgba(248,220,140,.6); letter-spacing:.06em; }
@@ -573,7 +573,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-trader-page .mk-periods { gap:8px; }
 .mk-trader-page .mk-periods button[role="radio"] { height:34px; padding-inline:14px; border-radius:12px; font-size:14px; font-weight:500; }
 .mk-trader-page .mk-periods button.on { font-weight:600; }
-.mk-trader-page .mk-sortdd-btn { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:104px; height:36px; padding:0 13px; border:0; border-radius:12px; background:var(--c-subtle); color:var(--c-accent); font-size:17px; }
+.mk-trader-page .mk-sortdd-btn { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:104px; height:36px; padding:0 13px; border:0; border-radius:12px; background:var(--c-subtle); color:var(--c-accent); font-size:18px; }
 html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0) invert(1); }
 .mk-trader-panel { overflow:hidden; border:1px solid var(--c-line); border-radius:16px; background:var(--c-surface); }
 .mk-trader-columns,.mk-trader-row-link { display:grid; grid-template-columns:minmax(0,437fr) minmax(0,160fr) minmax(0,152fr) minmax(0,65fr) minmax(0,160fr); align-items:center; padding-inline:23px 13px; }
@@ -622,7 +622,7 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
   .mk-trader-row > .mk-fav { top:14px; left:16px; }
   .mk-trader-who { grid-column:1 / -1; padding-right:0; }
   .mk-trader-name { font-size:18px; }
-  .mk-trader-metric,.mk-trader-grade .mk-grade-text { font-size:17px; line-height:22px; }
+  .mk-trader-metric,.mk-trader-grade .mk-grade-text { font-size:18px; line-height:22px; }
   .mk-trader-metric-label { position:static; display:block; width:auto; height:auto; clip-path:none; color:var(--c-sub); font-size:12px; line-height:17px; }
 }
 /* 트레이더 상세 지표: 남색 카드 5개 (시안 1275:6904 · 등급 · 누적 수익률 · 일관성 · 전략 이행률 · 최대 낙폭) */

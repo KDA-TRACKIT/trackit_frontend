@@ -14,6 +14,7 @@ import BeeLoader from "../../BeeLoader";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
+import MonthSelect from "./MonthSelect";
 import ReviewView from "./ReviewView";
 import {
   KINDS,
@@ -201,17 +202,7 @@ export default function MemosPage() {
             <ChevronDown size={12} aria-hidden="true" />
           </span>
           {view === "calendar" ? (
-            <span className="mm-select with-icon">
-              <CalendarDays size={14} aria-hidden="true" />
-              <select value={month} onChange={(e) => pickMonth(e.target.value)} aria-label="달">
-                {Array.from({ length: 12 }, (_, i) => addMonths(today.slice(0, 7), -i)).map((ym) => (
-                  <option key={ym} value={ym}>
-                    {monthLabel(ym)}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} aria-hidden="true" />
-            </span>
+            <MonthSelect months={Array.from({ length: 12 }, (_, i) => addMonths(today.slice(0, 7), -i))} value={month} onChange={pickMonth} />
           ) : (
             <span className="mm-select with-icon">
               <CalendarDays size={14} aria-hidden="true" />

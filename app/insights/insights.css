@@ -94,12 +94,12 @@
 .ins-mk-chart { height:330px; }
 .ins-mk-meta { margin:8px 0 0; }
 .ins-mk-stats { display:flex; flex-direction:column; gap:18px; padding-left:24px; border-left:1px solid var(--c-line); }
-.ins-mk-stats h3 { margin:6px 0 0; font-size:17px; font-weight:800; }
+.ins-mk-stats h3 { margin:6px 0 0; font-size:18px; font-weight:800; }
 .ins-mk-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:0; }
 .ins-mk-grid.two { grid-template-columns:repeat(2,1fr); }
 .ins-mk-grid.sep { padding-top:18px; border-top:1px solid var(--c-line); }
 .ins-mk-grid dt { color:var(--c-sub); font-size:13px; }
-.ins-mk-grid dd { margin:4px 0 0; font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ins-mk-grid dd { margin:4px 0 0; font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .ins-mk-grid dd small { margin-left:2px; font-size:13px; font-weight:600; }
 .ins-mk-w52 > span { color:var(--c-sub); font-size:13px; }
 .ins-mk-w52 .bar { position:relative; height:4px; margin:12px 6px; border-radius:2px; background:var(--c-line); }
@@ -114,16 +114,16 @@
 /* 오늘의 종목 (MarketMovers.tsx): 순위 표 + 오른쪽 종목 요약 */
 .ins-mv { padding:18px 20px 16px; }
 .ins-mv-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
-.ins-mv-head h2 { margin:0; font-size:20px; font-weight:800; }
+.ins-mv-head h2 { margin:0; font-size:18px; font-weight:800; }
 .ins-mv-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; }
-.ins-mv-tabs button { height:34px; padding:0 14px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink-2); font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+.ins-mv-tabs button { height:34px; padding:0 14px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink-2); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .ins-mv-tabs button:hover { border-color:var(--c-line-strong); }
 .ins-mv-tabs button[aria-selected="true"] { border-color:#0f2367; background:#0f2367; color:#fff; }
 .ins-mv-body { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:0; border-top:1px solid var(--c-line); }
 .ins-mv-table { min-width:0; padding-right:18px; }
 .ins-mv-table ol { margin:0; padding:0; list-style:none; }
-.ins-mv-row { display:grid; grid-template-columns:34px minmax(170px,1.6fr) minmax(90px,1fr) minmax(120px,1.1fr) minmax(90px,1fr) minmax(80px,.9fr) minmax(80px,.9fr); align-items:center; gap:8px; min-height:52px; padding:0 6px; border-bottom:1px solid var(--c-line); font-size:14.5px; }
-.ins-mv-th { min-height:40px; color:var(--c-sub); font-size:12.5px; }
+.ins-mv-row { display:grid; grid-template-columns:34px minmax(170px,1.6fr) minmax(90px,1fr) minmax(120px,1.1fr) minmax(90px,1fr) minmax(80px,.9fr) minmax(80px,.9fr); align-items:center; gap:8px; min-height:52px; padding:0 6px; border-bottom:1px solid var(--c-line); font-size:15px; }
+.ins-mv-th { min-height:40px; color:var(--c-sub); font-size:13px; }
 .ins-mv-th span:not(:nth-child(2)) { text-align:right; }
 li.ins-mv-row { cursor:pointer; }
 li.ins-mv-row:hover { background:var(--c-hover); }
@@ -134,20 +134,20 @@ li.ins-mv-row.on { background:var(--c-subtle); }
 .ins-mv-row .who b { min-width:0; overflow:hidden; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
 .ins-mv-avatar { display:inline-grid; flex:0 0 auto; place-items:center; border-radius:26%; color:#fff; font-weight:800; line-height:1; }
 /* 관심 종목 ☆ / ★ (트레이딩 로그 종목 검색의 별과 같은 색) */
-.ins-mv .fav { display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:none; color:#b3bac6; font-size:17px; line-height:1; cursor:pointer; }
+.ins-mv .fav { display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:none; color:#b3bac6; font-size:18px; line-height:1; cursor:pointer; }
 .ins-mv .fav:hover, .ins-mv .fav.on { color:#f2b01e; }
-.ins-mv-dhead .fav { font-size:19px; }
+.ins-mv-dhead .fav { font-size:18px; }
 .ins-mv .fav:disabled { cursor:progress; opacity:.5; }
 /* 미국: 티커(굵게) + 한글 이름(흐리게) */
 .ins-mv-row .who .nm { display:flex; min-width:0; align-items:baseline; gap:6px; }
 .ins-mv-row .who .tk { flex:none; overflow:visible; font-weight:700; letter-spacing:.2px; }
-.ins-mv-row .who .nm small { min-width:0; overflow:hidden; color:var(--c-sub); font-size:12.5px; text-overflow:ellipsis; white-space:nowrap; }
+.ins-mv-row .who .nm small { min-width:0; overflow:hidden; color:var(--c-sub); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
 .ins-mv-more { display:block; width:100%; height:40px; margin-top:6px; border:0; border-radius:8px; background:var(--c-subtle); color:var(--c-ink-2); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .ins-mv-detail { position:sticky; top:12px; align-self:start; display:flex; min-width:0; flex-direction:column; gap:10px; padding:16px 0 0 18px; border-left:1px solid var(--c-line); }
 .ins-mv-dhead { display:flex; align-items:center; gap:10px; }
 .ins-mv-dhead > div { display:flex; min-width:0; flex:1; flex-direction:column; }
-.ins-mv-dhead strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; white-space:nowrap; }
-.ins-mv-dhead small { color:var(--c-sub); font-size:12.5px; }
+.ins-mv-dhead strong { overflow:hidden; font-size:18px; text-overflow:ellipsis; white-space:nowrap; }
+.ins-mv-dhead small { color:var(--c-sub); font-size:13px; }
 .ins-mv-price { display:flex; align-items:baseline; gap:8px; margin:0; font-variant-numeric:tabular-nums; }
 .ins-mv-price b { font-size:24px; }
 .ins-mv-price span { font-size:15px; font-weight:700; }
@@ -156,7 +156,7 @@ li.ins-mv-row.on { background:var(--c-subtle); }
 .ins-mv-facts { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:4px 0 0; padding-top:12px; border-top:1px solid var(--c-line); }
 .ins-mv-facts dt { color:var(--c-sub); font-size:12px; }
 .ins-mv-facts dd { margin:3px 0 0; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
-.ins-mv-go { display:grid; place-items:center; height:40px; margin-top:4px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; }
+.ins-mv-go { display:grid; place-items:center; height:40px; margin-top:4px; border:1px solid var(--c-line-strong); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
 .ins-mv-go:hover { background:var(--c-hover); }
 @media (max-width:800px) { .ins-mv-row { grid-template-columns:34px minmax(150px,1.6fr) minmax(86px,1fr) minmax(116px,1.1fr) minmax(80px,.9fr); } .ins-mv-row .opt { display:none; } }
 @media (max-width:800px) { .ins-mv-body { grid-template-columns:1fr; } .ins-mv-table { padding-right:0; } .ins-mv-detail { position:static; padding:16px 0 0; border-left:0; border-top:1px solid var(--c-line); } }

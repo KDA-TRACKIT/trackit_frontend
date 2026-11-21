@@ -36,6 +36,17 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-select select { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mm-select:focus-within { border-color:#0f2367; }
 .mm-select svg { flex:none; pointer-events:none; }
+/* 달 고르기 (MonthSelect): 기본 select 대신 작은 메뉴 — 연 · 월을 칸으로 나누고 숫자 폭을 맞춰 '월'이 한 줄로 */
+.mm-month { padding:0; }
+.mm-month-btn { display:flex; align-items:center; gap:6px; width:100%; height:100%; padding:0 10px 0 13px; border:0; border-radius:inherit; outline:0; background:none; color:inherit; font:inherit; font-variant-numeric:tabular-nums; text-align:left; cursor:pointer; }
+.mm-month-btn > span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mm-month-menu { position:absolute; z-index:30; top:calc(100% + 6px); left:-1px; right:-1px; margin:0; padding:4px; border:1px solid var(--c-line, #e2e8f0); border-radius:10px; background:var(--c-surface, #fff); box-shadow:0 8px 22px rgba(15,35,103,.12); list-style:none; }
+.mm-month-menu button { display:grid; grid-template-columns:14px 3.6em 2.3em; justify-content:start; align-items:center; column-gap:5px; width:100%; height:30px; padding:0 8px; border:0; border-radius:6px; outline:0; background:none; color:var(--c-ink-2, #4a5463); font:inherit; font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; text-align:left; cursor:pointer; }
+.mm-month-menu button .m { text-align:right; }
+.mm-month-menu button i { display:grid; place-items:center; color:#0f2367; }
+.mm-month-menu button:hover, .mm-month-menu button:focus-visible { background:var(--c-subtle, #f4f6fa); }
+.mm-month-menu button.on { color:var(--c-ink, #1c212b); font-weight:700; }
+html[data-theme="dark"] .mm-month-menu button i { color:var(--c-accent); }
 
 /* ── 참고 자료(종류) 고르기 ── */
 .mm-kinds { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:20px 0; }
@@ -186,7 +197,7 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-chips { display:flex; flex-direction:column; gap:3px; margin-top:6px; }
 .mm-chip-wrap { position:relative; display:block; min-width:0; }
 /* 칩: 흰색 60% · 마우스 올림 = 종류별 연한 색 + 그림자 + 밑줄 · 고른 칩 = 흰색 + 그림자 (Figma '최종 칩 60%') */
-.mm-page .mm-chip { display:block; width:100%; padding:2px 4px; overflow:hidden; border:0; border-radius:4px; background:rgb(255 255 255 / 60%); color:#1b2a44; font:inherit; font-size:11.5px; font-weight:500; line-height:1.45; text-align:left; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.mm-page .mm-chip { display:block; width:100%; padding:2px 4px; overflow:hidden; border:0; border-radius:4px; background:rgb(255 255 255 / 60%); color:#1b2a44; font:inherit; font-size:12px; font-weight:500; line-height:1.45; text-align:left; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
 .mm-page .mm-chip .mm-dot { width:6px; height:6px; margin-right:3px; vertical-align:1px; }
 .mm-page .mm-chip:hover, .mm-page .mm-chip:focus-visible { box-shadow:0 2px 6px rgb(16 26 45 / 16%); outline:none; text-decoration:underline; }
 .mm-page .mm-chip.k-chart:is(:hover, :focus-visible) { background:#f3f2fd; color:#322f4b; }
@@ -235,9 +246,9 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-side-text { display:-webkit-box; overflow:hidden; color:#3d4757; font-size:13px; line-height:1.55; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .mm-side-ref { overflow:hidden; color:#8791a3; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .mm-side-day { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 20px; border-bottom:1px solid #eef2f6; background:#f7f9fc; }
-.mm-side-day b { color:#1c212b; font-size:12.5px; font-weight:600; }
+.mm-side-day b { color:#1c212b; font-size:13px; font-weight:600; }
 .mm-side-day small { margin-left:4px; color:#8791a3; font-weight:500; }
-.mm-side-day span { font-size:12.5px; font-weight:700; }
+.mm-side-day span { font-size:13px; font-weight:700; }
 .mm-side-none { margin:0; padding:28px 20px; border-bottom:1px solid #eef2f6; color:#8791a3; font-size:13px; text-align:center; }
 /* 달력형 크게 보기 (오른쪽 1/3) */
 .mm-detail.in-side { gap:13px; padding:14px 20px 22px; }
