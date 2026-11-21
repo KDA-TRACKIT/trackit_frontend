@@ -66,7 +66,7 @@ export default function PurchasesPage() {
   const nothing = server !== null && !traders.length && !server.length;
 
   return (
-    <main className="mk-page">
+    <main className="mk-page ar-subscriptions-page">
       <SiteHeader active="archive" />
       <div className="mk-wrap ar-wrap">
         <div className="ar-title-row">
