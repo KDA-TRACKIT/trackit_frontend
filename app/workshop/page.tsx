@@ -22,12 +22,12 @@ import RecordBoard from "./RecordBoard";
 import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
-import { addRecord, kstNow, linkPending, memoText, useRecords } from "../../lib/records";
+import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
 import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanConfirm";
-import { autoFillPlan, consolidateStrategy, strategyKind } from "../../lib/strategyText";
+import { autoFillPlan } from "../../lib/strategyText";
 import { buildLadder, noteLines, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
-import { accumulate, currentRecords, lineChange, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
+import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import SiteHeader from "../SiteHeader";
@@ -356,39 +356,12 @@ export default function WorkshopPage() {
   const analyzed = !!aiMemoResult && analyzedKey === inputKey;
   /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
   const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
-  /** AI 가 쌓인 전략과 합친 정리본이 있으면 이번 저장이 종목 전략 전체를 대신함 */
-  // 종목 전략 정리본: 쌓인 전략(투자자가 쓴 문장만) + 이번 Memo. 다시 쓴 칸만 바꾸고 나머지는 이어받음 (규칙, AI 가 말을 바꾸지 않게)
-  const merged = consolidateStrategy(strategyRecords.map((r) => memoText(r.text)), noteText);
-  const consolidating = strategyRecords.length > 0 && !!merged.text;
-  /**
-   * 바뀐 게 없는지: 정리본 문장(매수 · 매도 · 손절 · 목표 · 메모)이 지금까지와 같고, 그은 선도 새로 긋거나 옮긴 게 없으면
-   *   현재가 · AI 분석만 다른 것 → 새 종목 전략 버전을 쌓지 않음 (2026-11-19)
-   */
-  const unchanged = (lines: NoteLine[]) => {
-    if (!strategyRecords.length) return false;
-    const before = consolidateStrategy(strategyRecords.map((r) => memoText(r.text)), "").text;
-    if (merged.text.replace(/\s/g, "") !== before.replace(/\s/g, "")) return false;
-    const prev = new Map(accumulate(strategyRecords).map((l) => [l.key, l]));
-    return lines.every((l) => lineChange(prev.get(l.key), l) === "same");
-  };
   /** 매매 계획: 그은 선에서 고른 매매 + Memo 문장, 빈 칸(손절 · 목표 · 매도)은 정한 가격 기준으로 그은 선에서 채움 */
   const fullPlan = () => {
     const { rungs, groups } = buildLadder(drawings, bars[bars.length - 1]?.time, bars);
     const prices = [...rungs.map((r) => r.price), ...groups.flatMap((g) => (g.kind === "zone" ? [g.low, g.high] : g.levels.map((l) => l.price)))];
     return autoFillPlan(withMemo(plan, noteText), prices, money, today?.close);
   };
-  /** 확인 창에 보여 줄 매매 계획 4칸 */
-  const planRows = () => {
-    const fp = fullPlan();
-    const conds = fp.condition.split(" / ").map((x) => x.trim()).filter(Boolean);
-    return [
-      { label: "매수", text: conds.filter((c) => strategyKind(c) === "buy").join(" / ") },
-      { label: "매도", text: conds.filter((c) => strategyKind(c) !== "buy").join(" / ") },
-      { label: "손절", text: fp.stop },
-      { label: "목표", text: fp.target },
-    ];
-  };
-
   /** AI 분석 (그은 선 + Memo). 결과가 들어오면 true */
   async function saveToRecord(): Promise<boolean> {
     if (memoBusy) return false;
@@ -500,7 +473,7 @@ export default function WorkshopPage() {
     //   확인 창에서 매매 계획 칸을 고쳤으면 그 값 (매수 · 매도 → 조건, 손절, 목표)
     const auto = fullPlan();
     const row = (label: string) => edits?.plan?.find((r) => r.label === label)?.text.trim() ?? "";
-    const fp = edits?.plan ? { ...auto, condition: [row("매수"), row("매도")].filter(Boolean).join(" / "), stop: row("손절"), target: row("목표") } : auto;
+    const fp = edits?.plan?.length ? { ...auto, condition: [row("매수"), row("매도")].filter(Boolean).join(" / "), stop: row("손절"), target: row("목표") } : auto;
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
     const result = await addRecord({
       date: kstNow().date,
@@ -514,7 +487,6 @@ export default function WorkshopPage() {
       // 확인 창에서 고쳤으면 고친 글
       text: edits ? edits.pendingText : savedText(),
       // AI 가 쌓인 종목 전략과 합친 정리본이면, 합친 예전 메모를 가리켜 화면엔 정리본 하나만 보이게 (예전 것은 기록에 남음)
-      consolidates: consolidating ? strategyRecords.map((r) => r.id) : undefined,
       drawings: drawings.map(drawingToAnnotation),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
@@ -583,13 +555,16 @@ export default function WorkshopPage() {
     if (await saveToRecord()) openReview();
   }
 
-  /** 확정할 때 종목 전략에 쌓일 글: Memo + AI 분석 정리(머리표 없이) + 고른 매매 */
-  //   매매 계획 줄([노트 종류] · [매수 조건] …)은 체결과 연결됐을 때만 (연결 안 되면 매매 계획으로 치지 않음)
-  const savedText = () =>
-    // 종목 전략 정리본(투자자가 쓴 문장 그대로) + AI 분석 문단(참고용, 다음 정리 때는 전략으로 안 침)
-    //   매매 계획 4칸(자동 포함)은 확인 창에서 이 정리본의 '- 매수: …' 줄로 들어가고, 칸을 고치면 그 줄도 바뀜
-    //   맨 위 줄은 저장할 때의 현재가 (나중에 그때 가격을 바로 보게. '[' 로 시작해 다음 정리 때 전략 문장으로 안 침)
-    [today?.close ? `[현재가] ${money(today.close)}` : "", merged.text || noteText.trim(), scenarioLine, aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
+  /** 그은 선 정리: 선마다 이름 · 지지/저항 · 가격 (· 고른 매매) */
+  const drawingSummary = () => {
+    const last = bars[bars.length - 1];
+    const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
+    if (!lines.length) return "";
+    const at = (l: NoteLine) => (l.price !== undefined ? money(l.price) : `${money(l.low ?? 0)}~${money(l.high ?? 0)}`);
+    return ["[드로잉]", ...lines.map((l) => `· ${l.label}${l.role ? ` (${l.role === "SUPPORT" ? "지지" : "저항"})` : ""} ${at(l)}${l.trade ? ` · ${l.trade}` : ""}`)].join("\n");
+  };
+  /** 저장될 글 (2026-11-21): 투자자가 쓴 Memo + 그은 선 + 고른 시나리오 + AI 분석. 예전 전략 합치기 · 매매 계획 칸 줄은 안 넣음 */
+  const savedText = () => [noteText.trim(), drawingSummary(), scenarioLine, aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {
@@ -881,15 +856,6 @@ ${t}` : t))}
                   pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
                   ai={aiMemoResult}
                   records={strategyRecords}
-                  consolidating={consolidating}
-                  unchanged={unchanged(review.lines)}
-                  planRows={planRows()}
-                  levels={[
-                    { label: "지지", text: review.lines.filter((l) => l.role === "SUPPORT").map((l) => (l.price !== undefined ? money(Math.round(l.price)) : `${money(Math.round(l.low ?? 0))}~${money(Math.round(l.high ?? 0))}`)).join(" · ") },
-                    { label: "저항", text: review.lines.filter((l) => l.role === "RESISTANCE").map((l) => (l.price !== undefined ? money(Math.round(l.price)) : `${money(Math.round(l.low ?? 0))}~${money(Math.round(l.high ?? 0))}`)).join(" · ") },
-                  ]}
-                  current={today?.close ? money(today.close) : undefined}
-                  dropped={consolidating ? merged.dropped : []}
                   linked={!!linkedExecution}
                   busy={confirmBusy}
                   error={confirmError}
