@@ -526,9 +526,6 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 /* 구매한 전략 → 트레이더 (시안) */
 .ar-pt-back { display:inline-flex; align-items:center; gap:2px; margin:8px 0 0 -5px; padding:4px 8px 4px 0; color:var(--c-sub); font-size:16px; font-weight:600; text-decoration:none; }
 .ar-pt-back:hover { color:var(--c-ink); }
-.ar-pt-head { display:flex; align-items:center; justify-content:space-between; margin:10px 0 18px; }
-.ar-pt-head h1 { margin:0; font-size:26px; font-weight:800; }
-.ar-pt-head select { border:0; background:none; color:inherit; font:inherit; font-size:26px; font-weight:800; cursor:pointer; }
 .ar-pt-trades { padding:18px 16px 12px; }
 .ar-pt-trades h2 { margin:0 0 10px 8px; font-size:18px; font-weight:800; }
 .ar-pt-table .th, .ar-pt-table .tr { display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr; align-items:center; gap:8px; padding:9px 14px; text-align:left; }
@@ -539,7 +536,6 @@ html[data-theme="dark"] .ar-page { --ar-k-journal:#7c9be0; }
 html[data-theme="dark"] .ar-pt-table .tr.on, html[data-theme="dark"] .ar-pt-table .tr:hover { background:rgba(124,155,224,.16); }
 .ar-pt-table .tr b.gain { color:#1f9d55; } .ar-pt-table .tr b.loss { color:#e03131; }
 .ar-pt-table .tr small { color:var(--c-sub); font-size:12px; }
-.ar-pt-hold { padding:3px 14px; border-radius:12px; background:#e8eefc; color:#0f2367; font-size:13px; font-style:normal; font-weight:700; }
 .ar-pt-tools { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:26px 0 16px; }
 .ar-pt-tabs { display:flex; gap:6px; }
 .ar-pt-tabs button { height:40px; padding:0 20px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:16px; cursor:pointer; }
@@ -559,7 +555,6 @@ html[data-theme="dark"] .ar-pt-table .tr.on, html[data-theme="dark"] .ar-pt-tabl
 .ar-pt-memos li em { padding:2px 10px; border-radius:10px; background:#e8eefc; color:#0f2367; font-size:12px; font-style:normal; font-weight:700; }
 .ar-pt-memos li p { margin:10px 0 0; font-size:15px; line-height:1.5; }
 .ar-pt-memos li.empty { color:var(--c-sub); font-size:13px; }
-.ar-pt-etc-title { margin:30px 0 12px; font-size:22px; font-weight:800; }
 .ar-pt-etc { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 .ar-pt-etc div { padding:16px 18px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); }
 .ar-pt-etc small { color:var(--c-sub); font-size:14px; } .ar-pt-etc b { display:block; margin-top:6px; color:#0f2367; font-size:26px; font-weight:800; }
@@ -572,16 +567,7 @@ html[data-theme="dark"] .ar-pt-table .tr.on, html[data-theme="dark"] .ar-pt-tabl
 .ar-symbol-list a { display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid var(--c-line-strong); border-radius:8px; color:var(--c-ink); font-size:14px; font-weight:700; text-decoration:none; }
 .ar-symbol-list a:hover { border-color:var(--c-accent); color:var(--c-accent); }
 
-/* 트레이더 상세 · 달 고르기 (기본 select 대신) */
-.ar-mp { position:relative; display:inline-block; }
-.ar-mp-btn { display:inline-flex; align-items:center; gap:2px; padding:0 2px; border:0; border-radius:6px; background:none; color:inherit; font:inherit; font-size:inherit; font-weight:inherit; cursor:pointer; }
-.ar-mp-btn:hover { background:var(--c-subtle); }
-.ar-mp-btn svg { color:var(--c-sub); }
-.ar-mp-menu { position:absolute; z-index:20; top:calc(100% + 6px); left:0; min-width:120px; margin:0; padding:4px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 8px 22px rgba(0,0,0,.12); list-style:none; }
-.ar-mp-menu button { display:block; width:100%; padding:8px 12px; border:0; border-radius:6px; background:none; color:var(--c-ink); font:inherit; font-size:15px; font-weight:600; text-align:left; white-space:nowrap; cursor:pointer; }
-.ar-mp-menu button:hover { background:var(--c-subtle); }
-.ar-mp-menu button.on { color:var(--c-accent); font-weight:800; }
-
+/* 거래 내역이 빈 달 (전략 상세 · StrategyDetail) */
 .ar-pt-table .ar-pt-empty { margin:0; padding:22px 12px; color:var(--c-sub); font-size:14px; text-align:center; }
 
 /* 산 전략 활용하기 (내 차트에 겹치기 · 같은 상황 알림 · 내 매매와 비교 · 이 트레이더라면?) */
@@ -638,7 +624,6 @@ html[data-theme="dark"] .ar-pt-table .tr.on, html[data-theme="dark"] .ar-pt-tabl
 
 /* 구매한 전략 화면 다크 테마: 남색(#0f2367) 글씨 · 연파랑 칩이 어두운 배경에서 안 보이던 것 */
 html[data-theme="dark"] .ar-pt-etc b { color:#9db4ff; }
-html[data-theme="dark"] .ar-pt-hold,
 html[data-theme="dark"] .ar-pt-tabs button[aria-selected="true"],
 html[data-theme="dark"] .ar-pt-memos li em { background:rgba(124,155,224,.18); color:#c3d2ff; }
 html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }

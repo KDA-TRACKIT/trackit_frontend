@@ -1,0 +1,72 @@
+/* 전략 상세 (StrategyDetail) — 전략 마켓 · 전략보관함이 같이 쓰는 화면 (2026-11-21 통일)
+   전략보관함 화면(ar-pt-*)을 바탕으로, 전략 머리 · 지표 5개 · 달 칩 · 계획 열 · 노트 범위 · 노트 종류 표시만 더함 */
+.sd-body { display:flex; flex-direction:column; gap:18px; margin-top:12px; }
+.sd-body > .ar-pt-tools { margin:0; }
+.sd-body > .mk-sim-rule { margin:0; padding:16px 20px; }
+.sd-body > .mk-sim-lock { margin:0; }
+.sd-body > .su-wrap { margin-top:0; }
+
+/* 1. 전략 머리 */
+.sd-head { padding:18px 22px; }
+.sd-head-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.sd-head small { color:var(--c-faint); font-size:13px; font-weight:600; }
+.sd-head h1 { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:6px 0 0; font-size:22px; font-weight:800; letter-spacing:-.3px; }
+
+/* 같은 트레이더의 다른 전략 (예전 '달 고르기' 자리) */
+.sd-picker { position:relative; flex:none; }
+.sd-picker-btn { display:inline-flex; align-items:center; gap:4px; height:30px; padding:0 8px 0 12px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-subtle); color:var(--c-sub); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.sd-picker-btn:hover, .sd-picker-btn[aria-expanded="true"] { color:var(--c-ink); }
+.sd-picker-menu { position:absolute; z-index:20; top:calc(100% + 6px); right:0; min-width:300px; max-height:360px; margin:0; padding:4px; overflow-y:auto; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 8px 22px rgba(0,0,0,.12); list-style:none; }
+.sd-picker-menu a { display:flex; flex-direction:column; gap:2px; padding:8px 12px; border-radius:6px; color:var(--c-ink); text-decoration:none; }
+.sd-picker-menu a:hover { background:var(--c-subtle); }
+.sd-picker-menu a b { font-size:14px; font-weight:700; }
+.sd-picker-menu a small { color:var(--c-faint); font-size:12px; }
+.sd-picker-menu a.on b { color:var(--c-accent); font-weight:800; }
+
+/* 2. 지표 5개 (전략보관함 기타 정보 카드 모양) */
+.sd-stats { grid-template-columns:repeat(5, minmax(0, 1fr)); gap:12px; }
+.mk-page .sd-stats b.gain { color:var(--mk-gain); }
+.mk-page .sd-stats b.loss { color:var(--mk-loss); }
+
+/* 4. 거래 내역: 제목 옆 달 칩 · 계획 열 */
+.sd-trades-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 12px; margin:0 0 10px 8px; }
+.sd-trades-head h2 { margin:0; }
+.sd-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.sd-chips button { height:30px; padding:0 14px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.sd-chips button:hover { background:var(--c-subtle); }
+.sd-chips button[aria-pressed="true"] { border-color:var(--mk-primary); background:var(--mk-primary); color:var(--mk-primary-ink); }
+.sd-table .th, .sd-table .tr { grid-template-columns:1.1fr 1fr 1fr .9fr .9fr; }
+.sd-table .tb { max-height:288px; }
+.sd-plan { display:inline-block; padding:2px 8px; border-radius:9px; font-size:11px; font-style:normal; font-weight:700; white-space:nowrap; }
+.sd-plan.ok { background:color-mix(in srgb, var(--c-up) 14%, transparent); color:var(--c-up); }
+.sd-plan.no { background:var(--c-warn-soft); color:var(--c-warn); }
+
+/* 6. 차트 노트: 범위 칩(이 종목 / 전략 전체) · 노트 종류 표시 */
+.sd-scope { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.sd-scope button { height:30px; padding:0 12px; border:0; border-radius:8px; background:none; color:var(--c-sub); font:inherit; font-size:13px; cursor:pointer; }
+.sd-scope button:hover { color:var(--c-ink); }
+.sd-scope button[aria-selected="true"] { background:#e8eefc; color:#0f2367; font-weight:800; }
+.sd-memos ul { max-height:520px; margin-top:12px; }
+.sd-memos li div b { color:var(--c-ink); font-size:13px; font-weight:700; }
+.sd-memos .sd-kind { flex:none; }
+.sd-memos .sd-kind.plan { background:#e8eefc; color:#0f2367; }
+.sd-memos .sd-kind.exit, .sd-memos .sd-kind.market { background:var(--c-subtle); color:var(--c-sub); }
+.sd-memos .sd-kind.stock { background:color-mix(in srgb, #7c3aed 14%, transparent); color:#7c3aed; }
+.sd-memos .sd-kind.review { background:var(--c-warn-soft); color:var(--c-warn); }
+.sd-memos .sd-kind.carry { background:var(--c-accent-soft); color:var(--mk-primary); }
+
+html[data-theme="dark"] .sd-scope button[aria-selected="true"],
+html[data-theme="dark"] .sd-memos .sd-kind.plan { background:rgba(124,155,224,.18); color:#c3d2ff; }
+html[data-theme="dark"] .sd-memos .sd-kind.stock { color:#b794f6; }
+html[data-theme="dark"] .sd-picker-menu { box-shadow:0 8px 22px rgba(0,0,0,.45); }
+
+@media (max-width:800px) {
+  .sd-head-top { flex-direction:column; align-items:flex-start; }
+  .sd-picker-menu { right:auto; left:0; min-width:min(300px, 86vw); }
+  .sd-stats { grid-template-columns:1fr 1fr; }
+  .sd-stats > div:first-child { grid-column:1 / -1; } /* 기간 수익률은 한 줄 전체, 나머지 4개는 2 × 2 */
+  /* 차트 칸이 차트 폭만큼 버티지 않고 화면에 맞게 줄도록 (1fr 만 쓰면 최소 폭이 차트 폭) */
+  .sd .ar-pt-chart { grid-template-columns:minmax(0, 1fr); }
+  .sd-table { overflow-x:auto; }
+  .sd-table .th, .sd-table .tb { min-width:540px; }
+}
