@@ -20,6 +20,8 @@ import { markFreeView } from "../../lib/free-views";
 import { useMyTrader } from "../../lib/my-trader";
 import { pct, periodLabel, strategiesOf, strategyOf, tone, traderById, type Strategy } from "./data";
 import { StrategyButton, useNotice } from "./parts";
+import { MemoNotes } from "./feedback";
+import { useFeedback } from "../../lib/feedback";
 import StrategyChart, { type SimCandle } from "./StrategyChart";
 import { useDark, type SimDetail, type SimMonth } from "./GuessFirst";
 import "./marketplace.css";
@@ -37,6 +39,8 @@ type Rec = {
   code?: string;
   name?: string;
   text: string;
+  /** 메모 열쇠 "종류:날짜:종목(없으면 -)[:순번]" — 보충 노트가 이 메모에 붙음 */
+  ref?: string;
 };
 const KIND: Record<Kind, string> = {
   plan: "사전 기록",
@@ -66,6 +70,9 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   const my = useMyTrader();
   const dark = useDark();
   const { notify, node } = useNotice();
+  // 보충 노트 (메모마다): 프로필의 '메모에서 보기'로 오면 (?memo=메모 열쇠) 그 메모의 보충 노트를 펼친 채로
+  const fb = useFeedback(traderId);
+
   const own = !!t && my === t.id;
   // 구독 중이거나 예전에 달로 연 기록이 있으면 열림. 내가 올린 전략이면 구독 없이 봄 (서버 /strategy-data 도 같은 판정)
   const isOpen = !!t && !!s && (own || [s.key, ...s.months].some((r) => opened(passes, t.id, r)));
@@ -112,6 +119,16 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   const [sel, setSel] = useState<{ month: string; code: string } | null>(null);
   const [tab, setTab] = useState<"all" | "pre">("all");
   const [scope, setScope] = useState<"symbol" | "all">("symbol");
+  const [memoParam, setMemoParam] = useState<string | null>(null);
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("memo");
+    if (!m) return;
+    const timer = setTimeout(() => {
+      setMemoParam(m);
+      setScope("all");
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
   const [query, setQuery] = useState("");
   const [extra, setExtra] = useState<{
     key: string;
@@ -190,6 +207,14 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     ])
     .filter((r) => r.text)
     .sort((a, b) => a.d.localeCompare(b.d) || ORDER[a.kind] - ORDER[b.kind]);
+  // 메모 열쇠: 같은 날 · 같은 종류 · 같은 종목이 여럿이면 순번을 붙임 (정렬 순서가 늘 같아 열쇠도 같음)
+  const seenRefs = new Map<string, number>();
+  for (const r of recs) {
+    const base = `${r.kind}:${r.d}:${r.code ?? "-"}`;
+    const n = seenRefs.get(base) ?? 0;
+    seenRefs.set(base, n + 1);
+    r.ref = n ? `${base}:${n}` : base;
+  }
   const byTab = (list: Rec[]) => (tab === "pre" ? list.filter((r) => PRE.includes(r.kind)) : list);
   // 이 종목: 고른 매매가 있는 달의 그 종목 것 (차트에 보이는 달과 같게). 전략 전체: 증시 노트 · 이어진 보유까지 날짜순
   const symbolList = cur ? byTab(recs.filter((r) => r.month === cur.month && r.code === cur.code && r.kind !== "market" && r.kind !== "carry")) : [];
@@ -476,6 +501,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                             <time>{md(r.d)}</time>
                           </div>
                           <p>{r.text}</p>
+                          {/* 보충 노트: 이 메모에 대한 설명 요청 · 판매자 답 (구독자와 판매자만) */}
+                          {r.ref && r.kind !== "carry" && <MemoNotes trader={t} strategyKey={s.key} memoRef={r.ref} fb={fb} notify={notify} openAtStart={r.ref === memoParam} />}
                         </li>
                       ))}
                       {!shown.length && <li className="empty">{tab === "pre" ? "사전 노트가 없어요." : "노트가 없어요."}</li>}
