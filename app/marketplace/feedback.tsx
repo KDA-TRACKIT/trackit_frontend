@@ -1,5 +1,5 @@
 "use client";
-// 전략 후기 · Q&A 조각 (모두 공개, 비밀글 없음): 전략마다 꿀 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
+// 전략 마켓의 꿀 버튼 · 익명 구매자 후기 · 구독자와 판매자가 보는 노트 보충 설명 이력
 import HoneyPot from "../HoneyPot";
 import BeeLoader from "../BeeLoader";
 import { useState } from "react";
@@ -158,8 +158,8 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
 }
 
 /**
- * 트레이더 상세 "Q&A" (2026-11-21): 전략별 공개 질문 · 답. 1:1 상담이 아니라 구독자 모두가 같이 봄 — 비밀글 없음
- *   질문 = 구독 중인 사람 (이미 공개된 기록에 대한 설명만), 답 = 전략을 올린 본인만
+ * 트레이더 상세의 노트 보충 설명 이력: 구독자 전원과 판매자가 요청과 답변을 열람할 수 있음
+ *   설명 요청 = 구독 중인 사람 (전략 노트에 대한 보충 설명), 답변 = 전략을 올린 판매자
  *   쓰는 중에 개인정보 · 투자 조언(사도 되나요 · 추천 · 사세요)을 미리 알려 주고, 서버가 한 번 더 거름
  */
 export function Qna({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback | null; notify: (m: string) => void }) {
@@ -199,9 +199,8 @@ export function Qna({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback
       <div className="mk-section-head">
         <div>
           <h2>
-            Q&amp;A <span className="mk-reviews-count">{count}</span>
+            노트 보충 설명 이력 <span className="mk-reviews-count">{count}</span>
           </h2>
-          <p>구독자 모두가 함께 보는 공개 질문 · 답이에요. 비밀글은 없고, 이미 공개된 기록에 대한 질문만 받아요. 투자 상담 · 종목 추천은 올릴 수 없어요.</p>
         </div>
       </div>
 
@@ -232,7 +231,9 @@ export function Qna({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback
           <BeeLoader size="sm" />
         </div>
       ) : !canSee ? (
-        <p className="mk-card mk-empty mk-review-empty">{count ? `구독하면 질문 · 답 ${count}개를 볼 수 있어요.` : "구독하면 공개된 기록에 대해 질문할 수 있어요."}</p>
+        <p className="mk-card mk-empty mk-review-empty">
+          구독하면 다른 구독자들이 전략 노트의 어떤 부분에 대해 설명을 요청했고, 판매자가 어떻게 답했는지 볼 수 있어요.
+        </p>
       ) : questions.length ? (
         <ul className="mk-review-list">
           {questions.map((q) => (
