@@ -647,3 +647,25 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .mk-subs { color:var(--c-sub); font-size:12.5px; font-weight:600; white-space:nowrap; }
 .mk-mine-note { margin:0 0 8px; color:var(--c-sub); font-size:13px; line-height:1.6; }
 .mk-trader-name-line .mk-mine { margin-left:2px; }
+
+/* 트레이더 상세 맨 위 한 장 카드 (2026-11-21, Figma '마켓 / 트레이더 소개 카드'): 왼쪽 프로필 | 오른쪽 구독(기존 배치)
+   두 칸 모두 세로 가운데 → 카드 높이는 둘 중 큰 쪽, 소개가 짧아도 아래만 비지 않음 */
+.mk-hero { display:flex; align-items:center; gap:0; padding:0; overflow:hidden; }
+.mk-hero > .mk-profile { flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; padding:20px 24px; }
+.mk-hero > .mk-buy { flex:none; align-self:stretch; justify-content:center; width:300px; padding:20px 22px; border-left:1px solid var(--c-line); background:none; }
+.mk-hero .mk-profile-top { gap:12px; }
+.mk-hero .mk-avatar { width:48px; height:48px; color:var(--mk-primary); font-size:18px; font-weight:800; }
+.mk-profile-who { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.mk-profile-name { display:flex; align-items:center; gap:6px; min-width:0; }
+.mk-hero .mk-profile h1 { font-size:24px; font-weight:800; line-height:1.35; letter-spacing:-.5px; overflow-wrap:anywhere; }
+.mk-profile-name .mk-fav { justify-content:center; width:24px; height:24px; padding:0; }
+.mk-profile-meta { display:flex; align-items:center; gap:6px; color:var(--c-faint); font-size:13px; line-height:1.5; }
+.mk-profile-meta .mk-subs { font-size:13px; }
+.mk-profile-intro { display:flex; flex-direction:column; gap:2px; }
+.mk-hero .mk-profile-intro blockquote { margin:0; font-size:18px; line-height:1.5; }
+.mk-hero .mk-profile-intro p { margin:0; font-size:14px; line-height:1.6; }
+.mk-hero .mk-tags { margin-top:0; }
+@media (max-width:800px) {
+  .mk-hero { flex-direction:column; align-items:stretch; }
+  .mk-hero > .mk-buy { width:auto; border-left:0; border-top:1px solid var(--c-line); }
+}

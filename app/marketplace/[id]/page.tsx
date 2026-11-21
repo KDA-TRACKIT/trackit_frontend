@@ -1,6 +1,7 @@
 "use client";
 // 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명)
 import { ChevronLeft } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
@@ -59,23 +60,46 @@ export default function TraderPage() {
           트레이더 목록
         </Link>
 
-        <div className="mk-hero">
-          <section className="mk-card mk-profile">
+        {/* 맨 위 한 장 카드: 왼쪽 프로필 | 오른쪽 구독, 두 칸 세로 가운데 (Figma '마켓 / 트레이더 소개 카드') */}
+        <div className="mk-card mk-hero">
+          <section className="mk-profile">
             <div className="mk-profile-top">
               <span className="mk-avatar" aria-hidden>
                 {t.name.slice(0, 1)}
               </span>
-              <div>
-                <h1>
-                  {t.name} {own && <span className="mk-mine">내 전략</span>} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span>{" "}
-                  <span className="mk-subs" title="지금 구독 중인 사람 수">구독자 {subscribers ? `${(subscribers[t.id] ?? 0).toLocaleString("ko-KR")}명` : "…"}</span> {!own && <FavButton id={t.id} name={t.name} label />}
-                </h1>
+              <div className="mk-profile-who">
+                <div className="mk-profile-name">
+                  <h1>{t.name}</h1>
+                  {own ? (
+                    <span className="mk-mine">내 전략</span>
+                  ) : (
+                    <FavButton
+                      id={t.id}
+                      name={t.name}
+                      outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />}
+                      onIcon={<Image src="/marketplace/favorite-star-on.svg" alt="" width={20} height={20} />}
+                    />
+                  )}
+                </div>
+                <div className="mk-profile-meta">
+                  <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계">
+                    <HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span className="mk-subs" title="지금 구독 중인 사람 수">
+                    구독자 {subscribers ? `${(subscribers[t.id] ?? 0).toLocaleString("ko-KR")}명` : "…"}
+                  </span>
+                </div>
               </div>
             </div>
-            {t.quote && <blockquote>“{t.quote}”</blockquote>}
-            {t.bio.map((b) => (
-              <p key={b}>{b}</p>
-            ))}
+            {(t.quote || t.bio.length > 0) && (
+              <div className="mk-profile-intro">
+                {t.quote && <blockquote>“{t.quote}”</blockquote>}
+                {t.bio.map((b) => (
+                  <p key={b}>{b}</p>
+                ))}
+              </div>
+            )}
             <div className="mk-tags">
               {[t.type, ...t.indicators, t.market].map((v) => (
                 <span key={v}>{v}</span>
@@ -83,7 +107,7 @@ export default function TraderPage() {
             </div>
           </section>
 
-          <aside className="mk-card mk-buy">
+          <aside className="mk-buy">
             <small>
               <b>{t.name}</b> 월 구독
             </small>
