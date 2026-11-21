@@ -52,10 +52,14 @@ const ago = (iso: string) => {
 
 /** 트레이더 상세 "구매자 후기": 익명 목록 + 연 전략이 있으면 쓰기 */
 export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback | null; notify: (m: string) => void }) {
-  // 후기를 남길 수 있는 전략 (오래된 것부터): 구독 중이면 전부, 아니면 예전에 연 것
-  const all = strategiesOf(trader).reverse();
-  // 본인 전략에는 후기를 남길 수 없음
-  const opened = fb?.owner ? [] : (fb?.subscribed ? all : all.filter((s) => [s.key, ...s.months].some((r) => fb?.openedMonths.includes(r)))).map((s) => s.key);
+  const all = strategiesOf(trader);
+  const openedKeys = new Set(fb?.openedMonths.map((ref) =>
+    (all.find((s) => s.key === ref) ?? all.find((s) => s.months.includes(ref)))?.key,
+  ));
+  const opened = fb?.owner ? [] : all.filter((s) => openedKeys.has(s.key)).reverse().map((s) => s.key);
+  // 월 구독은 전략 키를 저장하지 않으므로 열람 기록이 없으면 최신 전략 한 건에 후기를 남긴다.
+  const latest = all[0];
+  if (!opened.length && fb?.subscribed && !fb.owner && latest) opened.push(latest.key);
   const titleOf = (ref: string) => strategyOf(trader, ref)?.title ?? "전략";
   const [month, setMonth] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -91,13 +95,15 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
       {opened.length > 0 && (
         <div className="mk-card mk-review-form">
           <div className="mk-review-form-top">
-            <select value={target} onChange={(e) => setMonth(e.target.value)} aria-label="후기를 남길 전략">
-              {opened.map((m) => (
-                <option key={m} value={m}>
-                  {titleOf(m)}
-                </option>
-              ))}
-            </select>
+            {opened.length > 1 && (
+              <select value={target} onChange={(e) => setMonth(e.target.value)} aria-label="후기를 남길 전략">
+                {opened.map((m) => (
+                  <option key={m} value={m}>
+                    {titleOf(m)}
+                  </option>
+                ))}
+              </select>
+            )}
             <small>{text.trim().length}/300</small>
           </div>
           <textarea
