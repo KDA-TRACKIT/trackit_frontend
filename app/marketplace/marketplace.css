@@ -646,3 +646,9 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .mk-sector-head span { color:var(--c-faint); font-size:12.5px; }
 .mk-sector-head a { margin-left:auto; color:var(--mk-primary); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
 .mk-sector-group .mk-slist { margin-top:0; }
+
+/* Q&A (2026-11-21): 질문 아래 판매자 답 · 답 쓰는 칸 */
+.mk-qna-answer { margin-top:10px; padding:10px 12px; border-left:3px solid var(--mk-primary); border-radius:0 8px 8px 0; background:var(--c-subtle); }
+.mk-qna-reply { margin-top:10px; }
+.mk-qna-reply textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:1.5; resize:vertical; outline:none; }
+.mk-qna-reply textarea:focus { border-color:var(--c-focus); }

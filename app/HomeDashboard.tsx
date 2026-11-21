@@ -17,7 +17,7 @@ import { initRecordSource, useRecords } from "../lib/records";
 import { getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
-import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
+import HomeWeeklyRecords from "./HomeWeeklyRecords";
 import { weekDays } from "../lib/home-calendar";
 import BeeLoader from "./BeeLoader";
 
@@ -111,7 +111,7 @@ export default function HomeDashboard() {
           </div>
           <div className="home-week-memos">
             <h2>이번 주 노트</h2>
-            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={workshopLink(record.symbol, record.symbolName, record.date)}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 노트가 없습니다.</p>}
+            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={`/archive/notes?note=${encodeURIComponent(record.id)}`}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 노트가 없습니다.</p>}
           </div>
         </div>
       </section>

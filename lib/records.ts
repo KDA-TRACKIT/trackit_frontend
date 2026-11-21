@@ -35,7 +35,19 @@ export type TradeRecord = {
   consolidates?: string[];
   /** 노트 종류: 일반 노트 · 매매 노트 (실제 관련 매매가 생긴 노트) */
   noteType?: "general" | "trade";
+  /** 시장: KR 국내 주식 · US 해외 주식 (종목 노트는 일지의 시장, 시장 전반 노트는 적어 둔 시장). 모르면 없음 */
+  market?: "KR" | "US";
+  /** 섹터: 이 종목이 든 내 전략의 섹터 (서버 기록만) */
+  sector?: string;
 };
+
+/** 일지 · 노트에 적힌 시장 값 → KR / US */
+function marketOf(value: unknown): "KR" | "US" | undefined {
+  const v = String(value ?? "").toUpperCase();
+  if (/^(US|ND|NY|NA|NASDAQ|NYSE|AMEX)$/.test(v)) return "US";
+  if (/^(KR|KRX|KOSPI|KOSDAQ|KONEX|NXT)$/.test(v)) return "KR";
+  return undefined;
+}
 
 /** 종목 없는 메모의 주제 */
 export const RECORD_TOPICS = ["뉴스", "거시경제", "시장 흐름", "업종·테마", "기타"] as const;
@@ -99,6 +111,8 @@ function fromServer(): Promise<TradeRecord[]> {
           ...(s.target ? { target: s.target } : {}),
           ...(s.replaces ? { replaces: s.replaces } : {}),
           ...(n.noteType ? { noteType: n.noteType } : {}),
+          ...((market ? marketOf(s.market) : marketOf(journal.market)) ? { market: market ? marketOf(s.market) : marketOf(journal.market) } : {}),
+          ...(!market && journal.sector ? { sector: journal.sector } : {}),
           ...(Array.isArray(s.consolidates) ? { consolidates: s.consolidates.filter((x: unknown): x is string => typeof x === "string") } : {}),
         } satisfies TradeRecord;
       }),

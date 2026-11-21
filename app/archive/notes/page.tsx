@@ -3,7 +3,7 @@
 //   내가 남긴 노트(트레이딩 로그 · 증시 캘린더 · 빠른 노트)를 한곳에서: 검색 · 참고 자료(종류) · 종목 · 기간으로 거르고
 //   - 리스트형: 날짜별 목록. 노트를 누르면 오른쪽에 크게(차트 · 연결된 체결 · 같은 종목 노트 · 이 노트로 AI 전략 만들기)
 //   - 달력형: 한 달 달력(칸 색 = 그날 청산한 거래의 실현 수익률, 칸 안 = 그날 노트) + 오른쪽에 고른 날 노트 / 크게 보기
-//   - 종목형: 종목(없으면 시장 전반)끼리 묶음
+//   - 종목형: 시장 → 섹터 → 종목으로 묶고 그 안은 시간순. 종목 없는 노트(시장 · 뉴스 · 경제)는 그 시장의 '시장 · 경제 · 뉴스' 묶음
 //   제목 줄은 전략보관함 다른 화면(구매한 전략 · 전략 분석)과 같은 자리 · 크기(ar-title-row), 설명 줄은 다른 화면처럼 없음
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -16,6 +16,9 @@ import MemoChart from "./MemoChart";
 import ReviewView from "./ReviewView";
 import {
   KINDS,
+  MARKET_ORDER,
+  MARKET_WIDE,
+  NO_SECTOR,
   addDays,
   addMonths,
   execInfo,
@@ -90,6 +93,17 @@ export default function MemosPage() {
   const [positions, setPositions] = useState<Position[]>([]);
 
   useEffect(() => void initRecordSource(), []);
+  // 홈 '이번 주 노트'에서 노트를 눌러 들어오면 (?note=노트 id) 그 노트를 바로 크게 보기 — 기간에 걸려 안 보이지 않게 전체 기간으로
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("note");
+    if (!id) return;
+    // 주소는 브라우저에서만 읽을 수 있어 첫 그림 뒤에 반영
+    const t = setTimeout(() => {
+      setRange("all");
+      setSel(id);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     let live = true;
     // 그날 수익률(달력 칸 색)용 청산 포지션. 로그인 전 · 서버 오류면 색 없이
@@ -356,27 +370,65 @@ function MemoRow({ m, pinned, on, onSelect, mode = "time" }: { m: Memo; pinned: 
   );
 }
 
+/**
+ * 종목형: 시장 → 섹터 → 종목으로 묶고 그 안은 시간순 (2026-11-21)
+ *   종목 없는 노트(시장 흐름 · 뉴스 · 경제 지표 · 공시)는 섹터가 아니라 그 시장의 '시장 · 경제 · 뉴스' 묶음으로, 섹터들보다 먼저
+ */
 function StockGroups({ memos, pins, sel, onSelect }: { memos: Memo[]; pins: ReadonlySet<string>; sel: string | null; onSelect: (id: string) => void }) {
   const [more, setMore] = useState(false);
-  const groups = useMemo(() => {
-    const map = new Map<string, Memo[]>();
-    for (const m of memos) map.set(m.subject, [...(map.get(m.subject) ?? []), m]);
-    return [...map].map(([subject, items]) => ({ subject, items }));
+  const markets = useMemo(() => {
+    const out: { market: string; sectors: { sector: string; subjects: { subject: string; items: Memo[] }[] }[] }[] = [];
+    for (const m of memos) {
+      let mk = out.find((x) => x.market === m.market);
+      if (!mk) out.push((mk = { market: m.market, sectors: [] }));
+      let sc = mk.sectors.find((x) => x.sector === m.sector);
+      if (!sc) mk.sectors.push((sc = { sector: m.sector, subjects: [] }));
+      let sb = sc.subjects.find((x) => x.subject === m.subject);
+      if (!sb) sc.subjects.push((sb = { subject: m.subject, items: [] }));
+      sb.items.push(m);
+    }
+    const rank = (x: string) => (MARKET_ORDER.indexOf(x) + 1 || 99);
+    const sectorRank = (x: string) => (x === MARKET_WIDE ? 0 : x === NO_SECTOR ? 2 : 1);
+    out.sort((a, b) => rank(a.market) - rank(b.market));
+    for (const mk of out) mk.sectors.sort((a, b) => sectorRank(a.sector) - sectorRank(b.sector) || a.sector.localeCompare(b.sector, "ko"));
+    return out;
   }, [memos]);
-  const shown = more ? groups : groups.slice(0, STOCK_GROUPS);
+  // 처음엔 종목 묶음 STOCK_GROUPS 개까지만 (시장 · 섹터 순서대로), 나머지는 '전체 노트 더 보기'
+  let left = more ? Infinity : STOCK_GROUPS;
+  const total = markets.reduce((a, mk) => a + mk.sectors.reduce((b, sc) => b + sc.subjects.length, 0), 0);
   return (
     <>
-      {shown.map((g) => (
-        <div key={g.subject} className="mm-group">
-          <div className="mm-day mm-band">
-            {g.subject} <small>노트 {g.items.length}개</small>
+      {markets.map((mk) => {
+        if (left <= 0) return null;
+        return (
+          <div key={mk.market} className="mm-market">
+            <div className="mm-market-name">{mk.market}</div>
+            {mk.sectors.map((sc) => {
+              if (left <= 0) return null;
+              const subjects = sc.subjects.slice(0, left);
+              left -= subjects.length;
+              return (
+                <div key={sc.sector} className="mm-sector">
+                  <div className="mm-sector-name">
+                    {sc.sector} <small>노트 {sc.subjects.reduce((a, g) => a + g.items.length, 0)}개</small>
+                  </div>
+                  {subjects.map((g) => (
+                    <div key={g.subject} className="mm-group">
+                      <div className="mm-day mm-band">
+                        {g.subject} <small>노트 {g.items.length}개</small>
+                      </div>
+                      {g.items.map((m) => (
+                        <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={onSelect} mode="date" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
-          {g.items.map((m) => (
-            <MemoRow key={m.id} m={m} pinned={pins.has(m.id)} on={m.id === sel} onSelect={onSelect} mode="date" />
-          ))}
-        </div>
-      ))}
-      {groups.length > shown.length && (
+        );
+      })}
+      {!more && total > STOCK_GROUPS && (
         <button type="button" className="mm-more" onClick={() => setMore(true)}>
           전체 노트 더 보기 <ChevronDown size={14} aria-hidden="true" />
         </button>

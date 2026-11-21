@@ -12,6 +12,8 @@ type NoteSummary = {
   summary?: string;
   symbolName?: string | null;
   topic?: string;
+  /** 시장 전반 노트가 어느 시장 이야기인지 (KR · US). 없으면 시장 공통 */
+  market?: string;
   /** 노트에 연결한 체결 (확정 시점 기준) */
   execution?: { time: string; side: string; quantity: number } | null;
   /** 노트를 쓴 시각 KST HH:MM:SS (확정 시각과 다를 수 있음) */

@@ -11,7 +11,7 @@ import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
-import { LikeButton, Reviews } from "../feedback";
+import { LikeButton, Qna, Reviews } from "../feedback";
 import "../marketplace.css";
 
 /** 채널나스닥 → "채널나스닥"과, 원트로그 → "원트로그"와 (따옴표로 감싸고, 마지막 글자가 한글이 아니면 와(과)) */
@@ -174,6 +174,8 @@ export default function TraderPage() {
         </section>
 
         <Reviews trader={t} fb={fb} notify={notify} />
+
+        <Qna trader={t} fb={fb} notify={notify} />
 
         <section className="mk-section mk-similar">
           <h2>{withWa(t.name)} 비슷한 트레이더</h2>

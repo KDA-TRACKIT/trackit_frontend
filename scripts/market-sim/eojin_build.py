@@ -213,6 +213,7 @@ for mth in E.MONTHS:
         if n_: notes.append(n_)
     for t in carried:
         done = t["exit"]["d"][:7] == mth
+        if not done: continue  # 아직 들고 있는 종목은 '보유 중'으로 드러내지 않음 (사후 공개: 청산한 달에만 남김, 2026-11-21)
         notes.append(dict(type="carry", d=t["exit"]["d"] if done else mth + "-01", code=t["code"], name=t["name"],
                           text=(f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']}({money(t['entry']['px'])}) — {t['exit']['d']} {t['exit']['why']} ({t['ret']:+.2f}%)."
                                 if done else f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']} 계속 보유 (진입가 {money(t['entry']['px'])}).")))
