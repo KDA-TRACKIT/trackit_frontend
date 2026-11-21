@@ -19,7 +19,7 @@ export type TraderFeedback = {
   questionCount?: number;
   questions?: Question[];
 };
-export type Question = { id: string; month: string; body: string; createdAt: string; mine: boolean; answers: { id: string; body: string; createdAt: string; mine: boolean }[] };
+export type Question = { id: string; month: string; /** 어느 메모에 대한 요청인지 (전략 상세의 메모 열쇠). 예전 전략 단위 요청은 null */ memoRef?: string | null; body: string; createdAt: string; mine: boolean; answers: { id: string; body: string; createdAt: string; mine: boolean }[] };
 
 // ── 트레이더별 ♥ 합계 (목록 · 홈 트레이더 보드) ──
 let totals: Record<string, number> = {};
@@ -94,8 +94,8 @@ export async function postComment(traderId: string, month: string, body: string)
 }
 
 /** 질문 남기기 (구독 중인 사람). 서버가 개인정보 · 투자 조언 요청을 거름 */
-export async function postQuestion(traderId: string, month: string, body: string) {
-  set(traderId, await apiRequest<TraderFeedback>(`/market/feedback/${traderId}/comments`, { method: "POST", body: JSON.stringify({ kind: "question", month, body }) }));
+export async function postQuestion(traderId: string, month: string, body: string, memoRef?: string) {
+  set(traderId, await apiRequest<TraderFeedback>(`/market/feedback/${traderId}/comments`, { method: "POST", body: JSON.stringify({ kind: "question", month, body, ...(memoRef ? { memoRef } : {}) }) }));
 }
 
 /** 질문에 답하기 (그 트레이더 본인만) */

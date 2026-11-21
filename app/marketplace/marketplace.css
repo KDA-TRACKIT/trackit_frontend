@@ -669,3 +669,22 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
   .mk-hero { flex-direction:column; align-items:stretch; }
   .mk-hero > .mk-buy { width:auto; border-left:0; border-top:1px solid var(--c-line); }
 }
+
+/* 메모마다 붙는 보충 노트 (2026-11-22) */
+.mk-memo-notes { margin-top:6px; }
+.mk-memo-notes-btn { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid var(--c-line); border-radius:999px; background:none; color:var(--c-sub); font:inherit; font-size:11.5px; cursor:pointer; }
+.mk-memo-notes-btn:hover { background:var(--c-subtle); }
+.mk-memo-notes-btn.has { border-color:var(--mk-primary); color:var(--mk-primary); font-weight:700; }
+.mk-memo-notes-btn span { color:var(--c-faint); font-weight:500; }
+.mk-memo-notes-body { margin-top:8px; }
+.mk-memo-notes-body .mk-review { padding:10px 12px; }
+.mk-memo-notes-body .mk-review-list { margin-bottom:8px; }
+/* 전략 상세의 메모 목록(.ar-pt-memos li div · ul · p)에 걸린 모양이 보충 노트 안쪽까지 내려오지 않게 되돌림 */
+.ar-pt-memos li .mk-memo-notes, .ar-pt-memos li .mk-memo-notes div { display:block; color:inherit; font-size:inherit; }
+.ar-pt-memos li .mk-memo-notes div.mk-review-top { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+.ar-pt-memos li .mk-memo-notes div.mk-review-form-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.ar-pt-memos li .mk-memo-notes ul { max-height:none; margin:0 0 8px; padding:0; overflow:visible; gap:8px; }
+.ar-pt-memos li .mk-memo-notes li { padding:10px 12px; }
+.ar-pt-memos li .mk-memo-notes p { margin:6px 0 0; font-size:13.5px; line-height:1.6; }
+.ar-pt-memos li .mk-memo-notes div.mk-qna-answer { margin-top:8px; padding:8px 10px; }
+.ar-pt-memos li .mk-memo-notes .mk-review-form-foot small { font-size:11.5px; }
