@@ -192,7 +192,7 @@
 /* 값은 이름 바로 오른쪽, 왼쪽 정렬 */
 .ins-cal-side .ins-cal .ev .v { font-size:13px; text-align:center; }
 .ins-cal-side .ins-cal li.cols-row { position:sticky; top:0; z-index:1; display:block; padding:6px 0; border-top:0; border-bottom:1px solid var(--c-line); background:var(--c-surface); }
-.ins-cal-side .ins-cal li.cols-row .ev > .v { color:var(--c-faint); font-size:11.5px; font-weight:400; }
+.ins-cal-side .ins-cal li.cols-row .ev > .v { color:var(--c-faint); font-size:12px; font-weight:400; }
 .ins-cal-side .ins-cal li.cols-row .ev > .v:first-child { grid-column:5; }
 .ins-cal-side .ins-cal li.cols-row + li { border-top:0; }
 .ins-cal-side .ins-cal li.cols-row .ev { gap:6px 8px; font-size:13px; }
@@ -239,32 +239,32 @@ button.ins-cell { padding:0; font:inherit; cursor:pointer; }
 .ins-uschart .open-log:hover { background:var(--c-hover); }
 /* 기준금리 칸 (물가 칸 모양 그대로) */
 .ins-rate .ins-infl-head b { margin-left:4px; color:var(--c-faint); font-size:11px; font-weight:500; }
-.ins-rate strong em { font-size:11.5px; }
+.ins-rate strong em { font-size:12px; }
 /* 기준금리 그래프 */
 .ins-rate { padding:14px 16px 10px; }
 .ins-rchart { position:relative; height:132px; margin-top:4px; cursor:crosshair; }
 .ins-rchart svg { display:block; overflow:visible; }
 .ins-rchart .grid { stroke:var(--c-line); stroke-width:1; shape-rendering:crispEdges; }
 .ins-rchart .year { stroke:var(--c-line); stroke-dasharray:2 3; shape-rendering:crispEdges; }
-.ins-rchart .ytick, .ins-rchart .xtick { fill:var(--c-faint); font-size:10.5px; font-variant-numeric:tabular-nums; }
+.ins-rchart .ytick, .ins-rchart .xtick { fill:var(--c-faint); font-size:11px; font-variant-numeric:tabular-nums; }
 .ins-rchart .line { fill:none; stroke:var(--c-accent); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
 .ins-rchart .fill-top { stop-color:var(--c-accent); stop-opacity:.32; }
 .ins-rchart .fill-bottom { stop-color:var(--c-accent); stop-opacity:0; }
 .ins-rchart .hike circle { fill:var(--c-up); stroke:var(--c-subtle); stroke-width:1.5; }
 .ins-rchart .cut circle { fill:var(--c-down); stroke:var(--c-subtle); stroke-width:1.5; }
-.ins-rchart .hike text { fill:var(--c-up); font-size:10px; font-weight:700; }
-.ins-rchart .cut text { fill:var(--c-down); font-size:10px; font-weight:700; }
+.ins-rchart .hike text { fill:var(--c-up); font-size:11px; font-weight:700; }
+.ins-rchart .cut text { fill:var(--c-down); font-size:11px; font-weight:700; }
 .ins-rchart .end { fill:var(--c-accent); }
 .ins-rchart .end-ring { fill:var(--c-accent); opacity:.22; }
 .ins-rchart .hover line { stroke:var(--c-sub); stroke-dasharray:3 3; }
 .ins-rchart .hover circle { fill:var(--c-surface); stroke:var(--c-accent); stroke-width:2; }
 .ins-rchart-tip { position:absolute; z-index:2; display:flex; flex-direction:column; align-items:center; gap:1px; transform:translateX(-50%); padding:5px 9px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); box-shadow:0 4px 14px rgba(0,0,0,.18); font-size:11px; white-space:nowrap; pointer-events:none; }
 .ins-rchart-tip span { color:var(--c-faint); }
-.ins-rchart-tip b { color:var(--c-ink); font-size:12.5px; font-variant-numeric:tabular-nums; }
+.ins-rchart-tip b { color:var(--c-ink); font-size:13px; font-variant-numeric:tabular-nums; }
 .ins-rchart-tip em { font-style:normal; font-weight:700; }
 .ins-rchart-tip em.up { color:var(--c-up); }
 .ins-rchart-tip em.down { color:var(--c-down); }
-.ins-rate-src { margin:2px 0 0; color:var(--c-faint); font-size:10.5px; text-align:right; }
+.ins-rate-src { margin:2px 0 0; color:var(--c-faint); font-size:11px; text-align:right; }
 /* 경제 캘린더 나라 고르기 (전체 · 미국 · 한국 · 일본) */
 .ins-cal-nations { display:flex; align-items:center; gap:10px; margin-right:6px; color:var(--c-sub); font-size:12px; font-weight:600; }
 .ins-cal-nations label { display:inline-flex; align-items:center; gap:4px; cursor:pointer; white-space:nowrap; }
