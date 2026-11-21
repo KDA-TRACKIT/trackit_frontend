@@ -63,7 +63,7 @@ export function useNotifications(loggedIn: boolean) {
     id: `match:${h.id}`,
     kind: "match",
     at: h.at,
-    title: `${h.name}: ${h.traderName}님이 산 자리와 비슷해요 (${h.score}점)`,
+    title: `${h.name}: ${h.traderName}님이 산 자리와 비슷해요`,
     body: `${h.caseName} ${h.caseDate.slice(5).replace("-", ".")} 매수 때와 상황이 비슷해요`,
     href: `/workshop?symbol=${encodeURIComponent(h.code)}&name=${encodeURIComponent(h.name)}${h.market ? `&market=${encodeURIComponent(h.market)}` : ""}${h.exchange ? `&exchange=${h.exchange}` : ""}`,
   }));

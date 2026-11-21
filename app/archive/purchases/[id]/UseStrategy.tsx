@@ -170,7 +170,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           <span>비슷한 자리가 나오면 알림</span>
         </label>
         <label className="su-min">
-          비슷한 정도
+          알림 기준
           <select
             value={min}
             onChange={(e) => {
@@ -181,7 +181,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           >
             {[65, 75, 85].map((v) => (
               <option key={v} value={v}>
-                {v}점 이상
+                {v === 65 ? "조금 비슷해도" : v === 75 ? "비슷할 때" : "매우 비슷할 때만"}
               </option>
             ))}
           </select>
@@ -196,17 +196,12 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
         </p>
       )}
       {msg && <p className="su-msg">{msg}</p>}
-      {rows && !!rows.length && (
-        <p className="su-msg">
-          점수는 그 종목의 오늘 상황이 {traderName}님이 샀던 날과 얼마나 비슷한지예요 (100점 만점 · RSI, 20일선과의 거리, 최근 20일 등락, 거래량, 60일 범위 안 위치로 계산). {min}점 이상이면 비슷한 자리로 봐요.
-        </p>
-      )}
       {rows && (
         <ul className="su-rows">
-          {rows.map((r) => (
-            <li key={r.code} className={r.score >= min ? "hit" : ""}>
+          {rows.filter((r) => r.score >= min).map((r) => (
+            <li key={r.code} className="hit">
               <div>
-                <strong>{r.name}</strong> <b className="su-score">비슷한 정도 {r.score}점</b>
+                <strong>{r.name}</strong>
                 <small>오늘: {r.today}</small>
                 <small>
                   비슷한 매매: {r.c.trade.name} {md(r.c.trade.entry.d)} 매수 — {r.c.trade.entry.why} → {sign(r.c.trade.ret)}
@@ -217,6 +212,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
               </Link>
             </li>
           ))}
+          {!!rows.length && !rows.some((r) => r.score >= min) && <li className="su-empty">지금은 {traderName}님이 샀던 자리와 비슷한 관심 종목이 없어요.</li>}
           {!rows.length && <li className="su-empty">상황을 계산할 수 있는 관심 종목이 없어요 (일봉 60개 이상 필요).</li>}
         </ul>
       )}
@@ -226,7 +222,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           <ul>
             {hits.slice(0, 5).map((h) => (
               <li key={h.id}>
-                {md(h.at.slice(0, 10))} · {h.name} {h.score}점 <small>({h.caseName} {md(h.caseDate)} 매수와 비슷)</small>
+                {md(h.at.slice(0, 10))} · {h.name} <small>({h.caseName} {md(h.caseDate)} 매수와 비슷)</small>
               </li>
             ))}
           </ul>
@@ -389,10 +385,10 @@ function Ask({ traderName, cases, months, market }: { traderName: string; cases:
             </p>
           )}
           <ol>
-            {answer.picks.map(({ c, score }) => (
+            {answer.picks.map(({ c }) => (
               <li key={`${c.trade.code}:${c.trade.entry.d}`}>
                 <div>
-                  <b className="su-score">{score}점</b> {c.trade.name} · {md(c.trade.entry.d)} 매수 {c.trade.entry.px.toLocaleString("ko-KR")}
+                  {c.trade.name} · {md(c.trade.entry.d)} 매수 {c.trade.entry.px.toLocaleString("ko-KR")}
                 </div>
                 <q>{c.trade.entry.why}</q>
                 <small>
