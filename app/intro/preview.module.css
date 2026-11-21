@@ -118,7 +118,7 @@
 .archiveMetrics { display: grid; grid-template-columns: calc(80 * var(--u)) calc(80 * var(--u)) calc(106 * var(--u)); gap: calc(16 * var(--u)); }
 .positive { color: #c7232d; }
 .negative { color: #245caa; }
-.honey { display: inline-flex; align-items: center; gap: calc(2.6 * var(--u)); padding: 0 calc(5.2 * var(--u)); height: calc(26 * var(--u)); border-radius: calc(8.4 * var(--u)); background: #fff5ce; border: 1px solid #dfe5ee; color: #a56809; font-size: calc(8.4 * var(--u)); font-weight: 600; }
+.honey { display: inline-flex; align-items: center; gap: calc(2.6 * var(--u)); padding: 0 calc(5.2 * var(--u)); height: calc(17 * var(--u)); border-radius: 20px; background: #fff5ce; border: 1px solid #dfe5ee; color: #a56809; font-size: calc(8 * var(--u)); font-weight: 600; }
 .honey img { width: calc(7.37 * var(--u)); height: auto; }
 
 .marketBody { padding: calc(7 * var(--u)) calc(29.7 * var(--u)) 0; }
@@ -137,7 +137,6 @@
 .marketName { display: flex; gap: calc(5 * var(--u)); align-items: flex-start; justify-self: start; white-space: nowrap; padding-left: calc(14 * var(--u)); }
 .marketName > img { width: calc(13 * var(--u)); height: auto; margin-top: calc(3 * var(--u)); }
 .marketName small { display: block; color: #52627c; font-size: calc(8 * var(--u)); }
-.marketName .honey { height: calc(17 * var(--u)); font-size: calc(8 * var(--u)); border-radius: 20px; }
 .trend { width: calc(90.36 * var(--u)); height: auto; }
 .marketUp { color: #2b9b41; }
 .marketDown { color: #d53336; }

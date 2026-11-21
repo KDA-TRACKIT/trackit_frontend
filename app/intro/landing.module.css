@@ -39,6 +39,7 @@
 .header { background: #f9fbff; border-bottom: 1px solid var(--line); }
 .header .shell { min-height: 84px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--navy); font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+.header .brand img { border-radius: 9px; }
 
 .landing :is(.button, .secondary, .goldButton) {
   display: inline-flex;
