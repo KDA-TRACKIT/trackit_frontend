@@ -2,7 +2,7 @@
 // 비즈니스 프로필 전환 (시안 2026-11-18):
 //   전략 판매 시작하기 → 판매 약관 동의 → 정산 정보 입력 → 프로필 정보 공개 안내(동의) → 완료
 //   판매자 API 가 생기기 전까지 전환 상태는 이 브라우저에만. 정산 계좌는 끝 4자리만 저장 (전체 번호는 남기지 않음)
-//   전환 자격은 서버가 자동 판정 (GET /me/business-eligibility): 최근 30일 메모 5개 이상 (2026-11-20 기획 변경, 유지 조건도 같음)
+//   전환 자격은 서버가 자동 판정 (GET /me/business-eligibility): 첫 노트부터 3개월 + 최근 30일 메모 5개 이상 (유지 조건은 메모)
 //     조건을 채우면 '계정 전환'이 켜지고 약관 · 정산 · 공개 동의 뒤 바로 비즈니스 프로필
 import { useEffect, useState } from "react";
 import { apiRequest, errorMessage } from "../../../lib/api/client";
@@ -187,7 +187,7 @@ export default function BusinessPage() {
               {check?.error
                 ? check.error
                 : check?.data
-                  ? "최근 30일 동안 메모를 5개 이상 쓰면 전환할 수 있고, 계속 이 조건을 지켜야 유지돼요."
+                  ? `첫 노트부터 3개월이 지나고 최근 30일 메모가 5개 이상이면 전환할 수 있어요.${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` ${ymd(check.data.eligibleAt)}부터 기간 충족.` : ""}`
                   : "비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요."}
             </p>
           </div>
