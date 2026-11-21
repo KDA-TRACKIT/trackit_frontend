@@ -39,6 +39,8 @@ export type TradeRecord = {
   market?: "KR" | "US";
   /** 섹터: 이 종목이 든 내 전략의 섹터 (서버 기록만) */
   sector?: string;
+  /** 상장 시장 (KOSPI · KOSDAQ · US …). 섹터가 없는 종목을 시장으로 묶을 때 씀 */
+  exchange?: string;
 };
 
 /** 일지 · 노트에 적힌 시장 값 → KR / US */
@@ -113,6 +115,7 @@ function fromServer(): Promise<TradeRecord[]> {
           ...(n.noteType ? { noteType: n.noteType } : {}),
           ...((market ? marketOf(s.market) : marketOf(journal.market)) ? { market: market ? marketOf(s.market) : marketOf(journal.market) } : {}),
           ...(!market && journal.sector ? { sector: journal.sector } : {}),
+          ...(!market && (journal.listedMarket || journal.market) ? { exchange: String(journal.listedMarket || journal.market).toUpperCase() } : {}),
           ...(Array.isArray(s.consolidates) ? { consolidates: s.consolidates.filter((x: unknown): x is string => typeof x === "string") } : {}),
         } satisfies TradeRecord;
       }),

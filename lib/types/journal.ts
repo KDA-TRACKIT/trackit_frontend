@@ -6,6 +6,8 @@ export type Journal = {
   market: string;
   /** 이 종목이 든 내 전략의 섹터 (목록 응답에만, 없으면 null) */
   sector?: string | null;
+  /** 종목 목록에서 찾은 상장 시장 (KOSPI · KOSDAQ …, 목록 응답에만) */
+  listedMarket?: string | null;
   timeframe: string | null;
   content: string | null;
   status?: string;

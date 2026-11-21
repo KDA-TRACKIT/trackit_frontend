@@ -36,14 +36,21 @@ export type Memo = {
   at: string;
   /** 시장 묶음: 국내 주식 · 해외 주식 · 시장 공통(시장을 모르는 시장 전반 노트) */
   market: string;
-  /** 섹터 묶음: 종목 노트는 내 전략의 섹터(없으면 '섹터 미지정'), 종목 없는 노트(시장 · 뉴스 · 경제 · 공시)는 섹터가 아니라 그 시장의 '시장 · 경제 · 뉴스' */
+  /** 섹터 묶음: 종목 노트는 내 전략의 섹터(없으면 상장 시장: 코스피 · 코스닥 …), 종목 없는 노트(시장 · 뉴스 · 경제 · 공시)는 섹터가 아니라 그 시장의 '시장 · 경제 · 뉴스' */
   sector: string;
 };
 
 export const MARKET_ORDER = ["국내 주식", "해외 주식", "시장 공통"];
 /** 종목 없는 노트(시장 흐름 · 뉴스 · 경제 지표 · 공시)가 모이는 묶음 — 섹터들보다 먼저 보여 줌 */
 export const MARKET_WIDE = "시장 · 경제 · 뉴스";
-export const NO_SECTOR = "섹터 미지정";
+/**
+ * 섹터(내 전략)가 없는 종목은 '섹터 미지정' 대신 상장 시장으로 묶음 (2026-11-22)
+ *   코스피 · 코스닥 · 나스닥 …, 시장을 모르면 국내 종목 · 해외 종목
+ */
+const EXCHANGE_LABEL: Record<string, string> = { KOSPI: "코스피", KOSDAQ: "코스닥", KONEX: "코넥스", NXT: "넥스트레이드", ND: "나스닥", NASDAQ: "나스닥", NY: "뉴욕증권거래소", NYSE: "뉴욕증권거래소", NA: "아멕스", AMEX: "아멕스" };
+export const marketGroup = (exchange: string | undefined, market: string) => (exchange && EXCHANGE_LABEL[exchange]) || (market === "해외 주식" ? "해외 종목" : market === "국내 주식" ? "국내 종목" : "기타 종목");
+/** 시장으로 묶은 묶음인지 (섹터 묶음 뒤에 보여 줌) */
+export const isMarketGroup = (sector: string) => Object.values(EXCHANGE_LABEL).includes(sector) || /^(국내|해외|기타) 종목$/.test(sector);
 
 export function kindOf(r: TradeRecord): MemoKind {
   if (r.symbol) return "chart";
@@ -75,7 +82,7 @@ export function toMemo(r: TradeRecord): Memo {
   // 종목 코드로도 시장을 짐작 (이 브라우저에만 있는 기록): 숫자 6자리 = 국내, 영문 = 해외
   const mk = r.market ?? (r.symbol ? (/^\d{6}$/.test(r.symbol) ? "KR" : /^[A-Z.]{1,6}$/.test(r.symbol) ? "US" : undefined) : undefined);
   const market = mk === "KR" ? "국내 주식" : mk === "US" ? "해외 주식" : "시장 공통";
-  const sector = r.symbol ? (r.sector ?? NO_SECTOR) : MARKET_WIDE;
+  const sector = r.symbol ? (r.sector ?? marketGroup(r.exchange, market)) : MARKET_WIDE;
   return { id: r.id, rec: r, kind, subject, code: r.symbol, ref, body: body.trim(), date: r.date, time: r.noteTime.slice(0, 5), at: `${r.date} ${r.noteTime}`, market, sector };
 }
 

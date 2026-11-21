@@ -20,7 +20,7 @@ import {
   KINDS,
   MARKET_ORDER,
   MARKET_WIDE,
-  NO_SECTOR,
+  isMarketGroup,
   addDays,
   addMonths,
   execInfo,
@@ -388,7 +388,8 @@ function StockGroups({ memos, pins, sel, onSelect }: { memos: Memo[]; pins: Read
       sb.items.push(m);
     }
     const rank = (x: string) => (MARKET_ORDER.indexOf(x) + 1 || 99);
-    const sectorRank = (x: string) => (x === MARKET_WIDE ? 0 : x === NO_SECTOR ? 2 : 1);
+    // 시장 · 경제 · 뉴스 → 섹터(내 전략) → 섹터가 없어 시장으로 묶은 종목
+    const sectorRank = (x: string) => (x === MARKET_WIDE ? 0 : isMarketGroup(x) ? 2 : 1);
     out.sort((a, b) => rank(a.market) - rank(b.market));
     for (const mk of out) mk.sectors.sort((a, b) => sectorRank(a.sector) - sectorRank(b.sector) || a.sector.localeCompare(b.sector, "ko"));
     return out;
