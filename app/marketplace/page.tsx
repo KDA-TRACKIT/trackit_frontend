@@ -139,16 +139,16 @@ function MarketplaceList() {
     // 추천순: 내 투자 정보(매매 방식 · 참고 지표 · 시장 · 기간)와 트레이더가 겹칠수록 위로. 투자 정보가 없으면 좋아요 · 이행률 · 수익률
     const base = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
     const score = (t: Trader) => (mine ? similarity(mine, t) * 1000 : 0) + base(t);
-    // 즐겨찾기한 트레이더를 맨 위에, 그 안에서는 고른 정렬대로
+    const key = sortKey(sort);
     const fav = (t: Trader) => (isFavorite(favs, t.id) ? 1 : 0);
-    out.sort(
-      (a, b) =>
-        fav(b) - fav(a) ||
-        // 지금 구독할 수 있는 트레이더 먼저
-        Number(sellable(b)) - Number(sellable(a)) ||
-        (sortAsc(sort) ? -1 : 1) *
-          (sortKey(sort) === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : sortKey(sort) === "ret" ? (ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1) : sortKey(sort) === "price" ? b.price - a.price : score(b) - score(a)),
-    );
+    out.sort((a, b) => {
+      if (key === "price") return sortAsc(sort) ? a.price - b.price : b.price - a.price;
+      if (key === "ret") return ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1;
+
+      // 추천순과 인기순에서는 즐겨찾기한 트레이더를 먼저 표시한다.
+      return fav(b) - fav(a) || Number(sellable(b)) - Number(sellable(a)) ||
+        (key === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : score(b) - score(a));
+    });
     return out;
   }, [query, period, sort, filter, likeTotals, favs, mine]);
 
