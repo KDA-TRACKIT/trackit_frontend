@@ -282,7 +282,7 @@ function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { 
   const curve = trader.curves?.[period];
   return (
     <li className="mk-trader-row">
-      <FavButton id={trader.id} name={trader.name} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} />
+      <FavButton id={trader.id} name={trader.name} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} onIcon={<Image src="/marketplace/favorite-star-on.svg" alt="" width={20} height={20} />} />
       <Link className="mk-trader-row-link" href={`/marketplace/${trader.id}`}>
         <div className="mk-trader-who">
           <div className="mk-trader-name-line">

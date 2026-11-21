@@ -4,11 +4,11 @@
 //   가운데: 매매마다 계획 가격과 실제 가격, 지킨 것 · 어긴 것 (누르면 그때 쓴 노트를 오른쪽에)
 //   아래: 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게)
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeRecord } from "../../../lib/records";
-import { recentTrades } from "../../../lib/api/performance";
+import { recentTrades, type Trade } from "../../../lib/api/performance";
 import { searchAllSymbols } from "../../../lib/market-data";
-import { pairTrades, type MyRound } from "../../../lib/strategy-use";
+import { pairTrades } from "../../../lib/strategy-use";
 import { habits, planChanges, reviewRounds, type RoundReview } from "../../../lib/self-review";
 import { shortDate } from "./model";
 import ReplayView from "./ReplayView";
@@ -16,20 +16,22 @@ import BeeLoader from "../../BeeLoader";
 
 const won = (n: number | null) => (n === null ? "—" : n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 }));
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+const recordCode = (record: TradeRecord) => record.symbol || record.target?.code;
 
-export default function ReviewView({ records, stock, onOpenNote }: { records: TradeRecord[]; stock: string; onOpenNote: (id: string) => void }) {
-  const [rounds, setRounds] = useState<MyRound[] | null>(null);
+export default function ReviewView({ records, stock, from, onOpenNote }: { records: TradeRecord[]; stock: string; from: string; onOpenNote: (id: string) => void }) {
+  const [trades, setTrades] = useState<Trade[] | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let alive = true;
     recentTrades()
-      .then((t) => alive && setRounds(pairTrades(t)))
-      .catch(() => alive && (setFailed(true), setRounds([])));
+      .then((t) => alive && setTrades(t))
+      .catch(() => alive && (setFailed(true), setTrades([])));
     return () => {
       alive = false;
     };
   }, []);
 
+  const rounds = useMemo(() => (trades ? pairTrades(trades) : []), [trades]);
   const names = useMemo(() => {
     const m = new Map<string, string>();
     for (const r of records) {
@@ -41,37 +43,48 @@ export default function ReviewView({ records, stock, onOpenNote }: { records: Tr
   // 노트에 이름이 없는 종목(노트 없이 산 종목)은 종목 검색으로 이름을 찾음
   const [found, setFound] = useState<Record<string, string>>({});
   useEffect(() => {
-    const miss = [...new Set((rounds ?? []).map((r) => r.symbol))].filter((c) => !names.has(c) && !found[c]);
+    const miss = [...new Set(rounds.map((r) => r.symbol))].filter((c) => !names.has(c) && !Object.hasOwn(found, c));
     if (!miss.length) return;
     let alive = true;
     Promise.all(miss.map((c) => searchAllSymbols(c).then((l) => [c, l.find((x) => x.code === c)?.name ?? c] as const).catch(() => [c, c] as const))).then((pairs) => alive && setFound((f) => ({ ...f, ...Object.fromEntries(pairs) })));
     return () => {
       alive = false;
     };
-  }, [rounds, names]); // eslint-disable-line react-hooks/exhaustive-deps
-  const nameOf = (c: string) => names.get(c) ?? found[c] ?? c;
-  const reviews = useMemo(() => (rounds ? reviewRounds(records, rounds, nameOf).filter((r) => stock === "all" || r.name === stock) : []), [rounds, records, stock, found]); // eslint-disable-line react-hooks/exhaustive-deps
-  const codes = useMemo(() => [...new Set(records.flatMap((r) => (r.symbol ? [r.symbol] : r.target ? [r.target.code] : [])))].filter((c) => stock === "all" || nameOf(c) === stock), [records, stock]); // eslint-disable-line react-hooks/exhaustive-deps
-  const changes = useMemo(() => planChanges(records, codes, nameOf), [records, codes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rounds, names, found]);
+  const nameOf = useCallback((c: string) => names.get(c) ?? found[c] ?? c, [names, found]);
+  const selectedCodes = useMemo(
+    () => new Set(records.filter((r) => (r.symbolName ?? r.target?.name) === stock).map(recordCode)),
+    [records, stock],
+  );
+  const matchesStock = useCallback((code: string) => stock === "all" || selectedCodes.has(code) || nameOf(code) === stock, [stock, selectedCodes, nameOf]);
+  const codes = useMemo(
+    () => [...new Set(records.map(recordCode))].filter((code): code is string => code !== undefined && matchesStock(code)),
+    [records, matchesStock],
+  );
+  // 청산한 매매는 매도일, 보유 중인 매매는 매수일로 기간을 거름. 그 전에 쓴 계획은 복기에 사용.
+  const reviews = useMemo(() => {
+    const visible = rounds.filter((r) => matchesStock(r.symbol) && (r.exit?.d ?? r.entry.d) >= from);
+    return reviewRounds(records, visible, nameOf);
+  }, [records, rounds, matchesStock, from, nameOf]);
+  const changes = useMemo(() => planChanges(records, codes, nameOf).filter((c) => c.at.slice(0, 10) >= from), [records, codes, nameOf, from]);
   const list = useMemo(() => habits(reviews, changes), [reviews, changes]);
-  // 매매 없이 계획만 남긴 종목 (기다린 기록)
-  const traded = new Set(reviews.map((r) => r.round.symbol));
-  const waiting = codes.filter((c) => !traded.has(c));
+  // 선택 기간에 노트를 남겼고 매매 이력이 없는 종목
+  const traded = new Set(rounds.map((r) => r.symbol));
+  const activeNoteCodes = new Set(records.filter((r) => r.date >= from).map(recordCode));
+  const waiting = codes.filter((c) => activeNoteCodes.has(c) && !traded.has(c));
 
-  if (!rounds) return <div className="mm-card mm-rv-empty"><BeeLoader size="sm" label="내 매매" /></div>;
+  if (!trades) return <div className="mm-card mm-rv-empty"><BeeLoader size="sm" label="내 매매" /></div>;
   const closed = reviews.filter((r) => r.round.exit);
   const planned = reviews.filter((r) => r.plan).length;
   const kept = closed.filter((r) => r.plan && !r.flags.some((f) => f.bad)).length;
   const wins = closed.filter((r) => (r.round.ret ?? 0) > 0).length;
   const rate = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 
-  // 재생할 종목: 노트를 남겼거나 매매한 종목 (이름 기준으로 위의 '종목' 고르기와 맞춤)
-  const replayStocks = [...new Set([...records.flatMap((r) => (r.symbol ? [r.symbol] : r.target ? [r.target.code] : [])), ...(rounds ?? []).map((r) => r.symbol)])].map((c) => ({ code: c, name: nameOf(c) }));
-  const picked = stock === "all" ? undefined : replayStocks.find((x) => x.name === stock)?.code;
+  const replayStocks = [...new Set([...codes, ...rounds.map((r) => r.symbol)])].filter(matchesStock).map((code) => ({ code, name: nameOf(code) }));
 
   return (
     <div className="mm-rv">
-      {!!replayStocks.length && <ReplayView records={records} stocks={replayStocks} initial={picked} onOpenNote={onOpenNote} />}
+      {!!replayStocks.length && <ReplayView key={`${stock}:${from}`} records={records} trades={trades} stocks={replayStocks} from={from} onOpenNote={onOpenNote} />}
       {failed && <p className="mm-card mm-rv-empty">로그인하고 증권사를 연결하면 실제 체결과 비교해요. 지금은 노트만 보여요.</p>}
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>
@@ -110,7 +123,7 @@ export default function ReviewView({ records, stock, onOpenNote }: { records: Tr
       <section className="mm-card mm-rv-rounds">
         <h2>매매마다 계획 vs 실제</h2>
         {!reviews.length ? (
-          <p className="mm-rv-muted">{stock === "all" ? "체결된 매매가 없어요." : `${stock} 매매가 없어요.`}</p>
+          <p className="mm-rv-muted">{stock === "all" && !from ? "체결된 매매가 없어요." : "선택한 조건에 해당하는 매매가 없어요."}</p>
         ) : (
           <ul>
             {reviews.map((r) => (

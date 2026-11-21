@@ -9,7 +9,7 @@ import { Pause, Play, SkipBack, SkipForward, StepBack, StepForward } from "lucid
 import { barDate, isKrCode, loadDaily } from "../bars";
 import type { Bar } from "../../../lib/interval";
 import type { TradeRecord } from "../../../lib/records";
-import { recentTrades, type Trade } from "../../../lib/api/performance";
+import type { Trade } from "../../../lib/api/performance";
 import { buildReplay, moneyOf, type ReplayStep } from "../../../lib/replay";
 import { fetchBars, searchAllSymbols } from "../../../lib/market-data";
 import { fixZoomPointer } from "../../../lib/zoom-pointer";
@@ -21,22 +21,11 @@ const moneyFor = (code: string) => {
   return (n: number | null) => (n === null ? "—" : f(n));
 };
 
-export default function ReplayView({ records, stocks, initial, onOpenNote }: { records: TradeRecord[]; stocks: { code: string; name: string }[]; initial?: string; onOpenNote: (id: string) => void }) {
-  const [code, setCode] = useState(initial ?? stocks[0]?.code ?? "");
-  useEffect(() => {
-    if (initial) setCode(initial);
-  }, [initial]);
-  const [trades, setTrades] = useState<Trade[]>([]);
-  useEffect(() => {
-    let alive = true;
-    recentTrades()
-      .then((t) => alive && setTrades(t))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-  const steps = useMemo(() => (code ? buildReplay(records, trades, code) : []), [records, trades, code]);
+export default function ReplayView({ records, trades, stocks, from, onOpenNote }: { records: TradeRecord[]; trades: Trade[]; stocks: { code: string; name: string }[]; from: string; onOpenNote: (id: string) => void }) {
+  const [picked, setPicked] = useState("");
+  const code = stocks.find((stock) => stock.code === picked)?.code ?? stocks[0]?.code ?? "";
+  // 기간 안의 단계만 표시하되 그 전에 만든 계획과 차트 선을 이어받음.
+  const steps = useMemo(() => (code ? buildReplay(records, trades, code).filter((step) => step.date >= from) : []), [records, trades, code, from]);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -58,7 +47,7 @@ export default function ReplayView({ records, stocks, initial, onOpenNote }: { r
     <section className="mm-card mm-rp" aria-label="복기 재생">
       <div className="mm-rp-head">
         <h2>복기 재생</h2>
-        <select value={code} onChange={(e) => setCode(e.target.value)} aria-label="재생할 종목">
+        <select value={code} onChange={(e) => setPicked(e.target.value)} aria-label="재생할 종목">
           {stocks.map((s) => (
             <option key={s.code} value={s.code}>
               {s.name}
@@ -68,7 +57,7 @@ export default function ReplayView({ records, stocks, initial, onOpenNote }: { r
         <small>노트(그때의 뷰)와 실제 매매를 시간 순서로 다시 봐요</small>
       </div>
       {!steps.length ? (
-        <p className="mm-rv-muted">{name}에 남긴 노트 · 매매가 없어요.</p>
+        <p className="mm-rv-muted">{from ? "선택한 기간에 " : ""}{name}에 남긴 노트 · 매매가 없어요.</p>
       ) : (
         <>
           <div className="mm-rp-body">
