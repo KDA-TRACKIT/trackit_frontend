@@ -283,7 +283,7 @@ export function screen(t: Trader): Screening {
   return { verified: checks.every((c) => c.ok), checks };
 }
 export const isVerified = (t: Trader) => screen(t).verified;
-/** 전략 마켓 목록 · 비슷한 트레이더 · 홈 보드에 보이는 트레이더: 실제 기록(매매 · 월별 전략)이 있는 사람 (등급제 없음) */
+/** 전략 마켓 목록 · 홈 보드에 보이는 트레이더: 실제 기록(매매 · 월별 전략)이 있는 사람 (등급제 없음) */
 export const listed = (t: Trader) => t.verify.months > 0 && t.price > 0;
 
 /** 구독할 수 있는 트레이더 (월 구독료가 있음) */

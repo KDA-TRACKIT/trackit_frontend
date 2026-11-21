@@ -223,16 +223,6 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-free p { margin:3px 0 0; color:var(--c-sub); font-size:13px; }
 .mk-free .mk-primary { flex:none; }
 
-/* 비슷한 트레이더 (작게) */
-.mk-similar { margin-top:32px; }
-.mk-similar h2 { font-size:15px; }
-.mk-similar-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
-.mk-sim { display:flex; flex-direction:column; gap:2px; padding:12px 14px; color:inherit; text-decoration:none; }
-.mk-sim:hover { border-color:var(--c-line-strong); }
-.mk-sim strong { font-size:14px; }
-.mk-sim small { overflow:hidden; color:var(--c-faint); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
-.mk-sim span { margin-top:4px; font-size:12px; font-weight:700; }
-
 /* 월별 전략 전체 */
 .mk-sub-title { font-size:22px; }
 .mk-slist { display:flex; flex-direction:column; gap:10px; margin:18px 0 0; padding:0; list-style:none; }
@@ -253,7 +243,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
   .mk-row-who { grid-column:1 / -1; }
   .mk-row-spark { display:none; }
   .mk-hero, .mk-strats { grid-template-columns:1fr; }
-  .mk-stats, .mk-similar-grid { grid-template-columns:1fr 1fr; }
+  .mk-stats { grid-template-columns:1fr 1fr; }
   .mk-srow { grid-template-columns:1fr; }
 }
 .mk-page button.mk-owned, .mk-page button.mk-owned:disabled { opacity:1; border:1px solid var(--c-up); background:color-mix(in srgb, var(--c-up) 12%, transparent); color:var(--c-up); cursor:default; filter:none; }
@@ -505,10 +495,6 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-strat > strong { color:var(--c-ink); font-size:18px; }
 .mk-free { padding:14px 18px; background:var(--c-subtle); }
 .mk-free strong { color:var(--c-ink); font-size:15px; font-weight:700; }
-.mk-sim { padding:14px 16px; gap:4px; }
-.mk-sim strong { font-size:15px; }
-.mk-sim p { margin:0; overflow:hidden; color:var(--c-sub); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
-.mk-sim span { font-size:14px; }
 @media (max-width:760px) { .mk-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .mk-kpi { border-left:0 !important; border-top:1px solid var(--c-line); } }
 
 /* 월별 전략 보기: 작은 글씨 키우기 */
@@ -518,7 +504,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-sim-trades .who b { font-size:15px; }
 .mk-sim-peek span { font-size:13px; }
 .mk-sim-peek b { font-size:15px; }
-.mk-similar h2, .mk-chart-head h2 { font-size:18px; }
+.mk-chart-head h2 { font-size:18px; }
 .mk-agree { font-size:13px; }
 .mk-agree input { margin-top:3px; }
 
