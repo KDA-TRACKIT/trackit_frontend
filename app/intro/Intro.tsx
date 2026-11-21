@@ -29,28 +29,6 @@ function Brand() {
   );
 }
 
-function TitleWave({ text, start }: { text: string; start: number }) {
-  let index = 0;
-
-  return (
-    <span className={styles.titleLine}>
-      {text.split(" ").map((word, wordIndex) => (
-        <span key={wordIndex} className={styles.titleWord}>
-          {wordIndex > 0 ? " " : null}
-          {Array.from(word, (letter, letterIndex) => {
-            const delay = start + index++ * 104;
-            return (
-              <span key={letterIndex} className={styles.letter} style={{ animationDelay: delay + "ms" }}>
-                {letter}
-              </span>
-            );
-          })}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 export default function Intro() {
   return (
     <div className={styles.landing} id="intro-top">
@@ -67,10 +45,8 @@ export default function Intro() {
           <div className={styles.shell}>
             <div className={styles.heroCopy}>
               <h1 id="intro-headline" aria-label={headline.join(" ")}>
-                <span aria-hidden="true">
-                  <TitleWave text={headline[0]} start={0} />
-                  <TitleWave text={headline[1]} start={260} />
-                </span>
+                <span className={styles.titleLine}>{headline[0]}</span>
+                <span className={styles.titleLine}>{headline[1]}</span>
               </h1>
               <p>매매의 이유를 노트에 남기고 내 전략을 판매하세요.<br />{" "}다른 트레이더의 전략도 구독해서 볼 수 있어요.</p>
               <div className={styles.actions}>
