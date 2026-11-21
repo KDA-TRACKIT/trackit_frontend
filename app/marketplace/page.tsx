@@ -13,26 +13,18 @@ import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
-import { useSupabaseUser } from "../mypage/context";
-import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
 import { useLikeTotals } from "../../lib/feedback";
 import { useMyTrader, useSubscriberCounts } from "../../lib/my-trader";
 import { isFavorite, useFavorites } from "../../lib/favorites";
 
-// 정렬 4가지 × 높은순(↓) · 낮은순(↑) (시안: 정렬 드롭다운 8가지). 주소에는 "ret" · "ret-asc"
-type SortKey = "rec" | "pop" | "ret" | "price";
-type Sort = SortKey | `${SortKey}-asc`;
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: "rec", label: "추천순" },
+const SORT_OPTIONS = [
   { key: "pop", label: "인기순" },
   { key: "ret", label: "수익률순" },
-  { key: "price", label: "가격순" },
-];
-// 추천 · 인기 · 수익률은 높은 순만 (뒤집어 볼 일이 거의 없음), 가격만 낮은 순 · 높은 순 둘 다
-const SORT_ALL: Sort[] = ["rec", "pop", "ret", "price-asc", "price"];
-const sortKey = (s: Sort) => s.replace(/-asc$/, "") as SortKey;
-const sortAsc = (s: Sort) => s.endsWith("-asc");
-const sortLabel = (s: Sort) => (s === "price-asc" ? "가격 낮은 순" : s === "price" ? "가격 높은 순" : SORTS.find((x) => x.key === sortKey(s))!.label);
+  { key: "price-asc", label: "가격 낮은 순" },
+  { key: "price", label: "가격 높은 순" },
+] as const;
+type Sort = (typeof SORT_OPTIONS)[number]["key"];
+const DEFAULT_SORT: Sort = "pop";
 type Filter = { mdd: [number, number]; ret: [number, number]; price: [number, number]; types: string[]; markets: string[] };
 const NO_FILTER: Filter = { mdd: [0, 100], ret: [-100, 100], price: [0, 50000], types: [], markets: [] };
 const PER_PAGE = 10;
@@ -52,11 +44,12 @@ const list2 = (v: string | null) => (v ? v.split(",").filter(Boolean) : []);
 /** 주소 → 목록 상태 (없는 값은 기본값) */
 function readState(sp: URLSearchParams): ListState {
   const period = sp.get("period") as Period | null;
-  const sort = sp.get("sort") as Sort | null;
+  const sort = sp.get("sort");
+  const sortOption = sort === "price-asc" ? sort : sort?.replace(/-asc$/, "");
   return {
     query: sp.get("q") ?? "",
     period: period && PERIODS.some((p) => p.key === period) ? period : "3m",
-    sort: sort && SORT_ALL.includes(sort) ? sort : sort && SORT_ALL.includes(sortKey(sort)) ? sortKey(sort) : (sort as string | null) === "like" ? "pop" : "rec",
+    sort: SORT_OPTIONS.find(({ key }) => key === sortOption)?.key ?? DEFAULT_SORT,
     filter: {
       mdd: range(sp.get("mdd"), NO_FILTER.mdd),
       ret: range(sp.get("ret"), NO_FILTER.ret),
@@ -74,7 +67,7 @@ function writeState(s: ListState) {
   const same = (a: [number, number], b: [number, number]) => a[0] === b[0] && a[1] === b[1];
   if (s.query.trim()) sp.set("q", s.query.trim());
   if (s.period !== "3m") sp.set("period", s.period);
-  if (s.sort !== "rec") sp.set("sort", s.sort);
+  if (s.sort !== DEFAULT_SORT) sp.set("sort", s.sort);
   if (!same(s.filter.mdd, NO_FILTER.mdd)) sp.set("mdd", s.filter.mdd.join("~"));
   if (!same(s.filter.ret, NO_FILTER.ret)) sp.set("ret", s.filter.ret.join("~"));
   if (!same(s.filter.price, NO_FILTER.price)) sp.set("price", s.filter.price.join("~"));
@@ -105,7 +98,6 @@ function MarketplaceList() {
   const { query, period, sort, filter, page } = state;
   const [open, setOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const mine = useMyInvestment();
   const [asOf] = useState(() => new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10).replaceAll("-", "."));
 
   /** 상태 바꾸기 = 주소 바꾸기 (기록은 쌓지 않음: 뒤로 가기는 전 화면으로) */
@@ -136,21 +128,18 @@ function MarketplaceList() {
     const out = TRADERS.filter(listed).filter(hit);
     const likes = (t: Trader) => likeTotals[t.id] ?? 0;
     const ret = (t: Trader) => (oneStock(t, period) ? -Infinity : t.returns[period]);
-    // 추천순: 내 투자 정보(매매 방식 · 참고 지표 · 시장 · 기간)와 트레이더가 겹칠수록 위로. 투자 정보가 없으면 좋아요 · 이행률 · 수익률
-    const base = (t: Trader) => likes(t) * 0.4 + t.follow + (oneStock(t, period) ? 0 : t.returns[period]);
-    const score = (t: Trader) => (mine ? similarity(mine, t) * 1000 : 0) + base(t);
-    const key = sortKey(sort);
     const fav = (t: Trader) => (isFavorite(favs, t.id) ? 1 : 0);
     out.sort((a, b) => {
-      if (key === "price") return sortAsc(sort) ? a.price - b.price : b.price - a.price;
-      if (key === "ret") return ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1;
+      if (sort === "price-asc") return a.price - b.price;
+      if (sort === "price") return b.price - a.price;
+      if (sort === "ret") return ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1;
 
-      // 추천순과 인기순에서는 즐겨찾기한 트레이더를 먼저 표시한다.
+      // 인기순에서는 즐겨찾기한 트레이더를 먼저 표시한다.
       return fav(b) - fav(a) || Number(sellable(b)) - Number(sellable(a)) ||
-        (key === "pop" ? b.buyers - a.buyers || likes(b) - likes(a) : score(b) - score(a));
+        b.buyers - a.buyers || likes(b) - likes(a);
     });
     return out;
-  }, [query, period, sort, filter, likeTotals, favs, mine]);
+  }, [query, period, sort, filter, likeTotals, favs]);
 
   const per = PER_PAGE;
   const pages = Math.max(1, Math.ceil(list.length / per));
@@ -226,17 +215,16 @@ function MarketplaceList() {
             })}
           </div>
           <div className="mk-tools">
-            {/* 정렬: 드롭다운 (추천 · 인기 · 수익률 · 가격 낮은/높은 순) */}
             <div className="mk-sortdd" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSortOpen(false)}>
               <button type="button" className="mk-sortdd-btn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
-                {sortLabel(sort)} <Image src="/marketplace/sort-chevron.svg" alt="" width={14} height={14} />
+                {SORT_OPTIONS.find(({ key }) => key === sort)?.label} <Image src="/marketplace/sort-chevron.svg" alt="" width={14} height={14} />
               </button>
               {sortOpen && (
                 <ul className="mk-sortdd-list" role="listbox" aria-label="정렬">
-                  {SORT_ALL.map((k, i) => (
-                    <li key={k} className={i === 3 ? "sep" : ""}>
+                  {SORT_OPTIONS.map(({ key: k, label }) => (
+                    <li key={k} className={k === "price-asc" ? "sep" : ""}>
                       <button type="button" role="option" aria-selected={sort === k} className={sort === k ? "on" : ""} onClick={() => (update({ sort: k, page: 1 }), setSortOpen(false))}>
-                        {sortLabel(k)} {sort === k && <span aria-hidden>✓</span>}
+                        {label} {sort === k && <span aria-hidden>✓</span>}
                       </button>
                     </li>
                   ))}
@@ -364,25 +352,6 @@ function FilterModal({ initial, onClose, onApply }: { initial: Filter; onClose: 
       </div>
     </div>
   );
-}
-
-/** 내 투자 정보 (로그인했으면 계정의 investment). 추천순에 씀 */
-function useMyInvestment(): Investment | null {
-  const { user } = useSupabaseUser();
-  return useMemo(() => {
-    if (!user) return null;
-    const inv = readInvestment((user.user_metadata ?? {}) as Record<string, unknown>);
-    return inv.styles.length || inv.indicators.length || inv.market || inv.period ? inv : null;
-  }, [user]);
-}
-
-/** 내 투자 정보와 트레이더가 겹치는 정도 (매매 방식 2점 · 참고 지표 1점 · 시장 2점 · 기간 1점) */
-function similarity(me: Investment, t: Trader) {
-  const norm = (x: string) => x.replace(/\s/g, "");
-  const common = (a: string[], b: string[]) => a.filter((x) => b.some((y) => norm(y) === norm(x))).length;
-  const marketHit = (me.market.includes("국내") && t.market === "국내 주식") || ((me.market.includes("미국") || me.market.includes("해외")) && t.market === "해외 주식") ? 1 : 0;
-  const periodHit = (me.period.includes("단기") && t.type === "단기 매매") || (me.period.includes("중기") && t.type === "스윙") || (me.period.includes("장기") && t.type === "추세 추종") ? 1 : 0;
-  return common(me.styles, t.styles) * 2 + common(me.indicators, t.indicators) + marketHit * 2 + periodHit;
 }
 
 /** '전체' 도움말 말풍선이 화면 밖으로 나가지 않게 좌우로 밀기 (휴대폰에선 '전체'가 둘째 줄 왼쪽 끝으로 내려감). 꼬리는 계속 ? 를 가리킴 */
