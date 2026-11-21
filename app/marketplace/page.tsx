@@ -13,11 +13,11 @@ import SiteHeader from "../SiteHeader";
 import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
-import { useLikeTotals } from "../../lib/feedback";
-import { useMyTrader, useSubscriberCounts } from "../../lib/my-trader";
-import { isFavorite, useFavorites } from "../../lib/favorites";
+import { getMarketRankings, type MarketRankings } from "../../lib/api/market-rankings";
+import { useMyTrader } from "../../lib/my-trader";
 
 const SORT_OPTIONS = [
+  { key: "sales", label: "판매순" },
   { key: "pop", label: "인기순" },
   { key: "ret", label: "수익률순" },
   { key: "price-asc", label: "가격 낮은 순" },
@@ -87,10 +87,8 @@ export default function MarketplacePage() {
 }
 
 function MarketplaceList() {
-  const likeTotals = useLikeTotals();
+  const [rankings, setRankings] = useState<MarketRankings | null>(null);
   const myTrader = useMyTrader();
-  const subscribers = useSubscriberCounts();
-  const favs = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -112,6 +110,14 @@ function MarketplaceList() {
     rememberListUrl(sp.toString() ? `${pathname}?${sp.toString()}` : pathname);
   }, [pathname, sp]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void getMarketRankings(controller.signal).then((data) => {
+      if (!controller.signal.aborted) setRankings(data);
+    }).catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     const hit = (t: Trader) =>
@@ -126,20 +132,17 @@ function MarketplaceList() {
       (!filter.markets.length || filter.markets.includes(t.market));
     // 판매 심사로 숨기지 않음 (거르는 장치는 팀에서 따로 만듦)
     const out = TRADERS.filter(listed).filter(hit);
-    const likes = (t: Trader) => likeTotals[t.id] ?? 0;
     const ret = (t: Trader) => (oneStock(t, period) ? -Infinity : t.returns[period]);
-    const fav = (t: Trader) => (isFavorite(favs, t.id) ? 1 : 0);
+    const counts = sort === "sales" ? rankings?.subscribers : rankings?.honey;
     out.sort((a, b) => {
       if (sort === "price-asc") return a.price - b.price;
       if (sort === "price") return b.price - a.price;
       if (sort === "ret") return ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1;
 
-      // 인기순에서는 즐겨찾기한 트레이더를 먼저 표시한다.
-      return fav(b) - fav(a) || Number(sellable(b)) - Number(sellable(a)) ||
-        b.buyers - a.buyers || likes(b) - likes(a);
+      return (counts?.[b.id] ?? 0) - (counts?.[a.id] ?? 0);
     });
     return out;
-  }, [query, period, sort, filter, likeTotals, favs]);
+  }, [query, period, sort, filter, rankings]);
 
   const per = PER_PAGE;
   const pages = Math.max(1, Math.ceil(list.length / per));
@@ -243,7 +246,7 @@ function MarketplaceList() {
             </div>
             <ul className="mk-trader-rows">
               {shown.map((trader) => (
-                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={likeTotals[trader.id] ?? 0} mine={myTrader === trader.id} subscribers={subscribers ? (subscribers[trader.id] ?? 0) : null} />
+                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={rankings?.honey[trader.id] ?? 0} mine={myTrader === trader.id} subscribers={rankings ? (rankings.subscribers[trader.id] ?? 0) : null} />
               ))}
             </ul>
           </div>
