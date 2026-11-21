@@ -282,6 +282,7 @@ html[data-theme="dark"] .mk-help-tip::after { border-top-color:#2b3b5e; }
 .mk-review-form-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
 .mk-review-form-top select { height:30px; padding:0 8px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; }
 .mk-review-form-top small { color:var(--c-faint); font-size:12px; font-variant-numeric:tabular-nums; }
+.mk-review-form-top small:only-child { margin-inline-start:auto; }
 .mk-review-form textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-bg); color:var(--c-ink); font:inherit; font-size:14px; line-height:1.55; resize:vertical; outline:0; }
 .mk-review-form textarea:focus { border-color:var(--c-focus); }
 .mk-review-form-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
