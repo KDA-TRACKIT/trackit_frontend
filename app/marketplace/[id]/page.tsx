@@ -130,7 +130,7 @@ export default function TraderPage() {
         {/* 남색 카드: 누적 수익률 · 전략 이행률 · 최대 낙폭 (등급 · 일관성은 등급제와 함께 뺌) */}
         <div className="mk-kpis-navy">
           <div>
-            <span title={bought ? "산 전략대로 한 매매만 모은 수익률" : "처음부터 지금까지 쌓인 수익률 (전략을 사면 전략 직결 수익률로 보여요)"}>{bought ? "전략 직결 수익률" : "누적 수익률"}</span>
+            <span title={bought ? "구독한 전략대로 한 매매만 모은 수익률" : "처음부터 지금까지 쌓인 수익률 (구독하면 전략 직결 수익률로 보여요)"}>{bought ? "전략 직결 수익률" : "누적 수익률"}</span>
             <strong>{pct(total)}</strong>
           </div>
           <div>

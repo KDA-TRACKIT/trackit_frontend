@@ -411,7 +411,8 @@ function Detail({
         <b>{row.price ? price(row.price, currency) : "—"}</b>
         <span className={tone(row.changeRate)}>{pct(row.changeRate)}</span>
       </p>
-      <p className="ins-mv-sub">일봉 · 최근 3개월</p>
+      {/* 받은 일봉이 3개월(66거래일)보다 적으면 있는 만큼이라고 알려 줌 */}
+      <p className="ins-mv-sub">{bars && bars.length > 0 && bars.length < 60 ? `일봉 · 받은 ${bars.length}거래일 (상장한 지 얼마 안 됐거나 일봉을 일부만 받았어요)` : "일봉 · 최근 3개월"}</p>
       {bars === null ? <Loading height={200} /> : bars.length ? <MiniCandles bars={bars.slice(-66)} /> : <div className="ins-state" style={{ height: 200 }}><p>차트를 불러오지 못했어요</p></div>}
       <dl className="ins-mv-facts">
         <div>
@@ -487,7 +488,10 @@ function MiniCandles({ bars }: { bars: Bar[] }) {
     const vol = c.addSeries(HistogramSeries, { priceScaleId: "v", priceLineVisible: false, lastValueVisible: false });
     c.priceScale("v").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     vol.setData(bars.map((b) => ({ time: b.time as UTCTimestamp, value: b.volume, color: cssVar("--c-line-strong", "#ccc") })));
-    c.timeScale().fitContent();
+    // 봉이 몇 개뿐이면(갓 상장했거나 일봉을 조금만 받은 종목) 화면에 꽉 채우지 않고 보통 굵기로 오른쪽에 붙여 그림
+    //   (봉 하나가 패널 전체를 덮어 차트가 아니라 색 상자처럼 보였음)
+    if (bars.length < 20) c.timeScale().applyOptions({ barSpacing: 10, fixLeftEdge: false, rightOffset: 1 });
+    else c.timeScale().fitContent();
     return () => {
       unfixZoom();
       c.remove();
