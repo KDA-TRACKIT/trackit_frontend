@@ -112,7 +112,7 @@ export default function PurchasesPage() {
                         <b>{g.t ? `${g.t.follow}%` : "—"}</b>
                       </div>
                       <div className="ar-trader-stat">
-                        <small title="산 전략대로 한 매매만 모은 수익률 (최근 1개월)">전략 직결 수익률 · 1개월</small>
+                        <small title="구독한 전략대로 한 매매만 모은 수익률 (최근 1개월)">전략 직결 수익률 · 1개월</small>
                         <b className={g.ret === null ? "" : tone(g.ret)}>{g.ret === null ? "—" : pct(g.ret)}</b>
                       </div>
                     </Link>

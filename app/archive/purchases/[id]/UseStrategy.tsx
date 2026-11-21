@@ -1,9 +1,10 @@
 "use client";
-// 산 전략 활용하기 (구매한 전략 화면 아래): 내 차트에 겹치기 · 같은 상황 알림 · 복기 비교 · 이 트레이더라면?
+// 구독한 전략 활용하기 (구독한 전략 화면 아래. 2026-11-22: 열람권이 없어져 "산 전략" → "구독한 전략", 달 수를 전략 수로 세던 것 고침): 내 차트에 겹치기 · 같은 상황 알림 · 복기 비교 · 이 트레이더라면?
 //   계산은 lib/strategy-use.ts. 트레이더가 실제로 한 매매 · 노트만 근거로 씀 (지어낸 말 · 수익 예측 없음)
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchBars, searchAllSymbols, type UsExchange } from "../../../../lib/market-data";
+import { strategiesOf, traderById } from "../../../marketplace/data";
 import { fetchStrategyMonth } from "../../../../lib/strategy-data";
 import { recentTrades } from "../../../../lib/api/performance";
 import { useWatchlist } from "../../../insights/useWatchlist";
@@ -62,6 +63,9 @@ export default function UseStrategy({ traderId, traderName, months, current }: {
   }, [traderId, months]);
   const market = all?.[0]?.market ?? "KR";
   const simMonths: SimMonth[] = useMemo(() => (all ?? []).flatMap((d) => d.months), [all]);
+  // 전략 수 = 볼 수 있는 달이 들어 있는 전략 (전략은 판매자가 끊은 기간이라 달 수와 다름)
+  const trader = traderById(traderId);
+  const strategyCount = trader ? strategiesOf(trader).filter((s) => s.months.some((m) => months.includes(m))).length : months.length;
   const tradeCount = simMonths.reduce((s, m) => s + m.trades.length, 0);
 
   // 트레이더가 산 날 상황 (알림 · 이 트레이더라면? 에서 같이 씀)
@@ -77,11 +81,11 @@ export default function UseStrategy({ traderId, traderName, months, current }: {
   }, [needCases, cases, all, simMonths, market]);
 
   return (
-    <section className="mk-card su-wrap" aria-label="산 전략 활용하기">
+    <section className="mk-card su-wrap" aria-label="구독한 전략 활용하기">
       <div className="su-head">
-        <h2>산 전략 활용하기</h2>
+        <h2>구독한 전략 활용하기</h2>
         <small>
-          연 전략 {months.length}개 · 실제 매매 {tradeCount}건을 근거로 써요
+          구독한 전략 {strategyCount}개 · 실제 매매 {tradeCount}건을 근거로 써요
         </small>
       </div>
       <div className="su-tabs" role="tablist">
@@ -93,7 +97,7 @@ export default function UseStrategy({ traderId, traderName, months, current }: {
       </div>
       <p className="su-desc">{TABS.find((t) => t.key === tab)!.desc}</p>
       {!all ? (
-        <BeeLoader size="sm" label="산 전략" />
+        <BeeLoader size="sm" label="구독한 전략" />
       ) : tab === "alert" ? (
         <Alert traderId={traderId} traderName={traderName} cases={cases} market={market} />
       ) : tab === "review" ? (
@@ -242,6 +246,9 @@ function Review({ detail, traderName }: { detail: SimDetail[]; traderName: strin
   const theirs = detail.flatMap((d) => traderRounds(d));
   const months = new Set(detail.flatMap((d) => d.months.map((m) => m.month)));
   const myIn = (mine ?? []).filter((r) => months.has(r.entry.d.slice(0, 7)));
+  // 기간은 달을 하나씩 늘어놓지 않고 처음 ~ 끝으로 (47개월이면 한 줄이 넘어감)
+  const sorted = [...months].sort();
+  const span = sorted.length ? (sorted.length === 1 ? sorted[0].replace("-", ".") : `${sorted[0].replace("-", ".")} ~ ${sorted[sorted.length - 1].replace("-", ".")}`) : "";
   const a = statsOf(theirs.map((t) => ({ ret: t.ret, days: t.days })));
   const b = statsOf(myIn);
   const stopRate = theirs.length ? Math.round((theirs.filter((t) => t.followed).length / theirs.length) * 100) : null;
@@ -268,7 +275,7 @@ function Review({ detail, traderName }: { detail: SimDetail[]; traderName: strin
           <table className="su-table">
             <thead>
               <tr>
-                <th>산 전략의 달</th>
+                <th>구독한 전략 기간</th>
                 <th>{traderName}</th>
                 <th>나</th>
               </tr>
@@ -298,7 +305,7 @@ function Review({ detail, traderName }: { detail: SimDetail[]; traderName: strin
               </ul>
             </div>
           )}
-          {!myIn.length && <p className="su-empty">산 전략의 달({[...months].map((m) => `${Number(m.slice(5))}월`).join(" · ")})에 내 매매가 없어요.</p>}
+          {!myIn.length && <p className="su-empty">구독한 전략 기간({span})에 내 매매가 없어요.</p>}
           {!!tips.length && (
             <ul className="su-tips">
               {tips.map((t) => (
