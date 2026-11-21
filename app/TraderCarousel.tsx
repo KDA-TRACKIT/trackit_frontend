@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useLikeTotals } from "../lib/feedback";
 import { useEffect, useRef, useState } from "react";
-import { TRADERS, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
+import { TRADERS, followLabel, listed, oneStock, pct, strategiesOf } from "./marketplace/data";
 
 
 export default function TraderCarousel() {
@@ -14,7 +14,7 @@ export default function TraderCarousel() {
   const [order, setOrder] = useState("이번 달 인기");
   // 꿀(전략을 산 사람들이 준 합계) 많은 순 10명, 같으면 3개월 수익률 순
   const BOARD = TRADERS.filter(listed).sort((a, b) => {
-    if (order === "이행률 높은 순") return b.follow - a.follow || b.returns["1m"] - a.returns["1m"];
+    if (order === "이행률 높은 순") return (b.follow ?? -1) - (a.follow ?? -1) || b.returns["1m"] - a.returns["1m"];
     if (order === "최근 활동") return (strategiesOf(b)[0]?.start ?? "").localeCompare(strategiesOf(a)[0]?.start ?? "") || b.returns["1m"] - a.returns["1m"];
     return (likeTotals[b.id] ?? 0) - (likeTotals[a.id] ?? 0) || b.returns["1m"] - a.returns["1m"];
   }).slice(0, 10);
@@ -77,7 +77,7 @@ export default function TraderCarousel() {
                 </div>
               </div>
               <div className="home-trader-footer">
-                <span>이행률 {t.follow}%</span>
+                <span>이행률 {followLabel(t.follow)}</span>
                 <span className="home-trader-honey" aria-label={`받은 꿀 ${likeTotals[t.id] ?? 0}개`}>
                   <Image src="/home/leaderboard-honey.svg" alt="" width={11.42} height={14.34} />
                   {likeTotals[t.id] ?? 0}

@@ -9,6 +9,8 @@ import { opened, usePasses } from "../../../../../lib/purchases";
 import { monthLabel, strategyOf, traderById } from "../../../../marketplace/data";
 import GuessFirst, { useDark, type SimDetail } from "../../../../marketplace/GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
+import { fetchBars } from "../../../../../lib/market-data";
+import type { SimCandle } from "../../../../marketplace/StrategyChart";
 import "../../../../marketplace/marketplace.css";
 import "../../../archive.css";
 import BeeLoader from "../../../../BeeLoader";
@@ -39,6 +41,27 @@ export default function PracticePage() {
   const market = detail?.data?.market;
   const cur = (n: number) => (market === "US" ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : `${n.toLocaleString("ko-KR")}원`);
   const canPlay = !!m && m.trades.some((tr) => tr.code === m.symbol.code);
+  // 그 달 일봉이 저장돼 있지 않으면(공개 자료 판매자, 2026-11-21) 열 때 그 달 앞 60일 ~ 뒤 40일을 받음
+  const code = m?.symbol.code ?? "";
+  const needBars = !!m && !m.candles.length && canPlay;
+  const barsKey = `${key}:${code}`;
+  const [bars, setBars] = useState<{ key: string; candles: SimCandle[] } | null>(null);
+  useEffect(() => {
+    if (!needBars || !code) return;
+    const ac = new AbortController();
+    const start = Date.parse(`${month}-01T00:00:00+09:00`) / 1000;
+    const ymd = (sec: number) => new Date((sec + 9 * 3600) * 1000).toISOString().slice(0, 10);
+    fetchBars(code, "1d", ac.signal)
+      .then(({ bars: list }) =>
+        setBars({
+          key: barsKey,
+          candles: list.filter((b) => b.time >= start - 60 * 86_400 && b.time <= start + 40 * 86_400).map((b) => [ymd(b.time), b.open, b.high, b.low, b.close, b.volume] as SimCandle),
+        }),
+      )
+      .catch(() => !ac.signal.aborted && setBars({ key: barsKey, candles: [] }));
+    return () => ac.abort();
+  }, [needBars, code, month, barsKey]);
+  const shown = m && needBars ? (bars?.key === barsKey ? { ...m, candles: bars.candles } : undefined) : m;
 
   return (
     <main className="mk-page ar-page">
@@ -59,8 +82,12 @@ export default function PracticePage() {
           <div className="mk-card mk-empty"><BeeLoader /></div>
         ) : !canPlay ? (
           <p className="mk-card mk-empty">이 달 기록에는 연습할 매매가 없어요.</p>
+        ) : !shown ? (
+          <div className="mk-card mk-empty"><BeeLoader /></div>
+        ) : !shown.candles.length ? (
+          <p className="mk-card mk-empty">이 달 차트 데이터를 받지 못했어요.</p>
         ) : (
-          <GuessFirst m={m!} dark={dark} currency={market === "US" ? "USD" : "KRW"} cur={cur} />
+          <GuessFirst m={shown} dark={dark} currency={market === "US" ? "USD" : "KRW"} cur={cur} />
         )}
 
         {t && s && unlocked && (

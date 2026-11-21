@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import SiteHeader from "../../../SiteHeader";
-import { pct, periodLabel, strategiesBySector, strategiesOf, tone, traderById } from "../../data";
+import { followLabel, pct, periodLabel, strategiesBySector, strategiesOf, tone, traderById } from "../../data";
 import { PassBuyBox, StrategyStatsRow, useNotice } from "../../parts";
 import { useFeedback } from "../../../../lib/feedback";
 import { LikeButton } from "../../feedback";
@@ -68,7 +68,7 @@ export default function StrategiesPage() {
                       </div>
                       <div className="mk-srow-num">
                         <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
-                        <small>이행률 {s.follow}%</small>
+                        <small>이행률 {followLabel(s.follow)}</small>
                         <LikeButton trader={t} strategy={s} fb={fb} notify={notify} />
                       </div>
                     </li>

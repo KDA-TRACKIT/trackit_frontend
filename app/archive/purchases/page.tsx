@@ -13,7 +13,7 @@ import { apiRequest } from "../../../lib/api/client";
 import { subscribed, subscriptionEnd, usePasses, usePassesLoaded } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
-import { monthLabel, pct, strategiesOf, strategyOf, tone, traderById } from "../../marketplace/data";
+import { followLabel, monthLabel, pct, strategiesOf, strategyOf, tone, traderById } from "../../marketplace/data";
 import HoneyPot from "../../HoneyPot";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
@@ -109,7 +109,7 @@ export default function PurchasesPage() {
                       </div>
                       <div className="ar-trader-stat">
                         <small>전략 이행률</small>
-                        <b>{g.t ? `${g.t.follow}%` : "—"}</b>
+                        <b>{g.t ? followLabel(g.t.follow) : "—"}</b>
                       </div>
                       <div className="ar-trader-stat">
                         <small title="구독한 전략대로 한 매매만 모은 수익률 (최근 1개월)">전략 직결 수익률 · 1개월</small>

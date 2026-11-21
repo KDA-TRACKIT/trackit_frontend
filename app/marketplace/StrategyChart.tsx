@@ -20,10 +20,14 @@ export type SimTrade = {
   code: string;
   name: string;
   entry: { d: string; px: number; why: string };
+  /** 청산. 아직 안 판 매매(open)면 기준일(마지막 종가)로 평가한 값 — 매도로 그리지 않음 */
   exit: { d: string; px: number; why: string };
   ret: number;
-  followed: boolean;
+  /** 계획(가격)대로 했는지. 계획이 없던 매매는 null (이행률에서 빼고 '—') */
+  followed: boolean | null;
   lines: SimLine[];
+  /** 아직 보유 중 (공개 자료 판매자: 산 뒤 팔지 않은 물량) */
+  open?: boolean;
 };
 /** 매매가 아닌 기록: 증시 메모(시장 전체) · 종목 노트(안 산 종목 관찰, 기다리는 자리에 선) */
 /** carry: 앞 달에 산 매매가 이 달로 이어진 것 (매수 근거는 진입한 달 기록에) */
@@ -223,7 +227,7 @@ export default function StrategyChart({
     // 매수 · 매도: 봉에는 화살표만. 가격 글씨는 화살표 옆 빈 곳에 (아래 placeLabels)
     for (const t of mine) {
       if (t.entry.d >= first && t.entry.d <= last) add(t.entry.d, "belowBar", "arrowUp", "#3b6fd8", "");
-      if (t.exit.d >= first && t.exit.d <= last) add(t.exit.d, "aboveBar", "arrowDown", t.ret >= 0 ? up : down, "");
+      if (!t.open && t.exit.d >= first && t.exit.d <= last) add(t.exit.d, "aboveBar", "arrowDown", t.ret >= 0 ? up : down, "");
     }
     // 꼭지 이름표가 같은 쪽 매수/매도 글씨와 3봉 안이면 글씨는 빼고 점만 (가로로 겹치지 않게)
     const idx = new Map(candles.map(([d], x) => [d, x]));
@@ -279,7 +283,7 @@ export default function StrategyChart({
     const layer = overlay.current;
     const labels = mine.flatMap((t) => [
       ...(t.entry.d >= first && t.entry.d <= last ? [{ d: t.entry.d, side: "buy" as const, text: `매수 ${money(t.entry.px)}`, color: "#3b6fd8" }] : []),
-      ...(t.exit.d >= first && t.exit.d <= last ? [{ d: t.exit.d, side: "sell" as const, text: `매도 ${money(t.exit.px)}`, color: t.ret >= 0 ? up : down }] : []),
+      ...(!t.open && t.exit.d >= first && t.exit.d <= last ? [{ d: t.exit.d, side: "sell" as const, text: `매도 ${money(t.exit.px)}`, color: t.ret >= 0 ? up : down }] : []),
     ]);
     type Box = { x1: number; y1: number; x2: number; y2: number };
     const hit = (a: Box, b: Box) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;

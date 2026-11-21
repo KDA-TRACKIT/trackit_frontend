@@ -40,6 +40,10 @@
 .sd-plan { display:inline-block; padding:2px 8px; border-radius:9px; font-size:11px; font-style:normal; font-weight:700; white-space:nowrap; }
 .sd-plan.ok { background:color-mix(in srgb, var(--c-up) 14%, transparent); color:var(--c-up); }
 .sd-plan.no { background:var(--c-warn-soft); color:var(--c-warn); }
+/* 계획 가격이 없던 매매 (공개 자료 판매자): 이행률에서 빼고 회색으로 */
+.sd-plan.none { background:var(--c-subtle); color:var(--c-sub); }
+/* 노트 본문의 줄바꿈(· 항목)을 그대로 */
+.sd-memos li p { white-space:pre-line; }
 
 /* 6. 차트 노트: 범위 칩(이 종목 / 전략 전체) · 노트 종류 표시 */
 .sd-scope { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
