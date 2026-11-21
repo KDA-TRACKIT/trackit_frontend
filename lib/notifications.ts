@@ -65,7 +65,7 @@ export function useNotifications(loggedIn: boolean) {
     at: h.at,
     title: `${h.name}: ${h.traderName}님이 산 자리와 비슷해요 (${h.score}점)`,
     body: `${h.caseName} ${h.caseDate.slice(5).replace("-", ".")} 매수 때와 상황이 비슷해요`,
-    href: `/workshop?symbol=${encodeURIComponent(h.code)}&name=${encodeURIComponent(h.name)}`,
+    href: `/workshop?symbol=${encodeURIComponent(h.code)}&name=${encodeURIComponent(h.name)}${h.market ? `&market=${encodeURIComponent(h.market)}` : ""}${h.exchange ? `&exchange=${h.exchange}` : ""}`,
   }));
   const items = [...server, ...sampleFavorites(favs), ...matches].sort((a, b) => b.at.localeCompare(a.at));
   const unread = items.filter((n) => !seen || n.at > seen).length;
