@@ -13,7 +13,7 @@
   box-shadow:0 20px 60px #0002;
 }
 .home-investment-prompt::backdrop { background:rgb(0 0 0 / 55%); }
-.home-investment-prompt h2 { margin:0; font-size:22px; line-height:1.5; font-weight:700; text-align:center; word-break:keep-all; }
+.home-investment-prompt h2 { margin:0; font-size:20px; line-height:1.5; font-weight:700; text-align:center; word-break:keep-all; }
 .home-investment-prompt-actions { display:flex; gap:12px; margin-top:32px; }
 .home-investment-prompt-actions :is(a,button) { display:flex; flex:1; min-height:48px; align-items:center; justify-content:center; padding:12px 10px; border:0; border-radius:12px; background:var(--c-subtle,#f0f2f5); color:var(--c-ink,#1b2a44); font:inherit; font-size:14px; font-weight:600; text-align:center; cursor:pointer; }
 .home-investment-prompt-actions .primary { background:#0f2367; color:#fff; }

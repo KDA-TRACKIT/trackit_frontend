@@ -472,7 +472,7 @@ function MiniCandles({ bars }: { bars: Bar[] }) {
     const unfixZoom = fixZoomPointer(el);
     const c: IChartApi = createChart(el, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-faint", "#999"), fontSize: 10, attributionLogo: false },
+      layout: { background: { type: ColorType.Solid, color: cssVar("--c-surface", "#fff") }, textColor: cssVar("--c-faint", "#999"), fontSize: 11, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: cssVar("--c-line", "#eee") } },
       rightPriceScale: { visible: false },
       leftPriceScale: { visible: false },

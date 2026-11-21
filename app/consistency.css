@@ -14,7 +14,7 @@ input, textarea, select, button { font-family:inherit; }
 /* 제목 */
 .login-wordmark { margin-bottom:44px; font-size:30px; letter-spacing:-.5px; }
 .login-wordmark.brand { font-size:38px; letter-spacing:-1.5px; }
-.signup-choice h1, .signup-complete h1, .signup-form h1 { font-size:30px; letter-spacing:-.5px; }
+.signup-choice h1, .signup-complete h1, .signup-form h1 { font-size:32px; letter-spacing:-.5px; }
 .signup-form h1 { padding-bottom:16px; }
 
 /* 작은 글자 */
