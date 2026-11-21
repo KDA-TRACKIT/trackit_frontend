@@ -1,12 +1,12 @@
 "use client";
-// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명) · 비슷한 트레이더
+// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명)
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
-import { TRADERS, listed, monthLabel, oneStock, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
+import { monthLabel, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
@@ -14,13 +14,6 @@ import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Qna, Reviews } from "../feedback";
 import { useMyTrader, useSubscriberCounts } from "../../../lib/my-trader";
 import "../marketplace.css";
-
-/** 채널나스닥 → "채널나스닥"과, 원트로그 → "원트로그"와 (따옴표로 감싸고, 마지막 글자가 한글이 아니면 와(과)) */
-function withWa(name: string) {
-  const c = name.charCodeAt(name.length - 1) - 0xac00;
-  if (c < 0 || c > 11171) return `"${name}"와(과)`;
-  return `"${name}"${c % 28 ? "과" : "와"}`;
-}
 
 export default function TraderPage() {
   const { id } = useParams<{ id: string }>();
@@ -56,7 +49,6 @@ export default function TraderPage() {
   const total = bought ? linkedTotal : t.returns.all;
   // 마지막으로 기록한 달 (성과 카드 설명: "2026년 · 11월까지")
   const [lastYear, lastMonth] = t.monthly[t.monthly.length - 1].month.split("-").map(Number);
-  const similar = TRADERS.filter((o) => o.id !== t.id && listed(o) && (o.type === t.type || o.styles.some((s) => t.styles.includes(s)))).slice(0, 4);
 
   return (
     <main className="mk-page">
@@ -181,21 +173,6 @@ export default function TraderPage() {
         <Reviews trader={t} fb={fb} notify={notify} />
 
         <Qna trader={t} fb={fb} notify={notify} />
-
-        <section className="mk-section mk-similar">
-          <h2>{withWa(t.name)} 비슷한 트레이더</h2>
-          <div className="mk-similar-grid">
-            {similar.map((o) => (
-              <Link key={o.id} href={`/marketplace/${o.id}`} className="mk-card mk-sim">
-                <strong>
-                  {o.name}
-                </strong>
-                <p>{o.tagline}</p>
-                <span className={oneStock(o, "3m") ? "" : tone(o.returns["3m"])}>3개월 {oneStock(o, "3m") ? "-" : pct(o.returns["3m"])}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
       </div>
       {node}
     </main>
