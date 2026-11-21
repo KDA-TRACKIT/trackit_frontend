@@ -1,18 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import IntroSteps from "./IntroSteps";
 import { ArchivePreview, DashboardPreview, MarketPreview, WorkshopPreview } from "./ProductPreviews";
 import styles from "./landing.module.css";
 
 const headline = ["매매를 기록하고,", "전략을 사고팔다."];
 const orbitLabels = ["차트분석", "기록", "매매", "전략 판매", "전략 구매", "전략 공부"];
-
-const steps = [
-  { icon: "discover", width: 20.8, height: 20.8, title: "차트에서 발견", body: ["관심 구간에 선을 긋고", "매매 조건을 정해요."] },
-  { icon: "record", width: 16.8, height: 21.8, title: "노트로 기록", body: ["진입과 청산의 이유를", "노트에 남겨요."] },
-  { icon: "strategy", width: 19.8, height: 21.8, title: "기록을 전략으로", body: ["수익률과 이행률로", "내 매매 기준을 다듬어요."] },
-  { icon: "trade", width: 19.8, height: 19.8, title: "전략을 사고팔기", body: ["다른 전략을 열람하고", "내 전략을 판매해요."] },
-];
 
 const questions = [
   { title: "차트만 보고 있을 때도 노트를 남길 수 있나요?", answer: "투자작업실에서 관심 종목을 열고 차트 옆 노트에 관찰한 구간과 생각을 남길 수 있어요." },
@@ -75,22 +69,7 @@ export default function Intro() {
           </div>
         </section>
 
-        <section className={styles.steps} aria-labelledby="intro-steps-title">
-          <div className={styles.shell}>
-            <h2 id="intro-steps-title">차트 분석부터 전략 거래까지</h2>
-            <ol>
-              {steps.map(({ icon, width, height, title, body }) => (
-                <li key={icon}>
-                  <div className={styles.stepIcon}><Image src={`/intro-preview/${icon}.svg`} alt="" width={width} height={height} /></div>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{body[0]}<br />{" "}{body[1]}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        <IntroSteps />
 
         <section className={styles.features} id="intro-features" aria-label="주요 기능">
           <div className={styles.shell}>
