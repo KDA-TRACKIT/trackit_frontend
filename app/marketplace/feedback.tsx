@@ -1,5 +1,5 @@
 "use client";
-// 전략 마켓의 꿀 버튼 · 익명 구매자 후기 · 구독자와 판매자가 보는 노트 보충 설명 이력
+// 전략 마켓의 꿀 버튼 · 익명 구매자 후기 · 구독자와 판매자가 보는 보충 노트
 import HoneyPot from "../HoneyPot";
 import BeeLoader from "../BeeLoader";
 import { useState } from "react";
@@ -158,7 +158,7 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
 }
 
 /**
- * 트레이더 상세의 노트 보충 설명 이력: 구독자 전원과 판매자가 요청과 답변을 열람할 수 있음
+ * 트레이더 상세의 보충 노트: 구독자 전원과 판매자가 요청과 답변을 열람할 수 있음
  *   설명 요청 = 구독 중인 사람 (전략 노트에 대한 보충 설명), 답변 = 전략을 올린 판매자
  *   쓰는 중에 개인정보 · 투자 조언(사도 되나요 · 추천 · 사세요)을 미리 알려 주고, 서버가 한 번 더 거름
  */
@@ -199,7 +199,7 @@ export function Qna({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback
       <div className="mk-section-head">
         <div>
           <h2>
-            노트 보충 설명 이력 <span className="mk-reviews-count">{count}</span>
+            보충 노트 <span className="mk-reviews-count">{count}</span>
           </h2>
         </div>
       </div>
