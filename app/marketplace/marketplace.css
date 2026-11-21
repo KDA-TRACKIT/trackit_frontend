@@ -550,9 +550,8 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
 .mk-trader-page { background:var(--c-surface); }
 :is(.mk-trader-page, .mm-page, .ar-subscriptions-page, .an-chat-page) > .mk-wrap { width:min(1060px,calc(100% - 48px)); padding-top:56px; }
-.mk-trader-page .mk-title { color:var(--mk-primary); }
 .mk-trader-page .mk-title,
-:is(.mm-page, .ar-subscriptions-page, .an-chat-page) .ar-title-row .mk-title { font-size:40px; line-height:48px; font-weight:600; }
+:is(.mm-page, .ar-subscriptions-page, .an-chat-page) .ar-title-row .mk-title { color:var(--mk-primary); font-size:40px; line-height:48px; font-weight:600; }
 .mk-trader-page .mk-search { height:65px; padding-inline:22px; }
 .mk-trader-page .mk-search input { font-size:18px; }
 .mk-trader-page .mk-search input::placeholder { color:var(--c-sub); }
