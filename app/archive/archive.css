@@ -663,6 +663,9 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .mm-rv-changes b { color:var(--c-ink); margin-right:4px; }
 .mm-rv-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .mm-rv-chips a { padding:4px 12px; border:1px solid var(--c-line); border-radius:999px; color:var(--c-ink); font-size:13px; text-decoration:none; }
+.mm-rp-stocks { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+.mm-rp-stocks button { padding:5px 12px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink); font-size:13px; font-weight:700; cursor:pointer; }
+.mm-rp-stocks button.on { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); }
 .mm-rv-habit-group + .mm-rv-habit-group { margin-top:12px; }
 .mm-rv-habit-group h3 { margin:0 0 6px; color:var(--c-sub); font-size:13px; font-weight:700; }
 .mm-rv-whatif-sum { margin:0 0 12px; padding:10px 12px; border:1px solid var(--c-line); border-radius:8px; color:var(--c-ink); font-size:14px; }

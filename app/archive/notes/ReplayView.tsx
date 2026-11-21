@@ -47,14 +47,15 @@ export default function ReplayView({ records, trades, stocks, from, onOpenNote }
     <section className="mm-card mm-rp" aria-label="복기 재생">
       <div className="mm-rp-head">
         <h2>복기 재생</h2>
-        <select value={code} onChange={(e) => setPicked(e.target.value)} aria-label="재생할 종목">
-          {stocks.map((s) => (
-            <option key={s.code} value={s.code}>
-              {s.name}
-            </option>
-          ))}
-        </select>
         <small>노트(그때의 뷰)와 실제 매매를 시간 순서로 다시 봐요</small>
+      </div>
+      {/* 종목 고르기: 드롭다운은 눈에 안 띄어서 버튼으로 (2026-11-21) */}
+      <div className="mm-rp-stocks" role="tablist" aria-label="재생할 종목">
+        {stocks.map((s) => (
+          <button key={s.code} type="button" role="tab" aria-selected={s.code === code} className={s.code === code ? "on" : ""} onClick={() => setPicked(s.code)}>
+            {s.name}
+          </button>
+        ))}
       </div>
       {!steps.length ? (
         <p className="mm-rv-muted">{from ? "선택한 기간에 " : ""}{name}에 남긴 노트 · 매매가 없어요.</p>

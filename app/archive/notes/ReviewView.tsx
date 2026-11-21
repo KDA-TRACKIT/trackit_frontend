@@ -4,8 +4,8 @@
 //     (2026-11-22 용어 통일: 계획 있던 매매 → 계획을 세운 매매, 계획대로 끝냄 → 계획 이행률, 이긴 비율 → 승률, N번 → N건 — 홈 · 전략 마켓과 같은 말로)
 //   가운데: 매매마다 계획 가격과 실제 가격, 지킨 것 · 어긴 것 (누르면 그때 쓴 노트를 오른쪽에)
 //     (2026-11-21) 매매마다 '계획대로 했다면' 결과(일봉으로 계산)와 차트(계획 선 + 실제 매수 · 매도)
-//   그 아래: 복기 재생 → 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게) → 계획만 세우고 안 산 종목
-//     (2026-11-21 순서 정리: 요약 → 습관 → 매매 → 재생. 재생이 맨 위라 요약이 밀려 있었음)
+//   그 아래: 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게) → 계획만 세우고 안 산 종목
+//   맨 위: 복기 재생 (종목을 골라서)
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeRecord } from "../../../lib/records";
@@ -118,6 +118,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
 
   return (
     <div className="mm-rv">
+      {!!replayStocks.length && <ReplayView key={`${stock}:${from}`} records={records} trades={trades} stocks={replayStocks} from={from} onOpenNote={onOpenNote} />}
       {failed && <p className="mm-card mm-rv-empty">로그인하고 증권사를 연결하면 실제 체결과 비교해요. 지금은 노트만 보여요.</p>}
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>
@@ -181,8 +182,6 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
           </ul>
         )}
       </section>
-
-      {!!replayStocks.length && <ReplayView key={`${stock}:${from}`} records={records} trades={trades} stocks={replayStocks} from={from} onOpenNote={onOpenNote} />}
 
       {!!changes.length && (
         <section className="mm-card mm-rv-changes">
