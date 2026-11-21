@@ -206,7 +206,9 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
           {rows.map((r) => (
             <li key={r.code} className={r.score >= min ? "hit" : ""}>
               <div>
-                <strong>{r.name}</strong> <b className="su-score">비슷한 정도 {r.score}점</b>
+                <span>
+                  <strong>{r.name}</strong> <b className="su-score">비슷한 정도 {r.score}점</b>
+                </span>
                 <small>오늘: {r.today}</small>
                 <small>
                   비슷한 매매: {r.c.trade.name} {md(r.c.trade.entry.d)} 매수 — {r.c.trade.entry.why} → {sign(r.c.trade.ret)}
