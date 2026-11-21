@@ -115,7 +115,7 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
   const [on, setOn] = useState(false);
   const [min, setMin] = useState(75);
   const [hits, setHits] = useState<AlertHit[]>([]);
-  const [rows, setRows] = useState<{ code: string; name: string; score: number; today: string; c: EntryCase }[] | null>(null);
+  const [rows, setRows] = useState<{ code: string; name: string; market: string; exchange?: string; score: number; today: string; c: EntryCase }[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => {
     const sync = () => {
@@ -141,14 +141,14 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
       const s = situationAt(bars, bars.length - 1);
       if (!s) continue;
       const best = bestCase(s, cases);
-      if (best) out.push({ code: w.code, name: w.name, score: best.score, today: describe(s), c: best.c });
+      if (best) out.push({ code: w.code, name: w.name, market: w.market, exchange: w.exchange, score: best.score, today: describe(s), c: best.c });
     }
     out.sort((a, b) => b.score - a.score);
     setRows(out);
     const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
     const found = out.filter((r) => r.score >= min);
     if (on && found.length) {
-      const n = addHits(found.map((r) => ({ id: `${traderId}:${r.code}:${today}`, traderId, traderName, code: r.code, name: r.name, score: r.score, caseDate: r.c.trade.entry.d, caseName: r.c.trade.name, at: new Date().toISOString() })));
+      const n = addHits(found.map((r) => ({ id: `${traderId}:${r.code}:${today}`, traderId, traderName, code: r.code, name: r.name, market: r.market, exchange: r.exchange, score: r.score, caseDate: r.c.trade.entry.d, caseName: r.c.trade.name, at: new Date().toISOString() })));
       setMsg(n ? `새로 ${n}개를 알림에 남겼어요 (상단 종).` : "이미 알림에 있는 자리예요.");
     }
   }
@@ -196,18 +196,23 @@ function Alert({ traderId, traderName, cases, market }: { traderId: string; trad
         </p>
       )}
       {msg && <p className="su-msg">{msg}</p>}
+      {rows && !!rows.length && (
+        <p className="su-msg">
+          점수는 그 종목의 오늘 상황이 {traderName}님이 샀던 날과 얼마나 비슷한지예요 (100점 만점 · RSI, 20일선과의 거리, 최근 20일 등락, 거래량, 60일 범위 안 위치로 계산). {min}점 이상이면 비슷한 자리로 봐요.
+        </p>
+      )}
       {rows && (
         <ul className="su-rows">
           {rows.map((r) => (
             <li key={r.code} className={r.score >= min ? "hit" : ""}>
               <div>
-                <strong>{r.name}</strong> <b className="su-score">{r.score}점</b>
+                <strong>{r.name}</strong> <b className="su-score">비슷한 정도 {r.score}점</b>
                 <small>오늘: {r.today}</small>
                 <small>
                   비슷한 매매: {r.c.trade.name} {md(r.c.trade.entry.d)} 매수 — {r.c.trade.entry.why} → {sign(r.c.trade.ret)}
                 </small>
               </div>
-              <Link className="mk-soft" href={`/workshop?symbol=${encodeURIComponent(r.code)}&name=${encodeURIComponent(r.name)}`}>
+              <Link className="mk-soft" href={`/workshop?symbol=${encodeURIComponent(r.code)}&name=${encodeURIComponent(r.name)}&market=${encodeURIComponent(r.market)}${r.exchange ? `&exchange=${r.exchange}` : ""}`}>
                 차트 보기
               </Link>
             </li>

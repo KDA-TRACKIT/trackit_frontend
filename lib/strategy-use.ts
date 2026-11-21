@@ -164,7 +164,7 @@ export function entryText(s: OverlayShape) {
 const ALERTS = "trackit:strategy-alerts";
 const HITS = "trackit:strategy-hits";
 export type AlertRule = { traderId: string; traderName: string; min: number };
-export type AlertHit = { id: string; traderId: string; traderName: string; code: string; name: string; score: number; caseDate: string; caseName: string; at: string };
+export type AlertHit = { id: string; traderId: string; traderName: string; code: string; name: string; /** 미국 종목이면 거래소 (차트 열 때 필요) */ market?: string; exchange?: string; score: number; caseDate: string; caseName: string; at: string };
 
 const read = <T,>(k: string): T[] => {
   try {
