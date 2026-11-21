@@ -4,7 +4,8 @@
 /** 데이터 공간 좌표. time = 실제 시각(UTC 초), price = 원 단위 문자열(백엔드 숫자 규약) */
 export type DrawingPoint = { time: number; price: string };
 
-export type DrawingStyle = { color: string; width: number };
+/** dash: 선 모양 (없으면 실선). 툴이 스스로 점선을 쓰는 부분(보조선 등)은 그대로 */
+export type DrawingStyle = { color: string; width: number; dash?: "dashed" | "dotted" };
 
 export type Drawing = {
   id: string;
@@ -16,6 +17,10 @@ export type Drawing = {
   text?: string;
   /** 잠금: 고를 순 있지만 끌어서 옮기거나 점을 바꿀 수 없음 (선택 막대의 자물쇠로 풂) */
   locked?: boolean;
+  /** 감추기: 차트에 그리지 않고 누를 수도 없음 (객체 트리에서 다시 보이게) */
+  hidden?: boolean;
+  /** 인터벌 가시성: 이 주기들에서만 보임 (없거나 비었으면 모든 주기) */
+  intervals?: string[];
 };
 
 /** 왼쪽 도구 바의 그룹 */

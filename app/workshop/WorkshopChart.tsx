@@ -24,7 +24,8 @@ import IndicatorPicker from "./IndicatorPicker";
 import type { AvgPrice } from "../../hooks/useAvgPrice";
 import ColorSwatches from "./ColorSwatches";
 import Image from "next/image";
-import { Lock, LockOpen } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, GripVertical, ListTree, Lock, LockOpen, Magnet, MoreHorizontal } from "lucide-react";
+import { getDrawPrefs, removeDrawTemplate, saveDrawTemplate, setDrawPref, useDrawPrefs, useDrawTemplates } from "../../lib/drawing/prefs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
 import { DrawingLayer, fromChartTime, toChartTime } from "../../lib/drawing/render/lwc-adapter";
@@ -395,6 +396,9 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
+  /** 지금 주기 (드로잉의 인터벌 가시성 판정) */
+  const intervalNowRef = useRef<string>(interval);
+  intervalNowRef.current = interval;
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -417,7 +421,16 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const [instances, setInstances] = useState<IndicatorInstance[]>(loadInstances);
   const [pickerOpen, setPickerOpen] = useState(false);
   /** 드로잉 편집 툴바에서 펼친 메뉴 */
-  const [editMenu, setEditMenu] = useState<"color" | "width" | null>(null);
+  const [editMenu, setEditMenu] = useState<"color" | "width" | "dash" | "more" | null>(null);
+  /** 더보기(⋯) 안에서 펼친 항목 */
+  const [moreSub, setMoreSub] = useState<"template" | "order" | "intervals" | null>(null);
+  // 그리기 설정 (자석 · 모두 감추기 · 모두 잠금) · 스타일 템플릿 — 이 브라우저에 저장 (lib/drawing/prefs)
+  const drawPrefs = useDrawPrefs();
+  const templates = useDrawTemplates();
+  /** 객체 트리: 그린 것 목록 (고르기 · 감추기 · 잠금 · 삭제) */
+  const [treeOpen, setTreeOpen] = useState(false);
+  /** 선택 막대를 손잡이로 끌어 옮긴 거리 (차트를 가리지 않게) */
+  const [barOffset, setBarOffset] = useState({ x: 0, y: 0 });
   /** 평균 단가 선 */
   const avgLineRef = useRef<IPriceLine | null>(null);
   const lastClose = bars[bars.length - 1]?.close;
@@ -772,6 +785,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     loadedKeyRef.current = null;
     shownRef.current = [];
     layer.setDrawings(drawingsRef.current);
+    layer.setVisibility(intervalNowRef.current, getDrawPrefs().hideAll);
     const resizeObserver = new ResizeObserver(() => refreshPaneLegends());
     resizeObserver.observe(container);
 
@@ -960,8 +974,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       if (x > chart.paneSize().width || y > chart.paneSize(0).height) return null; // 가격 축·보조 창 위 클릭은 무시
       // 마지막 봉 뒤(미래)도 봉 간격으로 시각을 늘려 잡는다 (예측·포지션 툴)
       const time = layerRef.current?.xToTime(x) ?? null;
-      const price = candle.coordinateToPrice(y);
-      if (time === null || price === null) return null;
+      const raw = candle.coordinateToPrice(y);
+      if (time === null || raw === null) return null;
+      // 자석: 그 봉의 시가 · 고가 · 저가 · 종가 가까이면 그 값에 붙임
+      const price = getDrawPrefs().magnet ? (layerRef.current?.magnetPrice(time, raw) ?? raw) : raw;
       return { time, price: String(roundPx(price, currencyRef.current)) };
     };
     /** 펜 · 지우개: 봉에 맞추지 않은 그 자리 그대로의 점 */
@@ -1045,7 +1061,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       if (!id || !orig) return;
       event.stopPropagation();
       // 잠근 드로잉: 고르기만 (선택 막대에서 풀 수 있게), 끌어서 옮기지 않음
-      if (orig.locked) {
+      if (orig.locked || getDrawPrefs().lockAll) {
         selectDrawing(id);
         skipClick = true;
         return;
@@ -1073,7 +1089,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
       }
       const { x, y } = localXY(event);
       const sel = layer.selected();
-      const selLocked = !!sel && !!drawingsRef.current.find((d) => d.id === sel)?.locked;
+      const selLocked = !!sel && (getDrawPrefs().lockAll || !!drawingsRef.current.find((d) => d.id === sel)?.locked);
       const onHandle = sel && !selLocked ? layer.handleAt(sel, x, y) !== null : false;
       const id = onHandle ? sel : layer.drawingAt(x, y);
       layer.setHovered(id);
@@ -1794,6 +1810,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedKey]);
 
+  // 주기가 바뀌거나 '모두 감추기'를 누르면 보이는 드로잉을 다시 정함
+  useEffect(() => {
+    layerRef.current?.setVisibility(interval, drawPrefs.hideAll);
+  }, [interval, drawPrefs.hideAll]);
+
   function apply(next: Drawing[]) {
     drawingsRef.current = next;
     setDrawings(next);
@@ -1923,6 +1944,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   function selectDrawing(id: string | null) {
     setSelectedId(id);
     setEditMenu(null);
+    setMoreSub(null);
     layerRef.current?.setSelected(id);
   }
 
@@ -1930,6 +1952,36 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     const id = layerRef.current?.selected();
     if (!id) return;
     commit(drawingsRef.current.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  }
+
+  /** 보는 차례: 겹친 드로잉 가운데 무엇을 위에 그릴지 (목록 뒤쪽이 위) */
+  function reorderSelected(to: "front" | "forward" | "backward" | "back") {
+    const list = drawingsRef.current;
+    const i = list.findIndex((d) => d.id === layerRef.current?.selected());
+    if (i < 0) return;
+    const j = to === "front" ? list.length - 1 : to === "back" ? 0 : Math.min(list.length - 1, Math.max(0, i + (to === "forward" ? 1 : -1)));
+    if (i === j) return;
+    const next = [...list];
+    const [d] = next.splice(i, 1);
+    next.splice(j, 0, d);
+    commit(next);
+  }
+
+  /** 드로잉 하나 고치기 (객체 트리에서 고르지 않은 것도) */
+  function updateDrawing(id: string, patch: Partial<Drawing>) {
+    commit(drawingsRef.current.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+    // 감춘 드로잉은 고른 상태로 두지 않음 (안 보이는 걸 옮기지 않게)
+    if (patch.hidden && layerRef.current?.selected() === id) selectDrawing(null);
+  }
+
+  function removeDrawing(id: string) {
+    commit(drawingsRef.current.filter((d) => d.id !== id));
+    if (layerRef.current?.selected() === id) selectDrawing(null);
+  }
+
+  /** 인터벌 가시성: 고른 드로잉이 보일 주기 (null = 모든 주기) */
+  function setSelectedIntervals(intervals: string[] | null) {
+    updateSelected({ intervals: intervals?.length ? intervals : undefined });
   }
 
   function deleteSelected() {
@@ -2325,6 +2377,28 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             <Image src="/icons/candle.svg" width={20} height={20} alt="" unoptimized />
           </button>
           <span className="ws-draw-divider" />
+          {/* 그리기 설정 (2026-11-22): 자석 · 모두 잠금 · 모두 감추기 · 객체 트리 */}
+          <button className={drawPrefs.magnet ? "active" : ""} aria-pressed={drawPrefs.magnet} onClick={() => setDrawPref("magnet", !drawPrefs.magnet)} title={`자석 ${drawPrefs.magnet ? "켜짐" : "꺼짐"}: 점을 찍을 때 봉의 시가 · 고가 · 저가 · 종가에 붙여요`}>
+            <Magnet size={18} strokeWidth={1.8} aria-hidden />
+          </button>
+          <button className={drawPrefs.lockAll ? "active" : ""} aria-pressed={drawPrefs.lockAll} onClick={() => setDrawPref("lockAll", !drawPrefs.lockAll)} title={drawPrefs.lockAll ? "모두 잠금 켜짐: 드로잉이 옮겨지지 않아요. 누르면 풀림" : "모두 잠금: 그린 것이 실수로 옮겨지지 않게"}>
+            {drawPrefs.lockAll ? <Lock size={18} strokeWidth={1.8} aria-hidden /> : <LockOpen size={18} strokeWidth={1.8} aria-hidden />}
+          </button>
+          <button
+            className={drawPrefs.hideAll ? "active" : ""}
+            aria-pressed={drawPrefs.hideAll}
+            onClick={() => {
+              if (!drawPrefs.hideAll) selectDrawing(null);
+              setDrawPref("hideAll", !drawPrefs.hideAll);
+            }}
+            title={drawPrefs.hideAll ? "드로잉을 모두 감춘 상태예요. 누르면 다시 보여요" : "드로잉 모두 감추기 (지우지 않고 가려요)"}
+          >
+            {drawPrefs.hideAll ? <EyeOff size={18} strokeWidth={1.8} aria-hidden /> : <Eye size={18} strokeWidth={1.8} aria-hidden />}
+          </button>
+          <button className={treeOpen ? "active" : ""} aria-pressed={treeOpen} onClick={() => setTreeOpen(!treeOpen)} title={`객체 트리: 그린 것 목록 (${drawings.length})`}>
+            <ListTree size={18} strokeWidth={1.8} aria-hidden />
+          </button>
+          <span className="ws-draw-divider" />
           <div className="ws-draw-group">
             <button className={openGroup === "trash" ? "active" : ""} onClick={() => setOpenGroup(openGroup === "trash" ? null : "trash")} title="삭제">
               <Image src="/icons/trash.svg" width={20} height={20} alt="" unoptimized />
@@ -2437,7 +2511,27 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
           )}
           {/* 도구를 들고 있어도, 아직 새 드로잉의 점을 안 찍었으면 고른 드로잉의 설정을 보여 준다 */}
           {selectedDrawing && pendingCount === 0 && (
-            <div className="ws-draw-edit" onClick={(e) => e.stopPropagation()} key={selectedDrawing.id}>
+            <div className="ws-draw-edit" onClick={(e) => e.stopPropagation()} key={selectedDrawing.id} style={barOffset.x || barOffset.y ? { transform: `translate(calc(-50% + ${barOffset.x}px), ${barOffset.y}px)` } : undefined}>
+              {/* 손잡이: 끌어서 막대를 옮김 (차트를 가릴 때) */}
+              <button
+                className="ws-draw-edit-grip"
+                title="끌어서 옮기기 (두 번 누르면 제자리)"
+                aria-label="선택 막대 옮기기"
+                onDoubleClick={() => setBarOffset({ x: 0, y: 0 })}
+                onPointerDown={(e) => {
+                  const from = { x: e.clientX - barOffset.x, y: e.clientY - barOffset.y };
+                  const move = (ev: PointerEvent) => setBarOffset({ x: ev.clientX - from.x, y: Math.max(0, ev.clientY - from.y) });
+                  const up = () => {
+                    window.removeEventListener("pointermove", move);
+                    window.removeEventListener("pointerup", up);
+                  };
+                  window.addEventListener("pointermove", move);
+                  window.addEventListener("pointerup", up);
+                  e.preventDefault();
+                }}
+              >
+                <GripVertical size={16} strokeWidth={1.9} aria-hidden />
+              </button>
               <span className="ws-draw-edit-name">{getTool(selectedDrawing.toolId)?.label ?? "드로잉"}</span>
               <span className="ws-draw-edit-sep" />
               <div className="ws-draw-edit-item">
@@ -2473,6 +2567,29 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                   </div>
                 )}
               </div>
+              {/* 선 모양: 실선 · 파선 · 점선 */}
+              <div className="ws-draw-edit-item">
+                <button className={editMenu === "dash" ? "on" : ""} onClick={() => setEditMenu(editMenu === "dash" ? null : "dash")} title="선 모양">
+                  <i className={`ws-dash-line ${selectedDrawing.style.dash ?? "solid"}`} />
+                </button>
+                {editMenu === "dash" && (
+                  <div className="ws-draw-pop ws-width-pop">
+                    {([["solid", "실선"], ["dashed", "파선"], ["dotted", "점선"]] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        className={(selectedDrawing.style.dash ?? "solid") === key ? "on" : ""}
+                        onClick={() => {
+                          updateSelected({ style: { color: selectedDrawing.style.color, width: selectedDrawing.style.width, ...(key === "solid" ? {} : { dash: key }) } });
+                          setEditMenu(null);
+                        }}
+                      >
+                        <i className={`ws-dash-line ${key}`} />
+                        <small>{label}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {getTool(selectedDrawing.toolId)?.needsText && (
                 <button
                   className="ws-draw-edit-text"
@@ -2502,9 +2619,159 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               <button className="danger" onClick={deleteSelected} title="삭제 (Delete 키)" aria-label="삭제">
                 <Image src="/icons/trash.svg" width={18} height={18} alt="" unoptimized />
               </button>
+              {/* 더보기: 템플릿 · 보는 차례 · 인터벌 가시성 · 객체 트리 · 감추기 */}
+              <div className="ws-draw-edit-item">
+                <button
+                  className={editMenu === "more" ? "on" : ""}
+                  onClick={() => {
+                    setEditMenu(editMenu === "more" ? null : "more");
+                    setMoreSub(null);
+                  }}
+                  title="더보기"
+                  aria-label="더보기"
+                >
+                  <MoreHorizontal size={18} strokeWidth={1.9} aria-hidden />
+                </button>
+                {editMenu === "more" && (
+                  <div className="ws-draw-pop ws-more-pop" role="menu">
+                    <button className={moreSub === "template" ? "on" : ""} onClick={() => setMoreSub(moreSub === "template" ? null : "template")} role="menuitem">
+                      템플릿 <ChevronRight size={14} aria-hidden />
+                    </button>
+                    {moreSub === "template" && (
+                      <div className="ws-more-sub">
+                        <button
+                          onClick={() => {
+                            const name = window.prompt("템플릿 이름 (지금 색 · 굵기 · 선 모양을 저장해요)", `${getTool(selectedDrawing.toolId)?.label ?? "드로잉"} ${templates.length + 1}`)?.trim();
+                            if (name) saveDrawTemplate({ name, style: selectedDrawing.style });
+                          }}
+                        >
+                          + 지금 스타일을 템플릿으로 저장
+                        </button>
+                        {templates.map((t) => (
+                          <span key={t.name} className="ws-more-row">
+                            <button onClick={() => updateSelected({ style: t.style })} title="이 템플릿 적용">
+                              <i className="ws-color-dot" style={{ background: t.style.color }} /> {t.name} <small>{t.style.width}px{t.style.dash === "dashed" ? " · 파선" : t.style.dash === "dotted" ? " · 점선" : ""}</small>
+                            </button>
+                            <button className="x" onClick={() => removeDrawTemplate(t.name)} aria-label={`${t.name} 템플릿 삭제`} title="템플릿 삭제">
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                        {!templates.length && <small className="ws-more-note">저장한 템플릿이 없어요.</small>}
+                      </div>
+                    )}
+                    <button className={moreSub === "order" ? "on" : ""} onClick={() => setMoreSub(moreSub === "order" ? null : "order")} role="menuitem">
+                      보는 차례 <ChevronRight size={14} aria-hidden />
+                    </button>
+                    {moreSub === "order" && (
+                      <div className="ws-more-sub">
+                        <button onClick={() => reorderSelected("front")}>맨 앞으로</button>
+                        <button onClick={() => reorderSelected("forward")}>한 칸 앞으로</button>
+                        <button onClick={() => reorderSelected("backward")}>한 칸 뒤로</button>
+                        <button onClick={() => reorderSelected("back")}>맨 뒤로</button>
+                      </div>
+                    )}
+                    <button className={moreSub === "intervals" ? "on" : ""} onClick={() => setMoreSub(moreSub === "intervals" ? null : "intervals")} role="menuitem">
+                      인터벌 가시성 <ChevronRight size={14} aria-hidden />
+                    </button>
+                    {moreSub === "intervals" && (
+                      <div className="ws-more-sub">
+                        <button className={!selectedDrawing.intervals?.length ? "on" : ""} onClick={() => setSelectedIntervals(null)}>
+                          모든 주기에서 보이기
+                        </button>
+                        <button onClick={() => setSelectedIntervals([interval])}>지금 주기({intervalLabel(interval).button})에서만</button>
+                        <div className="ws-more-checks">
+                          {[...new Set([...PRESET_INTERVALS, interval])].map((key) => {
+                            const on = !selectedDrawing.intervals?.length || selectedDrawing.intervals.includes(key);
+                            return (
+                              <label key={key}>
+                                <input
+                                  type="checkbox"
+                                  checked={on}
+                                  onChange={() => {
+                                    const all = [...new Set([...PRESET_INTERVALS, interval])];
+                                    const cur = selectedDrawing.intervals?.length ? selectedDrawing.intervals : all;
+                                    const next = on ? cur.filter((k) => k !== key) : [...cur, key];
+                                    // 지금 주기를 끄면 화면에서 사라지므로 선택도 풂. 다 켜면 '모든 주기'
+                                    if (!next.includes(interval)) selectDrawing(null);
+                                    commit(drawingsRef.current.map((d) => (d.id === selectedDrawing.id ? { ...d, intervals: next.length && next.length < all.length ? next : undefined } : d)));
+                                  }}
+                                />
+                                {intervalLabel(key).button}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setTreeOpen(true);
+                        setEditMenu(null);
+                      }}
+                      role="menuitem"
+                    >
+                      객체 트리…
+                    </button>
+                    <span className="ws-more-line" />
+                    <button onClick={() => (duplicateSelected(), setEditMenu(null))} role="menuitem">
+                      클론
+                    </button>
+                    <button onClick={() => updateSelected({ locked: !selectedDrawing.locked })} role="menuitem">
+                      {selectedDrawing.locked ? "잠금 풀기" : "잠금"}
+                    </button>
+                    <button onClick={() => updateDrawing(selectedDrawing.id, { hidden: true })} role="menuitem">
+                      감추기
+                    </button>
+                    <button className="danger" onClick={deleteSelected} role="menuitem">
+                      없애기
+                    </button>
+                  </div>
+                )}
+              </div>
               <button onClick={() => selectDrawing(null)} aria-label="선택 해제" title="선택 해제">
                 ✕
               </button>
+            </div>
+          )}
+
+          {/* 객체 트리: 그린 것 목록 (위에 그려진 것부터). 고르기 · 감추기 · 잠금 · 없애기 */}
+          {treeOpen && (
+            <div className="ws-tree" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="객체 트리">
+              <div className="ws-tree-head">
+                <strong>객체 트리</strong>
+                <small>{drawings.length}개</small>
+                <button onClick={() => setTreeOpen(false)} aria-label="객체 트리 닫기">
+                  ✕
+                </button>
+              </div>
+              {drawings.length ? (
+                <ul>
+                  {[...drawings].reverse().map((d) => {
+                    const off = !!d.intervals?.length && !d.intervals.includes(interval);
+                    return (
+                      <li key={d.id} className={`${d.id === selectedId ? "on" : ""}${d.hidden || off ? " dim" : ""}`}>
+                        <button className="name" disabled={d.hidden || off || drawPrefs.hideAll} onClick={() => selectDrawing(d.id)} title={off ? "이 주기에서는 보이지 않게 해 둔 드로잉이에요" : undefined}>
+                          <i className="ws-color-dot" style={{ background: d.style.color }} />
+                          <span>{getTool(d.toolId)?.label ?? "드로잉"}</span>
+                          <small>{d.text ? d.text.slice(0, 12) : Number(d.points[0]?.price) > 0 ? pxText(Number(d.points[0].price), currency) : ""}{off ? " · 다른 주기" : ""}</small>
+                        </button>
+                        <button onClick={() => updateDrawing(d.id, { hidden: !d.hidden })} aria-label={d.hidden ? "보이기" : "감추기"} title={d.hidden ? "보이기" : "감추기"}>
+                          {d.hidden ? <EyeOff size={15} strokeWidth={1.9} aria-hidden /> : <Eye size={15} strokeWidth={1.9} aria-hidden />}
+                        </button>
+                        <button onClick={() => updateDrawing(d.id, { locked: !d.locked })} aria-label={d.locked ? "잠금 풀기" : "잠금"} title={d.locked ? "잠금 풀기" : "잠금"}>
+                          {d.locked ? <Lock size={15} strokeWidth={1.9} aria-hidden /> : <LockOpen size={15} strokeWidth={1.9} aria-hidden />}
+                        </button>
+                        <button className="danger" onClick={() => removeDrawing(d.id)} aria-label="없애기" title="없애기">
+                          ✕
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>아직 그린 것이 없어요.</p>
+              )}
             </div>
           )}
 

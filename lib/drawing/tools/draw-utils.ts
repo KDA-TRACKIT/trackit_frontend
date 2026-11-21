@@ -4,10 +4,19 @@ import type { Drawing, PixelPoint, ViewInfo } from "../types";
 export const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
 export const priceOf = (d: Drawing, i: number) => Number(d.points[i].price);
 
+/** 지금 그리는 드로잉의 선 모양 (style.dash). 렌더러가 드로잉마다 정해 주고, 툴이 실선으로 긋는 선에만 적용 */
+let baseDash: number[] = [];
+export function setBaseDash(style?: "dashed" | "dotted", width = 1.5) {
+  baseDash = style === "dashed" ? [Math.max(6, width * 4), Math.max(4, width * 3)] : style === "dotted" ? [Math.max(1.5, width), Math.max(3, width * 2.5)] : [];
+}
+
+/** 렌더러가 툴을 부르기 전에 캔버스에 미리 걸어 둘 선 모양 (stroke() 를 안 쓰고 바로 긋는 툴: 추세선 · 수평선) */
+export const currentBaseDash = () => baseDash;
+
 export function stroke(ctx: CanvasRenderingContext2D, color: string, width = 1.5, dash: number[] = []) {
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
-  ctx.setLineDash(dash);
+  ctx.setLineDash(dash.length ? dash : baseDash);
 }
 
 export function line(ctx: CanvasRenderingContext2D, a: PixelPoint, b: PixelPoint) {
