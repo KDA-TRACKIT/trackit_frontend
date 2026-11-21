@@ -24,7 +24,7 @@ const SORT_OPTIONS = [
   { key: "price", label: "가격 높은 순" },
 ] as const;
 type Sort = (typeof SORT_OPTIONS)[number]["key"];
-const DEFAULT_SORT: Sort = "pop";
+const DEFAULT_SORT: Sort = "sales";
 type Filter = { mdd: [number, number]; ret: [number, number]; price: [number, number]; types: string[]; markets: string[] };
 const NO_FILTER: Filter = { mdd: [0, 100], ret: [-100, 100], price: [0, 50000], types: [], markets: [] };
 const PER_PAGE = 10;
