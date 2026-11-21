@@ -35,7 +35,19 @@ export type TradeRecord = {
   consolidates?: string[];
   /** 노트 종류: 일반 노트 · 매매 노트 (실제 관련 매매가 생긴 노트) */
   noteType?: "general" | "trade";
+  /** 시장: KR 국내 주식 · US 해외 주식 (종목 노트는 일지의 시장, 시장 전반 노트는 적어 둔 시장). 모르면 없음 */
+  market?: "KR" | "US";
+  /** 섹터: 이 종목이 든 내 전략의 섹터 (서버 기록만) */
+  sector?: string;
 };
+
+/** 일지 · 노트에 적힌 시장 값 → KR / US */
+function marketOf(value: unknown): "KR" | "US" | undefined {
+  const v = String(value ?? "").toUpperCase();
+  if (/^(US|ND|NY|NA|NASDAQ|NYSE|AMEX)$/.test(v)) return "US";
+  if (/^(KR|KRX|KOSPI|KOSDAQ|KONEX|NXT)$/.test(v)) return "KR";
+  return undefined;
+}
 
 /** 종목 없는 메모의 주제 */
 export const RECORD_TOPICS = ["뉴스", "거시경제", "시장 흐름", "업종·테마", "기타"] as const;
@@ -99,6 +111,8 @@ function fromServer(): Promise<TradeRecord[]> {
           ...(s.target ? { target: s.target } : {}),
           ...(s.replaces ? { replaces: s.replaces } : {}),
           ...(n.noteType ? { noteType: n.noteType } : {}),
+          ...((market ? marketOf(s.market) : marketOf(journal.market)) ? { market: market ? marketOf(s.market) : marketOf(journal.market) } : {}),
+          ...(!market && journal.sector ? { sector: journal.sector } : {}),
           ...(Array.isArray(s.consolidates) ? { consolidates: s.consolidates.filter((x: unknown): x is string => typeof x === "string") } : {}),
         } satisfies TradeRecord;
       }),
@@ -115,18 +129,25 @@ export async function refreshServerRecords() {
 
 /** 로그인했으면 서버 기록으로 바꾼다 (기록 화면을 열 때 한 번) */
 export async function initRecordSource() {
-  if (!(await accessToken())) {
-    source = "local";
-    notify();
-    return;
-  }
   try {
+    if (!(await accessToken())) {
+      source = "local";
+      return;
+    }
     await refreshServerRecords();
   } catch {
     // 서버가 꺼져 있으면 일단 이 브라우저 기록을 보여 준다
     source = "local";
+  } finally {
+    ready = true;
     notify();
   }
+}
+
+/** 기록을 한 번이라도 다 읽었는지. 읽기 전에 '기록이 없어요'를 보여 주지 않고 로딩으로 (2026-11-21) */
+let ready = false;
+export function useRecordsReady() {
+  return useSyncExternalStore(subscribe, () => ready, () => false);
 }
 
 export function recordSource() {

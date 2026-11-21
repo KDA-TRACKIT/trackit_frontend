@@ -34,7 +34,16 @@ export type Memo = {
   time: string;
   /** 정렬용 'YYYY-MM-DD HH:MM:SS' */
   at: string;
+  /** 시장 묶음: 국내 주식 · 해외 주식 · 시장 공통(시장을 모르는 시장 전반 노트) */
+  market: string;
+  /** 섹터 묶음: 종목 노트는 내 전략의 섹터(없으면 '섹터 미지정'), 종목 없는 노트(시장 · 뉴스 · 경제 · 공시)는 섹터가 아니라 그 시장의 '시장 · 경제 · 뉴스' */
+  sector: string;
 };
+
+export const MARKET_ORDER = ["국내 주식", "해외 주식", "시장 공통"];
+/** 종목 없는 노트(시장 흐름 · 뉴스 · 경제 지표 · 공시)가 모이는 묶음 — 섹터들보다 먼저 보여 줌 */
+export const MARKET_WIDE = "시장 · 경제 · 뉴스";
+export const NO_SECTOR = "섹터 미지정";
 
 export function kindOf(r: TradeRecord): MemoKind {
   if (r.symbol) return "chart";
@@ -63,7 +72,11 @@ export function toMemo(r: TradeRecord): Memo {
   // 공시 노트의 항목 이름은 '회사 제목' → 앞 낱말이 회사
   const company = kind === "disclosure" && ref ? ref.split(" ")[0] : null;
   const subject = r.symbolName ?? r.target?.name ?? company ?? "시장 전반";
-  return { id: r.id, rec: r, kind, subject, code: r.symbol, ref, body: body.trim(), date: r.date, time: r.noteTime.slice(0, 5), at: `${r.date} ${r.noteTime}` };
+  // 종목 코드로도 시장을 짐작 (이 브라우저에만 있는 기록): 숫자 6자리 = 국내, 영문 = 해외
+  const mk = r.market ?? (r.symbol ? (/^\d{6}$/.test(r.symbol) ? "KR" : /^[A-Z.]{1,6}$/.test(r.symbol) ? "US" : undefined) : undefined);
+  const market = mk === "KR" ? "국내 주식" : mk === "US" ? "해외 주식" : "시장 공통";
+  const sector = r.symbol ? (r.sector ?? NO_SECTOR) : MARKET_WIDE;
+  return { id: r.id, rec: r, kind, subject, code: r.symbol, ref, body: body.trim(), date: r.date, time: r.noteTime.slice(0, 5), at: `${r.date} ${r.noteTime}`, market, sector };
 }
 
 /** 노트 시각과 체결 시각 (체결이 이어진 종목 노트만) */

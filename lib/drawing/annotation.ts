@@ -33,7 +33,7 @@ export function drawingToAnnotation(d: Drawing): ChartDrawing {
   return {
     id: d.id,
     type: TYPE_BY_TOOL[d.toolId] ?? "OTHER",
-    payload: { toolId: d.toolId, schemaVersion: d.schemaVersion, points: d.points, style: d.style, ...(d.text ? { text: d.text } : {}), ...(d.locked ? { locked: true } : {}) },
+    payload: { toolId: d.toolId, schemaVersion: d.schemaVersion, points: d.points, style: d.style, ...(d.text ? { text: d.text } : {}), ...(d.locked ? { locked: true } : {}), ...(d.hidden ? { hidden: true } : {}), ...(d.intervals?.length ? { intervals: d.intervals } : {}) },
   };
 }
 
@@ -60,6 +60,8 @@ export function fromAnnotations<T extends ChartDrawing>(list: T[], idOf: (a: T) 
         style: (p.style as Drawing["style"]) ?? { color: "#2962ff", width: 1.5 },
         ...(typeof p.text === "string" ? { text: p.text } : {}),
         ...(p.locked === true ? { locked: true } : {}),
+        ...(p.hidden === true ? { hidden: true } : {}),
+        ...(Array.isArray(p.intervals) && p.intervals.length ? { intervals: (p.intervals as unknown[]).filter((x): x is string => typeof x === "string") } : {}),
       });
     }
   }

@@ -768,6 +768,7 @@ export default function WorkshopPage() {
             symbolCode={symbol.code}
             symbolName={symbol.name}
             market={symbol.market}
+            quoteCode={symbol.exchange ? `${symbol.exchange}:${symbol.code}` : symbol.code}
             currency={us ? "USD" : "KRW"}
             emptyMessage={emptyMessage}
             highlightId={hoverLine}

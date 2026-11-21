@@ -29,7 +29,7 @@ export default function PurchasedTraderPage() {
   const dark = useDark();
   // 구독으로 연 달 + 누구나 보는 무료 첫 전략
   const months = useMemo(
-    () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).map((s) => s.month) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).map((s) => s.month) : [])])].sort().reverse(),
+    () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).flatMap((s) => s.months) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).flatMap((s) => s.months) : [])])].sort().reverse(),
     [passes, id, t],
   );
   const [pick, setPick] = useState<string | null>(null);
@@ -53,8 +53,8 @@ export default function PurchasedTraderPage() {
 
   const m = detail?.month === month ? detail.data?.months.find((x) => x.month === month) : undefined;
   const trades = m?.trades ?? [];
-  const carry = (m?.notes ?? []).filter((n) => n.type === "carry" && n.code);
-  const codes = [...new Map([...trades.map((x) => [x.code, x.name] as const), ...carry.map((n) => [n.code!, n.name ?? n.code!] as const), ...(m ? [[m.symbol.code, m.symbol.name] as const] : [])]).entries()];
+  // 앞 달에 사서 들고 있는 종목은 목록에 '보유 중'으로 드러내지 않음 (2026-11-21: 청산한 매매만 보여 줌)
+  const codes = [...new Map([...trades.map((x) => [x.code, x.name] as const), ...(m ? [[m.symbol.code, m.symbol.name] as const] : [])]).entries()];
   const cur = code && codes.some(([c]) => c === code) ? code : (trades[0]?.code ?? m?.symbol.code ?? null);
   const curName = codes.find(([c]) => c === cur)?.[1] ?? cur ?? "";
 
@@ -140,17 +140,7 @@ export default function PurchasedTraderPage() {
                       <b className={tone(x.ret)}>{pct(x.ret)}</b>
                     </button>
                   ))}
-                  {carry.map((n) => (
-                    <button key={`carry:${n.code}`} type="button" className={n.code === cur ? "tr on" : "tr"} onClick={() => setCode(n.code!)}>
-                      <strong>{n.name ?? n.code}</strong>
-                      <span>
-                        <em className="ar-pt-hold">보유 중</em>
-                      </span>
-                      <span />
-                      <small>연결된 매매가 없습니다.</small>
-                    </button>
-                  ))}
-                  {!trades.length && !carry.length && <p className="ar-pt-empty">이 달에는 매매가 없어요.</p>}
+                  {!trades.length && <p className="ar-pt-empty">이 달에는 매매가 없어요.</p>}
                 </div>
               </div>
             </section>

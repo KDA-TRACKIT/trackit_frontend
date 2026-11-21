@@ -16,6 +16,7 @@ import "./marketplace.css";
 import { useSupabaseUser } from "../mypage/context";
 import { readInvestment, type Investment } from "../mypage/investment/InvestmentFields";
 import { useLikeTotals } from "../../lib/feedback";
+import { useMyTrader, useSubscriberCounts } from "../../lib/my-trader";
 import { isFavorite, useFavorites } from "../../lib/favorites";
 
 // 정렬 4가지 × 높은순(↓) · 낮은순(↑) (시안: 정렬 드롭다운 8가지). 주소에는 "ret" · "ret-asc"
@@ -94,6 +95,8 @@ export default function MarketplacePage() {
 
 function MarketplaceList() {
   const likeTotals = useLikeTotals();
+  const myTrader = useMyTrader();
+  const subscribers = useSubscriberCounts();
   const favs = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
@@ -252,7 +255,7 @@ function MarketplaceList() {
             </div>
             <ul className="mk-trader-rows">
               {shown.map((trader) => (
-                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={likeTotals[trader.id] ?? 0} />
+                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={likeTotals[trader.id] ?? 0} mine={myTrader === trader.id} subscribers={subscribers ? (subscribers[trader.id] ?? 0) : null} />
               ))}
             </ul>
           </div>
@@ -274,7 +277,7 @@ function MarketplaceList() {
   );
 }
 
-function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; period: Period; returnLabel: string; honey: number }) {
+function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { trader: Trader; period: Period; returnLabel: string; honey: number; /** 내가 올린 전략 */ mine: boolean; /** 지금 구독 중인 사람 수 (아직 못 받았으면 null) */ subscribers: number | null }) {
   const showReturn = !oneStock(trader, period);
   const curve = trader.curves?.[period];
   return (
@@ -284,10 +287,12 @@ function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; per
         <div className="mk-trader-who">
           <div className="mk-trader-name-line">
             <strong className="mk-trader-name">{trader.name}</strong>
+            {mine && <span className="mk-mine">내 전략</span>}
             <span className="mk-trader-honey" title="받은 꿀 합계">
               <Image src="/home/leaderboard-honey.svg" alt="받은 꿀" width={11.42} height={14.3401} />
               {honey}
             </span>
+            {subscribers !== null && <span className="mk-subs" title="지금 구독 중인 사람 수">구독자 {subscribers.toLocaleString("ko-KR")}명</span>}
           </div>
           <small>#{trader.tagline.replace(/^#\s*/, "")}</small>
         </div>
@@ -304,7 +309,7 @@ function TraderRow({ trader, period, returnLabel, honey }: { trader: Trader; per
           {period === "all" && trader.monthly.length > 0 && <small className="mk-trader-span">{spanOf(trader)}</small>}
         </div>
         <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{trader.follow}%</b></div>
-        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b></div>
+        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b>{mine && <small className="mk-trader-span">내가 판매 중</small>}</div>
       </Link>
     </li>
   );

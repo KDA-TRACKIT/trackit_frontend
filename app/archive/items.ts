@@ -1,11 +1,11 @@
 "use client";
-// 전략보관함 한 곳에 모으는 재료: 구매한 전략(구독으로 연 월별 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
+// 전략보관함 한 곳에 모으는 재료: 구매한 전략(구독으로 연 전략 · 무료로 본 첫 전략) + 내 기록(매매 일지 · 일반 노트 · 차트 노트 · 뉴스)
 //   기록은 lib/records (로그인 = 서버 확정 노트, 아니면 이 브라우저). 지어낸 기록 없이 있는 것만 보여 줌
 import { useEffect, useMemo, useState } from "react";
 import { classify, daysAgo, initRecordSource, recordSource, useRecords, type TradeRecord } from "../../lib/records";
 import { usePasses } from "../../lib/purchases";
 import { useFreeViews } from "../../lib/free-views";
-import { monthLabel, strategiesOf, traderById } from "../marketplace/data";
+import { strategyOf, traderById } from "../marketplace/data";
 
 export type ItemKind = "strategy" | "journal" | "note" | "chart" | "news";
 export const KINDS: { key: ItemKind; label: string; short: string }[] = [
@@ -90,7 +90,7 @@ export function useArchive() {
       .filter((p) => p.used)
       .map((p) => {
         const t = traderById(p.traderId);
-        const s = t ? strategiesOf(t).find((x) => x.month === p.used!.month) : undefined;
+        const s = t ? strategyOf(t, p.used!.month) : undefined;
         const at = kstDate(p.used!.at || p.approvedAt || "");
         return {
           id: `pass-${p.id}`,
@@ -99,10 +99,10 @@ export function useArchive() {
           time: at.slice(11, 16),
           symbol: null,
           symbolName: null,
-          title: `${monthLabel(p.used!.month)} · ${s?.title ?? p.used!.title}`,
+          title: s?.title ?? p.used!.title,
           sub: p.traderName,
           text: s?.summary ?? t?.rule?.desc ?? "",
-          href: `/marketplace/${p.traderId}/strategies/${p.used!.month}`,
+          href: `/marketplace/${p.traderId}/strategies/${s?.key ?? p.used!.month}`,
           traderId: p.traderId,
           month: p.used!.month,
           ret: s?.ret,
@@ -114,7 +114,8 @@ export function useArchive() {
       .filter((v) => !passes.some((p) => p.traderId === v.traderId && p.used?.month === v.month))
       .map((v) => {
         const t = traderById(v.traderId);
-        const s = t ? strategiesOf(t).find((x) => x.month === v.month) : undefined;
+        // v.month = 전략 번호(s1 …). 예전 기록은 달(YYYY-MM) → 그 달이 들어 있는 전략
+        const s = t ? strategyOf(t, v.month) : undefined;
         const at = kstDate(v.at);
         return {
           id: `free-${v.traderId}-${v.month}`,
@@ -123,10 +124,10 @@ export function useArchive() {
           time: at.slice(11, 16),
           symbol: null,
           symbolName: null,
-          title: `${monthLabel(v.month)} · ${s?.title ?? v.title}`,
+          title: s?.title ?? v.title,
           sub: `${v.traderName} · 무료로 봄`,
           text: s?.summary ?? t?.rule?.desc ?? "",
-          href: `/marketplace/${v.traderId}/strategies/${v.month}`,
+          href: `/marketplace/${v.traderId}/strategies/${s?.key ?? v.month}`,
           traderId: v.traderId,
           month: v.month,
           ret: s?.ret,

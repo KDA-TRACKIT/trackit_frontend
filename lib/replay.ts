@@ -11,7 +11,10 @@ export type ReplayStep =
   | { kind: "note"; at: number; date: string; time: string; text: string[]; plan: ReplayPlan; lines: NoteLine[]; changes: string[]; recordId: string }
   | { kind: "trade"; at: number; date: string; time: string; side: "매수" | "매도"; price: number; qty: number; plan: ReplayPlan; lines: NoteLine[]; checks: { text: string; ok: boolean }[] };
 
-const won = (n: number) => `${n.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원`;
+/** 종목 단위: 국내(숫자 6자리) 원, 미국 $ 소수 둘째 자리 (2026-11-21: 미국 종목도 원으로 나오던 것) */
+export const isKrSymbol = (code: string) => /^\d{6}$/.test(code);
+export const moneyOf = (code: string) => (n: number) =>
+  isKrSymbol(code) ? `${Math.round(n).toLocaleString("ko-KR")}원` : `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 const priceOf = (l: NoteLine) => l.price ?? (l.low !== undefined && l.high !== undefined ? (l.low + l.high) / 2 : (l.pts?.at(-1)?.[1] ?? null));
 const kst = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString();
@@ -21,6 +24,7 @@ const roleName = (r: NoteLine["role"]) => (r === "SUPPORT" ? "지지" : r === "R
 const AI_LINE = /^[·•]|^\S.{0,30}\s[\d,.]+원\s*기준|사이에서 판단|현재가 대비|^\[전략 분석/;
 
 export function buildReplay(records: TradeRecord[], trades: Trade[], code: string): ReplayStep[] {
+  const won = moneyOf(code);
   const notes = records
     .filter((r) => (r.symbol === code || (!r.symbol && r.target?.code === code)) && !/^\s*\[전략 분석/.test(r.text ?? ""))
     .map((r) => ({ r, at: Date.parse(`${r.date}T${r.noteTime}+09:00`) || 0 }))
@@ -63,11 +67,11 @@ export function buildReplay(records: TradeRecord[], trades: Trade[], code: strin
       for (const l of r.lines ?? []) {
         const old = lines.get(l.key);
         const p = priceOf(l);
-        if (!old) changes.push(`${roleName(l.role)}선 ${p ? won(Math.round(p)) : l.label} 새로 그음`.trim());
+        if (!old) changes.push(`${roleName(l.role)}선 ${p ? won(p) : l.label} 새로 그음`.trim());
         else {
           const op = priceOf(old);
-          if (op && p && Math.abs(op - p) / op > 0.003) changes.push(`${l.label} ${won(Math.round(op))} → ${won(Math.round(p))}으로 옮김`);
-          if (old.role !== l.role && l.role) changes.push(`${won(Math.round(p ?? 0))} 선이 ${roleName(old.role)}에서 ${roleTo(l.role)} 바뀜`);
+          if (op && p && Math.abs(op - p) / op > 0.003) changes.push(`${l.label} ${won(op)} → ${won(p)}으로 옮김`);
+          if (old.role !== l.role && l.role) changes.push(`${won(p ?? 0)} 선이 ${roleName(old.role)}에서 ${roleTo(l.role)} 바뀜`);
         }
         lines.set(l.key, l);
       }

@@ -1,17 +1,18 @@
 "use client";
-// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 월별 전략(꿀) · 구매자 후기(익명)
+// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명)
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
-import { monthLabel, pct, sellable, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
+import { monthLabel, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
-import { LikeButton, Reviews } from "../feedback";
+import { LikeButton, Qna, Reviews } from "../feedback";
+import { useMyTrader, useSubscriberCounts } from "../../../lib/my-trader";
 import "../marketplace.css";
 
 export default function TraderPage() {
@@ -19,10 +20,13 @@ export default function TraderPage() {
   const t = traderById(id);
   const { notify, node } = useNotice();
   const passes = usePasses();
-  // 수익률: 구독을 산 적 없으면 계좌 누적 수익률(지금까지), 샀으면 전략 직결 수익률(그 달 전략대로 한 매매만)
+  // 수익률: 구독을 산 적 없으면 계좌 누적 수익률(지금까지), 샀으면 전략 직결 수익률(전략대로 한 매매만)
   const bought = passes.some((p) => p.traderId === id);
   const fb = useFeedback(id);
   const router = useRouter();
+  // 내가 올린 전략인지 (내 전략 표시 · 구독 버튼 숨김) · 지금 구독 중인 사람 수
+  const own = useMyTrader() === id;
+  const subscribers = useSubscriberCounts();
   if (!t) {
     return (
       <main className="mk-page">
@@ -63,7 +67,8 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  {t.name} {own && <span className="mk-mine">내 전략</span>} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span>{" "}
+                  <span className="mk-subs" title="지금 구독 중인 사람 수">구독자 {subscribers ? `${(subscribers[t.id] ?? 0).toLocaleString("ko-KR")}명` : "…"}</span> {!own && <FavButton id={t.id} name={t.name} label />}
                 </h1>
               </div>
             </div>
@@ -92,7 +97,7 @@ export default function TraderPage() {
                 지금은 구독을 받지 않는 트레이더예요.
               </p>
             )}
-            <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-ghost">
+            <Link href={`/marketplace/${t.id}/strategies/${first.key}`} className="mk-ghost">
               첫 번째 전략 무료로 보기
             </Link>
           </aside>
@@ -119,37 +124,55 @@ export default function TraderPage() {
         <section className="mk-section">
           <div className="mk-section-head">
             <div>
-              <h2>월별 전략</h2>
+              <h2>전략</h2>
+              <p>시장 · 섹터별로, {t.name}님이 기간을 끊어 올린 전략이에요.</p>
             </div>
-            <Link href={`/marketplace/${t.id}/strategies`}>더보기 ›</Link>
+            <Link href={`/marketplace/${t.id}/strategies`}>전체 {list.length}개 ›</Link>
           </div>
-          <div className="mk-strats">
-            {list.slice(0, 3).map((s) => (
-              <article key={s.id} className="mk-card mk-strat">
-                <small>{monthLabel(s.month)}</small>
-                <h3>
-                  <Link href={`/marketplace/${t.id}/strategies/${s.month}`}>{s.title}</Link>
-                </h3>
-                <StrategyStatsRow strategy={s} />
-                <div className="mk-strat-num">
-                  <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
-                  <span>이행률 {s.follow}%</span>
-                  <LikeButton trader={t} month={s.month} fb={fb} notify={notify} />
+          {/* 시장 → 섹터 → 전략 (섹터마다 최근 3개, 나머지는 더보기) */}
+          {strategiesBySector(t).map((m) => (
+            <div key={m.market} className="mk-market-group">
+              <h3 className="mk-market-name">{m.market}</h3>
+              {m.sectors.map((g) => (
+                <div key={g.sector} className="mk-sector-group">
+                  <div className="mk-sector-head">
+                    <h4>{g.sector}</h4>
+                    <span>전략 {g.list.length}개</span>
+                    {g.list.length > 3 && <Link href={`/marketplace/${t.id}/strategies#${encodeURIComponent(g.sector)}`}>더보기 ›</Link>}
+                  </div>
+                  <div className="mk-strats">
+                    {g.list.slice(0, 3).map((s) => (
+                      <article key={s.id} className="mk-card mk-strat">
+                        <small>{periodLabel(s, t.asOf)}</small>
+                        <h3>
+                          <Link href={`/marketplace/${t.id}/strategies/${s.key}`}>{s.title}</Link>
+                        </h3>
+                        <StrategyStatsRow strategy={s} />
+                        <div className="mk-strat-num">
+                          <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
+                          <span>이행률 {s.follow}%</span>
+                          <LikeButton trader={t} strategy={s} fb={fb} notify={notify} />
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
-              </article>
-            ))}
-          </div>
+              ))}
+            </div>
+          ))}
           <div className="mk-card mk-free">
             <div>
-              <strong>첫 번째 전략({monthLabel(first.month)})은 무료로 볼 수 있어요</strong>
+              <strong>첫 번째 전략({first.sector} · {periodLabel(first, t.asOf)})은 무료로 볼 수 있어요</strong>
             </div>
-            <Link href={`/marketplace/${t.id}/strategies/${first.month}`} className="mk-primary">
+            <Link href={`/marketplace/${t.id}/strategies/${first.key}`} className="mk-primary">
               무료로 보기
             </Link>
           </div>
         </section>
 
         <Reviews trader={t} fb={fb} notify={notify} />
+
+        <Qna trader={t} fb={fb} notify={notify} />
       </div>
       {node}
     </main>

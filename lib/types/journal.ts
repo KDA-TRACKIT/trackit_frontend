@@ -4,6 +4,8 @@ export type Journal = {
   title: string;
   symbol: string;
   market: string;
+  /** 이 종목이 든 내 전략의 섹터 (목록 응답에만, 없으면 null) */
+  sector?: string | null;
   timeframe: string | null;
   content: string | null;
   status?: string;

@@ -13,11 +13,11 @@ import HomePolicies from "./HomePolicies";
 import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
-import { initRecordSource, useRecords } from "../lib/records";
+import { initRecordSource, useRecords, useRecordsReady } from "../lib/records";
 import { getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
-import HomeWeeklyRecords, { workshopLink } from "./HomeWeeklyRecords";
+import HomeWeeklyRecords from "./HomeWeeklyRecords";
 import { weekDays } from "../lib/home-calendar";
 import BeeLoader from "./BeeLoader";
 
@@ -53,6 +53,8 @@ export default function HomeDashboard() {
   const [result, setResult] = useState<{ key: number; data?: Loaded; error?: string } | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
   const records = useRecords();
+  // 노트를 다 읽기 전에는 '저장된 노트가 없습니다' 대신 로딩
+  const recordsReady = useRecordsReady();
 
   const key = attempt;
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function HomeDashboard() {
         <div className="home-overview-side">
           <div className="home-stat-row">
             <Link className="home-stat-card" href="/mypage/activity/trades">
-              <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span>{data ? `${data.report.judgments.total}건 기준` : error ? "확인 불가" : "불러오는 중"}</span></div>
+              <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span title="'이 가격이 오면 사겠다 · 팔겠다'고 적은 계획을 실제 매매가 지켰는지 (계획 없이 한 매매는 세지 않아요)">{data ? (data.report.adherence?.plan?.judged ? `계획 ${data.report.adherence.plan.judged}건 중 ${data.report.adherence.plan.followed}건 지킴` : adherencePercent === null ? "판정할 계획이 없어요" : "그은 선 기준") : error ? "확인 불가" : "불러오는 중"}</span></div>
               <div className="home-progress" role="progressbar" aria-label="전략 이행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={adherencePercent ?? undefined}><span style={{ width: `${adherencePercent ?? 0}%` }} /></div>
             </Link>
             <Link className="home-stat-card" href="/mypage/sales/settlements">
@@ -111,7 +113,7 @@ export default function HomeDashboard() {
           </div>
           <div className="home-week-memos">
             <h2>이번 주 노트</h2>
-            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={workshopLink(record.symbol, record.symbolName, record.date)}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 노트가 없습니다.</p>}
+            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={`/archive/notes?note=${encodeURIComponent(record.id)}`}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : recordsReady ? <p>이번 주에 저장된 노트가 없습니다.</p> : <BeeLoader size="sm" />}
           </div>
         </div>
       </section>
@@ -122,7 +124,7 @@ export default function HomeDashboard() {
           <TraderCarousel />
         </div>
       </section>
-      <HomeWeeklyRecords trades={recent} records={records} names={names} loading={!data && !error} failed={!!error} />
+      <HomeWeeklyRecords trades={recent} records={records} names={names} loading={(!data && !error) || !recordsReady} failed={!!error} />
       <div className="home-container"><HomePolicies /></div>
     </main>
   );

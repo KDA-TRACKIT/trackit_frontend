@@ -1,7 +1,8 @@
 // 전략 마켓 예시 데이터 (백엔드 API 가 생기기 전까지 화면만 먼저)
 //   수익률은 % 숫자, 가격은 원. 수익은 초록 · 손실은 빨강 (차트의 양봉 초록 · 음봉 빨강과 같게)
 //   월별 수익률 · 최대 낙폭 · 매매 수 · 이행률은 sim.json: 실제 일봉(키움, 2024-06~2026-11)에 트레이더마다 규칙을 돌려 만든 값
-//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 월별 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 구독 확인 뒤 그 달만)
+//     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 구독 확인 뒤 그 전략 것만)
+//   전략(2026-11-21 기획) = 판매자가 섹터 안에서 끊은 기간 하나 (기간 · 메모 개수는 판매자가 정함). 달 단위로 팔지 않음
 import SIM from "./sim.json";
 // 등급제는 없앰 (2026-11-20 기획): grades.ts · lib/grade 는 나중을 위해 남기고 마켓에서는 호출하지 않음
 import type { GradeResult } from "../../lib/grade";
@@ -24,7 +25,12 @@ type SimTrader = {
   symbols: string[];
   months: { month: string; title: string; summary: string; follow: number; trades?: number; symbols?: string[]; sample?: string; stats?: StrategyStats }[];
   facts?: Facts;
+  /** 판매자의 섹터 (한 섹터만 하는 판매자) */
+  sector?: string;
+  /** 판매자가 끊은 전략들 (오래된 것부터): 섹터 · 기간 [start, end) · 그 기간의 달 · 매매 · 메모 수 */
+  strategies?: SimStrategy[];
 };
+type SimStrategy = { key: string; sector: string; title: string; start: string; end: string; months: string[]; trades: number; notes: number; memos: number; ret: number; follow: number; stats: StrategyStats; symbols: string[]; sample: string; rule?: { name: string; desc: string } };
 const sim = (id: string) => (SIM as Record<string, SimTrader>)[id];
 
 export type Period = "1m" | "3m" | "6m" | "1y" | "2y" | "all";
@@ -52,14 +58,27 @@ export type StrategyStats = { days: number; trades: number; stock: number; marke
 
 export type Strategy = {
   id: string;
-  month: string; // 2026-10
+  /** 전략 번호 (s1 …, 트레이더 안에서). 주소 · 꿀 · 후기에 씀 */
+  key: string;
+  /** 시장 (국내 주식 · 해외 주식) · 섹터 */
+  market: string;
+  sector: string;
+  /** 판매자가 끊은 기간: start 부터 end 전날까지 (YYYY-MM-DD) */
+  start: string;
+  end: string;
+  /** 이 기간에 들어가는 달 (차트 · 기록은 달 단위로 저장돼 있음) */
+  months: string[];
+  /** 메모 수 = 매매 메모 + 노트(종목 노트 · 증시 메모 · 복기) */
+  memos: number;
+  /** 그 기간에 쓰던 매매 규칙 (판매자가 도중에 규칙을 바꿨으면 전략마다 다름). 없으면 트레이더의 규칙 */
+  rule?: { name: string; desc: string };
   title: string;
   summary: string;
-  ret: number; // 그 달 수익률 %
+  ret: number; // 그 기간 수익률 %
   follow: number; // 이행률 %
   price: number;
   free?: boolean;
-  /** 구매 전 미리 보기: 그 달에 진입한 매매 수 · 다룬 종목 · 전략 설명 한 줄 */
+  /** 구매 전 미리 보기: 그 기간에 진입한 매매 수 · 다룬 종목 · 전략 설명 한 줄 */
   trades?: number;
   symbols?: string[];
   sample?: string;
@@ -87,7 +106,7 @@ export type Trader = {
   bio: string[];
   since: string; // 2024-01
   likes: number;
-  price: number; // 이번 달 전략 가격
+  price: number; // 월 구독료 (30일)
   buyers: number;
   follow: number; // 전략 이행률 %
   mdd: number; // 최대 낙폭 % (음수)
@@ -99,7 +118,7 @@ export type Trader = {
   monthly: { month: string; ret: number }[]; // 최근 24개월
   /** 판매 심사에 쓰는 실제 기록 (방법은 안 따지고 결과 기록만 봄) */
   verify: Verify;
-  /** 월별 전략 제목 · 설명 (없으면 기본 목록에서) */
+  /** 전략 제목 · 설명 (없으면 기본 목록에서) */
   strategyTitles?: [string, string][];
   /** 매매 규칙 이름 · 설명, 매매하는 종목 (시뮬레이션) */
   rule?: { name: string; desc: string; symbols: string[] };
@@ -283,37 +302,69 @@ export function screen(t: Trader): Screening {
   return { verified: checks.every((c) => c.ok), checks };
 }
 export const isVerified = (t: Trader) => screen(t).verified;
-/** 전략 마켓 목록 · 홈 보드에 보이는 트레이더: 실제 기록(매매 · 월별 전략)이 있는 사람 (등급제 없음) */
+/** 전략 마켓 목록 · 홈 보드에 보이는 트레이더: 실제 기록(매매 · 전략)이 있는 사람 (등급제 없음) */
 export const listed = (t: Trader) => t.verify.months > 0 && t.price > 0;
 
 /** 구독할 수 있는 트레이더 (월 구독료가 있음) */
 export const sellable = listed;
 export const traderById = (id: string) => TRADERS.find((t) => t.id === id);
 
-const TITLES: [string, string][] = [
-  ["횡보장에서 손실을 줄이는 기준", "진입 · 청산 기준과 실제 매매 기록 비교"],
-  ["하락장에서 지킨 손절 원칙", "손절 기준을 몇 번 지켰는지 돌아봤어요"],
-  ["반등 구간에서 진입을 고르는 기준", "지지선 반등 확인 뒤 들어간 매매 기록"],
-  ["거래량이 터진 날의 대응", "거래량 급증 종목에서의 분할 매수"],
-  ["실적 발표 주간 매매 계획", "발표 전후 변동성에 맞춘 비중 조절"],
-  ["돌파 실패를 줄이는 확인 방법", "가짜 돌파를 걸러낸 세 가지 조건"],
-];
-
-/** 트레이더의 월별 전략 (최근 것부터) */
+/** 트레이더의 전략 (최근 것부터): 판매자가 섹터 안에서 끊은 기간마다 하나 */
 export function strategiesOf(t: Trader): Strategy[] {
-  const months = new Map((sim(t.id)?.months ?? []).map((m) => [m.month, m]));
-  const list: Strategy[] = [...t.monthly].reverse().map((m, k) => {
-    const s = months.get(m.month);
-    if (s) return { id: `${t.id}-${m.month}`, month: m.month, title: s.title, summary: s.summary, ret: m.ret, follow: s.follow, price: t.price, trades: s.trades, symbols: s.symbols, sample: s.sample, stats: s.stats };
-    const titles = t.strategyTitles ?? TITLES;
-    const [title, summary] = titles[(k + Number(t.id.slice(1))) % titles.length];
-    return { id: `${t.id}-${m.month}`, month: m.month, title, summary, ret: m.ret, follow: Math.min(99, t.follow - 3 + ((k * 7) % 9)), price: t.price };
-  });
+  const list: Strategy[] = [...(sim(t.id)?.strategies ?? [])].reverse().map((s) => ({
+    id: `${t.id}-${s.key}`,
+    key: s.key,
+    market: t.market,
+    sector: s.sector,
+    start: s.start,
+    end: s.end,
+    months: s.months,
+    memos: s.memos,
+    rule: s.rule ?? (t.rule ? { name: t.rule.name, desc: t.rule.desc } : undefined),
+    title: s.title,
+    summary: `매매 ${s.trades}건 · 메모 ${s.memos}개`,
+    ret: s.ret,
+    follow: s.follow,
+    price: t.price,
+    trades: s.trades,
+    symbols: s.symbols,
+    sample: s.sample,
+    stats: s.stats,
+  }));
   // 처음 공개한 전략은 무료
   const first = list[list.length - 1];
-  first.free = true;
-  first.price = 0;
+  if (first) {
+    first.free = true;
+    first.price = 0;
+  }
   return list;
+}
+
+/** 전략 하나 찾기: 전략 번호(s1 …)로, 예전 기록(달 YYYY-MM 로 남긴 꿀 · 무료 열람)은 그 달이 들어 있는 전략으로 */
+export function strategyOf(t: Trader, keyOrMonth: string): Strategy | undefined {
+  const list = strategiesOf(t);
+  return list.find((s) => s.key === keyOrMonth) ?? list.find((s) => s.months.includes(keyOrMonth));
+}
+
+/** 전략 기간 글자: 2023.01.01 ~ 2023.04.30 (아직 안 끝난 전략은 "~ 진행 중") */
+export function periodLabel(s: { start: string; end: string }, asOf?: string) {
+  const dot = (d: string) => d.replaceAll("-", ".");
+  if (asOf && s.end > asOf) return `${dot(s.start)} ~ 진행 중`;
+  const last = new Date(Date.parse(`${s.end}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  return `${dot(s.start)} ~ ${dot(last)}`;
+}
+
+/** 트레이더의 전략을 시장 → 섹터로 묶음 (섹터는 최근 전략이 있는 것부터, 섹터 안은 최근 것부터) */
+export function strategiesBySector(t: Trader): { market: string; sectors: { sector: string; list: Strategy[] }[] }[] {
+  const markets: { market: string; sectors: { sector: string; list: Strategy[] }[] }[] = [];
+  for (const s of strategiesOf(t)) {
+    let m = markets.find((x) => x.market === s.market);
+    if (!m) markets.push((m = { market: s.market, sectors: [] }));
+    let g = m.sectors.find((x) => x.sector === s.sector);
+    if (!g) m.sectors.push((g = { sector: s.sector, list: [] }));
+    g.list.push(s);
+  }
+  return markets;
 }
 
 export const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;

@@ -12,6 +12,8 @@ type NoteSummary = {
   summary?: string;
   symbolName?: string | null;
   topic?: string;
+  /** 시장 전반 노트가 어느 시장 이야기인지 (KR · US). 없으면 시장 공통 */
+  market?: string;
   /** 노트에 연결한 체결 (확정 시점 기준) */
   execution?: { time: string; side: string; quantity: number } | null;
   /** 노트를 쓴 시각 KST HH:MM:SS (확정 시각과 다를 수 있음) */
@@ -96,6 +98,10 @@ export async function saveNote(input: {
 
 /** 내 일지 전체의 확정 노트 (최근 일지 100개까지) */
 export async function listNotes(): Promise<{ journal: Journal; notes: NoteVersion[] }[]> {
+  // 한 번에 (/me/notes, 2026-11-21). 서버가 아직 옛 버전이면 일지마다 따로
+  try {
+    return await apiRequest<{ journal: Journal; notes: NoteVersion[] }[]>("/me/notes?limit=100");
+  } catch {}
   const journals = await apiRequest<Journal[]>("/journals?limit=100");
   return Promise.all(journals.map(async (journal) => ({ journal, notes: await apiRequest<NoteVersion[]>(`/journals/${journal.id}/note-versions`) })));
 }

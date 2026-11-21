@@ -317,3 +317,11 @@ html[data-theme="dark"] .mm-page :is(.mm-cell-day, .mm-side-day) .up { color:#b6
 html[data-theme="dark"] .mm-page :is(.mm-cell-day, .mm-side-day) .down { color:#ffc4c4; }
 html[data-theme="dark"] .mm-page .mm-cell.is-sel .mm-cell-day b { color:var(--c-ink); }
 html[data-theme="dark"] .mm-page .mm-cell-day em { color:#d6e1fb; }
+
+/* 종목형: 시장 → 섹터 → 종목 (2026-11-21) */
+.mm-market-name { padding:12px 20px 10px; border-top:1px solid #e4e9f1; background:#eef2f9; color:#0f2367; font-size:15px; font-weight:800; }
+.mm-market:first-child .mm-market-name { border-top:0; }
+.mm-sector-name { padding:10px 20px 8px; color:#1b2b4d; font-size:14px; font-weight:800; }
+.mm-sector-name small { margin-left:6px; color:#8a94a6; font-size:12px; font-weight:500; }
+html[data-theme="dark"] .mm-page .mm-market-name { border-color:var(--c-line); background:var(--c-subtle); color:var(--c-ink); }
+html[data-theme="dark"] .mm-page .mm-sector-name { color:var(--c-ink); }

@@ -12,6 +12,7 @@ import type {
 } from "lightweight-charts";
 import { getTool } from "../registry";
 import { INK_TOOLS } from "../tools/shapes-text";
+import { currentBaseDash, setBaseDash } from "../tools/draw-utils";
 import type { Drawing, PixelPoint, ViewBar, ViewInfo } from "../types";
 
 // 차트는 KST 벽시계 기준 시각(UTC+9 만큼 민 값)으로 그린다 (lightweight-charts 공식 권장 방식).
@@ -28,6 +29,8 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
   private preview: Drawing | null = null;
   private bars: ViewBar[] = [];
   private selectedId: string | null = null;
+  private interval = "";
+  private hideAll = false;
   /** 마우스가 올라간 드로잉 (누를 수 있다는 표시) */
   private hoveredId: string | null = null;
   // 라이브러리가 배열 참조로 캐시하므로 같은 배열을 계속 돌려준다
@@ -119,7 +122,7 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
       // 펜 잉크는 누르거나 옮길 수 없음 (그림처럼, 지우개로만 지움)
-      if (INK_TOOLS.has(d.toolId)) continue;
+      if (INK_TOOLS.has(d.toolId) || !this.shows(d)) continue;
       const tool = getTool(d.toolId);
       const px = this.toPixels(d);
       if (!tool || !px) continue;
@@ -142,8 +145,43 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     this.bars = bars;
   }
 
+  /** 지금 보이는 드로잉인지: 감춘 것 · 다른 주기에서만 보이게 한 것 · '모두 감추기'면 안 보임 */
+  shows(d: Drawing) {
+    return !this.hideAll && !d.hidden && (!d.intervals?.length || d.intervals.includes(this.interval));
+  }
+
+  /** 지금 주기 (인터벌 가시성) · 모두 감추기 */
+  setVisibility(interval: string, hideAll: boolean) {
+    if (this.interval === interval && this.hideAll === hideAll) return;
+    this.interval = interval;
+    this.hideAll = hideAll;
+    this.syncAxisLines();
+    this.param?.requestUpdate();
+  }
+
+  /**
+   * 자석: 그 봉의 시가 · 고가 · 저가 · 종가 가운데 커서에서 가장 가까운 값이 tolerance(px) 안이면 그 가격으로
+   * (추세선 끝을 고점 · 저점에 정확히 붙일 때)
+   */
+  magnetPrice(time: number, price: number, tolerance = 14): number {
+    const bar = this.bars.find((b) => b.time === time);
+    const y = this.priceToY(price);
+    if (!bar || y === null) return price;
+    let best = price;
+    let gap = tolerance;
+    for (const v of [bar.open, bar.high, bar.low, bar.close]) {
+      const vy = this.priceToY(v);
+      if (vy !== null && Math.abs(vy - y) <= gap) {
+        gap = Math.abs(vy - y);
+        best = v;
+      }
+    }
+    return best;
+  }
+
   items() {
-    return this.preview ? [...this.drawings, this.preview] : this.drawings;
+    const shown = this.drawings.filter((d) => this.shows(d));
+    return this.preview ? [...shown, this.preview] : shown;
   }
 
   /** 봉 간격(초): 최근 봉들의 간격 중앙값 */
@@ -273,6 +311,8 @@ class DrawingRenderer implements IPrimitivePaneRenderer {
         if (!tool || !px) continue;
         context.save();
         try {
+          setBaseDash(drawing.style.dash, drawing.style.width);
+          context.setLineDash(currentBaseDash());
           tool.draw(context, px, drawing, view);
         } catch {
           // 툴 하나가 잘못 그려도 나머지 드로잉은 계속 그린다

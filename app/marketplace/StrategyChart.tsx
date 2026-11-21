@@ -1,5 +1,5 @@
 "use client";
-// 월별 전략 차트: 그 달 일봉 + 트레이더가 그은 선(추세선 · 반직선 · 수평선 · 채널 · 피보나치 · 엘리어트 파동 · 차트 패턴 · 이동평균 · 밴드)
+// 전략 차트 (전략 기간 안의 달마다 한 장): 그 달 일봉 + 트레이더가 그은 선(추세선 · 반직선 · 수평선 · 채널 · 피보나치 · 엘리어트 파동 · 차트 패턴 · 이동평균 · 밴드)
 //   + 매수/매도 표시(가격 함께) + 아래 보조지표 창(RSI · MACD · 거래량 — 규칙이 쓰는 것만)
 //   글씨가 봉 · 선과 겹치지 않게: 선 이름은 차트 위 범례로 빼고, 가격 창 위아래에 여백을 두어 매수/매도 · 꼭지 이름표는 빈 곳에
 import { useEffect, useMemo, useRef } from "react";
@@ -26,7 +26,7 @@ export type SimTrade = {
   lines: SimLine[];
 };
 /** 매매가 아닌 기록: 증시 메모(시장 전체) · 종목 노트(안 산 종목 관찰, 기다리는 자리에 선) */
-/** carry: 앞 달 전략에서 산 매매가 이 달로 이어진 것 (매수 근거는 진입한 달에) */
+/** carry: 앞 달에 산 매매가 이 달로 이어진 것 (매수 근거는 진입한 달 기록에) */
 export type SimNote = { type: "market" | "stock" | "carry" | "review"; d: string; text: string; code?: string; name?: string; lines?: SimLine[] };
 /** 차트 아래 보조지표 창: 봉과 같은 순서의 값 (규칙이 쓰는 것만) */
 export type SimInd = { rsi?: (number | null)[]; macd?: number[]; signal?: number[]; volume?: boolean; /** 이동평균선 (기간 → 봉마다 값) */ ma?: Record<string, (number | null)[]> };

@@ -37,6 +37,6 @@ export function subscriptionEnd(passes: PaidRecord[], traderId: string): Date | 
 
 export const subscribed = (passes: PaidRecord[], traderId: string, now = Date.now()) => (subscriptionEnd(passes, traderId)?.getTime() ?? 0) > now;
 
-/** 이 트레이더의 이 달 전략을 볼 수 있는지: 구독 중이거나, 예전 구독으로 연 달 */
+/** 이 트레이더의 이 전략(전략 번호 s1 … 또는 달)을 볼 수 있는지: 구독 중이거나, 예전 구독으로 연 달 */
 export const canView = (passes: PaidRecord[], traderId: string, month: string) =>
   subscribed(passes, traderId) || passes.some((p) => p.traderId === traderId && p.used?.month === month);

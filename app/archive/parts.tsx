@@ -110,7 +110,7 @@ export function PurchasedCards({ items, picked, onPick, cta }: { items: Item[]; 
       ) : (
         <Link href="/marketplace" className="ar-cta shop">
           <strong>전략을 더 담고 싶다면</strong>
-          <p>전략 마켓에서 월별 전략을 열면 바로 재료로 쓸 수 있어요.</p>
+          <p>전략 마켓에서 전략을 열면 바로 재료로 쓸 수 있어요.</p>
           <span>전략 마켓 ›</span>
         </Link>
       )}

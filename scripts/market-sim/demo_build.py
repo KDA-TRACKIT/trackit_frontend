@@ -4,7 +4,7 @@
   TRACKIT_CANDLES=data/market-sim-demo/US TRACKIT_MKT=SPY   python demo_build.py US
   - 한 사람 = 한 섹터 · 한 규칙(sim.py R_*), 2023-01 ~ 2026-11, 실제 일봉(수정주가). 쉬는 돈은 시장 기준(국내 대형주 바스켓 / SPY)
   - 메모: 매매 메모(진입 근거 · 손절 · 목표), 안 산 종목 노트(피보나치 · 수평선 · 추세선), 증시 메모, 시장 하락 구간 손실 복기
-  - 전략 = 섹터별 분기(3개월) 단위, 다음 전략은 직전 전략 끝부터 (새 기획 · DB 시드에 씀)
+  - 전략 = 판매자가 섹터 안에서 끊은 기간 (메모가 memos 개 쌓인 달 끝에서 끊음, 사람마다 다름). 다음 전략은 직전 전략 끝부터 (eojin_lib.cut_strategies · DB 시드에 씀)
   숫자는 전부 코드 계산, 문장은 그 숫자로만
 출력: app/marketplace/sim.json 의 t1~t9 (기존 t1~t41 키는 이 스크립트가 지우고 t42 어진냥이는 그대로), data/market-sim/t1~t9.json
 """
@@ -20,17 +20,17 @@ sim = NS["simulate2"]
 
 TRADERS = {
     "KR": [
-        dict(id="t1", name="깃발러너", sector="반도체", rule="flag", follow=0.9, seed=11, pool=["005930", "000660", "042700", "000990", "058470"]),
-        dict(id="t2", name="트렌드픽", sector="2차전지", rule="box", follow=0.84, seed=12, pool=["373220", "086520", "247540", "003670", "006400"]),
-        dict(id="t3", name="밸류버스", sector="바이오", rule="value", follow=0.93, seed=13, pool=["068270", "196170", "028300", "207940", "000100"]),
-        dict(id="t4", name="원트로그", sector="자동차", rule="pullback", follow=0.8, seed=14, pool=["005380", "000270", "012330", "204320"]),
-        dict(id="t5", name="황금비노트", sector="방산 · 조선", rule="fib", follow=0.88, seed=15, pool=["012450", "329180", "079550", "064350", "042660"]),
-        dict(id="t6", name="MACD리버설", sector="금융", rule="macd", follow=0.95, seed=16, pool=["105560", "055550", "086790", "316140", "138040"]),
-        dict(id="t7", name="볼밴헌터", sector="인터넷 · 게임", rule="bb", follow=0.86, seed=17, pool=["035420", "035720", "259960", "036570"]),
+        dict(id="t1", name="깃발러너", sector="반도체", rule="flag", follow=0.9, seed=11, memos=25, pool=["005930", "000660", "042700", "000990", "058470"]),
+        dict(id="t2", name="트렌드픽", sector="2차전지", rule="box", follow=0.84, seed=12, memos=30, pool=["373220", "086520", "247540", "003670", "006400"]),
+        dict(id="t3", name="밸류버스", sector="바이오", rule="value", follow=0.93, seed=13, memos=40, pool=["068270", "196170", "028300", "207940", "000100"]),
+        dict(id="t4", name="원트로그", sector="자동차", rule="pullback", follow=0.8, seed=14, memos=20, pool=["005380", "000270", "012330", "204320"]),
+        dict(id="t5", name="황금비노트", sector="방산 · 조선", rule="fib", follow=0.88, seed=15, memos=35, pool=["012450", "329180", "079550", "064350", "042660"]),
+        dict(id="t6", name="MACD리버설", sector="금융", rule="macd", follow=0.95, seed=16, memos=30, pool=["105560", "055550", "086790", "316140", "138040"]),
+        dict(id="t7", name="볼밴헌터", sector="인터넷 · 게임", rule="bb", follow=0.86, seed=17, memos=25, pool=["035420", "035720", "259960", "036570"]),
     ],
     "US": [
-        dict(id="t8", name="스윙도크", sector="미국 빅테크", rule="weekly", follow=0.9, seed=18, pool=["AAPL", "MSFT", "GOOGL", "AMZN", "META"]),
-        dict(id="t9", name="모멘텀랩", sector="미국 헬스케어", rule="ma", follow=0.92, seed=19, pool=["LLY", "UNH", "JNJ", "ABBV", "MRK"]),
+        dict(id="t8", name="스윙도크", sector="미국 빅테크", rule="weekly", follow=0.9, seed=18, memos=30, pool=["AAPL", "MSFT", "GOOGL", "AMZN", "META"]),
+        dict(id="t9", name="모멘텀랩", sector="미국 헬스케어", rule="ma", follow=0.92, seed=19, memos=45, pool=["LLY", "UNH", "JNJ", "ABBV", "MRK"]),
     ],
 }[MK]
 SLOTS = 3
@@ -84,11 +84,6 @@ def stock_note(code, mth):
     return dict(type="stock", d=d, code=code, name=nm, text=txt, lines=lines)
 
 
-def quarter_of(m):
-    y, mm = int(m[:4]), int(m[5:])
-    return f"{y}-Q{(mm - 1) // 3 + 1}"
-
-
 def build(cfg):
     rule_fn, rule_name, rule_desc = NS["RULES"][cfg["rule"]]
     pool = cfg["pool"]
@@ -126,6 +121,7 @@ def build(cfg):
             if n_: notes.append(n_)
         for t in carried:
             done = t["exit"]["d"][:7] == mth
+            if not done: continue  # 아직 들고 있는 종목은 '보유 중'으로 드러내지 않음 (사후 공개: 청산한 달에만 남김, 2026-11-21)
             notes.append(dict(type="carry", d=t["exit"]["d"] if done else mth + "-01", code=t["code"], name=t["name"],
                               text=(f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']}({money(t['entry']['px'])}) — {t['exit']['d']} {t['exit']['why']} ({t['ret']:+.2f}%)."
                                     if done else f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']} 계속 보유 (진입가 {money(t['entry']['px'])}).")))
@@ -147,21 +143,9 @@ def build(cfg):
             ind["ma"] = {str(n): [px(main, IND[main][f"ma{n}"][k]) if IND[main][f"ma{n}"][k] else None for k in rng] for n in (5, 20, 60, 120, 200)}
         months.append(dict(month=mth, title=title, summary=summary, ret=ret, follow=follow_m, symbol=dict(code=main, name=META[main]["name"]),
                            candles=NS["month_candles"](main, mth, 25), ind=ind, trades=mt, notes=notes))
-    # 분기 전략 (섹터 · 기간, 다음 전략은 직전 끝부터)
-    quarters = []
-    for m in months:
-        q = quarter_of(m["month"])
-        if not quarters or quarters[-1]["q"] != q:
-            quarters.append(dict(q=q, months=[]))
-        quarters[-1]["months"].append(m["month"])
-    strategies = []
-    for k, q in enumerate(quarters):
-        ms = [m for m in months if m["month"] in q["months"]]
-        n_tr = sum(len(m["trades"]) for m in ms)
-        n_no = sum(sum(1 for x in m["notes"] if x["type"] != "carry") for m in ms)
-        start = q["months"][0] + "-01"
-        nxt = quarters[k + 1]["months"][0] + "-01" if k + 1 < len(quarters) else "2026-12-01"
-        strategies.append(dict(title=f"{cfg['sector']} {q['q'].replace('-Q', '년 ')}분기: {rule_name}", start=start, end=nxt, months=q["months"], trades=n_tr, notes=n_no))
+    # 전략 = 판매자가 섹터 안에서 끊은 기간 (메모가 cfg["memos"]개 쌓인 달 끝에서 끊음, 다음 전략은 직전 끝부터)
+    strategies, strategy_cards = E.cut_strategies(months, monthly, cfg["sector"], rule_name, cfg["memos"], "2026-12-01")
+    for k, (a, b) in enumerate(zip(strategies, strategy_cards)): a["key"] = b["key"] = f"s{k + 1}"
     eqv = [round(e * 10000) for _, e in eq]
     m_idx = {}
     for k, (d, _) in enumerate(eq): m_idx.setdefault(d[:7], k)
@@ -170,7 +154,7 @@ def build(cfg):
     hold = lambda t: (date.fromisoformat(t["exit"]["d"]) - date.fromisoformat(t["entry"]["d"])).days
     best = max(trades, key=lambda t: t["ret"]); worst = min(trades, key=lambda t: t["ret"])
     summary = dict(persona=None, eq=eqv, mIdx=m_idx, asOf=eq[-1][0], monthly=monthly, mdd=mdd_of(eq), trades=n, follow=follow,
-                   rule=rule_name, ruleDesc=rule_desc, symbols=[META[c]["name"] for c in pool], sector=cfg["sector"],
+                   rule=rule_name, ruleDesc=rule_desc, symbols=[META[c]["name"] for c in pool], sector=cfg["sector"], strategies=strategy_cards,
                    months=[dict(month=x["month"], title=x["title"], summary=x["summary"], follow=x["follow"], stats=NS["month_stats"](x),
                                 trades=len(x["trades"]), symbols=sorted({t["name"] for t in x["trades"]}),
                                 sample=(x["trades"][0]["entry"]["why"] if x["trades"] else next((nn["text"] for nn in x["notes"] if nn["type"] in ("stock", "review")), "")))
