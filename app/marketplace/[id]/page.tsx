@@ -123,50 +123,49 @@ export default function TraderPage() {
 
         <section className="mk-section">
           <div className="mk-section-head">
-            <div>
-              <h2>전략</h2>
-              <p>시장 · 섹터별로, {t.name}님이 기간을 끊어 올린 전략이에요.</p>
-            </div>
+            <h2>전략</h2>
             <Link href={`/marketplace/${t.id}/strategies`}>전체 {list.length}개 ›</Link>
           </div>
-          {/* 시장 → 섹터 → 전략 (섹터마다 최근 3개, 나머지는 더보기) */}
-          {strategiesBySector(t).map((m) => (
-            <div key={m.market} className="mk-market-group">
-              <h3 className="mk-market-name">{m.market}</h3>
-              {m.sectors.map((g) => (
-                <div key={g.sector} className="mk-sector-group">
-                  <div className="mk-sector-head">
-                    <h4>{g.sector}</h4>
-                    <span>전략 {g.list.length}개</span>
-                    {g.list.length > 3 && <Link href={`/marketplace/${t.id}/strategies#${encodeURIComponent(g.sector)}`}>더보기 ›</Link>}
+          {/* '전략' 아래 내용은 한 칸 들여 써서 '전략'에 묶여 보이게: 시장 → 섹터 → 전략 카드(섹터마다 최근 3개, 나머지는 더보기) → 무료 첫 전략 */}
+          <div className="mk-section-body">
+            {strategiesBySector(t).map((m) => (
+              <div key={m.market} className="mk-market-group">
+                <h3 className="mk-market-name">{m.market}</h3>
+                {m.sectors.map((g) => (
+                  <div key={g.sector} className="mk-sector-group">
+                    <div className="mk-sector-head">
+                      <h4>{g.sector}</h4>
+                      <span>전략 {g.list.length}개</span>
+                      {g.list.length > 3 && <Link href={`/marketplace/${t.id}/strategies#${encodeURIComponent(g.sector)}`}>더보기 ›</Link>}
+                    </div>
+                    <div className="mk-strats">
+                      {g.list.slice(0, 3).map((s) => (
+                        <article key={s.id} className="mk-card mk-strat">
+                          <small>{periodLabel(s, t.asOf)}</small>
+                          <h3>
+                            <Link href={`/marketplace/${t.id}/strategies/${s.key}`}>{s.title}</Link>
+                          </h3>
+                          <StrategyStatsRow strategy={s} />
+                          <div className="mk-strat-num">
+                            <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
+                            <span>이행률 {s.follow}%</span>
+                            <LikeButton trader={t} strategy={s} fb={fb} notify={notify} />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mk-strats">
-                    {g.list.slice(0, 3).map((s) => (
-                      <article key={s.id} className="mk-card mk-strat">
-                        <small>{periodLabel(s, t.asOf)}</small>
-                        <h3>
-                          <Link href={`/marketplace/${t.id}/strategies/${s.key}`}>{s.title}</Link>
-                        </h3>
-                        <StrategyStatsRow strategy={s} />
-                        <div className="mk-strat-num">
-                          <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
-                          <span>이행률 {s.follow}%</span>
-                          <LikeButton trader={t} strategy={s} fb={fb} notify={notify} />
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            ))}
+            <div className="mk-card mk-free">
+              <div>
+                <strong>첫 번째 전략({first.sector} · {periodLabel(first, t.asOf)})은 무료로 볼 수 있어요</strong>
+              </div>
+              <Link href={`/marketplace/${t.id}/strategies/${first.key}`} className="mk-primary">
+                무료로 보기
+              </Link>
             </div>
-          ))}
-          <div className="mk-card mk-free">
-            <div>
-              <strong>첫 번째 전략({first.sector} · {periodLabel(first, t.asOf)})은 무료로 볼 수 있어요</strong>
-            </div>
-            <Link href={`/marketplace/${t.id}/strategies/${first.key}`} className="mk-primary">
-              무료로 보기
-            </Link>
           </div>
         </section>
 
