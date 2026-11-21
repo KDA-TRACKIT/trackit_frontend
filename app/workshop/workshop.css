@@ -1493,3 +1493,4 @@ details.ws-ladder { padding:10px 12px; }
 .ws-tree li button.name small { overflow:hidden; color:var(--c-faint); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .ws-tree li button.danger:hover { color:#c92a2a; }
 .ws-tree p { margin:0; padding:14px; color:var(--c-faint); font-size:12.5px; text-align:center; }
+.ws-alert-msg { position:absolute; z-index:7; left:50%; bottom:64px; transform:translateX(-50%); max-width:calc(100% - 32px); padding:8px 14px; border-radius:8px; background:var(--c-ink); color:var(--c-surface); font-size:12.5px; box-shadow:0 6px 18px rgba(0,0,0,.2); }

@@ -24,7 +24,9 @@ import IndicatorPicker from "./IndicatorPicker";
 import type { AvgPrice } from "../../hooks/useAvgPrice";
 import ColorSwatches from "./ColorSwatches";
 import Image from "next/image";
-import { ChevronRight, Eye, EyeOff, GripVertical, ListTree, Lock, LockOpen, Magnet, MoreHorizontal } from "lucide-react";
+import { Bell, BellRing, ChevronRight, Eye, EyeOff, GripVertical, ListTree, Lock, LockOpen, Magnet, MoreHorizontal } from "lucide-react";
+import { alertLineOf, canAlert, putAlert, removeAlert, sameLine, useAlerts } from "../../lib/api/alerts";
+import { errorMessage } from "../../lib/api/client";
 import { getDrawPrefs, removeDrawTemplate, saveDrawTemplate, setDrawPref, useDrawPrefs, useDrawTemplates } from "../../lib/drawing/prefs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTool, toolsByGroup, type Drawing, type DrawingPoint, type DrawingTool, type ToolGroup } from "../../lib/drawing";
@@ -225,6 +227,8 @@ type Props = {
   symbolCode: string;
   symbolName: string;
   market: string;
+  /** 시세 코드 (국내 "005930" · 미국 "ND:AAPL"). 추세선 얼러트가 이 코드의 현재가로 확인함. 없으면 종목 코드 */
+  quoteCode?: string;
   /** 가격 단위: 국내 원(정수) · 미국 달러(센트까지). 기본 KRW */
   currency?: "KRW" | "USD";
   /** 봉이 없을 때 차트 가운데 안내 */
@@ -392,7 +396,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide, onScenarioPick }: Props) {
+export default function WorkshopChart({ quoteCode, bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide, onScenarioPick }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -427,6 +431,10 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   // 그리기 설정 (자석 · 모두 감추기 · 모두 잠금) · 스타일 템플릿 — 이 브라우저에 저장 (lib/drawing/prefs)
   const drawPrefs = useDrawPrefs();
   const templates = useDrawTemplates();
+  // 추세선 얼러트 (lib/api/alerts): 이 종목에 켜 둔 것. 선에 현재가가 닿으면 종 알림
+  const alerts = useAlerts();
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
+  const seenDrawingIds = useRef(new Set<string>());
   /** 객체 트리: 그린 것 목록 (고르기 · 감추기 · 잠금 · 삭제) */
   const [treeOpen, setTreeOpen] = useState(false);
   /** 선택 막대를 손잡이로 끌어 옮긴 거리 (차트를 가리지 않게) */
@@ -1815,6 +1823,44 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
     layerRef.current?.setVisibility(interval, drawPrefs.hideAll);
   }, [interval, drawPrefs.hideAll]);
 
+  // 얼러트를 건 선을 옮기면 얼러트의 선도 따라 바꾸고, 선을 지우면 얼러트도 끔 (0.8초 모아서 한 번)
+  useEffect(() => {
+    // 이 화면에서 본 적 있는 드로잉만 '지웠다'고 봄 (저장 안 된 선 · 아직 안 불러온 선의 얼러트를 잘못 끄지 않게)
+    for (const d of drawings) seenDrawingIds.current.add(d.id);
+    const mine = alerts.filter((a) => a.status === "ACTIVE" && a.symbol === symbolCode && a.drawingId);
+    if (!mine.length) return;
+    const timer = setTimeout(() => {
+      for (const a of mine) {
+        const d = drawings.find((x) => x.id === a.drawingId);
+        const line = d ? alertLineOf(d) : null;
+        if (!d) {
+          if (seenDrawingIds.current.has(a.drawingId!)) void removeAlert(a.id).catch(() => {});
+        } else if (!line) void removeAlert(a.id).catch(() => {});
+        else if (!sameLine(line, a.line)) void putAlert({ symbol: a.symbol, quoteCode: a.quoteCode, symbolName: a.symbolName, drawingId: d.id, label: a.label, line }).catch(() => {});
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [alerts, drawings, symbolCode]);
+
+  /** 고른 선에 얼러트 넣기 · 끄기 */
+  async function toggleAlert(d: Drawing) {
+    const on = alerts.find((a) => a.status === "ACTIVE" && a.drawingId === d.id);
+    const line = alertLineOf(d);
+    try {
+      if (on) {
+        await removeAlert(on.id);
+        setAlertMsg("얼러트를 껐어요");
+      } else if (line) {
+        await putAlert({ symbol: symbolCode, quoteCode: quoteCode ?? symbolCode, symbolName, drawingId: d.id, label: getTool(d.toolId)?.label ?? "추세선", line });
+        setAlertMsg("얼러트를 넣었어요. 현재가가 이 선에 닿으면 종 알림으로 알려 드려요");
+      }
+    } catch (e) {
+      setAlertMsg(errorMessage(e));
+    }
+    setEditMenu(null);
+    setTimeout(() => setAlertMsg(null), 3500);
+  }
+
   function apply(next: Drawing[]) {
     drawingsRef.current = next;
     setDrawings(next);
@@ -2174,6 +2220,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
   const activeGroup = groupKeyOf(activeTool?.group);
   const textTools = toolsByGroup("text");
   const selectedDrawing = selectedId ? drawings.find((d) => d.id === selectedId) : undefined;
+  const selectedAlert = selectedDrawing ? alerts.find((a) => a.status === "ACTIVE" && a.drawingId === selectedDrawing.id) : undefined;
   const dayLabel = (bar: Bar) => kstDay(bar.time).slice(5).replace("-", ".");
   const change = legendBar && legendPrev ? legendBar.close - legendPrev.close : 0;
   const changeRate = legendPrev?.close ? (change / legendPrev.close) * 100 : 0;
@@ -2619,6 +2666,12 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
               <button className="danger" onClick={deleteSelected} title="삭제 (Delete 키)" aria-label="삭제">
                 <Image src="/icons/trash.svg" width={18} height={18} alt="" unoptimized />
               </button>
+              {/* 얼러트: 이 선에 현재가가 닿으면 종 알림 (선 도구만) */}
+              {canAlert(selectedDrawing) && (
+                <button className={selectedAlert ? "on" : ""} aria-pressed={!!selectedAlert} onClick={() => void toggleAlert(selectedDrawing)} title={selectedAlert ? "얼러트 켜짐: 현재가가 이 선에 닿으면 알려요. 누르면 꺼요" : "얼러트 넣기: 현재가가 이 선에 닿으면 종 알림으로 알려요"} aria-label={selectedAlert ? "얼러트 끄기" : "얼러트 넣기"}>
+                  {selectedAlert ? <BellRing size={17} strokeWidth={1.9} aria-hidden /> : <Bell size={17} strokeWidth={1.9} aria-hidden />}
+                </button>
+              )}
               {/* 더보기: 템플릿 · 보는 차례 · 인터벌 가시성 · 객체 트리 · 감추기 */}
               <div className="ws-draw-edit-item">
                 <button
@@ -2634,6 +2687,15 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                 </button>
                 {editMenu === "more" && (
                   <div className="ws-draw-pop ws-more-pop" role="menu">
+                    {canAlert(selectedDrawing) && (
+                      <>
+                        <button onClick={() => void toggleAlert(selectedDrawing)} role="menuitem">
+                          {selectedAlert ? "얼러트 끄기" : `${getTool(selectedDrawing.toolId)?.label ?? "선"} 얼러트 넣기…`}
+                          {selectedAlert ? <BellRing size={14} aria-hidden /> : <Bell size={14} aria-hidden />}
+                        </button>
+                        <span className="ws-more-line" />
+                      </>
+                    )}
                     <button className={moreSub === "template" ? "on" : ""} onClick={() => setMoreSub(moreSub === "template" ? null : "template")} role="menuitem">
                       템플릿 <ChevronRight size={14} aria-hidden />
                     </button>
@@ -2735,6 +2797,11 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
             </div>
           )}
 
+          {alertMsg && (
+            <div className="ws-alert-msg" role="status">
+              {alertMsg}
+            </div>
+          )}
           {/* 객체 트리: 그린 것 목록 (위에 그려진 것부터). 고르기 · 감추기 · 잠금 · 없애기 */}
           {treeOpen && (
             <div className="ws-tree" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="객체 트리">
@@ -2754,6 +2821,7 @@ export default function WorkshopChart({ bars, interval, onIntervalChange, avgPri
                         <button className="name" disabled={d.hidden || off || drawPrefs.hideAll} onClick={() => selectDrawing(d.id)} title={off ? "이 주기에서는 보이지 않게 해 둔 드로잉이에요" : undefined}>
                           <i className="ws-color-dot" style={{ background: d.style.color }} />
                           <span>{getTool(d.toolId)?.label ?? "드로잉"}</span>
+                          {alerts.some((a) => a.status === "ACTIVE" && a.drawingId === d.id) && <BellRing size={12} aria-label="얼러트 켜짐" />}
                           <small>{d.text ? d.text.slice(0, 12) : Number(d.points[0]?.price) > 0 ? pxText(Number(d.points[0].price), currency) : ""}{off ? " · 다른 주기" : ""}</small>
                         </button>
                         <button onClick={() => updateDrawing(d.id, { hidden: !d.hidden })} aria-label={d.hidden ? "보이기" : "감추기"} title={d.hidden ? "보이기" : "감추기"}>

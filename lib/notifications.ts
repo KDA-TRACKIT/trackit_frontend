@@ -9,7 +9,7 @@ import { useFavorites, type Favorite } from "./favorites";
 import { periodLabel, strategiesOf, traderById } from "../app/marketplace/data";
 import { readHits, type AlertHit } from "./strategy-use";
 
-export type AppNotification = { id: string; kind: "sale" | "favorite" | "match"; at: string; title: string; body: string; href: string };
+export type AppNotification = { id: string; kind: "sale" | "favorite" | "match" | "alert"; at: string; title: string; body: string; href: string };
 
 const SEEN = "trackit:noti-seen";
 const DAYS = 30;
