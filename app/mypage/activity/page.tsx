@@ -8,7 +8,7 @@ import { Card, Empty, PageHead, Stat, Table } from "../ui";
 const KIND = { pre: "사전 노트", post: "사후 노트", pending: "체결 대기", thought: "노트" } as const;
 
 export default function ActivityPage() {
-  const { records, trades, symbols } = useActivity();
+  const { records, trades, symbols, ready } = useActivity();
   const recent = newestFirst(records).slice(0, 10);
   return (
     <>
@@ -35,7 +35,8 @@ export default function ActivityPage() {
             ))}
           </Table>
         )}
-        {recent.length === 0 && (
+        {recent.length === 0 && !ready && <Empty text="불러오는 중…" />}
+        {recent.length === 0 && ready && (
           <Empty text="아직 기록이 없어요">
             <Link className="mp-btn primary" href="/workshop">
               트레이딩 로그 열기

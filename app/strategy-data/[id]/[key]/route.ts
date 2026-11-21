@@ -2,6 +2,7 @@
 //   주소의 key = 전략 번호(s1 …)면 그 전략 기간의 달 기록 전부, 달(YYYY-MM)이면 그 달 기록 하나 (전략보관함이 달 단위 차트로 볼 때)
 //   원본은 공개 폴더(public)가 아니라 서버만 읽는 data/market-sim/{id}.json 에 둠 → 주소로 통째로 받아 갈 수 없음
 //   무료(첫 번째) 전략은 누구나, 나머지는 로그인한 사람이 그 트레이더를 구독 중일 때만 (백엔드 /me/subscriptions, lib/purchases 와 같은 계산)
+//   전략을 올린 본인은 구독 없이 봄 (백엔드 /me/trader 가 본인인지 판정)
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { strategyOf, traderById } from "../../../marketplace/data";
@@ -22,7 +23,12 @@ async function opened(auth: string, traderId: string, month: string) {
     const body = (await res.json()) as { data?: T[] } | T[];
     return Array.isArray(body) ? body : (body.data ?? []);
   };
-  return canView(toRecords(await get<Subscription>("/me/subscriptions"), [] as Legacy[]), traderId, month);
+  if (canView(toRecords(await get<Subscription>("/me/subscriptions"), [] as Legacy[]), traderId, month)) return true;
+  // 내가 올린 전략인지
+  const res = await fetch(`${API}/api/v1/me/trader`, { headers: { Authorization: auth }, cache: "no-store" });
+  if (!res.ok) return false;
+  const body = (await res.json()) as { data?: { traderId?: string | null }; traderId?: string | null };
+  return (body.data?.traderId ?? body.traderId ?? null) === traderId;
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; key: string }> }) {

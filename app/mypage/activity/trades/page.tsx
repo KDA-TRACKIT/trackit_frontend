@@ -10,7 +10,7 @@ type Period = keyof typeof PERIODS;
 type Side = "전체" | "매수" | "매도";
 
 export default function TradesPage() {
-  const { trades, buys, sells } = useActivity();
+  const { trades, buys, sells, ready } = useActivity();
   const [q, setQ] = useState("");
   const [period, setPeriod] = useState<Period>("전체");
   const [side, setSide] = useState<Side>("전체");
@@ -81,7 +81,7 @@ export default function TradesPage() {
           ))}
         </Table>
         )}
-        {list.length === 0 && <Empty text={trades.length ? "조건에 맞는 거래가 없어요" : "체결된 거래가 아직 없어요"} />}
+        {list.length === 0 && <Empty text={!ready ? "불러오는 중…" : trades.length ? "조건에 맞는 거래가 없어요" : "체결된 거래가 아직 없어요"} />}
       </Card>
     </>
   );

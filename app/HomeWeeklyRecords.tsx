@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { kstDate, type Trade } from "../lib/api/performance";
 import { koreanDay, weekDays } from "../lib/home-calendar";
 import type { TradeRecord } from "../lib/records";
+import BeeLoader from "./BeeLoader";
 
 const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
 export function recordColor(record: TradeRecord) {
@@ -62,6 +63,7 @@ export default function HomeWeeklyRecords({ trades, records, names, loading, fai
             ))}
           </div>
           {dailyNotes.map((record) => <Link key={record.id} className="home-day-note" href={`/archive/notes?note=${encodeURIComponent(record.id)}`}><i className={recordColor(record)} aria-hidden="true" /><strong>{record.noteTime.slice(0, 5)} · {record.symbolName ?? record.topic ?? "시장 전반"}</strong><span>{record.text}</span></Link>)}
+          {loading && !dailyTrades.length && !dailyNotes.length && <BeeLoader size="sm" />}
           {!loading && !dailyTrades.length && !dailyNotes.length && <p className="home-detail-empty">{failed ? "거래 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : "이 날짜에 저장된 거래와 노트가 없습니다."}</p>}
         </div>
       </div>

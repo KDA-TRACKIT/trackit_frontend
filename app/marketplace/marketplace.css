@@ -652,3 +652,9 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .mk-qna-reply { margin-top:10px; }
 .mk-qna-reply textarea { box-sizing:border-box; width:100%; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13.5px; line-height:1.5; resize:vertical; outline:none; }
 .mk-qna-reply textarea:focus { border-color:var(--c-focus); }
+
+/* 내가 올린 전략 표시 · 구독자 수 (2026-11-21) */
+.mk-mine { display:inline-block; padding:2px 8px; border-radius:999px; background:var(--mk-primary); color:#fff; font-size:11.5px; font-weight:700; line-height:1.5; vertical-align:middle; white-space:nowrap; }
+.mk-subs { color:var(--c-sub); font-size:12.5px; font-weight:600; white-space:nowrap; }
+.mk-mine-note { margin:0 0 8px; color:var(--c-sub); font-size:13px; line-height:1.6; }
+.mk-trader-name-line .mk-mine { margin-left:2px; }

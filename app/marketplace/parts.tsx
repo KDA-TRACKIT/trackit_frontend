@@ -8,7 +8,8 @@ import { startCheckout } from "../../lib/api/payments";
 import { errorMessage } from "../../lib/api/client";
 import { opened, subscribed, subscriptionEnd, usePasses } from "../../lib/purchases";
 import type { Strategy, Trader } from "./data";
-import { useProfile } from "../AccountChip";
+import { useMyTrader } from "../../lib/my-trader";
+import BeeLoader from "../BeeLoader";
 
 /** 누적 수익 곡선 (월 수익률을 이어 붙임). 끝이 위면 초록, 아래면 빨강 */
 /**
@@ -201,21 +202,38 @@ export function StrategyStatsRow({ strategy, className = "mk-strat-stats" }: { s
 /** 전략 버튼: 구독 중이거나 무료 첫 전략이면 "보기", 아니면 "구독하기" */
 export function StrategyButton({ trader, strategy, className = "mk-primary", notify }: { trader: Trader; strategy: Strategy; className?: string; notify: (m: string) => void }) {
   const passes = usePasses();
-  if (opened(passes, trader.id, strategy.key) || strategy.free) {
+  const my = useMyTrader();
+  if (my === undefined) return <BeeLoader size="sm" />;
+  if (my === trader.id || opened(passes, trader.id, strategy.key) || strategy.free) {
     return (
       <Link href={`/marketplace/${trader.id}/strategies/${strategy.key}`} className={`${className} mk-owned`} aria-label={`${strategy.title} 보기`}>
-        {strategy.free ? "무료로 보기 ›" : "보기 ›"}
+        {my === trader.id ? "내 전략 보기 ›" : strategy.free ? "무료로 보기 ›" : "보기 ›"}
       </Link>
     );
   }
   return <PassBuyButton trader={trader} className={className} notify={notify} />;
 }
 
-/** 월 구독 상자: (구독 중이면 끝나는 날) + 구독 버튼. 결제 1번 = 30일. 본인 전략은 구독할 수 없음 (서버 결제 준비에서도 막음) */
+/**
+ * 월 구독 상자: (구독 중이면 끝나는 날) + 구독 버튼. 결제 1번 = 30일
+ *   내가 올린 전략이면 구독 버튼 없이 '내 전략' 안내 (서버 결제 준비에서도 막음). 내 트레이더인지 확인하는 동안은 로딩
+ */
 export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: string) => void }) {
   const passes = usePasses();
-  const { profile } = useProfile();
-  if (profile?.name === trader.name) return <p className="mk-stopped">내가 올린 전략이라 구독할 수 없어요.</p>;
+  const my = useMyTrader();
+  if (my === undefined) return <BeeLoader size="sm" />;
+  if (my === trader.id) {
+    return (
+      <div className="mk-passbox">
+        <p className="mk-mine-note">
+          <span className="mk-mine">내 전략</span> 내가 올린 전략이에요. 구독 없이 모두 볼 수 있어요.
+        </p>
+        <Link href="/mypage/sales" className="mk-ghost">
+          판매 관리 ›
+        </Link>
+      </div>
+    );
+  }
   const end = subscriptionEnd(passes, trader.id);
   const active = subscribed(passes, trader.id);
   return (

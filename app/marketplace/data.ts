@@ -30,7 +30,7 @@ type SimTrader = {
   /** 판매자가 끊은 전략들 (오래된 것부터): 섹터 · 기간 [start, end) · 그 기간의 달 · 매매 · 메모 수 */
   strategies?: SimStrategy[];
 };
-type SimStrategy = { key: string; sector: string; title: string; start: string; end: string; months: string[]; trades: number; notes: number; memos: number; ret: number; follow: number; stats: StrategyStats; symbols: string[]; sample: string };
+type SimStrategy = { key: string; sector: string; title: string; start: string; end: string; months: string[]; trades: number; notes: number; memos: number; ret: number; follow: number; stats: StrategyStats; symbols: string[]; sample: string; rule?: { name: string; desc: string } };
 const sim = (id: string) => (SIM as Record<string, SimTrader>)[id];
 
 export type Period = "1m" | "3m" | "6m" | "1y" | "2y" | "all";
@@ -70,6 +70,8 @@ export type Strategy = {
   months: string[];
   /** 메모 수 = 매매 메모 + 노트(종목 노트 · 증시 메모 · 복기) */
   memos: number;
+  /** 그 기간에 쓰던 매매 규칙 (판매자가 도중에 규칙을 바꿨으면 전략마다 다름). 없으면 트레이더의 규칙 */
+  rule?: { name: string; desc: string };
   title: string;
   summary: string;
   ret: number; // 그 기간 수익률 %
@@ -318,6 +320,7 @@ export function strategiesOf(t: Trader): Strategy[] {
     end: s.end,
     months: s.months,
     memos: s.memos,
+    rule: s.rule ?? (t.rule ? { name: t.rule.name, desc: t.rule.desc } : undefined),
     title: s.title,
     summary: `매매 ${s.trades}건 · 메모 ${s.memos}개`,
     ret: s.ret,

@@ -1,6 +1,7 @@
 "use client";
 // 전략 후기 · Q&A 조각 (모두 공개, 비밀글 없음): 전략마다 꿀 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
 import HoneyPot from "../HoneyPot";
+import BeeLoader from "../BeeLoader";
 import { useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { filterAdvice, filterComment } from "../../lib/comment-filter";
@@ -144,6 +145,11 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
             </li>
           ))}
         </ul>
+      ) : !fb ? (
+        // 후기를 받아 오기 전에는 '아직 후기가 없어요' 대신 로딩
+        <div className="mk-card mk-empty mk-review-empty">
+          <BeeLoader size="sm" />
+        </div>
       ) : (
         <p className="mk-card mk-empty mk-review-empty">{opened.length ? "첫 후기를 남겨 보세요." : "아직 후기가 없어요."}</p>
       )}
@@ -221,7 +227,11 @@ export function Qna({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback
         </div>
       )}
 
-      {!canSee ? (
+      {!fb ? (
+        <div className="mk-card mk-empty mk-review-empty">
+          <BeeLoader size="sm" />
+        </div>
+      ) : !canSee ? (
         <p className="mk-card mk-empty mk-review-empty">{count ? `구독하면 질문 · 답 ${count}개를 볼 수 있어요.` : "구독하면 공개된 기록에 대해 질문할 수 있어요."}</p>
       ) : questions.length ? (
         <ul className="mk-review-list">

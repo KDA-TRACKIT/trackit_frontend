@@ -13,7 +13,7 @@ import HomePolicies from "./HomePolicies";
 import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
-import { initRecordSource, useRecords } from "../lib/records";
+import { initRecordSource, useRecords, useRecordsReady } from "../lib/records";
 import { getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
@@ -53,6 +53,8 @@ export default function HomeDashboard() {
   const [result, setResult] = useState<{ key: number; data?: Loaded; error?: string } | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
   const records = useRecords();
+  // 노트를 다 읽기 전에는 '저장된 노트가 없습니다' 대신 로딩
+  const recordsReady = useRecordsReady();
 
   const key = attempt;
   useEffect(() => {
@@ -111,7 +113,7 @@ export default function HomeDashboard() {
           </div>
           <div className="home-week-memos">
             <h2>이번 주 노트</h2>
-            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={`/archive/notes?note=${encodeURIComponent(record.id)}`}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : <p>이번 주에 저장된 노트가 없습니다.</p>}
+            {weekNotes.length ? weekNotes.map((record) => <Link key={record.id} href={`/archive/notes?note=${encodeURIComponent(record.id)}`}><strong>{record.symbolName ?? record.topic ?? "시장 전반"}</strong><time>{record.noteTime.slice(0, 5)}</time><span>{record.text}</span></Link>) : recordsReady ? <p>이번 주에 저장된 노트가 없습니다.</p> : <BeeLoader size="sm" />}
           </div>
         </div>
       </section>
@@ -122,7 +124,7 @@ export default function HomeDashboard() {
           <TraderCarousel />
         </div>
       </section>
-      <HomeWeeklyRecords trades={recent} records={records} names={names} loading={!data && !error} failed={!!error} />
+      <HomeWeeklyRecords trades={recent} records={records} names={names} loading={(!data && !error) || !recordsReady} failed={!!error} />
       <div className="home-container"><HomePolicies /></div>
     </main>
   );

@@ -14,6 +14,7 @@ import StrategyChart from "../../../StrategyChart";
 import { useDark, type SimDetail } from "../../../GuessFirst";
 import { fetchStrategyMonth } from "../../../../../lib/strategy-data";
 import { markFreeView } from "../../../../../lib/free-views";
+import { useMyTrader } from "../../../../../lib/my-trader";
 import "../../../marketplace.css";
 import BeeLoader from "../../../../BeeLoader";
 
@@ -26,7 +27,10 @@ export default function StrategyView() {
   const [detail, setDetail] = useState<{ id: string; data: SimDetail | null } | null>(null);
   const s = t ? strategyOf(t, sKey) : undefined;
   // 구독하면 다시 받음 (서버가 구독을 확인하고 그 전략 것만 줌). 예전에 달 단위로 연 기록도 인정
-  const isOpen = !!t && !!s && [s.key, ...s.months].some((r) => opened(passes, t.id, r));
+  // 내가 올린 전략이면 구독 없이 봄 (서버 /strategy-data 도 본인인지 확인)
+  const my = useMyTrader();
+  const own = !!t && my === t.id;
+  const isOpen = !!t && !!s && (own || [s.key, ...s.months].some((r) => opened(passes, t.id, r)));
   const key = `${id}/${sKey}/${isOpen}`;
 
   useEffect(() => {
@@ -90,17 +94,20 @@ export default function StrategyView() {
             <span>
               메모 <b>{s.memos}개</b>
             </span>
-            {(detail?.data?.rule.name ?? t.rule?.name) && (
+            {(s.rule?.name ?? detail?.data?.rule.name) && (
               <span>
-                규칙 <b>{detail?.data?.rule.name ?? t.rule?.name}</b>
+                규칙 <b>{s.rule?.name ?? detail?.data?.rule.name}</b>
               </span>
             )}
+            {own && <span className="mk-mine">내 전략</span>}
           </div>
           {/* 원본은 그대로 보존, 정정 · 사후 해설은 따로 (구독 구매 정책) */}
           <p className="mk-sim-origin">✓ 최초 확정본 그대로 · 정정 0건</p>
         </section>
 
-        {!unlocked ? (
+        {!unlocked && my === undefined ? (
+          <div className="mk-card mk-empty"><BeeLoader /></div>
+        ) : !unlocked ? (
           <section className="mk-card mk-sim-lock">
             <strong>이 전략에 담긴 것 (구매 전 미리 보기)</strong>
             <ul className="mk-sim-peek">
@@ -135,9 +142,10 @@ export default function StrategyView() {
         ) : (
           <>
             <section className="mk-card mk-sim-rule">
-              <h2>매매 규칙 · {detail.data.rule.name}</h2>
-              <p>{detail.data.rule.desc}</p>
-              <small>매매 종목: {detail.data.symbols.map((x) => x.name).join(" · ")}</small>
+              {/* 그 기간에 쓰던 규칙 (도중에 규칙을 바꾼 판매자는 전략마다 다름) · 종목은 그 기간에 실제로 매매한 것 */}
+              <h2>매매 규칙 · {s.rule?.name ?? detail.data.rule.name}</h2>
+              <p>{s.rule?.desc ?? detail.data.rule.desc}</p>
+              <small>매매 종목: {s.symbols?.length ? s.symbols.join(" · ") : "이 기간엔 매매 없음 (관찰 · 노트)"}</small>
             </section>
 
             {/* 차트는 달 단위로 저장돼 있어 기간 안의 달마다 한 장 (그 달에 가장 많이 매매한 종목) */}

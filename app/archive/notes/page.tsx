@@ -9,7 +9,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, History, Link2, List, PenLine, Pin, Search, X } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
-import { initRecordSource, useRecords } from "../../../lib/records";
+import { initRecordSource, useRecords, useRecordsReady } from "../../../lib/records";
+import BeeLoader from "../../BeeLoader";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
@@ -71,6 +72,8 @@ const byOld = (a: Memo, b: Memo) => a.at.localeCompare(b.at);
 
 export default function MemosPage() {
   const records = useRecords();
+  // 노트를 다 읽기 전에는 '아직 남긴 노트가 없어요' 대신 로딩
+  const ready = useRecordsReady();
   const pins = usePins();
   const [today] = useState(kstToday);
   const [view, setView] = useState<View>("list");
@@ -236,7 +239,11 @@ export default function MemosPage() {
           </button>
         </div>
 
-        {!memos.length ? (
+        {!memos.length && !ready ? (
+          <div className="mm-card mm-empty">
+            <BeeLoader />
+          </div>
+        ) : !memos.length ? (
           <div className="mm-card mm-empty">
             <b>아직 남긴 노트가 없어요</b>
             <p>투자작업실 차트나 증시 캘린더에서 노트를 남기면 여기에 모여요.</p>

@@ -129,18 +129,25 @@ export async function refreshServerRecords() {
 
 /** 로그인했으면 서버 기록으로 바꾼다 (기록 화면을 열 때 한 번) */
 export async function initRecordSource() {
-  if (!(await accessToken())) {
-    source = "local";
-    notify();
-    return;
-  }
   try {
+    if (!(await accessToken())) {
+      source = "local";
+      return;
+    }
     await refreshServerRecords();
   } catch {
     // 서버가 꺼져 있으면 일단 이 브라우저 기록을 보여 준다
     source = "local";
+  } finally {
+    ready = true;
     notify();
   }
+}
+
+/** 기록을 한 번이라도 다 읽었는지. 읽기 전에 '기록이 없어요'를 보여 주지 않고 로딩으로 (2026-11-21) */
+let ready = false;
+export function useRecordsReady() {
+  return useSyncExternalStore(subscribe, () => ready, () => false);
 }
 
 export function recordSource() {

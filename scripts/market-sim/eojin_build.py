@@ -64,10 +64,13 @@ def vol_ratio(code, d):
     k = next(i for i, x in enumerate(b) if x["d"] == d)
     return b[k]["v"] / I["v20"][k - 1] if I["v20"][k - 1] else 0, (b[k]["c"] / b[k - 1]["c"] - 1) * 100
 
-WEAK = ["{n} {g} 소식에 거래량 {v:.1f}배, 하루 {r:+.1f}% 급등. 더 갈 것 같아서 따라 샀음",
-        "{n} 오늘 {r:+.1f}%. 커뮤니티에서 다들 산다길래 들어감 (거래량 {v:.1f}배)",
-        "{n} 거래량 {v:.1f}배 터짐. {g} 뉴스 나온 듯, 일단 탐",
-        "{n} {r:+.1f}% 장대양봉. 놓치면 아까울 것 같아서 샀음"]
+# 1기는 기준 없이 그날 기분으로 따라 사던 때 (2026-11-21: 그 느낌이 나게). 숫자(등락 · 거래량)는 그날 일봉 그대로, 나머지는 그때 마음
+WEAK = ["{n} {g} 얘기 돌더니 하루 {r:+.1f}% (거래량 {v:.1f}배). 더 갈 것 같아서 일단 따라 탔음. 손절은 사고 나서 생각",
+        "{n} 오늘 {r:+.1f}%. 커뮤니티가 온통 이 얘기라 안 사면 나만 손해일 것 같아서 들어감 (거래량 {v:.1f}배)",
+        "{n} 거래량 {v:.1f}배 터짐. 왜 오르는지는 잘 모르겠는데 {g} 쪽이 뜨거워서 일단 탐",
+        "{n} {r:+.1f}% 장대양봉. 놓치면 후회할 것 같아서 급하게 샀음",
+        "{n} 급등 알림 뜨자마자 매수 ({r:+.1f}%). {g} 뉴스라는데 내용은 아직 안 읽어 봄",
+        "{n} 또 {r:+.1f}%. 고민하면 늦을 것 같아서 바로 삼 (거래량 {v:.1f}배). 얼마에 팔지는 안 정함"]
 for k, t in enumerate(t1):
     v, r = vol_ratio(t["code"], t["entry"]["d"])
     t["entry"]["why"] = WEAK[k % len(WEAK)].format(n=t["name"], g=GROUP[t["code"]], v=v, r=r)
@@ -180,7 +183,20 @@ def note_p1(code, mth):
     if not ks: return None
     k = ks[-1]
     mv = (b[k]["c"] / b[ks[0] - 1]["c"] - 1) * 100 if ks[0] else 0
-    return dict(type="stock", d=b[k]["d"], code=code, name=META[code]["name"], text=f"{META[code]['name']} 이번 달 {mv:+.1f}%. 뉴스 뜨면 다시 볼 것", lines=[])
+    nm = META[code]["name"]
+    txt = (f"{nm} 이번 달 {mv:+.1f}%. 안 산 게 배 아픔. 다음에 뜨면 바로 탈 것" if mv >= 15 else
+           f"{nm} 이번 달 {mv:+.1f}%. 많이 빠졌으니 이제 오를 차례 아닐까 싶음" if mv <= -15 else
+           f"{nm} 이번 달 {mv:+.1f}%. 뉴스 뜨면 다시 볼 것")
+    return dict(type="stock", d=b[k]["d"], code=code, name=nm, text=txt, lines=[])
+
+# 1기에 팔고 나서 남긴 한 줄 (사실: 수익률 · 계획대로 팔았는지는 매매 기록 그대로)
+def sold_p1(t):
+    why, r = t["exit"]["why"], t["ret"]
+    if "버" in why: txt = f"{t['name']} 손절가 왔는데 본전 생각에 못 팔고 버티다 {r:+.1f}%에 정리"
+    elif "목표 전" in why: txt = f"{t['name']} 조금 오르니 불안해서 목표 전에 팔아 버림 ({r:+.1f}%)"
+    elif r < 0: txt = f"{t['name']} {r:+.1f}%로 정리. 다시 봐도 왜 샀는지 모르겠음"
+    else: return None
+    return dict(type="stock", d=t["exit"]["d"], code=t["code"], name=t["name"], text=txt, lines=[])
 
 # ── 월별 ──
 def month_ind2(code, mth, back=25):
@@ -218,6 +234,7 @@ for mth in E.MONTHS:
                           text=(f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']}({money(t['entry']['px'])}) — {t['exit']['d']} {t['exit']['why']} ({t['ret']:+.2f}%)."
                                 if done else f"{t['entry']['d'][:7].replace('-', '년 ')}월에 산 {t['name']} 계속 보유 (진입가 {money(t['entry']['px'])}).")))
     notes += [x for x in reviews if x["d"][:7] == mth]
+    if p1: notes += [n_ for n_ in (sold_p1(t) for t in t1 if t["exit"]["d"][:7] == mth) if n_]
     if mth == t3_day[:7]:
         notes.append(dict(type="review", d=t3_day, text=turn3_text))
     if mth == T1_END:
@@ -264,9 +281,15 @@ summary = dict(persona=None, eq=eq, mIdx=m_idx, asOf=eq_hist[-1][0], monthly=mon
                           best=dict(name=best["name"], ret=best["ret"], d=best["entry"]["d"]), worst=dict(name=worst["name"], ret=worst["ret"], d=worst["entry"]["d"]),
                           followed=sum(1 for t in trades if t["followed"]), avgHold=round(sum(hold(t) for t in trades) / n, 1)))
 # 전략 = 섹터 안에서 끊은 기간 (2026-11-21): 1기 바이오 · 테마는 메모 20개마다, 2기 AI 기술주는 메모 30개마다. 섹터가 바뀌면 새 전략
-d1, c1 = E.cut_strategies([m for m in months if m["phase"] == 1], monthly, "바이오 · 테마", "급등 따라 사기", 20, "2023-11-01")
-d2, c2 = E.cut_strategies([m for m in months if m["phase"] == 2], monthly, "AI 기술주", "골든크로스 · TQQQ 맥점", 30, "2026-12-01")
-strategies, summary["strategies"] = d1 + d2, c1 + c2
+#   전략마다 그때 쓰던 규칙을 같이 남김 (2026-11-21): 규칙을 바꾼 날(2023-11 전환 · 2026-08 급락 구간 관망)에서 전략도 끊음
+RULE1 = dict(name="급등주 따라 타기", desc="뉴스 · 커뮤니티에서 뜨는 바이오 · 테마주가 거래량이 터지며 급등하면 그날 따라 샀다. 얼마에 팔지 정하지 않고 들어가서, 조금 오르면 불안해서 일찍 팔고 내리면 본전 생각에 버텼다. 지금은 쓰지 않는 방식 (2023-11부터 AI 기술주 골든크로스로 바꿈).")
+RULE2 = dict(name="골든크로스 · 하락장 TQQQ 맥점", desc="AI 기술주는 20일선이 60일선을 위로 뚫을 때 산다(손절 -7%, 종가가 20일선 아래면 정리). 나스닥이 급락하면 나스닥100 직전 스윙 저점(맥점)에서 양봉 지지를 확인하고 TQQQ를 산다(손절 -9%, 직전 고점 회복이 목표).")
+RULE3 = dict(name="골든크로스 · 급락 구간 관망", desc="AI 기술주는 20일선이 60일선을 위로 뚫을 때 산다(손절 -7%, 종가가 20일선 아래면 정리). 나스닥 급락 구간엔 새로 사지 않고 현금으로 관망한다 (2026-08부터: 급락 구간 매수의 손절이 몰려 계좌가 흔들린 걸 복기하고 바꿈).")
+d1, c1 = E.cut_strategies([m for m in months if m["phase"] == 1], monthly, "바이오 · 테마", RULE1["name"], 20, "2023-11-01", rule=RULE1,
+                          title_fn=lambda n, w: f"{n}번 사서 {w}번 벌고 {n - w}번 잃음" if n else "따라 살 급등이 없던 기간")
+d2, c2 = E.cut_strategies([m for m in months if m["phase"] == 2 and m["month"] < T3[:7]], monthly, "AI 기술주", "골든크로스 · TQQQ 맥점", 30, T3, rule=RULE2)
+d3, c3 = E.cut_strategies([m for m in months if m["phase"] == 2 and m["month"] >= T3[:7]], monthly, "AI 기술주", "골든크로스 · 급락 구간 관망", 30, "2026-12-01", rule=RULE3)
+strategies, summary["strategies"] = d1 + d2 + d3, c1 + c2 + c3
 for k, (a, b) in enumerate(zip(strategies, summary["strategies"])): a["key"] = b["key"] = f"s{k + 1}"
 detail = dict(id="t42", market="US", rule=dict(key=KEY2, name=RULE, desc=RULE_DESC), symbols=[dict(code=c, name=META[c]["name"]) for c in P2], strategies=strategies,
               phases=[dict(n=1, from_="2023-01", to=T1_END, label="바이오 · 테마 급등 추격", symbols=[META[c]["name"] for c in P1]),

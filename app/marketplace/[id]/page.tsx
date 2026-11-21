@@ -12,6 +12,7 @@ import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Qna, Reviews } from "../feedback";
+import { useMyTrader, useSubscriberCounts } from "../../../lib/my-trader";
 import "../marketplace.css";
 
 /** 채널나스닥 → "채널나스닥"과, 원트로그 → "원트로그"와 (따옴표로 감싸고, 마지막 글자가 한글이 아니면 와(과)) */
@@ -30,6 +31,9 @@ export default function TraderPage() {
   const bought = passes.some((p) => p.traderId === id);
   const fb = useFeedback(id);
   const router = useRouter();
+  // 내가 올린 전략인지 (내 전략 표시 · 구독 버튼 숨김) · 지금 구독 중인 사람 수
+  const own = useMyTrader() === id;
+  const subscribers = useSubscriberCounts();
   if (!t) {
     return (
       <main className="mk-page">
@@ -71,7 +75,8 @@ export default function TraderPage() {
               </span>
               <div>
                 <h1>
-                  {t.name} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span> <FavButton id={t.id} name={t.name} label />
+                  {t.name} {own && <span className="mk-mine">내 전략</span>} <span className="mk-like" title="전략을 산 사람들이 준 꿀 합계"><HoneyPot count={fb?.total ?? 0} size={16} /> {fb?.total ?? 0}</span>{" "}
+                  <span className="mk-subs" title="지금 구독 중인 사람 수">구독자 {subscribers ? `${(subscribers[t.id] ?? 0).toLocaleString("ko-KR")}명` : "…"}</span> {!own && <FavButton id={t.id} name={t.name} label />}
                 </h1>
               </div>
             </div>

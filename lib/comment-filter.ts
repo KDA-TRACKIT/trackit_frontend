@@ -30,7 +30,18 @@ const RULES: { code: string; reason: string; test: (raw: string, digits: string)
   { code: "EMAIL", reason: "이메일 주소는 쓸 수 없어요.", test: (raw) => /[\w.+-]+\s*(@|＠|\(at\)|\[at\]|골뱅이)\s*[\w-]+\s*(\.|닷|\(dot\))\s*[a-z]{2,}/i.test(raw) },
   { code: "RRN", reason: "주민등록번호 같은 개인정보는 쓸 수 없어요.", test: (_raw, d) => /(?<!\d)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[1-8]\d{6}(?!\d)/.test(d) },
   { code: "CARD", reason: "카드 · 계좌번호 같은 금융 정보는 쓸 수 없어요.", test: (raw, d) => /(?<!\d)\d{13,19}(?!\d)/.test(d) || /(계좌|입금|송금|카드번호)/.test(raw) && /\d{6,}/.test(d) },
-  { code: "LINK", reason: "링크나 다른 사이트 주소는 쓸 수 없어요.", test: (raw) => /(https?:\/\/|www\.|[a-z0-9-]+\s*\.\s*(com|net|kr|co|io|me|ly|gg|app|link|xyz)\b)/i.test(raw) },
+  {
+    // 링크는 모두 막음 (2026-11-21): 주소 · 도메인(띄어 쓰거나 '닷' · '점'으로 쓴 것 포함) · 줄인 주소 · IP · 다른 서비스로 오라는 말
+    code: "LINK",
+    reason: "링크나 다른 사이트 주소는 쓸 수 없어요.",
+    test: (raw) =>
+      /(h\s*t\s*t\s*p\s*s?\s*:|:\/\/|www\s*[.．])/i.test(raw) ||
+      /[a-z0-9-]{2,}\s*(\.|．|닷|점)\s*(com|net|org|kr|co|io|me|ly|gg|app|link|xyz|info|biz|site|shop|store|online|club|live|tv|cc|to|us|jp|cn|ai|dev|page|blog|be|컴|넷)(?![a-z])/i.test(raw) ||
+      /(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)/.test(raw) ||
+      /(bit\.ly|t\.me|open\.kakao|youtu\.be|naver\.me|me2\.do|linktr\.ee|forms\.gle)/i.test(raw) ||
+      /(유튜브|youtube|블로그|네이버\s*카페|다음\s*카페|밴드|디스코드|discord|트위터|스레드|틱톡|채널)\s*(에서|으로|로|에)?\s*(검색|오세요|와|들어|참고|구독|보세요|확인|찾아)/i.test(raw) ||
+      /(링크|주소|url)\s*(는|를|로|에|가|도|은)?\s*(보내|남기|남겨|드릴|줄게|줄께|참고|클릭|타고|들어|알려|공유|걸어)/i.test(raw),
+  },
   {
     code: "MESSENGER",
     reason: "카톡 · 오픈채팅 · 텔레그램 아이디 같은 연락 수단은 쓸 수 없어요.",

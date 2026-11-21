@@ -62,7 +62,10 @@ function set(traderId: string, data: TraderFeedback) {
 export function loadFeedback(traderId: string) {
   return apiRequest<TraderFeedback>(`/market/feedback/${traderId}`)
     .then((d) => set(traderId, d))
-    .catch(() => {});
+    .catch(() => {
+      // 서버가 꺼져 있으면 빈 값으로 (화면이 계속 로딩에 머물지 않게). 이미 받은 값이 있으면 그대로
+      if (!cache.has(traderId)) set(traderId, { traderId, total: 0, likesByMonth: {}, myLikes: [], openedMonths: [], comments: [] });
+    });
 }
 
 export function useFeedback(traderId: string): TraderFeedback | null {

@@ -80,8 +80,9 @@ def g(name):
 # ── 전략 묶기 (2026-11-21 기획): 판매자가 섹터마다 기간을 끊어 전략 하나로 판다. 메모가 memo_target 개 쌓인 달 끝에서 끊음 ──
 #   메모 = 매매 메모(매매마다 하나) + 노트(종목 노트 · 증시 메모 · 복기). 다음 전략은 직전 전략이 끝난 날부터 (빈 기간 없음)
 #   숫자(수익률 · 이행률 · 매매 수 · 메모 수)는 모두 그 기간의 달 기록에서 계산
-def cut_strategies(months, monthly, sector, label, memo_target, end_after):
-    """months: 달 기록(month · trades · notes), monthly: [{month, ret}] → (상세용 목록, 화면 요약용 목록). key 는 부르는 쪽에서 붙임"""
+def cut_strategies(months, monthly, sector, label, memo_target, end_after, rule=None, title_fn=None):
+    """months: 달 기록(month · trades · notes), monthly: [{month, ret}] → (상세용 목록, 화면 요약용 목록). key 는 부르는 쪽에서 붙임
+    rule: 이 전략들의 규칙 {name, desc} (판매자가 도중에 규칙을 바꿨으면 구간마다 따로). title_fn(매매 수, 수익 난 매매 수): 제목 뒷부분"""
     ret_of = {x["month"]: x["ret"] for x in monthly}
     notes_n = lambda m: sum(1 for x in m["notes"] if x["type"] != "carry")
     groups, cur, n = [], [], 0
@@ -98,7 +99,8 @@ def cut_strategies(months, monthly, sector, label, memo_target, end_after):
         for m in ms: eq *= 1 + ret_of[m["month"]] / 100
         stats = [NS["month_stats"](m) for m in ms]
         n_no = sum(notes_n(m) for m in ms)
-        base = dict(sector=sector, title=f"{sector} {label}: " + (f"매매 {len(trades)}건 중 {wins}건 수익" if trades else "신호를 기다린 기간"),
+        tail = title_fn(len(trades), wins) if title_fn else (f"매매 {len(trades)}건 중 {wins}건 수익" if trades else "신호를 기다린 기간")
+        base = dict(sector=sector, title=f"{sector} {label}: {tail}", **({"rule": rule} if rule else {}),
                     start=ms[0]["month"] + "-01", end=groups[k + 1][0]["month"] + "-01" if k + 1 < len(groups) else end_after,
                     months=[m["month"] for m in ms], trades=len(trades), notes=n_no, memos=len(trades) + n_no)
         detail.append(dict(base))
