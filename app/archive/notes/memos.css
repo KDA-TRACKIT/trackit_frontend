@@ -30,12 +30,14 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-search:focus-within { box-shadow:inset 0 0 0 1px #0f2367; }
 .mm-search button { display:grid; place-items:center; width:20px; height:20px; padding:0; border:0; border-radius:50%; background:#e6ebf2; color:#5c6678; cursor:pointer; }
 /* 종목 · 기간(달) 칸은 너비 고정 — 보기(리스트 · 달력 · 종목)를 바꿔 글자('최근 1개월' ↔ '2026년 11월')가 달라져도 줄이 움직이지 않음 */
-.mm-select { position:relative; display:inline-flex; flex:none; align-items:center; gap:6px; width:140px; height:30px; padding:0 10px 0 12px; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); color:#4a5463; font-size:12px; font-weight:500; }
-.mm-select.with-icon { padding-left:13px; }
+.mm-select { position:relative; display:inline-flex; flex:none; align-items:center; gap:6px; width:140px; height:30px; padding:0; border:1px solid #e2e8f0; border-radius:8px; background:var(--c-surface, #fff); color:#4a5463; font-size:12px; font-weight:500; }
 .mm-select select, .mm-sort select { appearance:none; padding:0; border:0; outline:0; background:none; color:inherit; font:inherit; cursor:pointer; }
-.mm-select select { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mm-select > select { width:100%; height:100%; min-width:0; padding:0 28px 0 12px; border-radius:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mm-select.with-icon > select { padding-left:32px; }
 .mm-select:focus-within { border-color:#0f2367; }
 .mm-select svg { flex:none; pointer-events:none; }
+.mm-select > svg { position:absolute; right:10px; }
+.mm-select.with-icon > svg:first-child { left:13px; right:auto; }
 /* 달 고르기 (MonthSelect): 기본 select 대신 작은 메뉴 — 연 · 월을 칸으로 나누고 숫자 폭을 맞춰 '월'이 한 줄로 */
 .mm-month { padding:0; }
 .mm-month-btn { display:flex; align-items:center; gap:6px; width:100%; height:100%; padding:0 10px 0 13px; border:0; border-radius:inherit; outline:0; background:none; color:inherit; font:inherit; font-variant-numeric:tabular-nums; text-align:left; cursor:pointer; }

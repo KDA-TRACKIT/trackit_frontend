@@ -126,7 +126,7 @@ export default function MemosPage() {
     return names.sort((a, b) => (a === "시장 전반" ? 1 : b === "시장 전반" ? -1 : a.localeCompare(b, "ko")));
   }, [memos]);
 
-  // 검색 · 종류 · 종목 (기간은 화면마다: 리스트 · 종목형 = 최근 n, 달력 = 그 달)
+  // 검색 · 종류 · 종목 (기간: 리스트 · 종목 · 복기형 = 최근 n, 달력 = 그 달)
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return memos.filter(
@@ -246,12 +246,14 @@ export default function MemosPage() {
           <ReviewView
             records={records}
             stock={stock}
+            from={from}
             onOpenNote={(id) => {
               // 그때 쓴 노트를 리스트형 오른쪽에 크게
               setView("list");
               setRange("all");
               setQ("");
               setKind("all");
+              setStock("all");
               setSel(id);
             }}
           />
