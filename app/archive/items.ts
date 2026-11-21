@@ -38,7 +38,8 @@ export type Item = {
   traderId?: string;
   month?: string;
   ret?: number;
-  follow?: number;
+  /** 이행률 % (계획 가격이 있던 매매가 없으면 null → '—') */
+  follow?: number | null;
 };
 
 const sideOf = (s?: string) => (!s ? undefined : /buy|매수|long/i.test(s) ? "매수" : /sell|매도|short/i.test(s) ? "매도" : undefined);

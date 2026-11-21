@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Check, LayoutGrid, LineChart, List, Sparkles } from "lucide-react";
 import { Spark } from "../marketplace/parts";
-import { pct, tone, traderById } from "../marketplace/data";
+import { followLabel, pct, tone, traderById } from "../marketplace/data";
 import { kindLabel, shortDate, type Item, type ItemKind } from "./items";
 
 export type View = "list" | "board" | "chart";
@@ -90,7 +90,7 @@ export function PurchasedCards({ items, picked, onPick, cta }: { items: Item[]; 
               {t?.curves?.["1m"] && <Spark equity={t.curves["1m"]} w={120} h={36} />}
             </div>
             <div className="ar-bought-foot">
-              <small>{i.follow !== undefined ? `이행률 ${i.follow}%` : i.sub}</small>
+              <small>{i.follow !== undefined ? `이행률 ${followLabel(i.follow)}` : i.sub}</small>
               {i.href && (
                 <Link href={i.href} onClick={(e) => e.stopPropagation()}>
                   전략 보기 ›

@@ -11,7 +11,7 @@ import "../workshop/workshop.css";
 /** "2026-10-14" → 그날 0시(KST) 초 (국내 일봉 시각과 같게) */
 const dayTime = (d: string) => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))) / 1000 - 9 * 3600;
 
-export type SimMonth = { month: string; title: string; summary: string; ret: number; follow: number; symbol: { code: string; name: string }; candles: SimCandle[]; ind?: SimInd; trades: SimTrade[]; notes?: SimNote[] };
+export type SimMonth = { month: string; title: string; summary: string; ret: number; follow: number | null; symbol: { code: string; name: string }; candles: SimCandle[]; ind?: SimInd; trades: SimTrade[]; notes?: SimNote[] };
 export type SimDetail = { id: string; market: "KR" | "US"; rule: { key: string; name: string; desc: string }; symbols: { code: string; name: string }[]; months: SimMonth[] };
 
 /** 다크 모드 (html data-theme) — 차트 색을 맞추려고 */

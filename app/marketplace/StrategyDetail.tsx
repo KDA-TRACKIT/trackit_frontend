@@ -18,7 +18,7 @@ import { fetchStrategyMonth } from "../../lib/strategy-data";
 import { fetchBars } from "../../lib/market-data";
 import { markFreeView } from "../../lib/free-views";
 import { useMyTrader } from "../../lib/my-trader";
-import { pct, periodLabel, strategiesOf, strategyOf, tone, traderById, type Strategy } from "./data";
+import { followLabel, pct, periodLabel, strategiesOf, strategyOf, tone, traderById, type Strategy } from "./data";
 import { StrategyButton, useNotice } from "./parts";
 import { MemoNotes } from "./feedback";
 import { useFeedback } from "../../lib/feedback";
@@ -62,6 +62,8 @@ const ORDER: Record<Kind, number> = {
   review: 5,
 };
 const md = (d: string) => `${d.slice(5, 7)}.${d.slice(8, 10)}`;
+/** 매수한 해와 다른 해에 판 매매는 연도까지 (공개 자료 판매자처럼 몇 년 들고 간 매매) */
+const mdFrom = (d: string, from: string) => (d.slice(0, 4) === from.slice(0, 4) ? md(d) : `${d.slice(2, 4)}.${md(d)}`);
 
 export default function StrategyDetail({ entry, traderId, strategyKey }: { entry: StrategyEntry; traderId: string; strategyKey: string }) {
   const t = traderById(traderId);
@@ -151,12 +153,14 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   }
   const curName = cur ? (names.get(cur.code) ?? cur.code) : "";
 
-  // 대표 종목이 아니면 그 달 앞뒤 일봉을 따로 받음 (curKey = "YYYY-MM:종목코드", repCode = 그 달 대표 종목)
+  // 대표 종목이 아니거나 그 달 일봉이 저장돼 있지 않으면(공개 자료 판매자, 2026-11-21) 그 달 앞뒤 일봉을 따로 받음
+  //   (curKey = "YYYY-MM:종목코드", repCode = 그 달 대표 종목)
   const repCode = curM?.symbol.code ?? "";
+  const repStored = !!curM?.candles.length;
   useEffect(() => {
     const month = curKey.slice(0, 7);
     const code = curKey.slice(8);
-    if (!repCode || !code || code === repCode) return;
+    if (!repCode || !code || (code === repCode && repStored)) return;
     const ac = new AbortController();
     const start = Date.parse(`${month}-01T00:00:00+09:00`) / 1000;
     const from = start - 60 * 86_400;
@@ -171,8 +175,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
       })
       .catch(() => !ac.signal.aborted && setExtra({ key: curKey, candles: [] }));
     return () => ac.abort();
-  }, [curKey, repCode]);
-  const candles = !curM || !cur ? [] : cur.code === curM.symbol.code ? curM.candles : extra?.key === curKey ? extra.candles : [];
+  }, [curKey, repCode, repStored]);
+  const candles = !curM || !cur ? [] : cur.code === curM.symbol.code && curM.candles.length ? curM.candles : extra?.key === curKey ? extra.candles : [];
   const last = candles.at(-1);
 
   // 노트 (전략 기간 전체, 날짜순)
@@ -187,14 +191,19 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
           name: x.name,
           text: x.entry.why,
         },
-        {
-          d: x.exit.d,
-          kind: "exit",
-          month: m.month,
-          code: x.code,
-          name: x.name,
-          text: x.exit.why,
-        },
+        // 아직 보유 중인 매매는 매도 노트를 만들지 않음 (exit 는 기준일 평가)
+        ...(x.open
+          ? []
+          : [
+              {
+                d: x.exit.d,
+                kind: "exit" as const,
+                month: m.month,
+                code: x.code,
+                name: x.name,
+                text: x.exit.why,
+              },
+            ]),
       ]),
       ...(m.notes ?? []).map((n): Rec => ({
         d: n.d,
@@ -329,8 +338,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
               <b>{preRate}</b>
             </div>
             <div>
-              <small title="계획(진입 · 손절 · 목표)대로 한 매매의 비율 (이행률)">계획대로 한 비율</small>
-              <b>{s.follow}%</b>
+              <small title="계획(진입 · 손절 · 목표)대로 한 매매의 비율 (이행률). 계획 가격이 없던 매매는 세지 않음">계획대로 한 비율</small>
+              <b>{followLabel(s.follow)}</b>
             </div>
           </div>
 
@@ -403,7 +412,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     <span>종목명</span>
                     <span>매수 시기</span>
                     <span>매도 시기</span>
-                    <span title="매수가 대비 매도가 (수수료 빼기 전)">수익률 ⓘ</span>
+                    <span title="매수가 대비 매도가 (수수료 빼기 전). 아직 보유 중이면 마지막 종가로 평가">수익률 ⓘ</span>
                     <span>계획</span>
                   </div>
                   <div className="tb">
@@ -413,10 +422,12 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                         <button key={`${month}:${tr.code}:${tr.entry.d}`} type="button" className={on ? "tr on" : "tr"} aria-pressed={on} onClick={() => setSel({ month, code: tr.code })}>
                           <strong>{tr.name}</strong>
                           <span>{md(tr.entry.d)}</span>
-                          <span>{md(tr.exit.d)}</span>
-                          <b className={tone(tr.ret)}>{pct(tr.ret)}</b>
+                          <span>{tr.open ? "보유 중" : mdFrom(tr.exit.d, tr.entry.d)}</span>
+                          <b className={tone(tr.ret)} title={tr.open ? `${tr.exit.d} 종가로 평가` : undefined}>
+                            {pct(tr.ret)}
+                          </b>
                           <span>
-                            <i className={tr.followed ? "sd-plan ok" : "sd-plan no"}>{tr.followed ? "계획대로" : "계획과 다름"}</i>
+                            <i className={tr.followed === null ? "sd-plan none" : tr.followed ? "sd-plan ok" : "sd-plan no"}>{tr.followed === null ? "계획 없음" : tr.followed ? "계획대로" : "계획과 다름"}</i>
                           </span>
                         </button>
                       );
@@ -476,7 +487,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                         dark={dark}
                         currency={market === "US" ? "USD" : "KRW"}
                       />
-                    ) : cur.code !== curM.symbol.code && extra?.key === curKey ? (
+                    ) : extra?.key === curKey ? (
                       <p className="mk-empty">이 종목의 그 달 차트 데이터가 없어요.</p>
                     ) : (
                       <BeeLoader size="sm" />

@@ -19,18 +19,19 @@ type SimTrader = {
   monthly: { month: string; ret: number }[];
   mdd: number;
   trades: number;
-  follow: number;
+  /** 이행률 % — 계획(가격)이 있던 매매만 셈, 계획이 하나도 없으면 null ('—') */
+  follow: number | null;
   rule: string;
   ruleDesc: string;
   symbols: string[];
-  months: { month: string; title: string; summary: string; follow: number; trades?: number; symbols?: string[]; sample?: string; stats?: StrategyStats }[];
+  months: { month: string; title: string; summary: string; follow: number | null; trades?: number; symbols?: string[]; sample?: string; stats?: StrategyStats }[];
   facts?: Facts;
   /** 판매자의 섹터 (한 섹터만 하는 판매자) */
   sector?: string;
   /** 판매자가 끊은 전략들 (오래된 것부터): 섹터 · 기간 [start, end) · 그 기간의 달 · 매매 · 메모 수 */
   strategies?: SimStrategy[];
 };
-type SimStrategy = { key: string; sector: string; title: string; start: string; end: string; months: string[]; trades: number; notes: number; memos: number; ret: number; follow: number; stats: StrategyStats; symbols: string[]; sample: string; rule?: { name: string; desc: string } };
+type SimStrategy = { key: string; sector: string; title: string; start: string; end: string; months: string[]; trades: number; notes: number; memos: number; ret: number; follow: number | null; stats: StrategyStats; symbols: string[]; sample: string; rule?: { name: string; desc: string } };
 const sim = (id: string) => (SIM as Record<string, SimTrader>)[id];
 
 export type Period = "1m" | "3m" | "6m" | "1y" | "2y" | "all";
@@ -50,6 +51,7 @@ export const TYPES = [
   { key: "스윙", desc: "몇 주 흐름을 따라감" },
   { key: "추세 추종", desc: "방향이 정해지면 따라감" },
   { key: "변동성 돌파", desc: "크게 움직이는 날 진입" },
+  { key: "장기 보유", desc: "몇 달 ~ 몇 년 들고 감" },
 ] as const;
 export const MARKETS = ["국내 주식", "해외 주식"] as const;
 
@@ -75,7 +77,7 @@ export type Strategy = {
   title: string;
   summary: string;
   ret: number; // 그 기간 수익률 %
-  follow: number; // 이행률 %
+  follow: number | null; // 이행률 % (계획이 있던 매매가 없으면 null → '—')
   price: number;
   free?: boolean;
   /** 구매 전 미리 보기: 그 기간에 진입한 매매 수 · 다룬 종목 · 전략 설명 한 줄 */
@@ -108,7 +110,7 @@ export type Trader = {
   likes: number;
   price: number; // 월 구독료 (30일)
   buyers: number;
-  follow: number; // 전략 이행률 %
+  follow: number | null; // 전략 이행률 % (계획이 있던 매매가 없으면 null → '—')
   mdd: number; // 최대 낙폭 % (음수)
   styles: string[];
   indicators: string[];
@@ -283,7 +285,33 @@ const EOJIN: Trader = {
   verify: { months: 0, trades: 0, preRate: 0 },
 };
 
-export const TRADERS: Trader[] = [...DEMO, EOJIN].map(withSim);
+/** 이행률 글자: 계획(가격)이 있던 매매가 없으면 '—' */
+export const followLabel = (n: number | null | undefined) => (n === null || n === undefined ? "—" : `${n}%`);
+
+/**
+ * 공개 자료로 다시 구성한 가명 판매자 3명 (2026-11-21, 노션 '공개 투자자 → 가명 마켓 판매자 등록 계획')
+ *   숫자 · 매매 · 노트는 sim.json t43~t45 / data/market-sim/t43~t45.json (scripts/market-sim/public_build.py: 공시 · 보도로 다시 모은 매매 · 노트 + 저장소 일봉)
+ *   운영 DB 의 데모 계정(demo-t43~45)에도 같은 매매 · 노트가 들어 있음. 이름은 별명이고 소개 마지막 줄에 안내 문구를 꼭 넣음
+ *   안 판 물량은 '보유 중' (마지막 종가로 평가), 계획 가격이 없는 매매는 이행률에서 빼고 '—'
+ */
+const PUBLIC_NOTICE = "공개된 매매 기록과 공시 · 서한을 바탕으로 다시 구성한 데모 판매자입니다. 이름은 별명이며, 실제 투자자나 회사가 운영하거나 보증하는 계정이 아닙니다.";
+const publicSeller = (id: string, name: string, tagline: string, quote: string, bio: [string, string], since: string, price: number, styles: string[]): Trader => ({
+  ...demo(id, name, tagline, "국내 주식", "장기 보유", styles, [], price),
+  intro: bio[0],
+  quote,
+  bio: [...bio, PUBLIC_NOTICE],
+  since,
+});
+const PUBLIC: Trader[] = [
+  publicSeller("t43", "미리미리", "국내 중소형 가치주 분할 매수", "미리 정하고, 나눠 산다",
+    ["국내 중소형주에서 저평가된 회사를 골라 지분을 여러 번에 나눠 모읍니다.", "산 이유와 계획은 메모로 남기고, 산 뒤에는 서두르지 않고 오래 들고 갑니다."], "2025-04", 12900, ["가치 투자", "중장기"]),
+  publicSeller("t44", "정렬주의자", "공개 서한 · 공개매수 참여", "요구는 공개로, 매매는 계획대로",
+    ["지분을 가진 회사에 공개 서한으로 주주환원과 지배구조 개선을 요구합니다.", "공개매수처럼 가격이 정해진 기회가 오면, 미리 적어 둔 계획대로 참여합니다."], "2022-05", 9900, ["가치 투자", "중장기"]),
+  publicSeller("t45", "엠빅딜", "공개매수로 사는 큰 거래", "값은 먼저 발표하고, 그 값에 산다",
+    ["회사 경영권이 걸린 큰 거래를 하며, 살 가격과 수량을 공개매수로 먼저 발표합니다.", "발표한 조건으로 체결한 한 번의 매매로, 계획이 실행으로 이어지는 과정을 보여 줍니다."], "2024-09", 9900, ["중장기"]),
+];
+
+export const TRADERS: Trader[] = [...DEMO, EOJIN, ...PUBLIC].map(withSim);
 
 /**
  * 판매 심사: 어떤 방법이든 기록으로 통하는 게 확인되면 판매, 아니면 판매 보류 (목록에서 숨기고 구독 판매 안 함)
@@ -293,7 +321,7 @@ export const SCREEN_RULES = [
   { key: "months", label: "공개한 달", need: 3, unit: "개월", value: (t: Trader) => t.verify.months },
   { key: "trades", label: "체결로 확인된 매매", need: 20, unit: "건", value: (t: Trader) => t.verify.trades },
   { key: "pre", label: "체결 전에 계획이 있던 매매", need: 50, unit: "%", value: (t: Trader) => t.verify.preRate },
-  { key: "follow", label: "전략 이행률", need: 60, unit: "%", value: (t: Trader) => t.follow },
+  { key: "follow", label: "전략 이행률", need: 60, unit: "%", value: (t: Trader) => t.follow ?? 0 },
 ] as const;
 
 export type Screening = { verified: boolean; checks: { label: string; value: number; need: number; unit: string; ok: boolean }[] };

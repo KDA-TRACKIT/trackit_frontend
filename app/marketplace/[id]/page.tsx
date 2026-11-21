@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
 import { useState } from "react";
 import SiteHeader from "../../SiteHeader";
-import { monthLabel, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
+import { followLabel, monthLabel, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
 import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
@@ -135,7 +135,7 @@ export default function TraderPage() {
           </div>
           <div>
             <span title={t.facts ? `매매 ${t.facts.wins + t.facts.losses}건 기준` : "계획대로 한 비율"}>전략 이행률</span>
-            <strong>{t.follow}%</strong>
+            <strong>{followLabel(t.follow)}</strong>
           </div>
           <div>
             <span title="기간 중 가장 크게 빠진 폭">최대 낙폭</span>
@@ -172,7 +172,7 @@ export default function TraderPage() {
                           <StrategyStatsRow strategy={s} />
                           <div className="mk-strat-num">
                             <span className={tone(s.ret)}>수익률 {pct(s.ret)}</span>
-                            <span>이행률 {s.follow}%</span>
+                            <span>이행률 {followLabel(s.follow)}</span>
                             <LikeButton trader={t} strategy={s} fb={fb} notify={notify} />
                           </div>
                         </article>

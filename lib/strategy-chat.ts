@@ -121,12 +121,12 @@ function daily(code: string, market: string): Promise<Bar[]> {
   return barsCache.get(key)!;
 }
 const toCandles = (bars: Bar[]): SimCandle[] => bars.map((b) => [kst(b.time), b.open, b.high, b.low, b.close, b.volume]);
-/** 그 달 전략 차트: 대표 종목은 전략에 든 봉, 다른 종목은 일봉에서 그 달 앞 60일 ~ 뒤 40일 */
+/** 그 달 전략 차트: 대표 종목은 전략에 든 봉, 다른 종목(또는 봉이 저장돼 있지 않은 달 — 공개 자료 판매자)은 일봉에서 그 달 앞 60일 ~ 뒤 40일 */
 async function monthCharts(m: SimMonth, market: string): Promise<ReplyChart[]> {
   const codes = [...new Set([m.symbol.code, ...m.trades.map((t) => t.code)])];
   const out: ReplyChart[] = [];
   for (const code of codes) {
-    if (code === m.symbol.code) out.push({ code, candles: m.candles, trades: m.trades, notes: m.notes, ind: m.ind });
+    if (code === m.symbol.code && m.candles.length) out.push({ code, candles: m.candles, trades: m.trades, notes: m.notes, ind: m.ind });
     else {
       const from = new Date(Date.parse(`${m.month}-01T00:00:00Z`) - 60 * 86_400_000).toISOString().slice(0, 10);
       const to = new Date(Date.parse(`${m.month}-01T00:00:00Z`) + 40 * 86_400_000).toISOString().slice(0, 10);

@@ -10,7 +10,7 @@ import { rememberListUrl } from "../../lib/market-list";
 import { fitZoom } from "../../lib/fit-script";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
-import { MARKETS, PERIODS, TRADERS, TYPES, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
+import { MARKETS, PERIODS, TRADERS, TYPES, followLabel, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
 import { getMarketRankings, type MarketRankings } from "../../lib/api/market-rankings";
@@ -299,7 +299,7 @@ function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { 
           )}
           {period === "all" && trader.monthly.length > 0 && <small className="mk-trader-span">{spanOf(trader)}</small>}
         </div>
-        <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{trader.follow}%</b></div>
+        <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{followLabel(trader.follow)}</b></div>
         <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b>{mine && <small className="mk-trader-span">내가 판매 중</small>}</div>
       </Link>
     </li>
