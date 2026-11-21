@@ -1,6 +1,8 @@
 /* 전략보관함 · 내 노트 (Figma Trackit 2182:6164 리스트형 · 종목형, 1876:5541 달력형). 색 · 크기는 Figma 값 그대로 */
 /* 버튼 규칙은 앞에 .mm-page — 전략 마켓 공통 .mk-page button { font:inherit } 보다 세게 (안 그러면 글자 크기가 16px 로 덮임) */
 
+html:not([data-theme="dark"]) .mm-page { background-color:#fff; }
+
 /* 달력 수익률 색 (model.ts retColor · retGradient 가 칸과 범례에 같이 씀): 0 = 보통 칸 색 → 눈금 끝 = Figma 끝 색 */
 .mm-page { --ret-zero:#f4f6fa; --ret-up:#9ae3b9; --ret-down:#fec2c0; }
 html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b; --ret-down:#803843; }
