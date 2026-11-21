@@ -549,7 +549,7 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-sortdd-list button.on { background:#eef2f9; color:#0f2367; font-weight:800; }
 .mk-heart { display:inline-flex; align-items:center; gap:3px; color:var(--mk-like); font-size:12px; font-weight:600; }
 .mk-trader-page { background:var(--c-surface); }
-.mk-trader-page .mk-wrap { width:min(1060px,calc(100% - 48px)); padding-top:56px; }
+:is(.mk-trader-page, .mm-page, .ar-subscriptions-page, .an-chat-page) > .mk-wrap { width:min(1060px,calc(100% - 48px)); padding-top:56px; }
 .mk-trader-page .mk-title { color:var(--mk-primary); }
 .mk-trader-page .mk-title,
 :is(.mm-page, .ar-subscriptions-page, .an-chat-page) .ar-title-row .mk-title { font-size:40px; line-height:48px; font-weight:600; }
@@ -599,7 +599,7 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .mk-trader-page .mk-pager button { min-width:42px; height:36px; border-radius:12px; font-size:14px; }
 
 @media (max-width:800px) {
-  .mk-trader-page .mk-wrap { width:calc(100% - 32px); padding-top:32px; }
+  :is(.mk-trader-page, .mm-page, .ar-subscriptions-page, .an-chat-page) > .mk-wrap { width:calc(100% - 32px); padding-top:32px; }
   .mk-trader-page .mk-title,
   :is(.mm-page, .ar-subscriptions-page, .an-chat-page) .ar-title-row .mk-title { font-size:32px; line-height:40px; }
   .mk-trader-page .mk-search { height:54px; padding-inline:12px; }
