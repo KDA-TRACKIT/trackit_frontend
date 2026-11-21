@@ -64,6 +64,7 @@ html[data-theme="dark"] .gnb-noti a.new { background:var(--c-accent-soft); }
 html[data-theme="dark"] .gnb-noti small, html[data-theme="dark"] .gnb-noti-empty { color:var(--c-sub); }
 html[data-theme="dark"] .gnb-noti-kind.sale { background:rgba(79,209,139,.14); color:var(--c-up); }
 html[data-theme="dark"] .gnb-noti-kind.favorite { background:rgba(242,180,60,.14); color:#f2b43c; }
+html[data-theme="dark"] .gnb-noti-kind.note { background:rgba(170,130,230,.16); color:#c3a4f0; }
 html[data-theme="dark"] .gnb-chip { background:var(--c-accent); color:var(--c-on-accent); }
 html[data-theme="dark"] button.gnb-chip.gnb-user { background:none; }
 html[data-theme="dark"] .gnb-chip-loading { background:var(--c-subtle); }

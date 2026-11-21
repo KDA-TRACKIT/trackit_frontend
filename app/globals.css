@@ -392,3 +392,4 @@ html[data-theme="dark"] .ti .ti-nav .ti-brand { color:var(--c-brand); }
   .gnb-account-box > button.gnb-chip.gnb-user .gnb-name { flex:none; overflow:visible; white-space:nowrap; }
 }
 .gnb-noti-kind.alert { background:#e8eefc; color:#0f2367; }
+.gnb-noti-kind.note { background:#f3ecfb; color:#6b3fa0; }
