@@ -262,7 +262,12 @@ summary = dict(persona=None, eq=eq, mIdx=m_idx, asOf=eq_hist[-1][0], monthly=mon
                facts=dict(wins=sum(1 for t in trades if t["ret"] > 0), losses=sum(1 for t in trades if t["ret"] <= 0),
                           best=dict(name=best["name"], ret=best["ret"], d=best["entry"]["d"]), worst=dict(name=worst["name"], ret=worst["ret"], d=worst["entry"]["d"]),
                           followed=sum(1 for t in trades if t["followed"]), avgHold=round(sum(hold(t) for t in trades) / n, 1)))
-detail = dict(id="t42", market="US", rule=dict(key=KEY2, name=RULE, desc=RULE_DESC), symbols=[dict(code=c, name=META[c]["name"]) for c in P2],
+# 전략 = 섹터 안에서 끊은 기간 (2026-11-21): 1기 바이오 · 테마는 메모 20개마다, 2기 AI 기술주는 메모 30개마다. 섹터가 바뀌면 새 전략
+d1, c1 = E.cut_strategies([m for m in months if m["phase"] == 1], monthly, "바이오 · 테마", "급등 따라 사기", 20, "2023-11-01")
+d2, c2 = E.cut_strategies([m for m in months if m["phase"] == 2], monthly, "AI 기술주", "골든크로스 · TQQQ 맥점", 30, "2026-12-01")
+strategies, summary["strategies"] = d1 + d2, c1 + c2
+for k, (a, b) in enumerate(zip(strategies, summary["strategies"])): a["key"] = b["key"] = f"s{k + 1}"
+detail = dict(id="t42", market="US", rule=dict(key=KEY2, name=RULE, desc=RULE_DESC), symbols=[dict(code=c, name=META[c]["name"]) for c in P2], strategies=strategies,
               phases=[dict(n=1, from_="2023-01", to=T1_END, label="바이오 · 테마 급등 추격", symbols=[META[c]["name"] for c in P1]),
                       dict(n=2, from_="2023-11", to="2026-11", label="AI 기술주 골든크로스 · TQQQ 맥점", symbols=syms)],
               revisions=[dict(d="2023-11-01", kind="UPDATE", text=turn_text), dict(d=T3, kind="UPDATE", text=turn3_text)],

@@ -29,7 +29,7 @@ export default function PurchasedTraderPage() {
   const dark = useDark();
   // 구독으로 연 달 + 누구나 보는 무료 첫 전략
   const months = useMemo(
-    () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).map((s) => s.month) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).map((s) => s.month) : [])])].sort().reverse(),
+    () => [...new Set([...(t && subscribed(passes, id) ? strategiesOf(t).flatMap((s) => s.months) : []), ...passes.filter((p) => p.traderId === id && p.used).map((p) => p.used!.month), ...(t ? strategiesOf(t).filter((s) => s.free).flatMap((s) => s.months) : [])])].sort().reverse(),
     [passes, id, t],
   );
   const [pick, setPick] = useState<string | null>(null);

@@ -42,7 +42,7 @@ export function useLikeTotals(): Record<string, number> {
   );
 }
 
-// ── 트레이더 한 명 (상세 · 월별 전략) ──
+// ── 트레이더 한 명 (상세 · 전략) ──
 const cache = new Map<string, TraderFeedback>();
 const listeners = new Map<string, Set<() => void>>();
 

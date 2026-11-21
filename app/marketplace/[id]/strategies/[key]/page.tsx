@@ -1,14 +1,14 @@
 "use client";
-// 월별 전략 보기: 매매 규칙 · 그 달 차트에 그은 선(지지선 · 채널 · 피보나치 · 엘리어트 파동 …) · 매수/매도 · 계획대로 했는지
+// 전략 보기 (전략 = 판매자가 섹터 안에서 끊은 기간 하나): 매매 규칙 · 기간 안 차트에 그은 선(지지선 · 채널 · 피보나치 · 엘리어트 파동 …) · 매수/매도 · 계획대로 했는지
 //   전략 하나에는 매매 기록 여러 건 + 매매가 아닌 증시 메모 · 종목 노트도 들어감 → 날짜순 한 줄 기록으로
-//   내용은 서버만 읽는 data/market-sim/{id}.json → /strategy-data/{id}/{달} 이 구독을 확인하고 그 달 것만 보냄 (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
-//   구독으로 연 달이나 무료 첫 전략만 내용을 보여 주고, 아니면 잠금 + 구독 버튼
+//   내용은 서버만 읽는 data/market-sim/{id}.json → /strategy-data/{id}/{전략 번호} 가 구독을 확인하고 그 전략 것만 보냄 (실제 일봉에 규칙을 돌린 결과, scripts/market-sim)
+//   구독 중이거나 무료 첫 전략만 내용을 보여 주고, 아니면 잠금 + 구독 버튼
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../../../SiteHeader";
 import { opened, usePasses } from "../../../../../lib/purchases";
-import { monthLabel, pct, strategiesOf, tone, traderById } from "../../../data";
+import { pct, periodLabel, strategyOf, tone, traderById } from "../../../data";
 import { StrategyButton, useNotice } from "../../../parts";
 import StrategyChart from "../../../StrategyChart";
 import { useDark, type SimDetail } from "../../../GuessFirst";
@@ -18,30 +18,29 @@ import "../../../marketplace.css";
 import BeeLoader from "../../../../BeeLoader";
 
 export default function StrategyView() {
-  const { id, month } = useParams<{ id: string; month: string }>();
+  const { id, key: sKey } = useParams<{ id: string; key: string }>();
   const t = traderById(id);
   const passes = usePasses();
   const { notify, node } = useNotice();
   const dark = useDark();
   const [detail, setDetail] = useState<{ id: string; data: SimDetail | null } | null>(null);
-  // 구독으로 이 달을 열면 다시 받음 (서버가 구독을 확인하고 그 달 것만 줌)
-  const isOpen = !!t && opened(passes, t.id, month);
-  const key = `${id}/${month}/${isOpen}`;
+  const s = t ? strategyOf(t, sKey) : undefined;
+  // 구독하면 다시 받음 (서버가 구독을 확인하고 그 전략 것만 줌). 예전에 달 단위로 연 기록도 인정
+  const isOpen = !!t && !!s && [s.key, ...s.months].some((r) => opened(passes, t.id, r));
+  const key = `${id}/${sKey}/${isOpen}`;
 
   useEffect(() => {
     let cancelled = false;
-    fetchStrategyMonth(id, month)
+    fetchStrategyMonth(id, sKey)
       .then((data) => !cancelled && setDetail({ id: key, data }))
       .catch(() => !cancelled && setDetail({ id: key, data: null }));
     return () => {
       cancelled = true;
     };
-  }, [id, month, key]);
+  }, [id, sKey, key]);
 
-  const list = t ? strategiesOf(t) : [];
-  const s = list.find((x) => x.month === month);
   // 무료 전략을 열면 전략보관함에 남김 (구독 없이 본 것도)
-  const freeKey = t && s?.free ? `${t.id}|${t.name}|${month}|${s.title}` : "";
+  const freeKey = t && s?.free ? `${t.id}|${t.name}|${s.key}|${s.title}` : "";
   useEffect(() => {
     if (!freeKey) return;
     const [traderId, traderName, m, ...title] = freeKey.split("|");
@@ -59,8 +58,11 @@ export default function StrategyView() {
       </main>
     );
   }
-  const unlocked = !!s.free || opened(passes, t.id, month);
-  const m = detail?.id === key ? detail.data?.months.find((x) => x.month === month) : undefined;
+  const unlocked = !!s.free || isOpen;
+  // 이 전략 기간의 달 기록 (오래된 것부터)
+  const ms = detail?.id === key ? (detail.data?.months ?? []).filter((x) => s.months.includes(x.month)).sort((a, b) => a.month.localeCompare(b.month)) : [];
+  const allTrades = ms.flatMap((m) => m.trades);
+  const allNotes = ms.flatMap((m) => m.notes ?? []);
   const loading = detail?.id !== key;
   const cur = (n: number) => (detail?.data?.market === "US" ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : `${n.toLocaleString("ko-KR")}원`);
 
@@ -73,16 +75,20 @@ export default function StrategyView() {
         </Link>
         <section className="mk-card mk-sim-head">
           <small>
-            {monthLabel(month)} 전략{s.free ? " · 무료" : ""}
+            {s.market} · {s.sector} · {periodLabel(s, t.asOf)}
+            {s.free ? " · 무료" : ""}
           </small>
           <h1>{s.title}</h1>
           <p>{s.summary}</p>
           <div className="mk-sim-nums">
             <span>
-              그 달 수익률 <b className={tone(s.ret)}>{pct(s.ret)}</b>
+              기간 수익률 <b className={tone(s.ret)}>{pct(s.ret)}</b>
             </span>
             <span>
               계획대로 한 비율 <b>{s.follow}%</b>
+            </span>
+            <span>
+              메모 <b>{s.memos}개</b>
             </span>
             {(detail?.data?.rule.name ?? t.rule?.name) && (
               <span>
@@ -96,11 +102,15 @@ export default function StrategyView() {
 
         {!unlocked ? (
           <section className="mk-card mk-sim-lock">
-            <strong>이 달 전략에 담긴 것 (구매 전 미리 보기)</strong>
+            <strong>이 전략에 담긴 것 (구매 전 미리 보기)</strong>
             <ul className="mk-sim-peek">
               <li>
-                <span>이 달에 진입한 매매</span>
+                <span>이 기간에 진입한 매매</span>
                 <b>{s.trades ?? 0}건</b>
+              </li>
+              <li>
+                <span>메모</span>
+                <b>{s.memos}개</b>
               </li>
               <li>
                 <span>다룬 종목</span>
@@ -113,15 +123,15 @@ export default function StrategyView() {
                 </li>
               )}
             </ul>
-            <p>열면 차트에 그은 선, 진입 · 손절 · 목표 근거, 매매를 시간순으로, 계획대로 했는지까지 볼 수 있어요. 매매는 진입한 달 전략에 들어가요.</p>
+            <p>열면 차트에 그은 선, 진입 · 손절 · 목표 근거, 매매를 시간순으로, 계획대로 했는지까지 볼 수 있어요. 매매는 진입한 날이 들어 있는 전략에 들어가요.</p>
             <div className="mk-buyrow">
               <StrategyButton trader={t} strategy={s} className="mk-primary" notify={notify} />
             </div>
           </section>
         ) : loading ? (
           <div className="mk-card mk-empty"><BeeLoader /></div>
-        ) : !m || !detail?.data ? (
-          <p className="mk-card mk-empty">이 달의 전략 내용을 불러오지 못했어요.</p>
+        ) : !ms.length || !detail?.data ? (
+          <p className="mk-card mk-empty">이 전략 내용을 불러오지 못했어요.</p>
         ) : (
           <>
             <section className="mk-card mk-sim-rule">
@@ -130,24 +140,27 @@ export default function StrategyView() {
               <small>매매 종목: {detail.data.symbols.map((x) => x.name).join(" · ")}</small>
             </section>
 
-            <section className="mk-card mk-sim-chart-card">
-              <h2>
-                {m.symbol.name} <small>{monthLabel(month)} · 그은 선과 매수 · 매도</small>
-              </h2>
-              {m.candles.length ? <StrategyChart candles={m.candles} trades={m.trades} notes={m.notes} ind={m.ind} code={m.symbol.code} dark={dark} currency={detail.data.market === "US" ? "USD" : "KRW"} /> : <p className="mk-empty">차트 데이터가 없어요.</p>}
-            </section>
+            {/* 차트는 달 단위로 저장돼 있어 기간 안의 달마다 한 장 (그 달에 가장 많이 매매한 종목) */}
+            {ms.map((m) => (
+              <section key={m.month} className="mk-card mk-sim-chart-card">
+                <h2>
+                  {m.symbol.name} <small>{m.month.replace("-", ".")} · 그은 선과 매수 · 매도</small>
+                </h2>
+                {m.candles.length ? <StrategyChart candles={m.candles} trades={m.trades} notes={m.notes} ind={m.ind} code={m.symbol.code} dark={dark} currency={detail.data!.market === "US" ? "USD" : "KRW"} /> : <p className="mk-empty">차트 데이터가 없어요.</p>}
+              </section>
+            ))}
 
             <section className="mk-card mk-sim-trades">
               <h2>
-                이 달의 기록{" "}
+                이 전략의 기록{" "}
                 <small>
-                  매매 {m.trades.length}건 · 종목 노트 {(m.notes ?? []).filter((n) => n.type === "stock").length}개 · 증시 노트 {(m.notes ?? []).filter((n) => n.type === "market").length}개
+                  매매 {allTrades.length}건 · 종목 노트 {allNotes.filter((n) => n.type === "stock").length}개 · 증시 노트 {allNotes.filter((n) => n.type === "market").length}개
                 </small>
               </h2>
               <ul>
                 {[
-                  ...m.trades.map((tr) => ({ d: tr.entry.d, k: `t-${tr.code}-${tr.entry.d}`, tr })),
-                  ...(m.notes ?? []).map((n, x) => ({ d: n.d, k: `n-${x}`, n })),
+                  ...allTrades.map((tr) => ({ d: tr.entry.d, k: `t-${tr.code}-${tr.entry.d}`, tr })),
+                  ...allNotes.map((n, x) => ({ d: n.d, k: `n-${x}`, n })),
                 ]
                   .sort((a, b) => a.d.localeCompare(b.d))
                   .map((row) =>
@@ -180,7 +193,7 @@ export default function StrategyView() {
                     ) : null,
                   )}
               </ul>
-              {!m.trades.length && !(m.notes ?? []).length && <p className="mk-empty">이 달은 기록이 없어요.</p>}
+              {!allTrades.length && !allNotes.length && <p className="mk-empty">이 기간은 기록이 없어요.</p>}
             </section>
           </>
         )}

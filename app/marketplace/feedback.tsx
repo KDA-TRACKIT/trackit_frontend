@@ -1,18 +1,19 @@
 "use client";
-// 전략 후기 조각: 전략(달)마다 꿀 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
+// 전략 후기 조각: 전략마다 꿀 버튼 · 트레이더 상세의 "구매자 후기" (익명 댓글, 쓰는 중에 개인정보 · 전략 세부 내용 미리 경고)
 import HoneyPot from "../HoneyPot";
 import { useState } from "react";
 import { errorMessage } from "../../lib/api/client";
 import { filterComment } from "../../lib/comment-filter";
 import { postComment, removeComment, toggleLike, type TraderFeedback } from "../../lib/feedback";
-import { monthLabel, strategiesOf, type Trader } from "./data";
+import { strategiesOf, strategyOf, type Strategy, type Trader } from "./data";
 
-/** 전략 하나(달)의 꿀 — 구독으로 연 사람만 누를 수 있음 */
-export function LikeButton({ trader, month, fb, notify }: { trader: Trader; month: string; fb: TraderFeedback | null; notify: (m: string) => void }) {
+/** 전략 하나의 꿀 — 구독한 사람만 누를 수 있음. 예전에 달 단위로 받은 꿀은 그 달이 들어 있는 전략에 합쳐 보여 줌 */
+export function LikeButton({ trader, strategy, fb, notify }: { trader: Trader; strategy: Strategy; fb: TraderFeedback | null; notify: (m: string) => void }) {
   const [busy, setBusy] = useState(false);
-  const count = fb?.likesByMonth[month] ?? 0;
-  const liked = !!fb?.myLikes.includes(month);
-  const canLike = !!fb?.subscribed || !!fb?.openedMonths.includes(month);
+  const refs = [strategy.key, ...strategy.months];
+  const count = refs.reduce((a, r) => a + (fb?.likesByMonth[r] ?? 0), 0);
+  const liked = !!fb?.myLikes.includes(strategy.key);
+  const canLike = !!fb?.subscribed || refs.some((r) => fb?.openedMonths.includes(r));
   return (
     <button
       type="button"
@@ -24,7 +25,7 @@ export function LikeButton({ trader, month, fb, notify }: { trader: Trader; mont
         if (!canLike) return notify("구독한 사람만 꿀을 줄 수 있어요");
         setBusy(true);
         try {
-          await toggleLike(trader.id, month);
+          await toggleLike(trader.id, strategy.key);
         } catch (e) {
           notify(errorMessage(e));
         } finally {
@@ -49,7 +50,10 @@ const ago = (iso: string) => {
 
 /** 트레이더 상세 "구매자 후기": 익명 목록 + 연 전략이 있으면 쓰기 */
 export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeedback | null; notify: (m: string) => void }) {
-  const opened = fb?.subscribed ? strategiesOf(trader).map((s) => s.month).sort() : (fb?.openedMonths ?? []);
+  // 후기를 남길 수 있는 전략 (오래된 것부터): 구독 중이면 전부, 아니면 예전에 연 것
+  const all = strategiesOf(trader).reverse();
+  const opened = (fb?.subscribed ? all : all.filter((s) => [s.key, ...s.months].some((r) => fb?.openedMonths.includes(r)))).map((s) => s.key);
+  const titleOf = (ref: string) => strategyOf(trader, ref)?.title ?? "전략";
   const [month, setMonth] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,7 +91,7 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
             <select value={target} onChange={(e) => setMonth(e.target.value)} aria-label="후기를 남길 전략">
               {opened.map((m) => (
                 <option key={m} value={m}>
-                  {monthLabel(m)} 전략
+                  {titleOf(m)}
                 </option>
               ))}
             </select>
@@ -116,7 +120,7 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
             <li key={c.id} className="mk-card mk-review">
               <div className="mk-review-top">
                 <b>익명 구매자</b>
-                <span className="mk-review-month">{monthLabel(c.month)} 전략</span>
+                <span className="mk-review-month">{titleOf(c.month)}</span>
                 <time dateTime={c.createdAt}>{ago(c.createdAt)}</time>
                 {c.mine && (
                   <button

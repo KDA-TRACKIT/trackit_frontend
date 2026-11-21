@@ -8,6 +8,7 @@ import { startCheckout } from "../../lib/api/payments";
 import { errorMessage } from "../../lib/api/client";
 import { opened, subscribed, subscriptionEnd, usePasses } from "../../lib/purchases";
 import type { Strategy, Trader } from "./data";
+import { useProfile } from "../AccountChip";
 
 /** 누적 수익 곡선 (월 수익률을 이어 붙임). 끝이 위면 초록, 아래면 빨강 */
 /**
@@ -171,36 +172,38 @@ export function PassBuyButton({
   );
 }
 
-/** 월별 전략 카드의 숫자 줄: 작성 N일 · 매매 N건 · 노트 N개 (숫자가 없는 예전 전략은 요약 문장) */
+/** 전략 카드의 숫자 줄: 작성 N일 · 매매 N건 · 메모 N개 (숫자가 없는 예전 전략은 요약 문장) */
 export function StrategyStatsRow({ strategy, className = "mk-strat-stats" }: { strategy: Strategy; className?: string }) {
   const st = strategy.stats;
   if (!st) return <p>{strategy.summary.replace(/\s*\([^)]*\)/g, "")}</p>;
-  const notes = st.stock + st.market;
+  // 메모 = 매매 메모(매매마다 하나) + 종목 노트 + 증시 메모 + 복기
+  const review = Math.max(0, strategy.memos - st.trades - st.stock - st.market);
+  const parts = `매매 메모 ${st.trades}개 · 종목 노트 ${st.stock}개 · 증시 메모 ${st.market}개${review ? ` · 복기 ${review}개` : ""}`;
   return (
-    <ul className={className} aria-label="이 달 기록">
+    <ul className={className} aria-label="이 전략의 기록">
       <li>
         작성 <b>{st.days}</b>일
       </li>
       <li>
         매매 <b>{st.trades}</b>건
       </li>
-      {/* 올리면 종목 노트 · 증시 메모로 나눠 보여 줌 (title 툴팁은 늦게 뜨거나 안 떠서 직접 그림) */}
-      <li className="mk-tip" tabIndex={0} aria-label={`노트 ${notes}개: 종목 노트 ${st.stock}개 · 증시 메모 ${st.market}개`}>
-        노트 <b>{notes}</b>개
+      {/* 올리면 매매 메모 · 종목 노트 · 증시 메모 · 복기로 나눠 보여 줌 (title 툴팁은 늦게 뜨거나 안 떠서 직접 그림) */}
+      <li className="mk-tip" tabIndex={0} aria-label={`메모 ${strategy.memos}개: ${parts}`}>
+        메모 <b>{strategy.memos}</b>개
         <span className="mk-tip-box" role="tooltip">
-          종목 노트 {st.stock}개 · 증시 메모 {st.market}개
+          {parts}
         </span>
       </li>
     </ul>
   );
 }
 
-/** 월별 전략 버튼: 구독 중이거나 무료 첫 전략이면 "보기", 아니면 "구독하기" */
+/** 전략 버튼: 구독 중이거나 무료 첫 전략이면 "보기", 아니면 "구독하기" */
 export function StrategyButton({ trader, strategy, className = "mk-primary", notify }: { trader: Trader; strategy: Strategy; className?: string; notify: (m: string) => void }) {
   const passes = usePasses();
-  if (opened(passes, trader.id, strategy.month) || strategy.free) {
+  if (opened(passes, trader.id, strategy.key) || strategy.free) {
     return (
-      <Link href={`/marketplace/${trader.id}/strategies/${strategy.month}`} className={`${className} mk-owned`} aria-label={`${strategy.title} 보기`}>
+      <Link href={`/marketplace/${trader.id}/strategies/${strategy.key}`} className={`${className} mk-owned`} aria-label={`${strategy.title} 보기`}>
         {strategy.free ? "무료로 보기 ›" : "보기 ›"}
       </Link>
     );
@@ -208,9 +211,11 @@ export function StrategyButton({ trader, strategy, className = "mk-primary", not
   return <PassBuyButton trader={trader} className={className} notify={notify} />;
 }
 
-/** 월 구독 상자: (구독 중이면 끝나는 날) + 구독 버튼. 결제 1번 = 30일 */
+/** 월 구독 상자: (구독 중이면 끝나는 날) + 구독 버튼. 결제 1번 = 30일. 본인 전략은 구독할 수 없음 (서버 결제 준비에서도 막음) */
 export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: string) => void }) {
   const passes = usePasses();
+  const { profile } = useProfile();
+  if (profile?.name === trader.name) return <p className="mk-stopped">내가 올린 전략이라 구독할 수 없어요.</p>;
   const end = subscriptionEnd(passes, trader.id);
   const active = subscribed(passes, trader.id);
   return (

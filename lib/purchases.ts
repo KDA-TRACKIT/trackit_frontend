@@ -63,5 +63,5 @@ export function usePassesLoaded() {
 
 /** 월 구독 (lib/subscription): 구독 중이면 그 트레이더 전략을 다 봄 */
 export { SUB_DAYS, subscriptionEnd, subscribed } from "./subscription";
-/** 이 트레이더의 이 달 전략을 볼 수 있는지 (구독 중이거나 예전 구독으로 연 달) */
+/** 이 트레이더의 이 전략(전략 번호 s1 … 또는 달)을 볼 수 있는지 (구독 중이거나 예전 구독으로 연 달) */
 export { canView as opened } from "./subscription";

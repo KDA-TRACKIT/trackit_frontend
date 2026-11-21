@@ -635,3 +635,14 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 /* 전략 구매 버튼 배치 */
 .mk-buyrow { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 .mk-buyrow > :last-child { flex:1 1 auto; }
+
+/* 전략을 시장 → 섹터로 묶어 보여 줌 (2026-11-21: 전략 = 판매자가 섹터 안에서 끊은 기간) */
+.mk-market-group { margin-top:18px; }
+.mk-market-group:first-of-type { margin-top:4px; }
+.mk-page .mk-market-name { margin:0 0 8px; padding-bottom:8px; border-bottom:1px solid var(--c-line, var(--c-subtle)); color:var(--c-ink); font-size:16px; font-weight:800; }
+.mk-sector-group { margin:0 0 18px; scroll-margin-top:80px; }
+.mk-sector-head { display:flex; align-items:baseline; gap:8px; margin:12px 0 10px; }
+.mk-page .mk-sector-head h3, .mk-page .mk-sector-head h4 { margin:0; color:var(--mk-primary); font-size:15px; font-weight:800; }
+.mk-sector-head span { color:var(--c-faint); font-size:12.5px; }
+.mk-sector-head a { margin-left:auto; color:var(--mk-primary); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.mk-sector-group .mk-slist { margin-top:0; }

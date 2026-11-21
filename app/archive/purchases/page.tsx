@@ -3,7 +3,7 @@
 //   구독을 산 트레이더 + 무료 전략만 본 트레이더를 카드로: 보유 구독(티켓 그림) · 전략 이행률 · 최근 1개월 수익률 · 보유 전략
 //   보유 구독 = 아직 안 쓴 구독만 (전략을 연 구독은 '보유 전략'의 달로 보임). 다 썼으면 0개
 //   보유 구독 티켓은 장수만큼 겹쳐 '보유 구독' 글자 끝에 맞춰 끝나고, 7장부터 가운데 ⋯ (PassTickets)
-//   카드를 누르면 그 트레이더의 월별 전략 (/archive/purchases/[id])
+//   카드를 누르면 그 트레이더의 전략 기록 (/archive/purchases/[id], 차트는 달 단위)
 //   구독 = 계정(lib/purchases → GET /me/passes), 무료로 본 전략 = 이 브라우저(lib/free-views)
 //   실제 판매 등록을 산 것(서버 GET /market/purchases)은 있으면 아래에 따로
 import Link from "next/link";
@@ -13,7 +13,7 @@ import { apiRequest } from "../../../lib/api/client";
 import { subscribed, subscriptionEnd, usePasses, usePassesLoaded } from "../../../lib/purchases";
 import { useFreeViews } from "../../../lib/free-views";
 import { useLikeTotals } from "../../../lib/feedback";
-import { monthLabel, pct, strategiesOf, tone, traderById } from "../../marketplace/data";
+import { monthLabel, pct, strategiesOf, strategyOf, tone, traderById } from "../../marketplace/data";
 import HoneyPot from "../../HoneyPot";
 import "../../marketplace/marketplace.css";
 import "../archive.css";
@@ -58,7 +58,7 @@ export default function PurchasesPage() {
     const t = traderById(id);
     const active = subscribed(passes, id);
     const end = subscriptionEnd(passes, id);
-    const months = [...new Set([...(active && t ? strategiesOf(t).map((s) => s.month) : []), ...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.map((v) => v.month)])].sort().reverse();
+    const months = [...new Set([...(active && t ? strategiesOf(t).flatMap((s) => s.months) : []), ...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.flatMap((v) => (t ? (strategyOf(t, v.month)?.months ?? []) : []))])].sort().reverse();
     return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, paid: mine.length > 0, active, end, months, ret: t?.monthly.at(-1)?.ret ?? null };
   });
   const nothing = server !== null && !traders.length && !server.length;
