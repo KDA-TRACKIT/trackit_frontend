@@ -118,7 +118,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
 
   return (
     <div className="mm-rv">
-      {!!replayStocks.length && <ReplayView key={`${stock}:${from}`} records={records} trades={trades} stocks={replayStocks} from={from} onOpenNote={onOpenNote} />}
+      {!!replayStocks.length && <ReplayView key={stock} records={records} trades={trades} stocks={replayStocks} onOpenNote={onOpenNote} />}
       {failed && <p className="mm-card mm-rv-empty">로그인하고 증권사를 연결하면 실제 체결과 비교해요. 지금은 노트만 보여요.</p>}
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>

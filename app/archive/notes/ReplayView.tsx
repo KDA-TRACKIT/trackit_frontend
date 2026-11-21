@@ -21,11 +21,11 @@ const moneyFor = (code: string) => {
   return (n: number | null) => (n === null ? "—" : f(n));
 };
 
-export default function ReplayView({ records, trades, stocks, from, onOpenNote }: { records: TradeRecord[]; trades: Trade[]; stocks: { code: string; name: string }[]; from: string; onOpenNote: (id: string) => void }) {
+export default function ReplayView({ records, trades, stocks, onOpenNote }: { records: TradeRecord[]; trades: Trade[]; stocks: { code: string; name: string }[]; onOpenNote: (id: string) => void }) {
   const [picked, setPicked] = useState("");
   const code = stocks.find((stock) => stock.code === picked)?.code ?? stocks[0]?.code ?? "";
-  // 기간 안의 단계만 표시하되 그 전에 만든 계획과 차트 선을 이어받음.
-  const steps = useMemo(() => (code ? buildReplay(records, trades, code).filter((step) => step.date >= from) : []), [records, trades, code, from]);
+  // 그 종목에 남긴 첫 노트부터 끝까지 (2026-11-21: 화면의 기간 선택과 상관없이 처음부터 재생)
+  const steps = useMemo(() => (code ? buildReplay(records, trades, code) : []), [records, trades, code]);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -58,7 +58,7 @@ export default function ReplayView({ records, trades, stocks, from, onOpenNote }
         ))}
       </div>
       {!steps.length ? (
-        <p className="mm-rv-muted">{from ? "선택한 기간에 " : ""}{name}에 남긴 노트 · 매매가 없어요.</p>
+        <p className="mm-rv-muted">{name}에 남긴 노트 · 매매가 없어요.</p>
       ) : (
         <>
           <div className="mm-rp-body">
