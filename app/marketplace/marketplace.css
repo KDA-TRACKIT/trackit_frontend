@@ -493,7 +493,8 @@ html[data-theme="dark"] .mk-stat p { color:#aab4c6; opacity:1; }
 .mk-strat p { font-size:14px; line-height:1.55; }
 .mk-strat-num { font-size:14px; }
 .mk-strat > strong { color:var(--c-ink); font-size:18px; }
-.mk-free { padding:14px 18px; background:var(--c-subtle); }
+/* 무료 첫 전략 안내: 페이지 바탕(--c-bg)과 거의 같던 --c-subtle 대신 한 단계 진한 --c-accent-soft 로 구분 */
+.mk-free { padding:14px 18px; background:var(--c-accent-soft); }
 .mk-free strong { color:var(--c-ink); font-size:15px; font-weight:700; }
 @media (max-width:760px) { .mk-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .mk-kpi { border-left:0 !important; border-top:1px solid var(--c-line); } }
 
