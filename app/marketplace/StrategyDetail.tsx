@@ -241,7 +241,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
           href: t ? `/marketplace/${t.id}` : "/marketplace",
           label: t?.name ?? "전략 마켓",
         }
-      : { href: "/archive/purchases", label: "트레이더 목록" };
+      : { href: "/archive/purchases", label: "구독 목록" };
   const hrefOf = (key: string) => (entry === "market" ? `/marketplace/${traderId}/strategies/${key}` : `/archive/purchases/${traderId}/${key}`);
 
   if (!t || !s) {

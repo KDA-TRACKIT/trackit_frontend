@@ -45,7 +45,7 @@ export default function PurchasedTraderPage() {
       <div className="mk-wrap ar-wrap ar-pt">
         <Link href="/archive/purchases" className="ar-pt-back">
           <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
-          트레이더 목록
+          구독 목록
         </Link>
         {loaded && !target ? (
           <p className="mk-card mk-empty">{t ? "이 트레이더를 구독하면 전략을 볼 수 있어요." : "트레이더를 찾을 수 없어요."}</p>
