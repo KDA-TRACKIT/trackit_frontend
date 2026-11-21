@@ -76,6 +76,10 @@ export function getPositions(status?: "OPEN" | "CLOSED") {
  * 일지에 안 묶인 체결(/trades/unlinked)도 함께
  */
 export async function recentTrades(limitJournals = 30): Promise<(Trade & { journalTitle: string | null })[]> {
+  // 한 번에 (/trades/recent, 2026-11-21). 서버가 아직 옛 버전이면 일지마다 따로
+  try {
+    return await apiRequest<(Trade & { journalTitle: string | null })[]>("/trades/recent?limit=300");
+  } catch {}
   const [journals, unlinked] = await Promise.all([
     apiRequest<Journal[]>(`/journals?limit=${limitJournals}`),
     apiRequest<Trade[]>(`/trades/unlinked`).catch(() => [] as Trade[]),

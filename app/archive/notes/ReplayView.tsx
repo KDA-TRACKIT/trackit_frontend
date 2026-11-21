@@ -10,12 +10,16 @@ import { barDate, isKrCode, loadDaily } from "../bars";
 import type { Bar } from "../../../lib/interval";
 import type { TradeRecord } from "../../../lib/records";
 import { recentTrades, type Trade } from "../../../lib/api/performance";
-import { buildReplay, type ReplayStep } from "../../../lib/replay";
+import { buildReplay, moneyOf, type ReplayStep } from "../../../lib/replay";
+import { fetchBars, searchAllSymbols } from "../../../lib/market-data";
 import { fixZoomPointer } from "../../../lib/zoom-pointer";
 import { shortDate } from "./model";
 import BeeLoader from "../../BeeLoader";
 
-const won = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원`);
+const moneyFor = (code: string) => {
+  const f = moneyOf(code);
+  return (n: number | null) => (n === null ? "—" : f(n));
+};
 
 export default function ReplayView({ records, stocks, initial, onOpenNote }: { records: TradeRecord[]; stocks: { code: string; name: string }[]; initial?: string; onOpenNote: (id: string) => void }) {
   const [code, setCode] = useState(initial ?? stocks[0]?.code ?? "");
@@ -69,7 +73,7 @@ export default function ReplayView({ records, stocks, initial, onOpenNote }: { r
         <>
           <div className="mm-rp-body">
             <ReplayChart code={code} steps={steps} idx={idx} />
-            <StepCard step={step} name={name} onOpenNote={onOpenNote} />
+            <StepCard code={code} step={step} name={name} onOpenNote={onOpenNote} />
           </div>
           <div className="mm-rp-ctrl">
             <button type="button" onClick={() => (setPlaying(false), setI(0))} aria-label="처음으로" disabled={idx === 0}>
@@ -115,7 +119,8 @@ export default function ReplayView({ records, stocks, initial, onOpenNote }: { r
   );
 }
 
-function StepCard({ step, name, onOpenNote }: { step: ReplayStep; name: string; onOpenNote: (id: string) => void }) {
+function StepCard({ step, name, code, onOpenNote }: { step: ReplayStep; name: string; code: string; onOpenNote: (id: string) => void }) {
+  const won = moneyFor(code);
   return (
     <div className={`mm-rp-card ${step.kind === "note" ? "note" : step.side === "매수" ? "buy" : "sell"}`}>
       <div className="mm-rp-when">
@@ -172,9 +177,15 @@ function ReplayChart({ code, steps, idx }: { code: string; steps: ReplayStep[]; 
   const [data, setData] = useState<{ code: string; bars: Bar[] } | null>(null);
   const bars = data?.code === code ? data.bars : null;
   useEffect(() => {
-    if (!isKrCode(code)) return setData({ code, bars: [] });
     let live = true;
-    void loadDaily(code).then((b) => live && setData({ code, bars: b }));
+    if (isKrCode(code)) void loadDaily(code).then((b) => live && setData({ code, bars: b }));
+    else
+      // 미국 종목: 거래소(나스닥 · 뉴욕 · 아멕스)를 찾아 미국 일봉
+      void searchAllSymbols(code)
+        .then((list) => list.find((s) => s.code === code && s.exchange))
+        .then((hit) => (hit?.exchange ? fetchBars(code, "1d", undefined, 3000, hit.exchange).then((r) => r.bars) : []))
+        .catch(() => [])
+        .then((b) => live && setData({ code, bars: b }));
     return () => {
       live = false;
     };
@@ -197,7 +208,7 @@ function ReplayChart({ code, steps, idx }: { code: string; steps: ReplayStep[]; 
     const unfixZoom = fixZoomPointer(box);
     const chart = createChart(box, {
       autoSize: true,
-      localization: { locale: "ko-KR", priceFormatter: (p: number) => Math.round(p).toLocaleString("ko-KR") },
+      localization: { locale: "ko-KR", priceFormatter: (p: number) => (isKrCode(code) ? Math.round(p).toLocaleString("ko-KR") : p.toFixed(2)) },
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: dark ? "#aab2c0" : "#8791a3", fontSize: 11, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: dark ? "#222833" : "#e9edf3" } },
       rightPriceScale: { borderVisible: false },
@@ -214,7 +225,7 @@ function ReplayChart({ code, steps, idx }: { code: string; steps: ReplayStep[]; 
       const last = k === seen.length - 1;
       return s.kind === "note"
         ? { time: day as Time, position: "inBar" as const, shape: "circle" as const, color: "#6e56cf", size: last ? 1.6 : 0.9, text: last ? "노트" : "" }
-        : { time: day as Time, position: s.side === "매수" ? ("belowBar" as const) : ("aboveBar" as const), shape: s.side === "매수" ? ("arrowUp" as const) : ("arrowDown" as const), color: s.side === "매수" ? up : down, text: `${s.side} ${Math.round(s.price).toLocaleString("ko-KR")}` };
+        : { time: day as Time, position: s.side === "매수" ? ("belowBar" as const) : ("aboveBar" as const), shape: s.side === "매수" ? ("arrowUp" as const) : ("arrowDown" as const), color: s.side === "매수" ? up : down, text: `${s.side} ${isKrCode(code) ? Math.round(s.price).toLocaleString("ko-KR") : s.price.toFixed(2)}` };
     });
     markers.sort((a, b) => String(a.time).localeCompare(String(b.time)));
     createSeriesMarkers(candle, markers);
@@ -243,9 +254,9 @@ function ReplayChart({ code, steps, idx }: { code: string; steps: ReplayStep[]; 
       unfixZoom();
       chart.remove();
     };
-  }, [bars, steps, idx]);
+  }, [bars, steps, idx, code]);
 
-  if (!isKrCode(code)) return <div className="mm-rp-chart is-empty">이 종목은 차트를 불러올 수 없어요.</div>;
+  if (bars && !bars.length) return <div className="mm-rp-chart is-empty">이 종목은 차트를 불러올 수 없어요.</div>;
   if (!bars) return <div className="mm-rp-chart is-empty"><BeeLoader size="sm" /></div>;
   return <div ref={el} className="mm-rp-chart" role="img" aria-label="그 순간까지의 일봉 · 그은 선 · 매매 표시" />;
 }
