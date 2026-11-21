@@ -295,7 +295,7 @@ export async function answerLocally(q: string, intent: Intent, target: Target, r
     const extra = mine.filter((r) => (buyCount.get(r.symbol) ?? 0) > 1).length;
     const a = statsOf(theirs.map((t) => ({ ret: t.ret, days: Math.round((Date.parse(t.exit.d) - Date.parse(t.entry.d)) / 86_400_000) })));
     const b = statsOf(mine);
-    const statId = add("성격 비교", `트레이더: 매매 ${a.n}건 · 이긴 비율 ${a.winRate?.toFixed(0) ?? "—"}% · 평균 보유 ${a.avgDays?.toFixed(1) ?? "—"}일 · 계획대로 ${theirs.filter((t) => t.followed).length}건 / 나: 매매 ${b.n}건 · 끝난 ${b.closed}건 · 이긴 비율 ${b.winRate?.toFixed(0) ?? "—"}% · 평균 보유 ${b.avgDays?.toFixed(1) ?? "—"}일 · 손절 늦음 ${late}건 · 추가 매수 ${extra}건`);
+    const statId = add("성격 비교", `트레이더: 매매 ${a.n}건 · 승률 ${a.winRate?.toFixed(0) ?? "—"}% · 평균 보유 ${a.avgDays?.toFixed(1) ?? "—"}일 · 계획대로 ${theirs.filter((t) => t.followed).length}건 / 나: 매매 ${b.n}건 · 끝난 ${b.closed}건 · 이긴 비율 ${b.winRate?.toFixed(0) ?? "—"}% · 평균 보유 ${b.avgDays?.toFixed(1) ?? "—"}일 · 손절 늦음 ${late}건 · 추가 매수 ${extra}건`);
     if (intent === "adherence") {
       if (!mine.length) say(`${from} 뒤로 내 매매가 없어서 이행을 볼 수 없어요.`, myId);
       else {

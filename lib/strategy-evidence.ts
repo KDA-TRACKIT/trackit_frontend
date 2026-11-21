@@ -145,7 +145,7 @@ export async function gatherTrader(detail: SimDetail[], traderName: string, bars
     const wins = trades.filter((t) => t.ret > 0);
     const avg = trades.reduce((s, t) => s + t.ret, 0) / trades.length;
     const days = trades.reduce((s, t) => s + (Date.parse(t.exit.d) - Date.parse(t.entry.d)) / 86_400_000, 0) / trades.length;
-    add("연 달 매매 결과", `${months.map((m) => m.month).join(", ")} · 매매 ${trades.length}건 · 이긴 비율 ${Math.round((wins.length / trades.length) * 100)}% · 평균 ${pct(avg)} · 평균 보유 ${days.toFixed(1)}일 · 계획대로 ${trades.filter((t) => t.followed).length}건`);
+    add("연 달 매매 결과", `${months.map((m) => m.month).join(", ")} · 매매 ${trades.length}건 · 승률 ${Math.round((wins.length / trades.length) * 100)}% · 평균 ${pct(avg)} · 평균 보유 ${days.toFixed(1)}일 · 계획대로 ${trades.filter((t) => t.followed).length}건`);
     add("매매 예시", trades.slice(0, 4).map((t) => `${t.entry.d} ${t.name} 매수 "${t.entry.why}" → ${t.exit.d} ${t.exit.why} (${pct(t.ret)})`).join(" / "));
   }
   const notes = months.flatMap((m) => (m.notes ?? []).filter((x) => x.type === "market")).slice(-3);

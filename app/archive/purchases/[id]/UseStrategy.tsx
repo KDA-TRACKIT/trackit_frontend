@@ -249,7 +249,7 @@ function Review({ detail, traderName }: { detail: SimDetail[]; traderName: strin
   const fmt = (v: number | null, f: (n: number) => string) => (v === null ? "—" : f(v));
   const rows: [string, string, string][] = [
     ["매매 수", `${a.n}건`, `${b.n}건`],
-    ["이긴 비율", fmt(a.winRate, (n) => `${n.toFixed(0)}%`), fmt(b.winRate, (n) => `${n.toFixed(0)}%`)],
+    ["승률", fmt(a.winRate, (n) => `${n.toFixed(0)}%`), fmt(b.winRate, (n) => `${n.toFixed(0)}%`)],
     ["평균 수익률", fmt(a.avgRet, (n) => sign(n, 2)), fmt(b.avgRet, (n) => sign(n, 2))],
     ["평균 보유", fmt(a.avgDays, (n) => `${n.toFixed(1)}일`), fmt(b.avgDays, (n) => `${n.toFixed(1)}일`)],
     ["가장 큰 손실", fmt(a.worst, (n) => sign(n, 2)), fmt(b.worst, (n) => sign(n, 2))],

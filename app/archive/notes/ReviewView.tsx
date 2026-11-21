@@ -1,6 +1,7 @@
 "use client";
 // 내 노트 · 복기형 (2026-11-20): 내가 쓴 종목 전략(계획) vs 실제 매매
-//   위: 숫자 요약(매매 · 계획 있던 비율 · 계획대로 끝낸 비율 · 이긴 비율) + 자주 반복되는 습관
+//   위: 숫자 요약(매매 · 계획을 세운 매매 · 계획 이행률 · 승률) + 자주 반복되는 습관
+//     (2026-11-22 용어 통일: 계획 있던 매매 → 계획을 세운 매매, 계획대로 끝냄 → 계획 이행률, 이긴 비율 → 승률, N번 → N건 — 홈 · 전략 마켓과 같은 말로)
 //   가운데: 매매마다 계획 가격과 실제 가격, 지킨 것 · 어긴 것 (누르면 그때 쓴 노트를 오른쪽에)
 //   아래: 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게)
 import Link from "next/link";
@@ -89,18 +90,18 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>
           <small>매매</small>
-          <b>{reviews.length}번</b>
+          <b>{reviews.length}건</b>
         </div>
         <div>
-          <small title="산 날까지 쓴 노트에 매수 · 손절 · 목표 가격이 있던 매매">계획 있던 매매 ⓘ</small>
+          <small title="전체 매매 가운데, 산 날까지 쓴 노트에 매수 · 손절 · 목표 가격을 적어 둔 매매의 비율">계획을 세운 매매 ⓘ</small>
           <b>{rate(planned, reviews.length)}</b>
         </div>
         <div>
-          <small title="끝난 매매 중 계획이 있었고, 늦은 손절 · 이른 익절 · 비싸게 산 것이 없는 매매">계획대로 끝냄 ⓘ</small>
+          <small title="끝난 매매 가운데, 계획을 세웠고 늦은 손절 · 이른 익절 · 비싸게 산 것 없이 계획대로 마친 매매의 비율">계획 이행률 ⓘ</small>
           <b>{rate(kept, closed.length)}</b>
         </div>
         <div>
-          <small>이긴 비율</small>
+          <small title="끝난 매매 가운데 수익으로 끝난 매매의 비율">승률 ⓘ</small>
           <b>{rate(wins, closed.length)}</b>
         </div>
       </section>
