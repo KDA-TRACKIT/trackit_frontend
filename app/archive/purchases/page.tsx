@@ -60,7 +60,9 @@ export default function PurchasesPage() {
     const end = subscriptionEnd(passes, id);
     const months = [...new Set([...(active && t ? strategiesOf(t).flatMap((s) => s.months) : []), ...mine.flatMap((p) => (p.used ? [p.used.month] : [])), ...free.flatMap((v) => (t ? (strategyOf(t, v.month)?.months ?? []) : []))])].sort().reverse();
     return { id, t, name: t?.name ?? mine[0]?.traderName ?? free[0].traderName, paid: mine.length > 0, active, end, months, ret: t?.monthly.at(-1)?.ret ?? null };
-  });
+  })
+    // 지금 마켓에 없는 트레이더(예전 열람권 시절 기록)는 보여 주지 않음 — 꿀통 · 이행률 · 수익률을 채울 수 없는 카드가 섞여 나왔음
+    .filter((g) => !!g.t);
   const nothing = server !== null && !traders.length && !server.length;
 
   return (
