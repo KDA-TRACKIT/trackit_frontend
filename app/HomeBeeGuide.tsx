@@ -1,12 +1,16 @@
 "use client";
 // 홈 꿀벌 안내 (2026-11-20): 처음 가입하고 들어온 사람에게 꿀벌이 기능을 하나씩 짚어 줌
+//   저절로 뜨는 건 가입하고 처음 로그인했을 때 한 번뿐 (2026-11-21). 그 밖엔 오른쪽 아래 꿀벌을 눌러야 뜸
+//     처음인지 = 계정에 '봤음' 표시(bee_guide_seen)가 없고 가입한 지 7일 안 (이메일 인증이 늦어도 첫 로그인을 놓치지 않게).
+//     뜨는 순간 계정에 '봤음'을 남겨서 다른 기기 · 브라우저에서 다시 로그인해도 저절로 뜨지 않음. 예전에 가입한 계정은 저절로 뜨지 않음
 //   메뉴 · 홈 카드에 불을 비추고(나머지는 어둡게) 꿀벌 말풍선으로 설명, 다음 · 이전 · 건너뛰기
-//   한 번 끝내거나 건너뛰면 그 계정에선 다시 안 뜸(이 브라우저 기준). 오른쪽 아래 꿀벌 버튼으로 언제든 다시 보기
+//   오른쪽 아래 꿀벌 버튼으로 언제든 다시 보기
 //   다른 팝업(투자 정보 입력 등)이 떠 있으면 닫힐 때까지 기다렸다가 시작
 //   페이지 배율(html zoom)이 달라도 위치가 맞게: 안내 층 자신의 화면 크기 대비로 잼
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getSupabaseBrowser } from "../lib/supabase-browser";
 import "./home-bee-guide.css";
 
 type Step = { target?: string; title: string; body: string };
@@ -24,19 +28,23 @@ const STEPS: Step[] = [
   { title: "준비 끝! 첫 계획부터 남겨 볼까?", body: "관심 있는 종목 차트에 선 하나 긋고 '어디서 사고, 어디서 틀렸다고 볼지' 적어 두면 시작이야. 오른쪽 아래 꿀벌 버튼을 누르면 이 안내를 언제든 다시 볼 수 있어." },
 ];
 const doneKey = (userId: string) => `trackit:bee-guide:${userId}`;
+/** 가입한 뒤 이 기간 안의 로그인을 '처음'으로 봄 */
+const FIRST_LOGIN_DAYS = 7;
 
-export default function HomeBeeGuide({ userId }: { userId: string }) {
+export default function HomeBeeGuide({ userId, createdAt, seen }: { userId: string; /** 가입한 시각 */ createdAt: string | null; /** 계정에 '꿀벌 안내 봤음'이 남아 있는지 */ seen: boolean }) {
   const [step, setStep] = useState<number | null>(null);
   const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   /** 안내 층의 크기(CSS px). 페이지 배율이 있어도 이 층 기준으로 재면 위치가 맞음 */
   const [view, setView] = useState({ w: 1200, h: 800 });
   const layer = useRef<HTMLDivElement>(null);
 
-  // 처음이면 시작 (다른 팝업이 떠 있으면 닫힐 때까지 기다림)
+  // 가입하고 처음 로그인했을 때만 저절로 시작 (다른 팝업이 떠 있으면 닫힐 때까지 기다림)
   useEffect(() => {
-    let done = false;
+    const joined = createdAt ? Date.parse(createdAt) : NaN;
+    const fresh = Number.isFinite(joined) && Date.now() - joined < FIRST_LOGIN_DAYS * 86_400_000;
+    let done = seen || !fresh;
     try {
-      done = localStorage.getItem(doneKey(userId)) === "done";
+      done ||= localStorage.getItem(doneKey(userId)) === "done";
     } catch {
       done = true;
     }
@@ -44,10 +52,17 @@ export default function HomeBeeGuide({ userId }: { userId: string }) {
     const timer = setInterval(() => {
       if (document.querySelector("dialog[open]")) return;
       clearInterval(timer);
+      // 뜨는 순간 '봤음'을 남김 (중간에 창을 닫아도 다음 로그인에 또 뜨지 않게): 이 브라우저 + 계정
+      try {
+        localStorage.setItem(doneKey(userId), "done");
+      } catch {
+        // 저장이 안 돼도 계정 표시로 막음
+      }
+      void getSupabaseBrowser()?.auth.updateUser({ data: { bee_guide_seen: true } }).catch(() => {});
       setStep(0);
     }, 600);
     return () => clearInterval(timer);
-  }, [userId]);
+  }, [userId, createdAt, seen]);
 
   const finish = useCallback(() => {
     try {

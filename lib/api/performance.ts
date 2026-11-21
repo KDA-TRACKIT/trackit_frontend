@@ -20,7 +20,13 @@ export type PerformanceReport = {
     maxDrawdownPnl: string;
     adherenceRate: string | null;
   };
+  /** 주문 전에 노트 · 규칙이 있었는지 (참고 숫자. 2026-11-21 부터 이행률로 쓰지 않음) */
   judgments: { PRE_ALGO: number; PRE_NOTE: number; NONE: number; total: number };
+  /**
+   * 이행률의 근거 (2026-11-21): PLAN = 계획 이행률 — "이 가격이 오면 사겠다 · 팔겠다"고 적은 메모를 실제 매매가 지켰는지
+   *   plan: 판정한 것 · 지킨 것 · 계획은 있지만 가격으로 판정 못 한 주문 · 계획 없이 한 주문. LINES = 지지 · 저항선 이행률 (계획이 없을 때)
+   */
+  adherence?: { source: "PLAN" | "LINES" | null; plan?: { judged: number; followed: number; unjudged: number; unplanned: number; rate: string | null } };
   open: { count: number; costBasis: string };
   costs: { feesAndTaxes: string; brokerTradeCount: number };
 };

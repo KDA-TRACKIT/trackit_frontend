@@ -14,6 +14,10 @@ import { LogOut } from "lucide-react";
 export type Profile = {
   userId: string;
   lastSignInAt: string | null;
+  /** 가입한 시각 */
+  createdAt: string | null;
+  /** 꿀벌 안내를 이미 봤는지 (계정에 저장 — 어느 기기에서든 한 번만 저절로 뜸) */
+  beeGuideSeen: boolean;
   hasInvestment: boolean;
   name: string;
   email: string | null;
@@ -34,6 +38,8 @@ export function profileOf(user: User): Profile {
   return {
     userId: user.id,
     lastSignInAt: user.last_sign_in_at ?? null,
+    createdAt: user.created_at ?? null,
+    beeGuideSeen: meta.bee_guide_seen === true,
     hasInvestment: hasSavedInvestment(meta),
     name,
     email: user.email ?? null,

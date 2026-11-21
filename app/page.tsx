@@ -14,8 +14,8 @@ export default function Home() {
   if (!ready) return <main className="home" />;
   return profile ? <>
     <HomeDashboard />
-    {/* 처음 들어온 사람에게 꿀벌이 기능 안내 (투자 정보 팝업이 닫힌 뒤) */}
-    <HomeBeeGuide userId={profile.userId} />
+    {/* 가입하고 처음 로그인한 사람에게만 꿀벌이 저절로 기능 안내 (투자 정보 팝업이 닫힌 뒤). 그 밖엔 오른쪽 아래 꿀벌을 눌러야 뜸 */}
+    <HomeBeeGuide userId={profile.userId} createdAt={profile.createdAt} seen={profile.beeGuideSeen} />
     {!profile.hasInvestment && <HomeInvestmentPrompt key={`${profile.userId}:${profile.lastSignInAt}`} userId={profile.userId} lastSignInAt={profile.lastSignInAt} />}
   </> : <>
     <Intro />

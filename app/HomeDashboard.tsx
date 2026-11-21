@@ -104,7 +104,7 @@ export default function HomeDashboard() {
         <div className="home-overview-side">
           <div className="home-stat-row">
             <Link className="home-stat-card" href="/mypage/activity/trades">
-              <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span>{data ? `${data.report.judgments.total}건 기준` : error ? "확인 불가" : "불러오는 중"}</span></div>
+              <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span title="'이 가격이 오면 사겠다 · 팔겠다'고 적은 계획을 실제 매매가 지켰는지 (계획 없이 한 매매는 세지 않아요)">{data ? (data.report.adherence?.plan?.judged ? `계획 ${data.report.adherence.plan.judged}건 중 ${data.report.adherence.plan.followed}건 지킴` : adherencePercent === null ? "판정할 계획이 없어요" : "그은 선 기준") : error ? "확인 불가" : "불러오는 중"}</span></div>
               <div className="home-progress" role="progressbar" aria-label="전략 이행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={adherencePercent ?? undefined}><span style={{ width: `${adherencePercent ?? 0}%` }} /></div>
             </Link>
             <Link className="home-stat-card" href="/mypage/sales/settlements">
