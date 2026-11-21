@@ -197,6 +197,7 @@
 .ins-cal-side .ins-cal li.cols-row + li { border-top:0; }
 .ins-cal-side .ins-cal li.cols-row .ev { gap:6px 8px; font-size:13px; }
 .ins-cal .ev .t { color:var(--c-sub); font-size:12px; font-variant-numeric:tabular-nums; }
+.ins-cal .ev > .chip { display:flex; align-items:center; justify-content:center; line-height:16px; white-space:nowrap; }
 .ins-cal .ev .imp { color:var(--c-line-strong); font-size:10px; letter-spacing:-1px; }
 .ins-cal .ev .imp.l3 { color:var(--c-err); }
 .ins-cal .ev .imp.l2 { color:#e8a317; }
