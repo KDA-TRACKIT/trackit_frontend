@@ -335,7 +335,7 @@ export default function AskPanel() {
             </div>
           )}
         </div>
-        <Link className="ask-side-new" href="/marketplace">
+        <Link className="ask-side-new" href="/archive/purchases">
           <Plus size={14} aria-hidden /> 전략 더 열기
         </Link>
       </nav>
