@@ -702,8 +702,8 @@ export default function WorkshopPage() {
   //   (2026-11-22) 본문은 Note 에 쓴 글 그대로 (+ 고른 시나리오). 그은 선은 차트 그림 · 선 기록(lines)으로 남음
   const savedText = () => [noteText.trim(), scenarioLine].filter(Boolean).join("\n\n");
 
-  // 드로잉은 완전히 같아야 같은 것 (점 · 글 · 색 · 굵기 · 숨김 등 전부. id 만 뺌)
-  const drawSig = (list: Drawing[]) => JSON.stringify(list.map(({ id: _id, ...rest }) => (void _id, rest)));
+  // 드로잉은 종류 · 점(위치) · 적은 글이 같으면 같은 것. 색 · 굵기 · 숨김처럼 모양만 바꾼 건 같은 노트 (서버 noteSignature 와 같은 기준)
+  const drawSig = (list: Drawing[]) => JSON.stringify(list.map((d) => [d.toolId, d.points, d.text ?? ""]));
   function sameAsBefore(): string | null {
     if (editing) return savedText().trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings) ? "불러온 노트와 바뀐 곳이 없어요. 글이나 드로잉을 고친 뒤 저장하세요." : null;
     // 새 노트: 예전 노트의 드로잉 원본은 화면에 없어서, 둘 다 드로잉이 없을 때만 여기서 미리 알려 줌. 드로잉이 있으면 서버가 비교해 거절함 (DUPLICATE_NOTE)
