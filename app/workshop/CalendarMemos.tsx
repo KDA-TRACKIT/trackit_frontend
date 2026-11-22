@@ -28,8 +28,8 @@ export default function CalendarMemos({
   editingId?: string;
 }) {
   const [open, setOpen] = useState(false);
-  /** 종목 노트 · 캘린더 노트 중 고름 (2026-11-22) */
-  const [tab, setTab] = useState<"stock" | "calendar">("stock");
+  /** 누르면 먼저 메뉴 둘(종목 노트 · 캘린더 노트), 하나를 고르면 그 목록 (2026-11-22) */
+  const [tab, setTab] = useState<"stock" | "calendar" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const memos = records
     .filter((r) => classify(r) === "thought")
@@ -46,20 +46,26 @@ export default function CalendarMemos({
 
   return (
     <div className="ws-cal-memos" ref={ref}>
-      <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled || busy} aria-expanded={open}>
+      <button type="button" onClick={() => (setTab(null), setOpen((o) => !o))} disabled={disabled || busy} aria-expanded={open}>
         {busy ? "가져오는 중…" : "노트 가져오기"}
       </button>
       {open && (
         <div className="ws-cal-memos-list" role="listbox" aria-label="가져올 노트">
-          <div className="ws-cal-memos-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected={tab === "stock"} className={tab === "stock" ? "on" : ""} onClick={() => setTab("stock")}>
-              종목 노트
+          {tab === null ? (
+            <div className="ws-cal-memos-menu" role="menu">
+              <button type="button" role="menuitem" onClick={() => setTab("stock")}>
+                종목 노트 <i aria-hidden>›</i>
+              </button>
+              <button type="button" role="menuitem" onClick={() => setTab("calendar")}>
+                캘린더 노트 <i aria-hidden>›</i>
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="ws-cal-memos-back" onClick={() => setTab(null)}>
+              ‹ {tab === "stock" ? "종목 노트" : "캘린더 노트"}
             </button>
-            <button type="button" role="tab" aria-selected={tab === "calendar"} className={tab === "calendar" ? "on" : ""} onClick={() => setTab("calendar")}>
-              캘린더 노트
-            </button>
-          </div>
-          {tab === "stock" ? (
+          )}
+          {tab === null ? null : tab === "stock" ? (
             stock.length === 0 ? (
               <p>이 종목에 쓴 노트가 없어요.</p>
             ) : (
