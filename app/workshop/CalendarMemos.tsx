@@ -28,6 +28,8 @@ export default function CalendarMemos({
   editingId?: string;
 }) {
   const [open, setOpen] = useState(false);
+  /** 종목 노트 · 캘린더 노트 중 고름 (2026-11-22) */
+  const [tab, setTab] = useState<"stock" | "calendar">("stock");
   const ref = useRef<HTMLDivElement>(null);
   const memos = records
     .filter((r) => classify(r) === "thought")
@@ -49,10 +51,19 @@ export default function CalendarMemos({
       </button>
       {open && (
         <div className="ws-cal-memos-list" role="listbox" aria-label="가져올 노트">
-          {stock.length > 0 && (
-            <>
-              <div className="ws-cal-memos-hint">이 종목의 이전 노트 — 그때 드로잉 · 글을 불러와요</div>
-              {stock.map((r) => (
+          <div className="ws-cal-memos-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={tab === "stock"} className={tab === "stock" ? "on" : ""} onClick={() => setTab("stock")}>
+              종목 노트
+            </button>
+            <button type="button" role="tab" aria-selected={tab === "calendar"} className={tab === "calendar" ? "on" : ""} onClick={() => setTab("calendar")}>
+              캘린더 노트
+            </button>
+          </div>
+          {tab === "stock" ? (
+            stock.length === 0 ? (
+              <p>이 종목에 쓴 노트가 없어요.</p>
+            ) : (
+              stock.map((r) => (
                 <button
                   key={r.id}
                   type="button"
@@ -66,16 +77,13 @@ export default function CalendarMemos({
                 >
                   <b>
                     {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
-                    {r.drawings ? ` · 드로잉 ${r.drawings}개` : ""}
                     {r.id === editingId ? " · 고치는 중" : ""}
                   </b>
                   <span>{r.text || "(내용 없음)"}</span>
                 </button>
-              ))}
-              <div className="ws-cal-memos-hint">증시 캘린더 노트 — 글 끝에 덧붙여요</div>
-            </>
-          )}
-          {memos.length === 0 ? (
+              ))
+            )
+          ) : memos.length === 0 ? (
             <p>증시 캘린더에서 쓴 노트가 없어요.</p>
           ) : (
             memos.map((r) => (

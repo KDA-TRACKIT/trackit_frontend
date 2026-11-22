@@ -1251,6 +1251,9 @@ details.ws-ladder { padding:10px 12px; }
 .ws-cal-memos-list b { color:var(--ws-muted); font-size:11px; font-weight:600; }
 .ws-cal-memos-list span { display:-webkit-box; overflow:hidden; font-size:13px; line-height:1.45; word-break:keep-all; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .ws-cal-memos-list p { padding:12px; color:var(--ws-muted); font-size:13px; }
+.ws-cal-memos-tabs { display:flex; gap:4px; padding:4px 4px 6px; }
+.ws-cal-memos-list .ws-cal-memos-tabs button { flex:1; flex-direction:row; justify-content:center; padding:6px 0; border:1px solid var(--ws-line); border-radius:6px; font-size:12px; font-weight:700; color:var(--ws-muted); }
+.ws-cal-memos-list .ws-cal-memos-tabs button.on { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); }
 .ws-cal-memos-hint { padding:6px 10px 4px; color:var(--ws-muted); font-size:11px; }
 /* 캘린더 노트를 가져오는 동안: 종목 전략 밑에 먼저 보여 주고 은은하게 깜빡임 · 다 되면 초록 알림 */
 .ws-strat-pending > p { color:var(--ws-muted); background:var(--c-subtle); cursor:default; animation:ws-strat-pending 1.1s ease-in-out infinite alternate; }

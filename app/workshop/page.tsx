@@ -447,6 +447,17 @@ export default function WorkshopPage() {
     const code = q.get("symbol")?.trim().toUpperCase();
     const exchange = q.get("exchange")?.trim().toUpperCase() as UsExchange | undefined;
     const usCode = !!exchange && ["ND", "NY", "NA"].includes(exchange) && !!code && /^[A-Z][A-Z0-9.]{0,9}$/.test(code);
+    // 미국 티커인데 거래소가 주소에 없으면(내 노트 · 복기형 등에서 온 링크) 종목 검색으로 거래소를 찾아서 연다 (2026-11-22)
+    if (code && !exchange && !isSpecialCode(code) && /^[A-Z][A-Z.]{0,9}$/.test(code)) {
+      let live = true;
+      searchAllSymbols(code)
+        .then((list) => list.find((x) => x.code === code && x.exchange))
+        .then((hit) => live && hit && pickSymbol({ code, name: q.get("name")?.trim() || hit.name, market: hit.market, exchange: hit.exchange }))
+        .catch(() => {});
+      return () => {
+        live = false;
+      };
+    }
     if (!code || (!usCode && !isSpecialCode(code) && !/^[0-9A-Z]{6}$/.test(code))) {
       // 주소로 종목을 안 정했으면: 마지막에 본 종목, 처음이면 주요 시장에 따라 기본 차트
       let live = true;
