@@ -28,7 +28,7 @@ export default function TradesPage() {
 
   return (
     <>
-      <PageHead title="거래 기록" parent={["활동 이력", "/mypage/activity"]} />
+      <PageHead title="거래 기록" />
       <Card>
         <div className="mp-stats">
           <Stat label="전체" value={trades.length} unit="건" />

@@ -62,7 +62,7 @@ export default function AccountBasicPage() {
 
   return (
     <>
-      <PageHead title="기본 계정 정보" parent={["계정 설정", "/mypage/account"]} />
+      <PageHead title="기본 계정 정보" />
       <Card>
         <div className="mp-form">
           <div className="mp-field">
