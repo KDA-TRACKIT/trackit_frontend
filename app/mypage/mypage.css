@@ -276,7 +276,7 @@
 .mp-home-symbols b { flex:none; font-size:13px; }
 .mp-home-symbols .mp-tags { margin:0; padding:0; border:0; }
 .mp-pill-muted { padding:7px 12px; border-radius:16px; background:var(--c-subtle); color:var(--c-faint); font-size:12px; }
-.mp-home-rate { display:block; font-size:16px; font-weight:800; }
+.mp-home-rate { display:block; color:var(--c-sub); font-size:13px; font-weight:400; }
 .mp-home-rate-desc { margin:10px 0 0; color:var(--c-sub); font-size:12px; line-height:1.5; }
 .mp-home-consent { display:flex; align-items:center; gap:10px; margin-top:18px; }
 .mp-tag-warn { flex:none; padding:5px 10px; border-radius:14px; background:var(--c-warn-soft, #fff1dc); color:var(--c-warn, #b7791f); font-size:12px; font-weight:700; }
@@ -533,7 +533,7 @@ html:not([data-theme="dark"]) .mp-modal {
 .mp-home-symbols { padding-top:10px; }
 .mp-home-symbols b { font-size:11px; font-weight:600; }
 .mp-pill-muted { border-radius:12px; font-size:11px; }
-.mp-home-rate { font-size:16px; line-height:22px; font-weight:600; }
+.mp-home-rate { font-size:12px; font-weight:400; }
 .mp-home-rate-desc { margin-top:16px; font-size:11px; line-height:14px; }
 .mp-home-consent { margin-top:26px; }
 .mp-home-consent small { font-size:11px; }
