@@ -189,19 +189,12 @@
 .footerBar .brand { color: #fff; }
 .footerBar > a:last-child { color: #d8e3ff; font-weight: 600; }
 
-/* 한 화면씩 넘김 (IntroSnap.tsx 와 같은 조건): 장마다 화면 높이를 채우고 가운데 정렬, 맨 위 · 각 장 시작 · 푸터 끝에 멈춤 */
-@media (min-width: 801px) and (min-height: 640px) {
-  .header { scroll-snap-align: start; }
-  .hero .shell { min-height: calc(100svh - 85px); }
-  .workflow { min-height: 100svh; scroll-snap-align: start; }
-  .steps { min-height: 100svh; display: grid; align-content: center; scroll-snap-align: start; }
-  .features { padding-block: 0; }
-  .feature { min-height: 100svh; align-content: center; align-items: center; scroll-snap-align: start; }
-  .feature + .feature { border-top: 0; margin-top: 0; padding-top: 0; }
-  .feature .featureCopy { padding-top: 0; }
-  .faq { min-height: 100svh; display: grid; align-content: center; scroll-snap-align: start; }
-  .footer { scroll-snap-align: end; }
-}
+/* 스크롤 도우미 (IntroScroll.tsx) */
+.header { position: sticky; top: 0; z-index: 10; transition: box-shadow 200ms ease; }
+.landing[data-scrolled] .header { box-shadow: 0 6px 18px #10265014; }
+.landing :is([id="intro-features"], [id="intro-faq-title"]) { scroll-margin-top: 84px; }
+.landing[data-reveal-ready] [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity 700ms ease, transform 700ms cubic-bezier(.2, .7, .2, 1); }
+.landing[data-reveal-ready] [data-reveal][data-shown] { opacity: 1; transform: none; }
 
 @media (min-width: 801px) and (max-width: 1020px) {
   .featureCopy h2 { font-size: 36px; }
