@@ -330,7 +330,9 @@ export default function WorkshopPage() {
    *   저장하면 그 노트를 고치는 게 아니라 새 노트로 남고(replaces = 예전 노트) 예전 노트는 기록에 그대로
    *   고치는 동안에는 이 종목의 지금 드로잉을 자동 저장으로 덮어쓰지 않음. 그만두면 지금 드로잉으로 돌아감
    */
-  const [editing, setEditing] = useState<{ id: string; when: string; drawings: Drawing[] } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; when: string; text: string; drawings: Drawing[] } | null>(null);
+  /** 저장하려는 내용이 예전 노트와 똑같을 때의 안내 (같은 노트를 또 남기지 않음, 2026-11-22) */
+  const [sameMsg, setSameMsg] = useState<string | null>(null);
   /** 노트 하나의 드로잉 · 글을 차트와 Note 칸에 불러옴 (주소의 ?edit= · '노트 가져오기'의 이 종목 이전 노트) */
   const [editBusy, setEditBusy] = useState(false);
   async function loadNoteForEdit(jid: string, id: string, code: string, live: { on: boolean } = { on: true }) {
@@ -341,8 +343,10 @@ export default function WorkshopPage() {
       if (!live.on || !n || n.symbol !== code) return;
       const raw = (Array.isArray(n.drawings) ? n.drawings : []) as Parameters<typeof fromAnnotations>[0];
       const kst = new Date(new Date(n.confirmedAt).getTime() + 9 * 3_600_000).toISOString();
-      setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
-      setNoteText(n.aiSummary?.summary ?? "");
+      const text = n.aiSummary?.summary ?? "";
+      setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, text, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
+      setNoteText(text);
+      setSameMsg(null);
     } catch {
       // 못 불러오면 지금 화면 그대로
     } finally {
@@ -371,6 +375,7 @@ export default function WorkshopPage() {
   function stopEditing() {
     setEditing(null);
     setNoteText("");
+    setSameMsg(null);
   }
   // 저장본 노트 + 이번에 새로 단 노트
   /** 지운 차트 노트 (저장본에 있던 것도 다음 저장 때 일지에서 빠진다) */
@@ -645,7 +650,8 @@ export default function WorkshopPage() {
     const failed: string[] = [];
     for (const [id, text] of Object.entries(edits?.records ?? {})) {
       const r = allRecords.find((x) => x.id === id);
-      if (!r || !text.trim()) continue;
+      // 글이 그대로면 새 노트를 남기지 않음
+      if (!r || !text.trim() || text.trim() === r.text.trim()) continue;
       const now = kstNow();
       const { id: _id, drawings: _drawings, ...rest } = r;
       void _id;
@@ -685,10 +691,23 @@ export default function WorkshopPage() {
   //   (2026-11-22) 본문은 Note 에 쓴 글 그대로 (+ 고른 시나리오). 그은 선은 차트 그림 · 선 기록(lines)으로 남음
   const savedText = () => [noteText.trim(), scenarioLine].filter(Boolean).join("\n\n");
 
+  const drawSig = (list: Drawing[]) => JSON.stringify(list.map((d) => [d.toolId, d.points, d.text ?? "", d.style, !!d.hidden]));
+  const lineSig = (list: { price?: number; low?: number; high?: number; pts?: [number, number][] }[]) => JSON.stringify(list.map((l) => [l.price ?? null, l.low ?? null, l.high ?? null, l.pts ?? null]).sort());
+  function sameAsBefore(lines: NoteLine[]): string | null {
+    if (editing) return savedText().trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings) ? "불러온 노트와 바뀐 곳이 없어요. 글이나 드로잉을 고친 뒤 저장하세요." : null;
+    const latest = [...currentRecords(symbolRecords)].sort((a, b) => `${b.date} ${b.noteTime}`.localeCompare(`${a.date} ${a.noteTime}`))[0];
+    if (!latest) return null;
+    return savedText().trim() === latest.text.trim() && lineSig(lines) === lineSig(latest.lines ?? []) ? "가장 최근 노트와 내용이 같아요. 바뀐 곳이 있을 때 새 노트로 남겨요." : null;
+  }
+
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview(range?: { from: number; to: number }) {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
+    // 똑같은 노트는 다시 남기지 않음: 불러와 고치는 노트는 그 노트와(글 · 드로잉), 새 노트는 이 종목의 가장 최근 노트와(글 · 그은 선) 비교
+    const same = sameAsBefore(lines);
+    setSameMsg(same);
+    if (same) return;
     const marks = reviewMarks(lines);
     // 창은 바로 열고, 차트 그림(기본은 드로잉 전체가 들어가게, 고른 구간이 있으면 그 구간)은 찍히는 대로 넣음
     setReview((r) => ({ image: r && range ? r.image : null, shooting: true, lines, from: range?.from ?? r?.from ?? 0, to: range?.to ?? r?.to ?? Math.max(0, bars.length - 1) }));
@@ -981,7 +1000,9 @@ ${t}` : t))}
                 </div>
                 {editing && (
                   <p className="ws-editing" role="status">
-                    <b>{editing.when} 노트를 고치는 중</b> 그때의 드로잉과 글을 불러왔어요. 저장하면 새 노트로 남고 예전 노트는 기록에 그대로 있어요.
+                    <span>
+                      ⓘ <b>{editing.when} 노트를 불러왔어요.</b> 아래 글과 차트의 드로잉을 고친 뒤 저장하면 새 노트로 남아요. 예전 노트는 기록에 그대로 있어요.
+                    </span>
                     <button type="button" onClick={stopEditing}>
                       그만두기
                     </button>
@@ -989,9 +1010,9 @@ ${t}` : t))}
                 )}
                 {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
                 <textarea
-                  className="ws-memo-text"
+                  className={`ws-memo-text${editing ? " is-editing" : ""}`}
                   value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
+                  onChange={(e) => (setNoteText(e.target.value), sameMsg && setSameMsg(null))}
                   readOnly={confirmed}
                   placeholder="판단 근거, 조건, 분할 매수 · 분할 매도 계획"
                   aria-label="차트 노트"
@@ -1003,9 +1024,12 @@ ${t}` : t))}
                 </button>
               ) : (
                 // 저장 (2026-11-22): AI 분석 없이 바로 저장 확인 창 (Memo + 그은 선 · 차트)
+                <>
+                {sameMsg && <p className="ws-same-msg" role="status">{sameMsg}</p>}
                 <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => openReview()}>
                   {memoBusy ? "저장 중…" : "저장"}
                 </button>
+                </>
               )}
               {confirming && review && (
                 <SaveReview
