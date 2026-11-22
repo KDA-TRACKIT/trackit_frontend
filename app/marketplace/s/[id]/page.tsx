@@ -49,6 +49,8 @@ export default function MarketStrategyPage() {
   const [data, setData] = useState<Content | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
+  /** 누른 노트: 저장한 차트 그림 + 쓴 글을 큰 차트 자리에 그대로 (2026-11-22) */
+  const [picked, setPicked] = useState<{ id: string; symbol: string; at: string; text: string } | null>(null);
   const [scope, setScope] = useState<"symbol" | "all">("all");
   const [dark, setDark] = useState(false);
 
@@ -163,7 +165,7 @@ export default function MarketStrategyPage() {
               {symbols.length > 0 && (
                 <div className="sd-chips ms-symbols" role="group" aria-label="종목 고르기">
                   {symbols.map((s) => (
-                    <button key={s.code} type="button" aria-pressed={cur === s.code} onClick={() => setSel(s.code)}>
+                    <button key={s.code} type="button" aria-pressed={cur === s.code} onClick={() => (setSel(s.code), setPicked(null))}>
                       {s.name}
                       {isSpecialCode(s.code) ? "" : ` ${s.notes + s.trades}`}
                     </button>
@@ -176,7 +178,19 @@ export default function MarketStrategyPage() {
                   <div className="ar-pt-sym">
                     <strong>{curName}</strong> <small>{cur}</small>
                   </div>
-                  {cur ? <NotesChart code={cur} from={from} to={to} trades={curTrades} noteDays={noteDays} dark={dark} /> : <p className="mk-empty">이 기간에 쓴 노트가 없어요.</p>}
+                  {picked && picked.symbol === cur ? (
+                    <>
+                      <p className="ar-pt-ohlc">
+                        <time>{ymd(picked.at).replaceAll("-", ".")}</time>
+                      </p>
+                      <NoteShot id={picked.id} className="sd-main-shot" fallback={<NotesChart code={cur} from={from} to={to} trades={curTrades} noteDays={noteDays} dark={dark} />} />
+                      {picked.text && <p className="sd-main-text">{picked.text}</p>}
+                    </>
+                  ) : cur ? (
+                    <NotesChart code={cur} from={from} to={to} trades={curTrades} noteDays={noteDays} dark={dark} />
+                  ) : (
+                    <p className="mk-empty">이 기간에 쓴 노트가 없어요.</p>
+                  )}
                 </div>
                 <aside className="ar-pt-memos sd-memos">
                   <h3>Note</h3>
@@ -190,7 +204,7 @@ export default function MarketStrategyPage() {
                   </div>
                   <ul>
                     {shownNotes.map((n) => (
-                      <li key={n.id} className="sd-memo-pick" onClick={() => setSel(n.symbol)}>
+                      <li key={n.id} className="sd-memo-pick" onClick={() => (setSel(n.symbol), setPicked({ id: n.id, symbol: n.symbol, at: n.at, text: n.text }))}>
                         <div>
                           <em className={`sd-kind ${n.plan ? "plan" : "stock"}`}>{n.plan ? "사전 기록" : "종목 노트"}</em>
                           {scope === "all" && <b>{n.name}</b>}
