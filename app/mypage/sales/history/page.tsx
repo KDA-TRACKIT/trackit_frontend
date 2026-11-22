@@ -37,8 +37,8 @@ export default function SalesHistoryPage() {
 
   return (
     <>
-      <PageHead title="구독 내역" desc="구독 결제 기록을 조회합니다." parent={["구독 관리", "/mypage/sales"]} />
-      <Card className="mp-sales-history" title="구독 내역" desc="기간별 구독 실적과 상세 결제 내역을 확인합니다.">
+      <PageHead title="구독 내역" parent={["구독 관리", "/mypage/sales"]} />
+      <Card className="mp-sales-history" title="구독 내역">
         <div className="mp-boxes">
           <div>
             <span>구독자 수</span>
@@ -57,7 +57,6 @@ export default function SalesHistoryPage() {
         <div className="mp-sub-head">
           <div>
             <h3>전략 목록</h3>
-            <p>등록한 전략과 섹터, 기간을 확인합니다.</p>
           </div>
           <button type="button" className="mp-btn ghost-line" onClick={() => setOpen(true)}>
             <svg viewBox="0 0 16 16" aria-hidden>

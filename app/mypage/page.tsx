@@ -79,11 +79,6 @@ export default function MyPage() {
         </Card>
         <Card title="나의 이행률" desc="전략의 신뢰도를 확인하는 지표">
           <strong className="mp-home-rate">{business ? "산출 준비 중이에요." : "비즈니스 계정 전환 시 산출됩니다."}</strong>
-          <p className="mp-home-rate-desc">
-            사전·사후 기록 비율, 저장 이력 및
-            <br />
-            전략 평가 점수로 구성됩니다.
-          </p>
           <div className="mp-home-consent">
             <Link className="mp-tag-warn" href="/mypage/account">
               추가 동의 필요
