@@ -503,13 +503,13 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     )}
                   </div>
                   <aside className="ar-pt-memos sd-memos">
-                    <h3>차트 노트</h3>
+                    <h3>Note</h3>
                     <div className="sd-scope" role="tablist" aria-label="노트 범위">
                       <button type="button" role="tab" aria-selected={scope === "symbol"} onClick={() => setScope("symbol")}>
                         {curName} {symbolList.length}건
                       </button>
                       <button type="button" role="tab" aria-selected={scope === "all"} onClick={() => setScope("all")}>
-                        전략 전체 {allList.length}건
+                        전체 {allList.length}건
                       </button>
                     </div>
                     <ul>
