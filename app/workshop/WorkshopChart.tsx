@@ -925,6 +925,8 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       else lines[i] = candle.createPriceLine(opts);
     });
     for (const l of lines.splice(tags.length)) candle.removePriceLine(l);
+    // 태그가 있으면 오른쪽을 조금 비워 둠 — 태그 글자가 최근 봉을 가리지 않게 (2026-11-22)
+    chartRef.current?.timeScale().applyOptions({ rightOffset: tags.length ? 12 : 4 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleSig, dataKey, lastClose === undefined]);
 
@@ -2042,7 +2044,12 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
         freeze = null;
       }
       try {
-        if (list.length) ts.setVisibleRange({ from: list[shown.from].time as Time, to: list[Math.min(last, shown.to)].time as Time });
+        if (list.length) {
+          ts.setVisibleRange({ from: list[shown.from].time as Time, to: list[Math.min(last, shown.to)].time as Time });
+          // 오른쪽을 조금 비움 (가격축 옆 지지 · 저항 태그가 봉을 가리지 않게)
+          const lr = ts.getVisibleLogicalRange();
+          if (lr) ts.setVisibleLogicalRange({ from: lr.from, to: lr.to + Math.max(3, (lr.to - lr.from) * 0.1) });
+        }
         if (prices.length) {
           const lo = Math.min(...prices);
           const hi = Math.max(...prices);
