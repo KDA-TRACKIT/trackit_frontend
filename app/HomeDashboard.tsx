@@ -14,7 +14,9 @@ import { errorMessage } from "../lib/api/client";
 import { getPerformance, getPositions, kstDate, recentTrades, type PerformanceReport, type Position, type Trade } from "../lib/api/performance";
 import { searchSymbols } from "../lib/market-data";
 import { initRecordSource, useRecords, useRecordsReady } from "../lib/records";
-import { getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
+import { accountPortfolio, getSyncStatus, listConnections, type BrokerConnection, type SyncStatus } from "../lib/api/orders";
+import { useQuotes } from "../lib/live-quotes";
+import type { Portfolio } from "../lib/types/trading";
 import "./home.css";
 import TraderCarousel from "./TraderCarousel";
 import HomeWeeklyRecords from "./HomeWeeklyRecords";
@@ -81,6 +83,33 @@ export default function HomeDashboard() {
     void initRecordSource();
   }, []);
 
+  // 실시간 수익률 (2026-11-22, 판매 등급 자리): 연결한 계좌의 보유 종목을 실시간 시세로 평가 (평가손익 ÷ 매입금액)
+  const [holdings, setHoldings] = useState<Portfolio["positions"] | null>(null);
+  useEffect(() => {
+    let live = true;
+    listConnections()
+      .then((list) => Promise.all(list.flatMap((c) => c.accounts.filter((a) => a.status === "ACTIVE")).map((a) => accountPortfolio(a.id).catch(() => null))))
+      .then((pfs) => live && setHoldings(pfs.flatMap((pf) => pf?.positions ?? []).filter((p) => Number(p.quantity) > 0)))
+      .catch(() => live && setHoldings([]));
+    return () => {
+      live = false;
+    };
+  }, [attempt]);
+  const holdCodes = useMemo(() => [...new Set((holdings ?? []).map((p) => p.symbol))].sort(), [holdings]);
+  const { quotes } = useQuotes(holdCodes);
+  const liveReturn = useMemo(() => {
+    let cost = 0;
+    let pnl = 0;
+    for (const p of holdings ?? []) {
+      const price = quotes[p.symbol]?.price;
+      if (!price) continue;
+      const q = Number(p.quantity);
+      cost += q * Number(p.avgPrice);
+      pnl += q * (price - Number(p.avgPrice));
+    }
+    return cost > 0 ? pnl / cost : null;
+  }, [holdings, quotes]);
+
   // 종목 이름 (체결엔 코드만 있음)
   const recent = useMemo(() => data?.trades ?? [], [data]);
   const currentWeek = weekDays(kstDate());
@@ -103,12 +132,12 @@ export default function HomeDashboard() {
         <ReturnChart data={data} failed={!!error} />
         <div className="home-overview-side">
           <div className="home-stat-row">
+            <Link className="home-stat-card" href="/mypage/wallet">
+              <h2>실시간 수익률</h2><div className="home-stat-value"><strong className={tone(liveReturn)}>{liveReturn === null ? "—" : pct(liveReturn, 2)}</strong><span>{holdings === null ? "불러오는 중" : holdings.length ? `보유 ${holdCodes.length}종목` : "보유 종목 없음"}</span></div>
+            </Link>
             <Link className="home-stat-card" href="/mypage/activity/trades">
               <h2>이행률</h2><div className="home-stat-value"><strong>{adherencePercent === null ? "—" : `${Math.round(adherencePercent)}%`}</strong><span title="'이 가격이 오면 사겠다 · 팔겠다'고 적은 계획을 실제 매매가 지켰는지 (계획 없이 한 매매는 세지 않아요)">{data ? (data.report.adherence?.plan?.judged ? `계획 ${data.report.adherence.plan.judged}건 중 ${data.report.adherence.plan.followed}건 지킴` : adherencePercent === null ? "판정할 계획이 없어요" : "그은 선 기준") : error ? "확인 불가" : "불러오는 중"}</span></div>
               <div className="home-progress" role="progressbar" aria-label="전략 이행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={adherencePercent ?? undefined}><span style={{ width: `${adherencePercent ?? 0}%` }} /></div>
-            </Link>
-            <Link className="home-stat-card" href="/mypage/sales/settlements">
-              <h2>판매 등급</h2><div className="home-stat-value"><strong>—</strong><span>판매 관리에서 확인</span></div><div className="home-progress" aria-hidden="true"><span style={{ width: 0 }} /></div>
             </Link>
           </div>
           <div className="home-week-memos">

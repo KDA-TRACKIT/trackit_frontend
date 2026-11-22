@@ -25,7 +25,7 @@ export default function MyPage() {
   const SALES = [
     { title: "공개 전략", sub: "무료 열람", href: "/mypage/sales/strategies" },
     { title: "월 구독", sub: "구독료 관리", href: "/mypage/sales" },
-    { title: "판매 내역", sub: totals.count ? `판매 기록 ${totals.count}건` : "판매 기록", href: "/mypage/sales/history" },
+    { title: "구독 내역", sub: totals.count ? `구독 기록 ${totals.count}건` : "구독 기록", href: "/mypage/sales/history" },
     { title: "정산 내역", sub: "정산 기록", href: "/mypage/sales/settlements" },
   ];
 
@@ -95,7 +95,7 @@ export default function MyPage() {
         </Card>
       </div>
 
-      <Card title="판매 관리" desc="내 전략의 월 구독과 판매 내역을 관리합니다.">
+      <Card title="구독 관리" desc="내 전략의 월 구독과 구독 내역을 관리합니다.">
         <div className="mp-home-sales">
           {SALES.map((s) => (
             <div key={s.title}>

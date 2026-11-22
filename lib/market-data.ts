@@ -8,6 +8,8 @@
 import { bucketStart, groupBars, needsGrouping, sourceOf, type Interval } from "./interval";
 import type { Bar } from "./mock/workshop";
 import { apiBase } from "./api-url";
+import { okxCloseAt, openOkxStream } from "./okx";
+import { isFuturesCode, isIndexCode, searchSpecial, specialOf } from "./special-symbols";
 
 export { bucketStart, groupBars };
 
@@ -47,12 +49,14 @@ type Hit = { code: string; name: string; market: string; exchange?: UsExchange; 
  */
 export async function searchAllSymbols(q: string, signal?: AbortSignal): Promise<SymbolInfo[]> {
   if (!q.trim()) return searchSymbols(q, signal);
+  // 지수 · 선물 · 환율이 맞으면 맨 앞에 (2026-11-22)
+  const special: SymbolInfo[] = searchSpecial(q).map((s) => ({ code: s.code, name: s.name, market: s.market }));
   try {
     const { items } = await get<{ items: Hit[] }>(`/insights/symbols?q=${encodeURIComponent(q)}&limit=20`, signal);
-    return items.map((h) => (h.country === "US" && h.exchange ? { code: displayTicker(h.code), name: h.name, market: h.etf ? `${h.market} ETF` : h.market, exchange: h.exchange } : { code: h.code, name: h.name, market: h.market }));
+    return [...special, ...items.map((h) => (h.country === "US" && h.exchange ? { code: displayTicker(h.code), name: h.name, market: h.etf ? `${h.market} ETF` : h.market, exchange: h.exchange } : { code: h.code, name: h.name, market: h.market }))];
   } catch (error) {
     if (signal?.aborted) throw error;
-    return searchSymbols(q, signal);
+    return [...special, ...(await searchSymbols(q, signal))];
   }
 }
 
@@ -145,6 +149,15 @@ export function fetchFlows(code: string, signal?: AbortSignal) {
  */
 export async function fetchBars(code: string, interval: Interval, signal?: AbortSignal, limit?: number, exchange?: UsExchange): Promise<{ symbol: SymbolInfo; bars: Bar[]; complete: boolean }> {
   const api = sourceOf(interval);
+  // 지수 · 선물 · 환율 (2026-11-22): 백엔드가 받아 둔 봉 (초봉은 과거가 없어 빈 배열에서 시작)
+  if (isIndexCode(code) || isFuturesCode(code)) {
+    const sp = specialOf(code)!;
+    const info = { code, name: sp.name, market: sp.market };
+    if (api === "1s") return { symbol: info, bars: [], complete: true };
+    const base = isIndexCode(code) ? `/charts/index/${code}` : `/charts/futures/${encodeURIComponent(code)}`;
+    const data = await get<{ bars: Bar[] }>(`${base}/bars?interval=${api}${limit ? `&limit=${limit}` : ""}`, signal);
+    return { symbol: info, bars: needsGrouping(interval) ? groupBars(data.bars, interval) : data.bars, complete: true };
+  }
   if (exchange) {
     // 미국: 초봉은 과거가 없어 실시간 체결로만 (빈 배열에서 시작)
     if (api === "1s") return { symbol: { code, name: code, market: "", exchange }, bars: [], complete: true };
@@ -203,10 +216,94 @@ export function usDailyTickTime(time: number) {
 }
 
 /** 실시간 체결 구독. 반환 함수로 해제 (백엔드가 0B 등록도 같이 뺀다) */
-export function openStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: { marketOpen: boolean; session?: UsSession }) => void; onError?: () => void }, exchange?: UsExchange) {
+/** delayed: 실시간이 아니라 늦은 시세로 갱신 중 (차트에 '지연' 표시) */
+export type StreamStatus = { marketOpen: boolean; session?: UsSession; delayed?: boolean };
+export function openStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: StreamStatus) => void; onError?: () => void }, exchange?: UsExchange) {
+  if (isIndexCode(code)) return openIndexStream(code, handlers);
+  if (isFuturesCode(code)) return openFuturesStream(code, handlers);
   const source = new EventSource(exchange ? `${API}/api/v1/charts/us/${encodeURIComponent(kiwoomTicker(code))}/stream?exchange=${exchange}` : `${API}/api/v1/charts/${code}/stream`);
   source.addEventListener("tick", (e) => handlers.onTick(JSON.parse((e as MessageEvent).data)));
   source.addEventListener("status", (e) => handlers.onStatus?.(JSON.parse((e as MessageEvent).data)));
   source.onerror = () => handlers.onError?.();
   return () => source.close();
+}
+
+/** 지수 실시간 (2026-11-22): 3초마다 현재가를 물어 장중에만 체결처럼 넣음 */
+function openIndexStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: { marketOpen: boolean }) => void }) {
+  let stop = false;
+  const poll = async () => {
+    try {
+      const q = await get<{ price: number; at: number; open: boolean }>(`/charts/index/${code}/quote`);
+      if (stop) return;
+      handlers.onStatus?.({ marketOpen: q.open });
+      if (q.open && q.price > 0) handlers.onTick({ code, time: q.at, price: q.price, volume: 0 });
+    } catch {
+      // 다음 번에 다시
+    }
+  };
+  void poll();
+  const timer = setInterval(() => void poll(), 3000);
+  return () => {
+    stop = true;
+    clearInterval(timer);
+  };
+}
+
+/**
+ * 선물 · 환율 실시간 (2026-11-22)
+ *   OKX 상품이 있고(나스닥100 · S&P500 · 금) CME 가 거래하는 날: OKX 체결을 CME 가격 기준으로 맞춰 바로 넣음 (CME 무료 시세는 약 10분 늦어서)
+ *     맞춤 = 마지막 CME 1분 종가 ÷ 같은 분의 OKX 종가 (1분마다 다시 잼)
+ *   CME 휴장일(주말 · 미국 휴일)엔 OKX 를 붙이지 않음 → 차트는 CME 마지막 가격에 멈춤
+ *   OKX 상품이 없으면: 1분마다 CME 1분봉 마지막 값을 넣음 (약 10분 늦음)
+ */
+function openFuturesStream(code: string, handlers: { onTick: (t: Tick) => void; onStatus?: (s: StreamStatus) => void }) {
+  const inst = specialOf(code)?.okx;
+  let stop = false;
+  let basis: number | null = null;
+  let lastCme: { time: number; close: number } | null = null;
+  let closeOkx: (() => void) | null = null;
+  /** CME 가 지금 거래하는 날인지: 뉴욕 일요일 18시 ~ 금요일 17시, 그리고 마지막 CME 체결이 2시간 안 (휴일이면 멈춰 있음) */
+  const cmeDay = () => {
+    const ny = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const dow = ny.getDay();
+    const h = ny.getHours();
+    const weekOpen = !(dow === 6 || (dow === 0 && h < 18) || (dow === 5 && h >= 17));
+    const fresh = !!lastCme && Date.now() / 1000 - lastCme.time < 2 * 3600 + 15 * 60;
+    return weekOpen && fresh;
+  };
+  const refresh = async () => {
+    try {
+      const data = await get<{ bars: Bar[] }>(`/charts/futures/${encodeURIComponent(code)}/bars?interval=1m&limit=1`);
+      const b = data.bars[data.bars.length - 1];
+      if (stop || !b) return;
+      const isNew = !lastCme || b.time > lastCme.time;
+      lastCme = { time: b.time, close: b.close };
+      const live = cmeDay();
+      if (inst && live) {
+        const okx = await okxCloseAt(inst, b.time).catch(() => null);
+        // 같은 분의 CME 값과 10% 넘게 다르면 다른 상품으로 보고 붙이지 않음 (기존 차트와 가격이 어긋나지 않게)
+        const ratio = okx ? b.close / okx : null;
+        if (ratio && Math.abs(ratio - 1) < 0.1) basis = ratio;
+        else if (ratio) basis = null;
+      }
+      const okxOn = !!(inst && live && basis);
+      handlers.onStatus?.({ marketOpen: live, delayed: live && !okxOn });
+      if (okxOn && inst) {
+        if (!closeOkx && !stop) closeOkx = openOkxStream(inst, (t) => basis && handlers.onTick({ code, time: t.time, price: Math.round(t.price * basis * 10000) / 10000, volume: t.volume, regular: true }));
+      } else {
+        closeOkx?.();
+        closeOkx = null;
+        if (isNew) handlers.onTick({ code, time: b.time, price: b.close, volume: 0, regular: true });
+      }
+    } catch {
+      // 다음 번에 다시
+    }
+  };
+  void refresh();
+  const timer = setInterval(() => void refresh(), 60_000);
+  return () => {
+    stop = true;
+    clearInterval(timer);
+    closeOkx?.();
+  };
 }

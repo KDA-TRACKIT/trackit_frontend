@@ -15,7 +15,7 @@ import BeeLoader from "../BeeLoader";
 import UseStrategy from "../archive/purchases/[id]/UseStrategy";
 import { opened, subscribed, usePasses } from "../../lib/purchases";
 import { fetchStrategyMonth } from "../../lib/strategy-data";
-import { fetchBars } from "../../lib/market-data";
+import { fetchBars, searchAllSymbols } from "../../lib/market-data";
 import { markFreeView } from "../../lib/free-views";
 import { useMyTrader } from "../../lib/my-trader";
 import { followLabel, pct, periodLabel, strategiesOf, strategyOf, tone, traderById, type Strategy } from "./data";
@@ -164,8 +164,17 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     const ac = new AbortController();
     const start = Date.parse(`${month}-01T00:00:00+09:00`) / 1000;
     const from = start - 60 * 86_400;
-    const to = start + 40 * 86_400;
-    fetchBars(code, "1d", ac.signal)
+    // 그 달에 산 것을 다음 달에 팔 수도 있어 뒤로 넉넉히 (매수 · 매도 표시가 둘 다 들어오게)
+    const to = start + 100 * 86_400;
+    // 미국 종목(2026-11-22): 거래소를 찾아 미국 일봉으로 (예전엔 국내 일봉으로 불러 '차트 데이터가 없어요')
+    const load = /^\d{6}$/.test(code)
+      ? fetchBars(code, "1d", ac.signal, 3000)
+      : searchAllSymbols(code, ac.signal).then((list) => {
+          const hit = list.find((s) => s.code === code && s.exchange);
+          if (!hit?.exchange) throw new Error("no exchange");
+          return fetchBars(code, "1d", ac.signal, 3000, hit.exchange);
+        });
+    load
       .then(({ bars }) => {
         const ymd = (sec: number) => new Date((sec + 9 * 3600) * 1000).toISOString().slice(0, 10);
         setExtra({

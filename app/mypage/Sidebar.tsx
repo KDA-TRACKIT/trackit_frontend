@@ -15,10 +15,10 @@ const TOP: Item[] = [
 const WALLET: Item = { label: "내 계좌", href: "/mypage/wallet" };
 const GROUPS: Group[] = [
   {
-    label: "전략 판매 관리",
+    label: "구독 관리",
     href: "/mypage/sales",
     children: [
-      { label: "판매 내역", href: "/mypage/sales/history" },
+      { label: "구독 내역", href: "/mypage/sales/history" },
       { label: "정산 내역", href: "/mypage/sales/settlements" },
     ],
   },
@@ -34,7 +34,7 @@ const GROUPS: Group[] = [
 
 export default function Sidebar() {
   const path = usePathname();
-  const [open, setOpen] = useState<Record<string, boolean>>({ "전략 판매 관리": true, "계정 설정": true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ "구독 관리": true, "계정 설정": true });
   const link = (it: Item, sub = false) => (
     <Link key={it.href} href={it.href} className={`${sub ? "sub " : ""}${path === it.href ? "on" : ""}`} aria-current={path === it.href ? "page" : undefined}>
       {it.label}

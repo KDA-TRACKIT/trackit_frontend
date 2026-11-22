@@ -23,6 +23,8 @@
 .home-redesign :is(.home-stat-card,.home-week-memos) h2 { margin:0; color:var(--home-ink); font-size:15px; font-weight:600; line-height:19px; }
 .home-stat-value { display:flex; align-items:baseline; gap:12px; margin-top:7px; white-space:nowrap; }
 .home-stat-value strong { color:var(--home-navy); font-size:32px; line-height:37px; font-weight:600; }
+.home-stat-value strong.up { color:#1f9d55; }
+.home-stat-value strong.down { color:#ec3434; }
 .home-stat-value > span { overflow:hidden; color:var(--home-muted); font-size:11px; text-overflow:ellipsis; }
 .home-progress { height:6px; margin-top:9px; overflow:hidden; border-radius:3px; background:#edf1fa; }
 .home-progress > span { display:block; height:100%; border-radius:inherit; background:var(--home-navy); }

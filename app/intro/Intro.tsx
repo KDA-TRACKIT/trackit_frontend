@@ -86,7 +86,7 @@ export default function Intro() {
               <ArchivePreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>전략 보관함</p>
-                <h2>구매한 전략을<br />한곳에서 다시 보세요.</h2>
+                <h2>구독한 전략을<br />한곳에서 다시 보세요.</h2>
                 <p>전략 보관함에서 구독한 트레이더의 전략을 확인하고, 필요한 전략을 다시 열어보세요.</p>
               </div>
             </article>

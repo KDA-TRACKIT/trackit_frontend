@@ -341,7 +341,7 @@ export default function BusinessPage() {
       {step === "done" && (
         <Modal label="전환 완료" onClose={close}>
           <h2>비즈니스 프로필로 전환했어요</h2>
-          <p className="mp-modal-desc">이제 내 전략을 판매할 수 있어요. 판매 관리에서 월 구독료를 정해 주세요.</p>
+          <p className="mp-modal-desc">이제 내 전략을 판매할 수 있어요. 구독 관리에서 월 구독료를 정해 주세요.</p>
           <div className="mp-actions">
             <button type="button" className="mp-btn primary" style={{ minWidth: 88 }} onClick={close}>
               닫기

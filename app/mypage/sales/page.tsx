@@ -1,43 +1,59 @@
 "use client";
-// 전략 판매 관리 (시안 2026-11-18): 판매 현황 + 전략 및 구독 관리 (GET /strategies + /market/royalties)
+// 구독 관리 (2026-11-22, 예전 '전략 판매 관리'): 구독 현황(구독자 수 · 전략 개수 · 정산 금액) + 전략 및 구독 관리
+//   구독자 · 결제 = GET /me/subscribers, 전략 = GET /strategies
+//   정산 금액 = 결제 금액 합계에서 기본 수수료 20% 를 뺀 판매자 몫
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, PageHead } from "../ui";
 import { useSeller, won } from "./data";
 import { useMypage } from "../context";
 import { useBusiness } from "../business/state";
 import StrategiesModal from "./StrategiesModal";
+import { apiRequest } from "../../../lib/api/client";
+
+type MySubscribers = { active: number; total: number; payments: number; revenue: number };
+const SELLER_SHARE = 0.8;
 
 export default function SalesPage() {
-  const { strategies, totals, byStrategy, loading } = useSeller();
+  const { strategies, byStrategy, loading } = useSeller();
   const [open, setOpen] = useState(false);
   const { user } = useMypage();
   // 판매자가 아니면 비즈니스 전환부터, 판매자면 달마다 잠긴 기록(전략보관함)에서 전략으로
   const business = useBusiness(user.id);
   const registerHref = business && business.status !== "pending" ? "/archive/mine" : "/mypage/business";
-  const dash = (v: string | null) => (loading || v === null ? "—" : v);
+  const [subs, setSubs] = useState<MySubscribers | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    apiRequest<MySubscribers>("/me/subscribers")
+      .then((v) => live && setSubs(v))
+      .catch(() => live && setSubs(null));
+    return () => {
+      live = false;
+    };
+  }, []);
+  const subsReady = subs !== undefined;
   return (
     <>
-      <PageHead title="전략 판매 관리" desc="구독 판매 및 정산 현황을 관리하세요." />
-      <Card title="판매 현황" desc="내 전략의 판매·열람 현황입니다.">
+      <PageHead title="구독 관리" desc="구독자와 정산 현황을 관리하세요." />
+      <Card title="구독 현황" desc="내 전략의 구독 현황입니다.">
         <div className="mp-three">
           <div>
-            <span>전략 개수</span>
-            <strong>{dash(strategies?.length ? `${strategies.length}개` : null)}</strong>
+            <span>구독자 수</span>
+            <strong>{!subsReady || subs === null ? "—" : `${subs.active.toLocaleString("ko-KR")}명`}</strong>
           </div>
           <div>
-            <span>총 판매 건수</span>
-            <strong>{dash(totals.count ? `${totals.count}건` : null)}</strong>
+            <span>전략 개수</span>
+            <strong>{loading ? "—" : `${strategies?.length ?? 0}개`}</strong>
           </div>
           <div>
             <span>정산 금액</span>
-            <strong>{dash(totals.payout ? won(totals.payout) : null)}</strong>
+            <strong>{!subsReady || subs === null ? "—" : won(subs.revenue * SELLER_SHARE)}</strong>
           </div>
         </div>
       </Card>
       <Card
         title="전략 및 구독 관리"
-        desc="무료로 보이는 전략과 구독 전략을 구분해 관리합니다."
+        desc="구독자가 보는 전략과 구독 · 정산 기록을 관리합니다."
         action={
           <Link className="mp-btn primary small" href={registerHref}>
             전략 등록
@@ -46,15 +62,15 @@ export default function SalesPage() {
       >
         <div className="mp-rows">
           <div>
-            <strong>전략 개수</strong>
-            <span>열람이 가능한 유/무료 전략 목록</span>
+            <strong>전략 목록</strong>
+            <span>구독자가 볼 수 있는 전략</span>
             <button type="button" className="mp-text-link" onClick={() => setOpen(true)}>
               조회하기 →
             </button>
           </div>
           <div>
-            <strong>판매 내역</strong>
-            <span>판매 기록 및 구매 요청</span>
+            <strong>구독 내역</strong>
+            <span>구독 결제 기록</span>
             <Link className="mp-text-link" href="/mypage/sales/history">
               조회하기 →
             </Link>

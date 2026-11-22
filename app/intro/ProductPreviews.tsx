@@ -3,10 +3,11 @@ import type { ReactNode } from "react";
 import styles from "./preview.module.css";
 
 const assetDir = "/intro-preview/";
+// 2026-11-22: 지금 전략 마켓 화면 그대로 (판매순 · 3개월 · 월 구독료). 숫자는 marketplace/data.ts(sim.json) 3개월 값
 const traders = [
-  { name: "차트메이트", description: "지지선 반등에 주목하는 단타 트레이더", archiveHoney: 128, marketHoney: 129, followThrough: "92%", returnRate: "−3.04%", months: "26년 9월 · 26년 8월", price: "₩19,900", trend: "market-trend-1.svg" },
-  { name: "파동노트", description: "거래량을 보는 추세 추종 트레이더", archiveHoney: 96, marketHoney: 96, followThrough: "89%", returnRate: "+0.90%", months: "26년 9월", price: "₩9,900", trend: "market-trend-2.svg" },
-  { name: "퀀트로그", description: "변동성을 관리하는 스윙 트레이더", archiveHoney: 85, marketHoney: 85, followThrough: "95%", returnRate: "+0.98%", months: "26년 8월 · 26년 7월", price: "₩8,900", trend: "market-trend-3.svg" },
+  { name: "어진냥이", description: "#하락에서 살아남기", archiveHoney: 128, marketHoney: 129, followThrough: "83%", returnRate: "−2.41%", until: "2026. 12. 21.까지", price: "₩19,900", trend: "market-trend-1.svg" },
+  { name: "모멘텀랩", description: "#미국 헬스케어", archiveHoney: 96, marketHoney: 96, followThrough: "97%", returnRate: "+5.05%", until: "2026. 12. 18.까지", price: "₩12,900", trend: "market-trend-2.svg" },
+  { name: "미리미리", description: "#국내 중소형 가치주 분할 매수", archiveHoney: 85, marketHoney: 85, followThrough: "50%", returnRate: "+5.73%", until: "2026. 12. 9.까지", price: "₩12,900", trend: "market-trend-3.svg" },
 ];
 
 const plannedTrades = [
@@ -15,7 +16,7 @@ const plannedTrades = [
   ["삼성전자", "70,800원", "추가 매수"],
 ];
 
-const periods = ["1개월", "3개월", "6개월", "1년", "3년", "설정이후"];
+const periods = ["이번 달", "3개월", "6개월", "1년", "2년", "전체"];
 
 function Preview({ title, variant, children }: {
   title: string;
@@ -78,11 +79,11 @@ export function DashboardPreview() {
         </div>
         <div className={styles.reportSide}>
           <div className={styles.reportMetrics}>
-            <div className={styles.reportMetric}><b>이행률</b><p><strong>83%</strong><small>6건 중 5건</small></p><i /></div>
-            <div className={styles.reportMetric}><b>판매 등급</b><p><strong>C</strong><small>B까지 조건 2개</small></p><i /></div>
+            <div className={styles.reportMetric}><b>실시간 수익률</b><p><strong className={styles.positive}>+2.14%</strong><small>보유 3종목</small></p></div>
+            <div className={styles.reportMetric}><b>이행률</b><p><strong>83%</strong><small>계획 6건 중 5건 지킴</small></p><i /></div>
           </div>
           <div className={styles.reportPlans}>
-            <b>이번 주 메모</b>
+            <b>이번 주 노트</b>
             <table>
               <tbody>{plannedTrades.map(([stock, price, plan]) => <tr key={stock}><th scope="row">{stock}</th><td>{price}</td><td>{plan}</td></tr>)}</tbody>
             </table>
@@ -103,7 +104,7 @@ export function WorkshopPreview() {
           <b>매매하기</b>
         </div>
         <Image className={styles.workspaceChart} src={assetDir + "workspace-chart.svg"} alt="" width={546} height={261} />
-        <div className={styles.workspaceNote}><strong>AI 노트</strong><p>지지선 반등과 거래량 증가를<br />확인한 뒤</p></div>
+        <div className={styles.workspaceNote}><strong>차트 노트</strong><p>지지선 반등과 거래량 증가를<br />확인한 뒤 분할 매수</p></div>
       </div>
     </Preview>
   );
@@ -111,7 +112,7 @@ export function WorkshopPreview() {
 
 export function ArchivePreview() {
   return (
-    <Preview title="전략 보관함 · 구매한 전략" variant="archive">
+    <Preview title="전략 보관함 · 구독 목록" variant="archive">
       <div className={styles.archiveBody}>
         <strong className={styles.tableHeading}>트레이더</strong>
         <div className={styles.archiveRows}>
@@ -119,9 +120,9 @@ export function ArchivePreview() {
             <div className={styles.archiveRow} key={trader.name}>
               <div className={styles.archiveName}><small>{trader.description}</small><span><b>{trader.name}</b><Honey count={trader.archiveHoney} /></span></div>
               <div className={styles.archiveMetrics}>
+                <div><small>구독</small><b>{trader.until}</b></div>
                 <div><small>전략 이행률</small><b>{trader.followThrough}</b></div>
-                <div><small>최근 1개월 수익률</small><b className={trader.returnRate.startsWith("+") ? styles.positive : styles.negative}>{trader.returnRate}</b></div>
-                <div><small>보유 전략</small><b>{trader.months}</b></div>
+                <div><small>3개월 수익률</small><b className={trader.returnRate.startsWith("+") ? styles.positive : styles.negative}>{trader.returnRate}</b></div>
               </div>
             </div>
           ))}
@@ -137,14 +138,14 @@ export function MarketPreview() {
       <div className={styles.marketBody}>
         <strong className={styles.tableHeading}>트레이더</strong>
         <div className={styles.marketSearch}><span>트레이더 이름, 매매 방식 등으로 검색하세요</span><b>검색</b></div>
-        <b className={styles.results}>검색 결과 40건</b>
+        <b className={styles.results}>검색 결과 13건</b>
         <div className={styles.marketFilters}>
           <ul>{periods.map((period, i) => <li className={i === 1 ? styles.activePeriod : undefined} key={period}>{period}</li>)}</ul>
-          <span>추천순　⌄</span>
+          <span>판매순　⌄</span>
         </div>
         <div className={styles.marketTable}>
           <div className={styles.marketRow}>
-            <span>트레이더</span><span>수익률 추이</span><span>수익률</span><span>이행률</span><span>열람권 가격</span>
+            <span>트레이더</span><span>수익률 추이</span><span>수익률</span><span>이행률</span><span>월 구독료</span>
           </div>
           {traders.map(trader => (
             <div className={styles.marketRow} key={trader.name}>

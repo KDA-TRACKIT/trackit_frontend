@@ -46,7 +46,7 @@ const steps: Step[] = [
   },
   {
     title: "전략을 사고팔기",
-    body: ["다른 전략을 열람하고", "내 전략을 판매해요."],
+    body: ["다른 전략을 구독하고", "내 전략을 판매해요."],
     width: 19.8,
     height: 19.8,
     strokes: [

@@ -23,8 +23,8 @@ export default function SalesHistoryPage() {
 
   return (
     <>
-      <PageHead title="판매 내역" desc="구독 판매 기록을 조회합니다." parent={["판매 관리", "/mypage/sales"]} />
-      <Card className="mp-sales-history" title="판매 내역" desc="기간별 판매 실적과 상세 주문 내역을 확인합니다.">
+      <PageHead title="구독 내역" desc="구독 결제 기록을 조회합니다." parent={["구독 관리", "/mypage/sales"]} />
+      <Card className="mp-sales-history" title="구독 내역" desc="기간별 구독 실적과 상세 결제 내역을 확인합니다.">
         <div className="mp-boxes">
           <div>
             <span>총 판매 건수</span>
@@ -119,7 +119,7 @@ export default function SalesHistoryPage() {
             </div>
           ))}
         </div>
-        {loading ? <Empty text="불러오는 중…" /> : !list.length && <div className="mp-empty-2"><strong>판매 내역이 없습니다.</strong><p>구독이 생기면 이곳에서 확인할 수 있습니다.</p></div>}
+        {loading ? <Empty text="불러오는 중…" /> : !list.length && <div className="mp-empty-2"><strong>구독 내역이 없습니다.</strong><p>구독이 생기면 이곳에서 확인할 수 있습니다.</p></div>}
       </Card>
       {open && <StrategiesModal strategies={strategies} views={byStrategy} onClose={() => setOpen(false)} />}
     </>

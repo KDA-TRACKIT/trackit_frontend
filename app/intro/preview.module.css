@@ -82,7 +82,7 @@
 .reportMetric strong { color: #0f2367; font-size: calc(16 * var(--u)); line-height: 1.1; }
 .reportMetric small, .reportPlans td:last-child { color: #69778d; font-size: calc(6 * var(--u)); }
 .reportMetric i { display: block; height: calc(3 * var(--u)); border-radius: 20px; background: linear-gradient(90deg, #0f2367 83%, #eaf0fd 83%); }
-.reportMetric + .reportMetric i { background: linear-gradient(90deg, #0f2367 50%, #eaf0fd 50%); }
+.reportMetric + .reportMetric i { background: linear-gradient(90deg, #0f2367 83%, #eaf0fd 83%); }
 .reportPlans table { width: 100%; border-collapse: collapse; margin-top: calc(3 * var(--u)); font-size: calc(7 * var(--u)); text-align: left; }
 .reportPlans :is(th, td) { padding: calc(2 * var(--u)) 0; border-top: 1px solid #eef1f5; }
 

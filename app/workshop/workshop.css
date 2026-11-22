@@ -1494,3 +1494,14 @@ details.ws-ladder { padding:10px 12px; }
 .ws-tree li button.danger:hover { color:#c92a2a; }
 .ws-tree p { margin:0; padding:14px; color:var(--c-faint); font-size:12.5px; text-align:center; }
 .ws-alert-msg { position:absolute; z-index:7; left:50%; bottom:64px; transform:translateX(-50%); max-width:calc(100% - 32px); padding:8px 14px; border-radius:8px; background:var(--c-ink); color:var(--c-surface); font-size:12.5px; box-shadow:0 6px 18px rgba(0,0,0,.2); }
+
+/* 지지 · 저항 태그 메뉴 (2026-11-22): 차트의 태그를 누르면 바꾸기 · 지우기 */
+.ws-role-menu { position:absolute; z-index:30; display:flex; white-space:nowrap; gap:4px; padding:4px; border:1px solid var(--c-border, #dde2ea); border-radius:8px; background:var(--c-surface, #fff); box-shadow:0 6px 18px rgba(15,35,103,.16); }
+.ws-role-menu button { padding:5px 10px; border:0; border-radius:6px; background:transparent; color:var(--c-text, #1b2433); font-size:13px; font-weight:600; cursor:pointer; }
+.ws-role-menu button:hover { background:var(--c-subtle, #f1f4f9); }
+.ws-role-menu button.on:first-child { background:#1f9d55; color:#fff; }
+.ws-role-menu button.on:nth-child(2) { background:#e5484d; color:#fff; }
+
+/* 시세 지연 표시 (2026-11-22): 차트 이름 옆 작은 테두리 배지 */
+.ws-delay { display:inline-flex; align-items:center; height:20px; margin-left:8px; padding:0 8px; border:1px solid #d97706; border-radius:999px; color:#b45309; font-size:12px; font-style:normal; font-weight:600; white-space:nowrap; vertical-align:middle; }
+:root[data-theme="dark"] .ws-delay, .dark .ws-delay { border-color:#f59e0b; color:#fbbf24; }

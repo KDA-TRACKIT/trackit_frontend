@@ -292,12 +292,17 @@ export type NoteLine = {
 };
 
 const ROLE_KEY = (key: string) => `role:${key}`;
-/** 그 선의 역할: 알고리즘 분류가 우선, 나눌 수 없으면 투자자가 고른 것 */
+/**
+ * 그 선의 역할 (2026-11-22): 투자자가 차트 태그에서 고른 것(지지 · 저항 · 없음)이 우선, 안 골랐으면 알고리즘 분류
+ *   '없음' = 표시 안 함 (이행률에서도 빠짐)
+ */
 export function roleOf(key: string, low: number, high: number, current: number | undefined, answers: Record<string, string>, body?: LastBar) {
+  const picked = answers[ROLE_KEY(key)];
+  if (picked === "지지" || picked === "저항") return { role: picked as Role, auto: false };
+  if (picked === "없음") return { role: null, auto: false };
   const auto = classify(low, high, current, body);
   if (auto) return { role: auto, auto: true };
-  const picked = answers[ROLE_KEY(key)];
-  return { role: picked === "지지" || picked === "저항" ? (picked as Role) : null, auto: false };
+  return { role: null, auto: false };
 }
 export const roleKey = ROLE_KEY;
 

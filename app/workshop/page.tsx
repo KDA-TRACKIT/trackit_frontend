@@ -11,8 +11,8 @@ import { PHASE_LABEL, isRegularPhase, useMarketPhase } from "../../lib/market-se
 import { clientIdOf, useChartAnnotations } from "../../hooks/useChartAnnotations";
 import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
-import { getTool, type Drawing } from "../../lib/drawing";
-import { requestChartMemo, type ChartMemoResult } from "../../lib/api/ai";
+import type { Drawing } from "../../lib/drawing";
+import type { ChartMemoResult } from "../../lib/api/ai";
 import { errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
@@ -23,19 +23,24 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
-import PlanConfirm, { EMPTY_PLAN, planText, withMemo, type Plan } from "./PlanConfirm";
+import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
+import type { RoleTag } from "./WorkshopChart";
 import { autoFillPlan } from "../../lib/strategyText";
-import { buildLadder, noteLines, type NoteLine } from "./lineLadder";
+import { buildLadder, noteLines, roleKey, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
 import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
+import { futuresDailyTickTime, isFuturesCode, isSpecialCode, specialOf } from "../../lib/special-symbols";
+import { getSupabaseBrowser, readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import SiteHeader from "../SiteHeader";
 import "./workshop.css";
 import { uuid } from "../../lib/uuid";
 
 // 차트는 브라우저 캔버스가 필요하므로 서버 렌더링에서 뺀다
 const WorkshopChart = dynamic(() => import("./WorkshopChart"), { ssr: false, loading: () => <section className="ws-chart" /> });
+
+const DEFAULT_SYMBOL: SymbolInfo = { code: STOCK.code, name: STOCK.name, market: "KOSPI" };
 
 const won = (value: number) => value.toLocaleString("ko-KR");
 /** 가격 표시: 국내 12,300원 · 미국 $123.45 */
@@ -52,16 +57,17 @@ const nowKst = () => kstNow().time;
 /** 화면에는 HH:MM까지만 */
 const hhmm = (time: string) => time.slice(0, 5);
 
-const DEFAULT_SYMBOL: SymbolInfo = { code: STOCK.code, name: STOCK.name, market: "KOSPI" };
-/** 목록에서 처음·끝을 포함해 고르게 max 개만 */
-function evenly<T>(list: T[], max: number): T[] {
-  if (list.length <= max) return list;
-  return Array.from({ length: max }, (_, i) => list[Math.round((i * (list.length - 1)) / (max - 1))]);
-}
-
 /** 저장본이 없을 때 차트에 넣는 빈 드로잉 목록 (항상 같은 배열이어야 자동 저장이 헛돌지 않음) */
 const NO_DRAWINGS: Drawing[] = [];
 const symbolLabel = (s: SymbolInfo) => `${s.code}  ${s.name}`;
+/** 마지막으로 본 종목 (사용자별, 이 브라우저) → 트레이딩 로그에 다시 들어오면 그 차트로 (2026-11-22) */
+const LAST_SYMBOL = "trackit:workshop:last-symbol";
+/** 처음 들어온 사람의 기본 차트: 투자 스타일의 주요 시장이 미국 쪽이면 나스닥100 선물(CME+OKX), 아니면 코스피 지수(KRX) */
+const FIRST_US: SymbolInfo = { code: "NQ1!", name: "나스닥100 선물", market: "CME" };
+const FIRST_KR: SymbolInfo = { code: "KOSPI", name: "코스피", market: "지수" };
+/** 지수 · 선물 · 환율 가격: 소수 둘째 자리 (1 아래는 넷째 자리), 단위 없음 */
+const pointsOf = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: Math.abs(v) < 1 ? 4 : 2 });
+const prefersUs = (market: string) => /미국|해외|나스닥|nasdaq|s&p|\bus\b|usa|뉴욕/i.test(market);
 
 export default function WorkshopPage() {
   const [interval, setChartInterval] = useState<Interval>("1d");
@@ -70,9 +76,12 @@ export default function WorkshopPage() {
     intervalRef.current = interval;
   }, [interval]);
   const [symbol, setSymbol] = useState<SymbolInfo>(DEFAULT_SYMBOL);
+  // 지수 · 선물 · 환율 (2026-11-22): 매매 · 기업 정보 없음, 가격은 단위 없이
+  const special = isSpecialCode(symbol.code);
+  const futures = isFuturesCode(symbol.code);
   const us = isUsSymbol(symbol);
-  const money = moneyOf(us);
-  const diff = diffOf(us);
+  const money = special ? pointsOf : moneyOf(us);
+  const diff = special ? pointsOf : diffOf(us);
   const [bars, setBars] = useState<Bar[]>([]);
   /** 지금 종목·간격 봉을 받았는지. 받기 전 실시간 체결을 빈 차트에 붙이면 체결 몇 건짜리 봉(초봉처럼 보임)이 먼저 그려진다 */
   const barsReadyRef = useRef(false);
@@ -80,6 +89,8 @@ export default function WorkshopPage() {
   /** live = 백엔드 시세, mock = 백엔드에 못 붙어서 예시 데이터 */
   const [source, setSource] = useState<"loading" | "live" | "mock">("loading");
   const [marketOpen, setMarketOpen] = useState<boolean | null>(null);
+  /** 늦은 시세로 갱신 중 (선물 · 환율, 2026-11-22) → 차트 이름 옆에 지연 표시 */
+  const [delayed, setDelayed] = useState(false);
   /** 미국 종목의 지금 거래 구간 (스트림이 알려 줌) */
   const [usSession, setUsSession] = useState<UsSession | null>(null);
   /** 장 단계 (프리마켓 · 장 열림 · 애프터마켓 · 장 마감 …) */
@@ -147,6 +158,7 @@ export default function WorkshopPage() {
         onTick: (t) => queue.push(t),
         onStatus: (st) => {
           setMarketOpen(st.marketOpen);
+          setDelayed(!!st.delayed);
           if (st.session) setUsSession(st.session);
         },
       },
@@ -158,8 +170,10 @@ export default function WorkshopPage() {
       // 봉을 받기 전 체결은 버린다 (받은 봉에 이미 들어 있음)
       if (!barsReadyRef.current) return;
       // 미국: 분·시간·초봉은 프리·애프터·주간거래 체결까지, 일·주·연봉은 정규장 체결만 (저장된 일봉이 정규장 기준)
-      const daily = exchange ? usDailyTicks(ticks) : ticks;
-      setBars((list) => applyTicks(list, exchange && isDailyLike(intervalRef.current) ? daily : ticks, intervalRef.current));
+      //   선물: CME 하루(뉴욕 18시 시작) 자리로
+      const fut = isFuturesCode(symbol.code);
+      const daily = exchange ? usDailyTicks(ticks) : fut ? ticks.map((t) => ({ ...t, time: futuresDailyTickTime(t.time) })) : ticks;
+      setBars((list) => applyTicks(list, (exchange || fut) && isDailyLike(intervalRef.current) ? daily : ticks, intervalRef.current));
       setDaily((list) => (list.length && daily.length ? applyTicks(list, daily, "1d") : list));
     }, 250);
     return () => {
@@ -234,10 +248,16 @@ export default function WorkshopPage() {
     setLinkChoice("auto");
     setNotes([]);
     setSymbol(next);
+    setDelayed(false);
     setQuery(symbolLabel(next));
     setSearchOpen(false);
     setBars([]);
     setDaily([]);
+    try {
+      localStorage.setItem(userStorageKey(LAST_SYMBOL), JSON.stringify(next));
+    } catch {
+      // 저장 못 해도 화면은 그대로
+    }
   }
 
   // AI 노트는 빈 칸으로 시작 (예시 문구 없음). 시각은 메모가 생길 때 붙는다
@@ -341,7 +361,35 @@ export default function WorkshopPage() {
     const code = q.get("symbol")?.trim().toUpperCase();
     const exchange = q.get("exchange")?.trim().toUpperCase() as UsExchange | undefined;
     const usCode = !!exchange && ["ND", "NY", "NA"].includes(exchange) && !!code && /^[A-Z][A-Z0-9.]{0,9}$/.test(code);
-    if (!code || (!usCode && !/^[0-9A-Z]{6}$/.test(code)) || code === DEFAULT_SYMBOL.code) return;
+    if (!code || (!usCode && !isSpecialCode(code) && !/^[0-9A-Z]{6}$/.test(code))) {
+      // 주소로 종목을 안 정했으면: 마지막에 본 종목, 처음이면 주요 시장에 따라 기본 차트
+      let live = true;
+      const saved = (() => {
+        try {
+          const v = JSON.parse(readUserStorage(LAST_SYMBOL) ?? "null") as SymbolInfo | null;
+          // 예전(2026-11-22 오전) OKX 단독 코드 US100 은 CME 나스닥100 선물로
+          if (v?.code === "US100") return FIRST_US;
+          return v && typeof v.code === "string" && typeof v.name === "string" ? v : null;
+        } catch {
+          return null;
+        }
+      })();
+      if (saved) {
+        if (saved.code === DEFAULT_SYMBOL.code) return;
+        const t = setTimeout(() => pickSymbol(saved), 0);
+        return () => clearTimeout(t);
+      }
+      void (async () => {
+        const sb = getSupabaseBrowser();
+        const { data } = sb ? await sb.auth.getSession() : { data: { session: null } };
+        const inv = (data.session?.user.user_metadata?.investment ?? {}) as { market?: unknown };
+        if (live) pickSymbol(typeof inv.market === "string" && prefersUs(inv.market) ? FIRST_US : FIRST_KR);
+      })();
+      return () => {
+        live = false;
+      };
+    }
+    if (code === DEFAULT_SYMBOL.code) return;
     const next: SymbolInfo = usCode
       ? { code, name: q.get("name")?.trim() || code, market: q.get("market")?.trim() || "", exchange }
       : { code, name: q.get("name")?.trim() || code, market: q.get("market")?.trim() || "KOSPI" };
@@ -373,9 +421,6 @@ export default function WorkshopPage() {
   const scenarioLine = scenario
     ? `[고른 시나리오] ${scenario.name}${scenario.base ? ` (기준: ${scenario.base})` : ""} · ${scenario.summary} · 5영업일 뒤 예상 ${money(scenario.candles[scenario.candles.length - 1]?.close ?? 0)}`
     : "";
-  /** AI 분석 대상: Memo + 그은 선 (이게 바뀌면 다시 분석해야 저장) */
-  const inputKey = JSON.stringify([noteText.trim(), scenarioLine, drawings.map((d) => [d.toolId, d.points.map((p) => [p.time, p.price])])]);
-  const analyzed = !!aiMemoResult && analyzedKey === inputKey;
   /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
   const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
   /** 매매 계획: 그은 선에서 고른 매매 + Memo 문장, 빈 칸(손절 · 목표 · 매도)은 정한 가격 기준으로 그은 선에서 채움 */
@@ -384,62 +429,25 @@ export default function WorkshopPage() {
     const prices = [...rungs.map((r) => r.price), ...groups.flatMap((g) => (g.kind === "zone" ? [g.low, g.high] : g.levels.map((l) => l.price)))];
     return autoFillPlan(withMemo(plan, noteText), prices, money, today?.close);
   };
-  /** AI 분석 (그은 선 + Memo). 결과가 들어오면 true */
+  /** 저장 전: 일지 · 드로잉을 먼저 저장 (2026-11-22: AI 분석은 뺌). 성공하면 true */
   async function saveToRecord(): Promise<boolean> {
     if (memoBusy) return false;
-    const key = inputKey;
     setMemoBusy(true);
     setSaveMessage("저장 중…");
     try {
-      // 일지·작도 저장이 성공한 경우에만 저장된 최신 내용을 AI에 보낸다.
       if (!(await saveChart())) return false;
-      const result = await requestChartMemo({
-        symbol: { code: symbol.code, name: symbol.name },
-        interval,
-        price: daily[daily.length - 1]?.close ?? bars[bars.length - 1]?.close ?? 1,
-        drawings: drawings.map((d) => ({
-          toolId: d.toolId,
-          label: getTool(d.toolId)?.label ?? d.toolId,
-          // AI 정리는 드로잉당 50점까지 → 긴 붓질은 고르게 골라 보낸다 (처음·끝 포함)
-          points: evenly(
-            d.points.map((p) => ({ time: p.time, price: Number(p.price) })).filter((p) => p.price > 0),
-            50,
-          ),
-          ...(d.text ? { text: d.text } : {}),
-        })),
-        // 투자자가 판단 근거 칸에 더 적은 내용도 같이 보내 AI 분석에 반영
-        notes: [
-          ...notes.map((n) => ({ time: n.time, price: n.price, text: n.text })),
-          ...(noteText.trim() && bars.length
-            ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자 판단 근거] ${noteText.trim()}` }]
-            : []),
-          // 고른 시나리오: 투자자가 예상한 흐름으로 같이 분석
-          ...(scenarioLine && bars.length ? [{ time: bars[bars.length - 1].time, price: daily[daily.length - 1]?.close ?? bars[bars.length - 1].close, text: `[투자자가 고른 시나리오] ${scenarioLine.replace(/^\[고른 시나리오\] /, "")}` }] : []),
-        ],
-        // 이 종목에 쌓인 종목 전략 → AI 가 이번 노트와 합쳐 하나로 정리 (바뀐 관점만 빼고 이어받음)
-        mode: "ai",
-        provider: "openai",
-        currency: us ? "USD" : "KRW",
-      });
-      setAiMemoResult(result);
-      setAnalyzedKey(key);
-      // 매수 조건 · 손절 · 목표는 AI 가 선 위치로 지어내지 않음 (Memo 와 어긋나고 소수 가격이 붙었음)
-      //   → 투자자가 그은 선 콤보박스에서 고른 매매만 계획에 들어감. 방향만 AI 판단으로 (안 정했을 때)
-      if (!plan.direction && /LONG|SHORT/.test(result.direction ?? "")) setPlan({ ...plan, direction: result.direction === "SHORT" ? "매도" : "매수" });
       setConfirmedAt(null);
       setAfterNotes([]);
-      setSuggestion(result.suggestion ?? result.summary ?? "");
       setNoteTime(nowKst());
       setSuggestionApplied(false);
       setConfirming(false);
       setConfirmed(false);
       setLinkChoice("auto");
       setSaveMessage("자동 저장됨");
-      setSaveDetail("AI가 차트 노트를 정리했어요");
       return true;
     } catch (error) {
       setSaveMessage("저장 실패");
-      setSaveDetail(`AI 정리 실패: ${errorMessage(error)}`);
+      setSaveDetail(errorMessage(error));
       return false;
     } finally {
       setMemoBusy(false);
@@ -571,9 +579,8 @@ export default function WorkshopPage() {
     setLineMeaning({});
   }
 
-  /** AI 분석 후 저장: Memo + 그은 선을 AI 가 분석하고 → 바로 저장 확인 창 (Memo 와 분석을 합친 글). 이미 같은 내용으로 분석했으면 바로 창 */
+  /** 저장: 일지 · 드로잉을 저장하고 → 저장 확인 창 (Memo + 그은 선) */
   async function analyzeAndReview() {
-    if (analyzed) return openReview();
     if (await saveToRecord()) openReview();
   }
 
@@ -583,10 +590,10 @@ export default function WorkshopPage() {
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
     if (!lines.length) return "";
     const at = (l: NoteLine) => (l.price !== undefined ? money(l.price) : `${money(l.low ?? 0)}~${money(l.high ?? 0)}`);
-    return ["[드로잉]", ...lines.map((l) => `· ${l.label}${l.role ? ` (${l.role === "SUPPORT" ? "지지" : "저항"})` : ""} ${at(l)}${l.trade ? ` · ${l.trade}` : ""}`)].join("\n");
+    return ["[드로잉]", ...lines.map((l) => `· ${l.label} ${at(l)}`)].join("\n");
   };
-  /** 저장될 글 (2026-11-21): 투자자가 쓴 Memo + 그은 선 + 고른 시나리오 + AI 분석. 예전 전략 합치기 · 매매 계획 칸 줄은 안 넣음 */
-  const savedText = () => [noteText.trim(), drawingSummary(), scenarioLine, aiMemoResult?.memo ? aiMemoResult.memo.trim() : ""].filter(Boolean).join("\n\n");
+  /** 저장될 글 (2026-11-22): 투자자가 쓴 Memo + 그은 선 + 고른 시나리오 (AI 분석은 뺌). 예전 전략 합치기 · 매매 계획 칸 줄은 안 넣음 */
+  const savedText = () => [noteText.trim(), drawingSummary(), scenarioLine].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview() {
@@ -645,6 +652,41 @@ export default function WorkshopPage() {
           : "오늘 체결을 불러오는 중이에요. 체결이 들어오면 1초봉이 이어서 쌓여요."
         : "표시할 시세가 없어요.";
 
+
+  /**
+   * 차트의 지지 · 저항 태그 (2026-11-22, 오른쪽 선 목록 대신): 그은 선마다 평단가처럼 가격 축 옆에
+   *   가까운 가격(0.4% 안)의 같은 역할 선은 태그 하나로 묶음 (피보나치 레벨이 겹쳐 보이지 않게). 누르면 묶인 선을 같이 바꿈
+   */
+  const roleTags = (() => {
+    const last = bars[bars.length - 1];
+    const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
+    const tags: RoleTag[] = [];
+    for (const l of lines) {
+      if (!l.role && !l.trade) continue;
+      const role = l.role === "SUPPORT" ? "지지" : l.role === "RESISTANCE" ? "저항" : null;
+      const trade = l.trade ?? "";
+      const price = l.price ?? (l.role === "RESISTANCE" ? l.high : l.low);
+      if (!price) continue;
+      const near = tags.find((t) => (t.trade || t.role) === (trade || role) && Math.abs(t.price - price) / price < 0.004);
+      if (near) near.keys.push(l.key);
+      else tags.push({ keys: [l.key], price, role, trade });
+    }
+    return tags;
+  })();
+  /** 태그 메뉴에서 고름: 지지 · 저항 · 없음 = 역할 (고른 매매는 취소), 매수 · 매도 · 목표 · 손절 = 매매 (같은 걸 다시 고르면 취소) → 매매 계획 칸 문장도 같이 */
+  function changeTag(tag: RoleTag, choice: string) {
+    const isRole = choice === "지지" || choice === "저항" || choice === "없음";
+    const nextTrade = isRole || choice === tag.trade ? "" : choice;
+    setPlan((p) => applyTrade(p, tag.trade, nextTrade, money(tag.price)));
+    setLineMeaning((a) => {
+      const out = { ...a };
+      for (const k of tag.keys) {
+        out[k] = nextTrade;
+        if (isRole) out[roleKey(k)] = choice;
+      }
+      return out;
+    });
+  }
 
   return (
     <main className="workshop">
@@ -707,7 +749,14 @@ export default function WorkshopPage() {
               </ul>
             )}
           </div>
-          {us ? (
+          {futures ? (
+            <span
+              className={`ws-feed ${source === "loading" || !marketOpen ? "closed" : "open"}`}
+              title={specialOf(symbol.code)?.okx ? "봉은 CME 시세, 실시간은 OKX 무기한 선물을 CME 가격에 맞춰 이어 그림 (CME 휴장일엔 멈춤)" : "거래소 시세 (약 10분 늦음)"}
+            >
+              {source === "loading" ? "불러오는 중" : `${specialOf(symbol.code)?.okx ? `${symbol.market}+OKX` : symbol.market}${marketOpen === false ? " 휴장" : ""}`}
+            </span>
+          ) : us ? (
             <span
               className={`ws-feed ${source === "loading" ? "closed" : usSession === "regular" ? "open" : usSession && usSession !== "closed" ? "extra" : "closed"}`}
               title="미국 정규장 09:30~16:00 (뉴욕) · 프리마켓·애프터마켓·주간거래 체결은 분봉에만 들어가요. 시각은 한국 시각"
@@ -737,14 +786,14 @@ export default function WorkshopPage() {
               {/* 저장 상태만 (저장 중… · 자동 저장됨 · 저장 실패). 서버 오류 문장은 마우스를 올리면 */}
               {saveMessage ?? ""}
             </span>
-            <button
+            {!special && <button
               className={`ws-trade${tradeOpen ? " open" : ""}`}
               onClick={() => setTradeOpen(!tradeOpen)}
               aria-expanded={tradeOpen}
               title={us ? "미국 주식 주문 (키움 계좌 · 주간거래 · 프리 · 정규 · 애프터)" : undefined}
             >
               {tradeOpen ? "매매 닫기" : "매매하기"}
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -755,6 +804,8 @@ export default function WorkshopPage() {
             onIntervalChange={changeInterval}
             // 차트 위 'AI 분석' 버튼은 없앰: AI 분석은 차트 노트 아래 버튼 하나로 (분석 뒤 확인하고 저장)
             avgPrice={avgPrice}
+            roleTags={confirmed ? [] : roleTags}
+            onRoleChange={changeTag}
             notes={notes}
             onAddNote={addNote}
             onDrawingsChange={changeDrawings}
@@ -766,7 +817,8 @@ export default function WorkshopPage() {
             symbolName={symbol.name}
             market={symbol.market}
             quoteCode={symbol.exchange ? `${symbol.exchange}:${symbol.code}` : symbol.code}
-            currency={us ? "USD" : "KRW"}
+            currency={us || special ? "USD" : "KRW"}
+            delay={futures && delayed ? (symbol.market === "외환" ? "1분 지연" : "10분 지연") : futures && marketOpen === false ? "휴장" : null}
             emptyMessage={emptyMessage}
             highlightId={hoverLine}
             fullscreenSide={<ChartSymbolSide current={symbol.code} watch={watch.items} onPick={pickSymbol} />}
@@ -786,28 +838,6 @@ ${t}` : t))}
               <h2>
                 차트 노트 <span className="ws-tag">저장 전 검증</span>
               </h2>
-              {/* 그은 선: 알고리즘 지지 · 저항이 맨 위 (선만 그어도 판단) */}
-              <PlanConfirm
-                drawings={drawings}
-                plan={plan}
-                onPlan={setPlan}
-                answers={lineMeaning}
-                onAnswer={(id, m) => setLineMeaning((a) => ({ ...a, [id]: m }))}
-                aiSummary={aiMemoResult?.summary}
-                aiQuestions={aiMemoResult?.questions}
-                money={money}
-                locked={confirmed}
-                current={today?.close}
-                nowTime={bars[bars.length - 1]?.time}
-                lastBar={bars[bars.length - 1]}
-                bars={bars}
-                onHover={setHoverLine}
-                onDelete={(ids) => removeLinesRef.current?.(ids)}
-              />
-
-              {aiMemoResult?.aiFallback && <p className="ws-ai-fallback">{aiMemoResult.aiFallback}</p>}
-              {/* AI 분석 내용은 'AI 분석 후 저장' 확인 창에서 한 번에 보여 줌 (여기 따로 펼치는 칸은 없앰) */}
-
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (
                 <div className="ws-note-list">
@@ -843,7 +873,7 @@ ${t}` : t))}
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
-                  placeholder="판단 근거, 조건(예: 저항이 지지로 바뀌면 매수), 분할 매수 · 분할 매도 계획(예: 190,000원에 절반, 185,000원에 나머지)을 적으면 AI 분석 때 같이 분석해요."
+                  placeholder="판단 근거, 조건, 분할 매수 · 분할 매도 계획"
                   aria-label="차트 노트"
                 />
               </div>
@@ -852,23 +882,10 @@ ${t}` : t))}
                   확정 완료
                 </button>
               ) : (
-                // AI 분석 후 저장: 누르면 그은 선 + Memo 를 AI 가 분석하고, 끝나면 저장 확인 창 (Memo 와 AI 분석을 합친 글 · 차트 · 종목 전략)
-                <>
-                  <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void analyzeAndReview()}>
-                    {memoBusy ? "AI 분석 중…" : "AI 분석 후 저장"}
-                  </button>
-                  <p className="ws-save-hint">
-                    {!noteText.trim() && !drawings.length ? (
-                      "선을 긋거나 Memo 를 적으면 AI 분석 후 저장할 수 있어요."
-                    ) : (
-                      <>
-                        드로잉과 Memo 를 AI 가 함께 분석한 뒤
-                        <br />
-                        저장할 내용을 보여 드려요.
-                      </>
-                    )}
-                  </p>
-                </>
+                // 저장 (2026-11-22): AI 분석 없이 바로 저장 확인 창 (Memo + 그은 선 · 차트)
+                <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void analyzeAndReview()}>
+                  {memoBusy ? "저장 중…" : "저장"}
+                </button>
               )}
               {confirming && review && (
                 <SaveReview
@@ -876,7 +893,7 @@ ${t}` : t))}
                   image={review.image}
                   shooting={review.shooting}
                   pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
-                  ai={aiMemoResult}
+                  ai={null}
                   records={strategyRecords}
                   linked={!!linkedExecution}
                   busy={confirmBusy}

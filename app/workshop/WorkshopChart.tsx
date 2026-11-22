@@ -202,6 +202,10 @@ const LAST_BAR_AT = 0.65;
 const IND_LIVE_MS = 1000;
 const GROW_SLOTS = 150;
 
+export type RoleTag = { keys: string[]; price: number; role: "지지" | "저항" | null; trade: string };
+const TAG_COLOR: Record<string, string> = { 지지: "#1f9d55", 저항: "#e5484d", 매수: "#2f6fde", 매도: "#f08c00", 목표: "#7048e8", 손절: "#495057" };
+const tagTitle = (t: RoleTag) => t.trade || t.role || "";
+
 type Props = {
   bars: Bar[];
   interval: Interval;
@@ -215,6 +219,12 @@ type Props = {
   registerAdd?: (add: (drawings: Drawing[]) => void) => void;
   /** 산 전략 겹치기: 내 드로잉이 아닌 보기용 가격선 (저장 · AI 분석에 안 들어감) */
   overlayLines?: { price: number; title: string }[];
+  /** 그은 선의 지지 · 저항 태그 (평단가처럼 가격 축 옆에). 누르면 바꾸기 · 지우기. keys = 이 태그로 묶인 선(가까운 피보 레벨 등) */
+  /** 시세가 늦으면 차트 이름 옆에 (예: "10분 지연", "휴장") */
+  delay?: string | null;
+  roleTags?: RoleTag[];
+  /** 고른 것: 지지 · 저항 · 매수 · 매도 · 목표 · 손절 · 없음(지우기) */
+  onRoleChange?: (tag: RoleTag, choice: string) => void;
   /** 산 전략 겹치기: 기울어진 선(추세선 · 채널 위아래). 봉 시각 사이를 이어 그림 (보기용, 저장 안 함) */
   overlaySegments?: { title: string; a: { time: number; price: number }; b: { time: number; price: number }; extend?: boolean }[];
   /** 저장 확인 창에 보여 줄 차트 그림: 지금 차트(드로잉 포함)를 찍고 선 가격마다 지지 · 저항 라벨을 얹어 PNG 로 */
@@ -396,7 +406,7 @@ const pxText = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? usd(v) : won(
 const roundPx = (v: number, cur: "KRW" | "USD") => (cur === "USD" ? Math.round(v * 100) / 100 : Math.round(v));
 const fmtVolume = (v: number) => (v >= 1e8 ? `${(v / 1e8).toFixed(1)}억` : v >= 1e4 ? `${won(Math.round(v / 1e4))}만` : won(Math.round(v)));
 
-export default function WorkshopChart({ quoteCode, bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide, onScenarioPick }: Props) {
+export default function WorkshopChart({ quoteCode, bars, interval, onIntervalChange, avgPrice, onDrawingsChange, registerRemove, registerAdd, overlayLines, delay, roleTags, onRoleChange, overlaySegments, registerSnapshot, loadedDrawings, notes, onAddNote, onSave, saving, dataKey, symbolCode, symbolName, market, currency = "KRW", emptyMessage, highlightId, onQuoteNews, fullscreenSide, onScenarioPick }: Props) {
   /** 차트를 한 번만 만들어서, 그 안의 콜백은 지금 단위를 ref 로 읽는다 */
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -501,6 +511,90 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlaySig, dataKey, lastClose === undefined]);
+
+  // 지지 · 저항 태그 (2026-11-22): 평단가처럼 가격 축 옆에 '지지' · '저항' (선은 드로잉이 그리므로 선은 안 그림)
+  const roleLinesRef = useRef<IPriceLine[]>([]);
+  const roleTagsRef = useRef(roleTags ?? []);
+  const onRoleChangeRef = useRef(onRoleChange);
+  // 가격은 정수로 줄여 비교 (기울어진 선은 시세마다 값이 조금씩 바뀌어 태그를 계속 다시 만들던 것)
+  const roleSig = JSON.stringify((roleTags ?? []).map((t) => [Math.round(t.price * 100) / 100, tagTitle(t)]));
+  const [roleMenu, setRoleMenu] = useState<{ tag: RoleTag; x: number; y: number } | null>(null);
+  useEffect(() => {
+    roleTagsRef.current = roleTags ?? [];
+    onRoleChangeRef.current = onRoleChange;
+  });
+  // 태그를 누르면 작은 메뉴 (차트의 다른 클릭 처리보다 먼저 받음: 바깥 요소의 캡처 단계)
+  useEffect(() => {
+    const container = containerRef.current;
+    const host = container?.parentElement;
+    if (!container || !host) return;
+    const hit = (e: PointerEvent) => {
+      const chart = chartRef.current;
+      const candle = candleRef.current;
+      if (!chart || !candle || !roleTagsRef.current.length) return null;
+      // 화면 배율(CSS zoom)이 걸려 있으면 마우스 좌표와 차트 좌표의 단위가 달라서 둘 다 맞춰 봄
+      const rect = container.getBoundingClientRect();
+      const scale = rect.width ? container.clientWidth / rect.width : 1;
+      const paneW = chart.timeScale().width();
+      for (const k of scale === 1 ? [1] : [1, scale]) {
+        const x = (e.clientX - rect.left) * k;
+        const y = (e.clientY - rect.top) * k;
+        if (x < paneW - 56 || x > container.clientWidth) continue;
+        let best: { tag: (typeof roleTagsRef.current)[number]; d: number } | null = null;
+        for (const tag of roleTagsRef.current) {
+          const ty = candle.priceToCoordinate(tag.price);
+          if (ty === null) continue;
+          const d = Math.abs(ty - y);
+          if (d <= 10 && (!best || d < best.d)) best = { tag, d };
+        }
+        if (best) return { tag: best.tag, x, y };
+      }
+      return null;
+    };
+    // 태그를 누른 한 번은 끝까지 태그가 받음 (드로잉 도구가 켜져 있으면 놓을 때 점이 찍혀서)
+    let swallow = false;
+    const onDown = (e: PointerEvent) => {
+      const h = hit(e);
+      swallow = false;
+      if (!h) return;
+      swallow = true;
+      e.stopPropagation();
+      e.preventDefault();
+      setRoleMenu({ tag: h.tag, x: h.x, y: h.y });
+    };
+    const eat = (e: Event) => {
+      if (!swallow) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.type === "click") swallow = false;
+    };
+    const onMove = (e: PointerEvent) => {
+      container.style.cursor = hit(e) ? "pointer" : "";
+    };
+    const later = ["pointerup", "mousedown", "mouseup", "click"] as const;
+    host.addEventListener("pointerdown", onDown, true);
+    for (const t of later) host.addEventListener(t, eat, true);
+    host.addEventListener("pointermove", onMove);
+    return () => {
+      host.removeEventListener("pointerdown", onDown, true);
+      for (const t of later) host.removeEventListener(t, eat, true);
+      host.removeEventListener("pointermove", onMove);
+    };
+  }, []);
+  useEffect(() => {
+    if (!roleMenu) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent && e.key !== "Escape") return;
+      if (e.target instanceof Element && e.target.closest(".ws-role-menu")) return;
+      setRoleMenu(null);
+    };
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [roleMenu]);
 
   // 기울어진 겹치기 선: 봉마다 그 시각의 선 가격 (봉 밖 시각은 만들지 않아 차트 시간축이 안 흔들림)
   const segRef = useRef<ISeriesApi<"Line">[]>([]);
@@ -811,10 +905,27 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       chart.remove();
       chartRef.current = null;
       candleRef.current = null;
+      roleLinesRef.current = [];
       layerRef.current = null;
       markersRef.current = null;
     };
   }, []);
+  // 지지 · 저항 태그 가격선 (차트를 만든 뒤에 돌아야 해서 여기)
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    // 있는 가격선은 고치기만 (지웠다 새로 만들면 그리는 중 클릭이 씹힘), 모자라면 만들고 남으면 지움
+    const tags = roleTags ?? [];
+    const lines = roleLinesRef.current;
+    tags.forEach((t, i) => {
+      const color = TAG_COLOR[tagTitle(t)] ?? "#495057";
+      const opts = { price: t.price, color, lineVisible: false, axisLabelVisible: true, axisLabelColor: color, axisLabelTextColor: "#fff", title: tagTitle(t) };
+      if (lines[i]) lines[i].applyOptions(opts);
+      else lines[i] = candle.createPriceLine(opts);
+    });
+    for (const l of lines.splice(tags.length)) candle.removePriceLine(l);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleSig, dataKey, lastClose === undefined]);
 
   // 화면 테마(라이트/다크)에 맞춰 차트 바탕·글자·격자 색을 바꾼다. <html data-theme> 이 바뀌면 바로 따라간다
   useEffect(() => {
@@ -2479,6 +2590,7 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
             <strong>
               {symbolName} · {intervalLabel(interval).legend} · {market || (currency === "USD" ? "US" : "KRX")}
             </strong>
+            {delay && <em className="ws-delay" title="실시간 시세가 아니에요">{delay}</em>}
             {legendBar && (
             <span>
               시 {pxText(legendBar.open, currency)} 고 {pxText(legendBar.high, currency)} 저 {pxText(legendBar.low, currency)} 종 {pxText(legendBar.close, currency)}{" "}
@@ -2541,6 +2653,21 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
           ))}
           {bars.length === 0 && emptyMessage && <div className="ws-empty">{emptyMessage === "차트를 불러오는 중…" ? <BeeLoader /> : emptyMessage}</div>}
           <div ref={containerRef} className={`ws-canvas${activeToolId || noteMode ? " drawing" : ""}`} />
+          {roleMenu && (
+            <div className="ws-role-menu" role="menu" style={{ left: Math.max(4, roleMenu.x - 360), top: roleMenu.y + 12 }}>
+              {["지지", "저항", "매수", "매도", "목표", "손절"].map((r) => {
+                const on = tagTitle(roleMenu.tag) === r;
+                return (
+                  <button key={r} type="button" role="menuitemradio" aria-checked={on} style={on ? { background: TAG_COLOR[r], color: "#fff" } : undefined} onClick={() => { onRoleChangeRef.current?.(roleMenu.tag, r); setRoleMenu(null); }}>
+                    {r}
+                  </button>
+                );
+              })}
+              <button type="button" role="menuitem" className="del" onClick={() => { onRoleChangeRef.current?.(roleMenu.tag, "없음"); setRoleMenu(null); }}>
+                태그 지우기
+              </button>
+            </div>
+          )}
 
           {noteMode && !noteDraft && <div className="ws-note-hint">노트를 남길 지점을 클릭하세요 · Esc 취소</div>}
           {activeTool && !textDraft && (

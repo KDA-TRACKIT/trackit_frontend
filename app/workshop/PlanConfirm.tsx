@@ -141,6 +141,16 @@ function phrase(m: string, p: string): [keyof Plan, string] | null {
       return null;
   }
 }
+/** 선의 매매를 prev → next 로 바꿀 때 계획 칸 문장도 같이 (차트 태그 메뉴에서 씀, 2026-11-22). next 가 "" 면 취소 */
+export function applyTrade(plan: Plan, prev: string, next: string, p: string): Plan {
+  let out = plan;
+  const old = prev ? phrase(prev, p) : null;
+  if (old) out = { ...out, [old[0]]: removeFrom(out[old[0]], old[1]) };
+  const add = next ? phrase(next, p) : null;
+  if (add) out = { ...out, [add[0]]: addTo(out[add[0]], add[1]) };
+  return out;
+}
+
 const addTo = (cur: string, line: string) => (cur.split(" / ").includes(line) ? cur : cur ? `${cur} / ${line}` : line);
 const removeFrom = (cur: string, line: string) =>
   cur
