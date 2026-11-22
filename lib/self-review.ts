@@ -39,8 +39,10 @@ const strategyNotes = (records: TradeRecord[], code: string) =>
 
 export function reviewRounds(records: TradeRecord[], rounds: MyRound[], nameOf: (code: string) => string): RoundReview[] {
   return rounds.map((round) => {
-    // 산 날까지 쓴 메모 중 가격 계획이 있는 마지막 것 (칸마다 가장 최근 값을 이어받음)
-    const notes = strategyNotes(records, round.symbol).filter((r) => r.date <= round.entry.d);
+    // 사기 전에 쓴 메모 중 가격 계획이 있는 마지막 것 (칸마다 가장 최근 값을 이어받음)
+    //   (2026-11-22) 날짜가 아니라 매수 시각으로 비교 — 같은 날 사고 나서 쓴 노트는 계획이 아님 (서버 계획 이행률과 같은 기준). 시각을 모르면 날짜로
+    const at = round.entry.at;
+    const notes = strategyNotes(records, round.symbol).filter((r) => (at ? `${r.date} ${r.noteTime}` < at : r.date <= round.entry.d));
     let plan = null as Plan | null;
     for (const r of notes) {
       const p = planOf(r);
@@ -56,7 +58,7 @@ export function reviewRounds(records: TradeRecord[], rounds: MyRound[], nameOf: 
       }
     const flags: Flag[] = [];
     const e = round.entry.px;
-    if (!plan) flags.push({ kind: "noplan", text: notes.length ? "산 날까지 쓴 노트에 매수 · 손절 · 목표 가격이 없었어요" : "계획 노트 없이 샀어요", bad: true });
+    if (!plan) flags.push({ kind: "noplan", text: notes.length ? "사기 전에 쓴 노트에 매수 · 손절 · 목표 가격이 없었어요" : "계획 노트 없이 샀어요", bad: true });
     else {
       if (plan.buy !== null && e > plan.buy * 1.02) flags.push({ kind: "chase", text: `계획 매수가 ${won(plan.buy)}보다 ${pct((e / plan.buy - 1) * 100)} 비싸게 샀어요`, bad: true });
       const x = round.exit?.px;
@@ -71,7 +73,7 @@ export function reviewRounds(records: TradeRecord[], rounds: MyRound[], nameOf: 
       if (!flags.some((f) => f.bad) && x !== undefined) flags.push({ kind: "followed", text: "계획대로 사고팔았어요", bad: false });
       if (x === undefined && plan.stop !== null) flags.push({ kind: "followed", text: `보유 중 · 손절선 ${won(plan.stop)}`, bad: false });
     }
-    if (!plan && latest && latest.at.slice(0, 10) > round.entry.d) flags.push({ kind: "followed", text: `산 뒤 ${latest.at.slice(5, 10).replace("-", ".")}에 계획을 세웠어요 — 손절 ${latest.stop === null ? "없음" : won(latest.stop)} · 목표 ${latest.target === null ? "없음" : won(latest.target)}`, bad: latest.stop === null });
+    if (!plan && latest && (at ? latest.at > at : latest.at.slice(0, 10) > round.entry.d)) flags.push({ kind: "followed", text: `산 뒤 ${latest.at.slice(5, 10).replace("-", ".")}에 계획을 세웠어요 — 손절 ${latest.stop === null ? "없음" : won(latest.stop)} · 목표 ${latest.target === null ? "없음" : won(latest.target)}`, bad: latest.stop === null });
     return { round, name: nameOf(round.symbol), plan, latest, flags };
   });
 }

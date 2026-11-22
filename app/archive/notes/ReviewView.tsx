@@ -126,7 +126,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
           <b>{reviews.length}건</b>
         </div>
         <div>
-          <small title="전체 매매 가운데, 산 날까지 쓴 노트에 매수 · 손절 · 목표 가격을 적어 둔 매매의 비율">계획을 세운 매매 ⓘ</small>
+          <small title="전체 매매 가운데, 사기 전에 쓴 노트에 매수 · 손절 · 목표 가격을 적어 둔 매매의 비율">계획을 세운 매매 ⓘ</small>
           <b>{rate(planned, reviews.length)}</b>
         </div>
         <div>
