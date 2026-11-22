@@ -2004,14 +2004,32 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       const pts = drawingsRef.current.flatMap((d) => d.points);
       const prices = [...pts.map((p) => Number(p.price)), ...marks.map((m) => m.price)].filter((n) => Number.isFinite(n) && n > 0);
       const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const last = Math.max(0, (barsRef.current?.length ?? 1) - 1);
+      // 구간은 '봉 번호'(이 종목 봉 배열의 순서)로 주고받고, 차트에는 그 봉의 시각으로 맞춤 (2026-11-22)
+      //   차트의 논리 번호는 지표 · 겹치기 선 같은 다른 시리즈 시각까지 합친 번호라, 그대로 쓰면 캔들이 없는 구간이 보였음
+      const list = barsRef.current ?? [];
+      const last = Math.max(0, list.length - 1);
+      /** 그 시각이 들어간 봉 번호 (첫 봉보다 이르면 0, 마지막 봉보다 늦으면 마지막) */
+      const idxAt = (t: number) => {
+        let lo = 0;
+        let hi = last;
+        while (lo < hi) {
+          const mid = (lo + hi + 1) >> 1;
+          if (list[mid].time <= t) lo = mid;
+          else hi = mid - 1;
+        }
+        return lo;
+      };
       // 보일 구간: 고른 구간, 없으면 드로잉 전체(앞뒤 3봉) — 드로잉이 없으면 보던 화면
-      let shown = range ?? null;
-      if (!shown && layer && pts.length) {
-        const ls = pts.map((p) => layer.timeToLogical(p.time)).filter((n): n is number => n !== null && Number.isFinite(n));
-        if (ls.length) shown = { from: Math.max(0, Math.floor(Math.min(...ls)) - 3), to: Math.min(last, Math.ceil(Math.max(...ls)) + 3) };
+      let shown = range ? { from: Math.max(0, Math.min(last, range.from)), to: Math.max(0, Math.min(last, range.to)) } : null;
+      if (!shown && pts.length && list.length) {
+        const times = pts.map((p) => Number(p.time)).filter((n) => Number.isFinite(n));
+        if (times.length) shown = { from: Math.max(0, idxAt(Math.min(...times)) - 3), to: Math.min(last, idxAt(Math.max(...times)) + 3) };
       }
-      if (!shown) shown = { from: Math.max(0, Math.floor(prevRange?.from ?? last - 60)), to: Math.min(last, Math.ceil(prevRange?.to ?? last)) };
+      if (!shown) {
+        const vr = ts.getVisibleRange();
+        shown = vr ? { from: idxAt(Number(vr.from)), to: idxAt(Number(vr.to)) } : { from: Math.max(0, last - 60), to: last };
+      }
+      if (shown.to <= shown.from) shown = { from: Math.max(0, shown.to - 1), to: Math.max(shown.to, 1) };
       // 찍는 동안 뒤의 차트가 확대 · 이동돼 보이지 않게 지금 모습을 그림으로 덮어 둠 (2026-11-22)
       let freeze: HTMLImageElement | null = null;
       try {
@@ -2024,7 +2042,7 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
         freeze = null;
       }
       try {
-        ts.setVisibleLogicalRange({ from: shown.from - 0.5, to: shown.to + 0.5 });
+        if (list.length) ts.setVisibleRange({ from: list[shown.from].time as Time, to: list[Math.min(last, shown.to)].time as Time });
         if (prices.length) {
           const lo = Math.min(...prices);
           const hi = Math.max(...prices);

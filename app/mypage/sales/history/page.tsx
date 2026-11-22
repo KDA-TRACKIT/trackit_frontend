@@ -2,7 +2,7 @@
 // 판매 내역 (시안 2026-11-18): 합계 · 전략별 판매 현황 · 최근 판매 내역 (GET /market/royalties). 구매자는 익명
 import { useState } from "react";
 import { Card, Empty, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
-import { SALE_STATUS, day, dayTime, saleState, useSeller } from "../data";
+import { SALE_STATUS, day, dayTime, useSeller } from "../data";
 import StrategiesModal from "../StrategiesModal";
 
 const krw = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
@@ -42,8 +42,8 @@ export default function SalesHistoryPage() {
 
         <div className="mp-sub-head">
           <div>
-            <h3>전략별 판매 현황</h3>
-            <p>등록한 전략이 지금까지 얼마나 판매됐는지 확인합니다.</p>
+            <h3>전략 목록</h3>
+            <p>등록한 전략과 섹터, 기간을 확인합니다.</p>
           </div>
           <button type="button" className="mp-btn ghost-line" onClick={() => setOpen(true)}>
             <svg viewBox="0 0 16 16" aria-hidden>
@@ -52,37 +52,26 @@ export default function SalesHistoryPage() {
             전략 리스트
           </button>
         </div>
-        <div className="mp-grid-table plain" style={{ ["--cols" as string]: "2.4fr 1fr 0.8fr 1fr 0.9fr" }}>
+        {/* 전략 목록 (2026-11-22, 예전 '전략별 판매 현황'): 구독제라 전략마다 판매 건수 · 판매액은 없음 → 섹터 · 기간 · 상태 */}
+        <div className="mp-grid-table plain" style={{ ["--cols" as string]: "2.4fr 1fr 1.4fr" }}>
           <div className="th">
             <span>전략</span>
-            <span>등록일</span>
-            <span>판매 건수</span>
-            <span>판매액</span>
-            <span>판매 상태</span>
+            <span>섹터</span>
+            <span>기간</span>
           </div>
           {(strategies ?? []).map((s) => {
-            const st = saleState(s);
-            const b = byStrategy.get(s.id);
             return (
               <div key={s.id} className="tr">
                 <span className="clip" title={s.title}>
                   <strong>{s.title}</strong>
                 </span>
-                <span className="num">{day(s.createdAt)}</span>
-                <span className="num">
-                  <strong>{(b?.buyers ?? 0).toLocaleString("ko-KR")}건</strong>
-                </span>
-                <span className="num">
-                  <strong>{krw(b?.revenue ?? 0)}</strong>
-                </span>
-                <span>
-                  <em className={`mp-status${st.tone === "on" ? "" : st.tone === "pause" ? " wait" : " off"}`}>{st.label}</em>
-                </span>
+                <span>{s.sector ?? "—"}</span>
+                <span className="num">{s.periodStart ? `${day(s.periodStart)} ~ ${s.periodEnd ? day(s.periodEnd) : ""}` : day(s.createdAt)}</span>
               </div>
             );
           })}
         </div>
-        {!loading && !strategies?.length && <Empty text="표시할 전략별 판매 내역이 없습니다." />}
+        {!loading && !strategies?.length && <Empty text="등록한 전략이 없습니다." />}
 
         <h3 className="mp-sub-title">최근 판매 내역</h3>
         <div className="mp-toolbar">

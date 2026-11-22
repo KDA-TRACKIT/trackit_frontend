@@ -9,6 +9,10 @@ export type MyStrategy = {
   title: string;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | string;
   createdAt: string;
+  /** 섹터 · 전략 기간 (2026-11-20 기획: 섹터별로 기간을 정해 만든 전략. 예전 달 단위 전략은 없음) */
+  sector?: string | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
   listings: { id: string; kind: "MONTHLY" | "ALL"; price: string | number; status: "ACTIVE" | "PAUSED" | string }[];
   _count?: { versions: number };
 };

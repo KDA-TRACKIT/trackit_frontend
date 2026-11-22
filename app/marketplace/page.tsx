@@ -10,6 +10,8 @@ import { rememberListUrl } from "../../lib/market-list";
 import { fitZoom } from "../../lib/fit-script";
 import { SlidersHorizontal } from "lucide-react";
 import SiteHeader from "../SiteHeader";
+import NewStrategies from "./NewStrategies";
+import ProfilePopup from "./ProfilePopup";
 import { MARKETS, PERIODS, TRADERS, TYPES, followLabel, listed, oneStock, pct, sellable, tone, won, type Period, type Trader } from "./data";
 import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
@@ -252,6 +254,8 @@ function MarketplaceList() {
           </div>
         )}
         <Pager page={cur} pages={pages} doubleChevron onPage={(p) => (setPage(p), window.scrollTo({ top: 0, behavior: "smooth" }))} />
+        {/* 내 노트에서 올린 전략 (2026-11-22) */}
+        <NewStrategies />
       </div>
 
       {open && (
@@ -271,13 +275,34 @@ function MarketplaceList() {
 function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { trader: Trader; period: Period; returnLabel: string; honey: number; /** 내가 올린 전략 */ mine: boolean; /** 지금 구독 중인 사람 수 (아직 못 받았으면 null) */ subscribers: number | null }) {
   const showReturn = !oneStock(trader, period);
   const curve = trader.curves?.[period];
+  // 이름을 누르면 프로필 (2026-11-22), 줄의 나머지를 누르면 트레이더 화면
+  const [profile, setProfile] = useState(false);
   return (
     <li className="mk-trader-row">
+      {profile && <ProfilePopup trader={trader} onClose={() => setProfile(false)} />}
       <FavButton id={trader.id} name={trader.name} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} onIcon={<Image src="/marketplace/favorite-star-on.svg" alt="" width={20} height={20} />} />
       <Link className="mk-trader-row-link" href={`/marketplace/${trader.id}`}>
         <div className="mk-trader-who">
           <div className="mk-trader-name-line">
-            <strong className="mk-trader-name">{trader.name}</strong>
+            <strong
+              className="mk-trader-name mk-pp-open"
+              role="button"
+              tabIndex={0}
+              title="프로필 보기"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setProfile(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setProfile(true);
+                }
+              }}
+            >
+              {trader.name}
+            </strong>
             {mine && <span className="mk-mine">내 전략</span>}
             <span className="mk-trader-honey" title="받은 꿀 합계">
               <Image src="/home/leaderboard-honey.svg" alt="받은 꿀" width={11.42} height={14.3401} />

@@ -433,11 +433,19 @@ function BotMsg({ m }: { m: Extract<Msg, { role: "bot" }> }) {
         {m.reply.points.map((p) => (
           <li key={p.text}>
             {p.text}
-            {p.refs.map((r) => (
-              <button key={r} type="button" className="ask-cite" onClick={() => setOpen(open === r ? null : r)} title="이 근거 보기">
-                {label(r)} ↗
-              </button>
-            ))}
+            {p.refs.map((r) => {
+              // 화면이 있는 근거(다가오는 경제 일정 → 증시 캘린더 경제지표)는 그 화면으로 바로 (2026-11-22)
+              const href = m.reply.evidence.find((e) => e.id === r)?.href;
+              return href ? (
+                <Link key={r} href={href} className="ask-cite" title="그 화면으로 가기">
+                  {label(r)} ↗
+                </Link>
+              ) : (
+                <button key={r} type="button" className="ask-cite" onClick={() => setOpen(open === r ? null : r)} title="이 근거 보기">
+                  {label(r)} ↗
+                </button>
+              );
+            })}
           </li>
         ))}
       </ul>

@@ -695,3 +695,31 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 /* 트레이더 상세 거래내역 (2026-11-22): 월별 수익률 아래 */
 .mk-history { margin-top:20px; }
 .mk-history .tb { max-height:none; }
+
+/* 전략 마켓 · 새로 올라온 전략 (2026-11-22) */
+.mk-new { margin-top:40px; }
+.mk-new h2 { margin:0 0 12px; font-size:20px; font-weight:800; color:var(--c-ink); }
+.mk-new .mk-new-cols, .mk-new-row { display:grid; grid-template-columns:minmax(0,2.2fr) 1fr 1fr 1.6fr; gap:12px; align-items:center; }
+.mk-new-rows { margin:0; padding:0; list-style:none; }
+.mk-new-row { padding:16px 20px; border-top:1px solid var(--c-line); font-size:15px; }
+.mk-new-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
+.mk-new-row span { color:var(--c-sub); }
+.mk-new-row b { font-weight:700; }
+
+/* 트레이더 프로필 팝업 (2026-11-22): 이름 · 사진을 누르면 */
+.mk-pp-open { cursor:pointer; }
+.mk-trader-name.mk-pp-open:hover, .mk-pp-name:hover { text-decoration:underline; text-underline-offset:3px; }
+button.mk-avatar { border:0; padding:0; font:inherit; }
+.mk-pp-name { padding:0; border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+.mk-pp-backdrop { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background:rgba(9,17,40,.45); cursor:default; }
+.mk-pp { position:relative; display:flex; flex-direction:column; gap:14px; width:min(460px,calc(100% - 32px)); padding:28px; border-radius:16px; background:var(--c-surface,#fff); color:var(--c-ink,#16203a); box-shadow:0 20px 50px rgba(0,0,0,.2); text-align:left; }
+.mk-pp-x { position:absolute; top:16px; right:18px; border:0; background:none; color:var(--c-sub,#6b778c); font-size:24px; line-height:1; cursor:pointer; }
+.mk-pp-who { display:flex; align-items:center; gap:16px; }
+.mk-pp-avatar { display:inline-flex; align-items:center; justify-content:center; flex:none; width:64px; height:64px; border-radius:50%; background:#e8eefc; color:#0f2367; font-size:26px; font-weight:800; }
+.mk-pp-who h2 { margin:0 0 4px; font-size:20px; font-weight:800; }
+.mk-pp-who span { color:var(--c-sub,#6b778c); font-size:14px; }
+.mk-pp-bio { margin:0; color:var(--c-ink,#16203a); font-size:14px; line-height:1.6; }
+.mk-pp dl { display:flex; flex-direction:column; gap:10px; margin:0; padding:16px; border-radius:12px; background:var(--c-subtle,#f4f6fa); }
+.mk-pp dl div { display:grid; grid-template-columns:120px 1fr; gap:10px; font-size:14px; }
+.mk-pp dt { color:var(--c-sub,#6b778c); }
+.mk-pp dd { margin:0; }

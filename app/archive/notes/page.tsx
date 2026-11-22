@@ -14,6 +14,9 @@ import BeeLoader from "../../BeeLoader";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
+import SellPanel from "./SellPanel";
+import { useBusiness } from "../../mypage/business/state";
+import { currentUserIdSync } from "../../../lib/supabase-browser";
 import MonthSelect from "./MonthSelect";
 import ReviewView from "./ReviewView";
 import {
@@ -120,6 +123,11 @@ export default function MemosPage() {
   }, []);
 
   const memos = useMemo(() => records.map(toMemo), [records]);
+  // 비즈니스 계정이면 내 노트에서 바로 전략 판매 (2026-11-22)
+  const [userId] = useState(() => currentUserIdSync() ?? "");
+  const business = useBusiness(userId);
+  const seller = !!business && business.status !== "pending";
+  const [selling, setSelling] = useState(false);
   const returns = useMemo(() => realizedReturns(positions), [positions]);
   const stocks = useMemo(() => {
     const names = [...new Set(memos.map((m) => m.subject))];
@@ -161,6 +169,7 @@ export default function MemosPage() {
       <div className="mk-wrap ar-wrap">
         <div className="ar-title-row">
           <h1 className="mk-title">내 노트</h1>
+          <div className="mm-title-right">
           <div className="mm-views" role="tablist" aria-label="노트 보기">
             {VIEWS.map(({ key, label, icon: Icon }) => (
               <button
@@ -178,7 +187,15 @@ export default function MemosPage() {
               </button>
             ))}
           </div>
+          {seller && (
+            <button type="button" className="mm-sell-open" onClick={() => setSelling(true)}>
+              전략 판매
+            </button>
+          )}
+          </div>
         </div>
+
+        {selling && <SellPanel memos={memos} onClose={() => setSelling(false)} />}
 
         <div className="mm-filters">
           <label className="mm-search">

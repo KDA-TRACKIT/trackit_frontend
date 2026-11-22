@@ -47,7 +47,7 @@ export async function briefing(target: Target | null, records: TradeRecord[], st
   const events = (cal?.events ?? []).filter((e) => e.date >= today && e.date <= week && e.impact >= 2).slice(0, 5);
   if (events.length) {
     const id = `E${evidence.length + 1}`;
-    evidence.push({ id, label: "다가오는 경제 일정", text: events.map((e) => `${e.date}${e.time ? ` ${e.time}` : ""} ${e.country} ${e.title}${e.forecast ? ` (예상 ${e.forecast})` : ""}`).join(" / ") });
+    evidence.push({ id, label: "다가오는 경제 일정", href: "/insights?tab=economy", text: events.map((e) => `${e.date}${e.time ? ` ${e.time}` : ""} ${e.country} ${e.title}${e.forecast ? ` (예상 ${e.forecast})` : ""}`).join(" / ") });
     points.push({ text: `이번 주 챙길 일정: ${events.map((e) => `${Number(e.date.slice(5, 7))}/${Number(e.date.slice(8))} ${e.title}`).join(", ")}.`, refs: [id] });
   }
   const basic: Target = { key: "basic", kind: "stock", id: "", name: "기본 채팅" };

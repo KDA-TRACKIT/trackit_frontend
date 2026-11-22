@@ -329,3 +329,26 @@ html[data-theme="dark"] .mm-page .mm-cell-day em { color:#d6e1fb; }
 .mm-sector-name small { margin-left:6px; color:#8a94a6; font-size:12px; font-weight:500; }
 html[data-theme="dark"] .mm-page .mm-market-name { border-color:var(--c-line); background:var(--c-subtle); color:var(--c-ink); }
 html[data-theme="dark"] .mm-page .mm-sector-name { color:var(--c-ink); }
+
+/* 내 노트 · 전략 판매 (비즈니스 계정, 2026-11-22) */
+.mm-title-right { display:flex; align-items:center; gap:12px; }
+.mm-page .mm-sell-open { height:34px; padding:0 16px; border:0; border-radius:8px; background:#0f2367; color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.mm-sell-backdrop { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(9,17,40,.45); }
+.mm-sell { display:flex; flex-direction:column; gap:14px; width:min(440px,calc(100% - 32px)); padding:24px; border-radius:16px; background:var(--c-surface,#fff); color:var(--c-ink,#16203a); box-shadow:0 20px 50px rgba(0,0,0,.2); }
+.mm-sell header { display:flex; align-items:center; justify-content:space-between; }
+.mm-sell h2 { margin:0; font-size:20px; font-weight:800; }
+.mm-sell-x { display:inline-flex; padding:4px; border:0; background:none; color:var(--c-sub,#6b778c); cursor:pointer; }
+.mm-sell label { display:flex; flex-direction:column; gap:6px; }
+.mm-sell label > span { color:var(--c-sub,#6b778c); font-size:13px; font-weight:600; }
+.mm-sell :is(input,select) { box-sizing:border-box; width:100%; min-width:0; height:40px; padding:0 12px; border:1px solid var(--c-line,#dde2ea); border-radius:8px; background:var(--c-surface,#fff); color:inherit; font:inherit; font-size:15px; }
+.mm-sell input[readonly] { background:var(--c-subtle,#f4f6fa); color:var(--c-sub,#6b778c); }
+.mm-sell-period { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+.mm-sell footer { display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
+.mm-sell footer button { height:40px; padding:0 18px; border:1px solid var(--c-line,#dde2ea); border-radius:8px; background:var(--c-surface,#fff); color:inherit; font:inherit; font-weight:700; cursor:pointer; }
+.mm-sell footer button.primary { border-color:#0f2367; background:#0f2367; color:#fff; }
+.mm-sell footer button:disabled { opacity:.5; cursor:default; }
+.mm-sell-error { margin:0; color:var(--c-down,#d64545); font-size:13px; }
+.mm-sell-empty { margin:0; color:var(--c-sub,#6b778c); }
+.mm-sell-done { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+.mm-sell-done p { margin:0; color:var(--c-sub,#6b778c); }
+.mm-sell-note { margin:-4px 0 0; color:var(--c-sub,#6b778c); font-size:13px; }

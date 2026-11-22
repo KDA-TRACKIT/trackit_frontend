@@ -13,6 +13,7 @@ import HoneyPot from "../../HoneyPot";
 import { usePasses } from "../../../lib/purchases";
 import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Qna, Reviews } from "../feedback";
+import ProfilePopup from "../ProfilePopup";
 import { useMyTrader, useSubscriberCounts } from "../../../lib/my-trader";
 import "../marketplace.css";
 import "../../archive/archive.css";
@@ -30,6 +31,8 @@ export default function TraderPage() {
   // 내가 올린 전략인지 (내 전략 표시 · 구독 버튼 숨김) · 지금 구독 중인 사람 수
   const own = useMyTrader() === id;
   const subscribers = useSubscriberCounts();
+  // 프로필 사진 · 이름을 누르면 프로필 (2026-11-22)
+  const [profile, setProfile] = useState(false);
   if (!t) {
     return (
       <main className="mk-page">
@@ -62,16 +65,21 @@ export default function TraderPage() {
           트레이더 목록
         </Link>
 
+        {profile && <ProfilePopup trader={t} onClose={() => setProfile(false)} />}
         {/* 맨 위 한 장 카드: 왼쪽 프로필 | 오른쪽 구독, 두 칸 세로 가운데 (Figma '마켓 / 트레이더 소개 카드') */}
         <div className="mk-card mk-hero">
           <section className="mk-profile">
             <div className="mk-profile-top">
-              <span className="mk-avatar" aria-hidden>
+              <button type="button" className="mk-avatar mk-pp-open" onClick={() => setProfile(true)} aria-label={`${t.name} 프로필 보기`}>
                 {t.name.slice(0, 1)}
-              </span>
+              </button>
               <div className="mk-profile-who">
                 <div className="mk-profile-name">
-                  <h1>{t.name}</h1>
+                  <h1>
+                    <button type="button" className="mk-pp-name" onClick={() => setProfile(true)} title="프로필 보기">
+                      {t.name}
+                    </button>
+                  </h1>
                   {own ? (
                     <span className="mk-mine">내 전략</span>
                   ) : (

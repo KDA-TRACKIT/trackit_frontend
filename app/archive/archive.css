@@ -810,3 +810,6 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .ask-new:hover:not(:disabled) { border-color:var(--c-ink); color:var(--c-ink); }
 /* 새 대화 버튼이 첫 메시지와 겹치지 않게: 채팅 기록 위쪽에 버튼 자리 */
 .ask-main .ask-log { padding-top:46px; }
+
+/* 화면으로 가는 근거 칩 (2026-11-22): 버튼 칩과 같은 모양 */
+a.ask-cite { display:inline-block; text-decoration:none; }
