@@ -67,12 +67,3 @@ export function requestChartMemo(body: ChartMemoRequest): Promise<ChartMemoResul
   // 프론트 주소로 보내 next.config rewrite 가 AI 백엔드(AI_API_URL, Gemini 키가 있는 곳)로 넘기게
   return apiRequest("/ai/chart-memo", { method: "POST", body: JSON.stringify(body), sameOrigin: true });
 }
-
-/** 전략 분석 질문: 화면이 모은 근거만으로 AI 가 답함 (POST /ai/strategy-ask). AI 가 꺼져 있으면 answer="" + aiFallback */
-/** href: 누르면 그 화면으로 바로 이동 (예: 다가오는 경제 일정 → 증시 캘린더 경제지표) */
-export type StrategyEvidence = { id: string; label: string; text: string; href?: string };
-export type StrategyAskResult = { answer: string; points: { text: string; refs: string[] }[]; cautions: string[]; followUps: string[]; provider?: string; model?: string; aiFallback?: string };
-export function askStrategy(body: { question: string; subject: string; evidence: StrategyEvidence[]; currency?: "KRW" | "USD" }): Promise<StrategyAskResult> {
-  // 기본 백엔드로 (배포에선 AI 키가 있는 서버). 로컬 백엔드에 키가 없으면 aiFallback → 화면이 근거로 직접 정리
-  return apiRequest("/ai/strategy-ask", { method: "POST", body: JSON.stringify(body) });
-}

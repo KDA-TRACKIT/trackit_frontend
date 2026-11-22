@@ -53,30 +53,6 @@
 .ar-link-sub { margin-left:14px; color:var(--c-sub); }
 .ar-sub { color:var(--c-faint); font-size:12px; }
 
-/* 전략 분석 */
-.an-table-wrap { overflow-x:auto; padding:6px 0; }
-.an-table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
-.an-table th { padding:10px 16px; color:var(--c-faint); font-size:12px; font-weight:600; text-align:right; white-space:nowrap; }
-.an-table th:first-child, .an-table td:first-child { text-align:left; }
-.an-table td { padding:12px 16px; border-top:1px solid var(--c-line); color:var(--c-ink); font-weight:700; text-align:right; white-space:nowrap; }
-.an-table td a { color:var(--c-ink); font-weight:800; text-decoration:none; }
-.an-table td a:hover { color:var(--mk-primary); }
-.an-table td small { display:block; color:var(--c-faint); font-size:11px; font-weight:500; }
-.an-card { margin-top:12px; padding:16px 18px; }
-.an-card-head { display:flex; align-items:baseline; gap:10px; }
-.an-card-head strong { font-size:16px; font-weight:800; }
-.an-card-head small { color:var(--c-faint); font-size:12px; }
-.an-bars { display:flex; align-items:stretch; gap:4px; height:120px; margin-top:12px; }
-.an-bar { position:relative; flex:1; border-radius:4px; }
-.an-bar.opened { background:var(--c-accent-soft); }
-.an-bar::after { content:""; position:absolute; left:0; right:0; top:50%; border-top:1px solid var(--c-line); }
-.an-bar span { position:absolute; left:20%; right:20%; border-radius:2px; }
-.an-bar span.gain { background:var(--mk-gain); }
-.an-bar span.loss { background:var(--mk-loss); }
-.an-bar small { position:absolute; bottom:-16px; left:0; right:0; color:var(--c-faint); font-size:11px; text-align:center; }
-.an-opened { display:flex; flex-direction:column; gap:6px; margin:24px 0 0; padding:0; list-style:none; font-size:13px; color:var(--c-ink-2); }
-.an-opened li { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.an-opened small { color:var(--c-faint); }
 @media (max-width:800px) { .ar-cards { grid-template-columns:1fr; } }
 
 
@@ -679,98 +655,6 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .mm-rv-chart.is-empty { display:grid; place-items:center; color:var(--c-faint); font-size:13px; }
 @media (max-width:800px) { .mm-rv-stats { grid-template-columns:1fr 1fr; } }
 
-/* 전략 분석 채팅 */
-.ask-wrap { margin-bottom:18px; padding:0; overflow:hidden; }
-.ask-muted { margin:0; padding:18px 20px; color:var(--c-faint); font-size:13px; }
-.ask-chat { display:flex; flex-direction:column; height:calc(100vh - 170px); min-height:520px; margin-bottom:0; }
-/* 전략 분석: 채팅창 아래로 페이지가 더 스크롤되지 않게 (아래 여백은 채팅창 높이로 맞춤) */
-.an-chat-page, .an-chat-page .mk-wrap { padding-bottom:0 !important; margin-bottom:0 !important; min-height:0 !important; }
-.ask-log { flex:1; display:flex; flex-direction:column; gap:10px; min-height:0; overflow-y:auto; padding:18px 20px; }
-.ask-hello { margin:auto; text-align:center; color:var(--c-sub); }
-.ask-hello b { color:var(--c-ink); font-size:16px; }
-.ask-hello p { margin:6px 0 0; font-size:13px; }
-.ask-msg { max-width:86%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.6; }
-.ask-msg.user { align-self:flex-end; background:var(--c-ink); color:var(--c-surface); border-bottom-right-radius:4px; }
-.ask-msg.bot { align-self:flex-start; border:1px solid var(--c-line); background:var(--c-surface); color:var(--c-ink); border-bottom-left-radius:4px; }
-.ask-msg.wait { color:var(--c-faint); font-size:13px; }
-.ask-msg p { margin:4px 0 6px; }
-.ask-msg ul { margin:4px 0; padding-left:18px; display:flex; flex-direction:column; gap:4px; }
-.ask-msg sup { margin-left:3px; padding:0 4px; border-radius:4px; background:var(--c-subtle); color:var(--c-sub); font-size:11px; font-weight:800; }
-.ask-tag { display:inline-block; padding:1px 8px; border-radius:999px; background:var(--c-subtle); color:var(--c-sub); font-size:12px; font-weight:800; }
-.ask-caution { display:block; color:var(--c-faint); font-size:12px; }
-.ask-msg details { margin-top:6px; font-size:13px; }
-.ask-msg summary { color:var(--c-sub); cursor:pointer; font-weight:700; }
-.ask-msg ol { margin:6px 0 0; padding-left:16px; color:var(--c-sub); display:flex; flex-direction:column; gap:4px; }
-.ask-msg ol b { color:var(--c-ink); }
-.ask-foot { display:flex; align-items:center; gap:10px; margin-top:6px; }
-.ask-foot small { flex:1; color:var(--c-faint); font-size:12px; }
-.ask-foot button { padding:3px 10px; border:1px solid var(--c-line); border-radius:999px; background:none; color:var(--c-sub); font-size:12px; cursor:pointer; }
-.ask-quick { display:flex; flex-wrap:wrap; gap:6px; padding:10px 20px 0; border-top:1px solid var(--c-line); }
-.ask-quick button { padding:5px 12px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-sub); font-size:13px; font-weight:700; cursor:pointer; }
-.ask-quick button:hover:not(:disabled) { border-color:var(--c-ink); color:var(--c-ink); }
-.ask-input { display:flex; gap:8px; padding:10px 20px 16px; }
-.ask-input select { height:42px; max-width:200px; padding:0 8px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); font-size:13px; }
-.ask-input input { flex:1; height:42px; padding:0 14px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); color:var(--c-ink); font-size:14px; }
-.ask-input button { width:42px; height:42px; border:0; border-radius:10px; background:var(--c-ink); color:var(--c-surface); cursor:pointer; display:grid; place-items:center; }
-.ask-input button:disabled { opacity:.4; cursor:default; }
-
-.ask-src { display:block; margin-top:6px; color:var(--c-faint); font-size:12px; }
-.ask-visual { margin-top:8px; }
-.ask-stocks { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
-.ask-stocks button { display:flex; align-items:baseline; gap:6px; padding:5px 11px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink); font-size:13px; cursor:pointer; }
-.ask-stocks button.on { border-color:var(--c-ink); background:var(--c-subtle); }
-.ask-stocks button:disabled { cursor:default; opacity:.7; }
-.ask-stocks small { color:var(--c-faint); font-size:11px; }
-.ask-stocks em { font-style:normal; font-weight:800; font-size:12px; }
-.ask-stocks em.gain { color:var(--c-up, #1f9d55); } .ask-stocks em.loss { color:var(--c-down, #e03131); }
-.ask-chart { width:min(720px, 100%); }
-.ask-chart a { display:inline-block; margin-top:4px; color:var(--c-sub); font-size:12px; font-weight:700; text-decoration:none; }
-.ask-msg.bot:has(.ask-chart) { max-width:100%; width:100%; }
-
-.ask-checks { margin:6px 0 8px; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-subtle); }
-.ask-checks > b { display:block; margin-bottom:6px; font-size:14px; }
-.ask-checks > b.ok { color:var(--c-up, #1f9d55); } .ask-checks > b.no { color:var(--c-ink); }
-.ask-checks ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px; font-size:13px; }
-.ask-checks li span { display:inline-block; width:18px; font-weight:800; }
-.ask-checks li.ok span { color:var(--c-up, #1f9d55); }
-.ask-checks li.no span { color:var(--c-down, #e03131); }
-.ask-checks li.na { color:var(--c-faint); }
-.ask-checks small { color:var(--c-faint); }
-
-/* 전략 분석 채팅: 왼쪽 채팅 목록 (쓰론 참고) */
-.ask-chat { flex-direction:row !important; }
-.ask-side { width:210px; flex:none; display:flex; flex-direction:column; gap:2px; padding:14px 10px; border-right:1px solid var(--c-line); overflow-y:auto; }
-.ask-side h4 { margin:12px 8px 4px; color:var(--c-faint); font-size:12px; font-weight:700; }
-.ask-side button, .ask-side-new { display:flex; align-items:center; gap:7px; width:100%; padding:8px 10px; border:0; border-radius:8px; background:none; color:var(--c-sub); font-size:13px; font-weight:600; text-align:left; text-decoration:none; cursor:pointer; }
-.ask-side button:hover, .ask-side-new:hover { background:var(--c-hover); color:var(--c-ink); }
-.ask-side button.on { background:var(--c-subtle); color:var(--c-ink); font-weight:800; }
-.ask-side em { margin-left:auto; font-style:normal; font-size:12px; font-weight:800; }
-.ask-side em.gain { color:var(--c-up, #1f9d55); } .ask-side em.loss { color:var(--c-down, #e03131); }
-.ask-side .dot { width:7px; height:7px; border-radius:50%; flex:none; }
-.ask-side .dot.t { background:#8b5cf6; } .ask-side .dot.s { background:#3b82f6; }
-.ask-side-new { margin-top:auto; color:var(--c-faint); }
-.ask-main { flex:1; min-width:0; display:flex; flex-direction:column; }
-.ask-row { display:flex; flex-direction:column; gap:6px; }
-.ask-row > .ask-msg.user { align-self:flex-end; }
-.ask-row > .ask-msg.bot { align-self:flex-start; }
-.ask-stamp { align-self:center; margin:6px 0 2px; color:var(--c-faint); font-size:12px; }
-.ask-lead { font-weight:700; }
-.ask-cite { margin-left:6px; padding:1px 8px; border:1px solid var(--c-line); border-radius:999px; background:none; color:var(--c-sub); font-size:11px; font-weight:700; cursor:pointer; vertical-align:1px; }
-.ask-cite:hover { border-color:var(--c-ink); color:var(--c-ink); }
-.ask-cite-box { margin:6px 0; padding:8px 10px; border-left:3px solid var(--c-line); background:var(--c-subtle); color:var(--c-sub); font-size:13px; line-height:1.55; }
-.ask-disclaimer { padding:0 20px 12px; color:var(--c-faint); font-size:11px; text-align:center; }
-.ask-main .ask-input { padding-bottom:6px; }
-@media (max-width:800px) { .ask-side { display:none; } }
-
-/* 전략 분석 채팅 목록: 구매 전략 전체에서 고르기 · 종목 검색 */
-.ask-side .ask-side-more { color:var(--c-faint); font-size:12px; font-weight:700; padding:6px 10px; }
-.ask-side-search { position:relative; margin:6px 2px 0; }
-.ask-side-search input { width:100%; height:32px; padding:0 10px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font-size:13px; }
-.ask-side-hits { position:absolute; left:0; right:0; top:36px; z-index:5; display:flex; flex-direction:column; padding:4px; border:1px solid var(--c-line); border-radius:10px; background:var(--c-surface); box-shadow:0 10px 24px rgba(0,0,0,.25); max-height:260px; overflow-y:auto; }
-.ask-side-hits button { justify-content:space-between; }
-.ask-side-hits small { color:var(--c-faint); font-size:11px; font-weight:600; }
-.ask-side-hits p { margin:6px 8px; color:var(--c-faint); font-size:12px; }
-
 /* 복기형 재생 */
 .mm-rp { padding:16px 18px; }
 .mm-rp-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
@@ -805,12 +689,3 @@ html[data-theme="dark"] .ar-pt-search button { background:#3b5bdb; }
 .mm-rp-track button.later { opacity:.45; }
 @media (max-width:900px) { .mm-rp-body { grid-template-columns:1fr; } .mm-rp-card { height:auto; } .mm-rp-card blockquote { max-height:220px; } }
 
-/* 전략 분석 채팅: 새 대화 (지난 대화 지우기) */
-.ask-main { position:relative; }
-.ask-new { position:absolute; top:10px; right:16px; z-index:3; display:inline-flex; align-items:center; gap:5px; height:28px; padding:0 10px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-sub); font-size:12px; font-weight:700; cursor:pointer; }
-.ask-new:hover:not(:disabled) { border-color:var(--c-ink); color:var(--c-ink); }
-/* 새 대화 버튼이 첫 메시지와 겹치지 않게: 채팅 기록 위쪽에 버튼 자리 */
-.ask-main .ask-log { padding-top:46px; }
-
-/* 화면으로 가는 근거 칩 (2026-11-22): 버튼 칩과 같은 모양 */
-a.ask-cite { display:inline-block; text-decoration:none; }
