@@ -17,6 +17,7 @@ import { FavButton, Pager, Range2, Spark } from "./parts";
 import "./marketplace.css";
 import { getMarketRankings, type MarketRankings } from "../../lib/api/market-rankings";
 import { useMyTrader } from "../../lib/my-trader";
+import { useFavorites } from "../../lib/favorites";
 
 const SORT_OPTIONS = [
   { key: "sales", label: "판매순" },
@@ -91,6 +92,7 @@ export default function MarketplacePage() {
 function MarketplaceList() {
   const [rankings, setRankings] = useState<MarketRankings | null>(null);
   const myTrader = useMyTrader();
+  const favorites = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -136,7 +138,10 @@ function MarketplaceList() {
     const out = TRADERS.filter(listed).filter(hit);
     const ret = (t: Trader) => (oneStock(t, period) ? -Infinity : t.returns[period]);
     const counts = sort === "sales" ? rankings?.subscribers : rankings?.honey;
+    const favoriteOrder = new Map(favorites.map(({ id }, index) => [id, index]));
     out.sort((a, b) => {
+      const priority = (favoriteOrder.get(a.id) ?? favorites.length) - (favoriteOrder.get(b.id) ?? favorites.length);
+      if (priority) return priority;
       if (sort === "price-asc") return a.price - b.price;
       if (sort === "price") return b.price - a.price;
       if (sort === "ret") return ret(b) === ret(a) ? 0 : ret(b) > ret(a) ? 1 : -1;
@@ -144,7 +149,7 @@ function MarketplaceList() {
       return (counts?.[b.id] ?? 0) - (counts?.[a.id] ?? 0);
     });
     return out;
-  }, [query, period, sort, filter, rankings]);
+  }, [query, period, sort, filter, rankings, favorites]);
 
   const per = PER_PAGE;
   const pages = Math.max(1, Math.ceil(list.length / per));
@@ -248,7 +253,7 @@ function MarketplaceList() {
             </div>
             <ul className="mk-trader-rows">
               {shown.map((trader) => (
-                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={rankings?.honey[trader.id] ?? 0} mine={myTrader === trader.id} subscribers={rankings ? (rankings.subscribers[trader.id] ?? 0) : null} />
+                <TraderRow key={trader.id} trader={trader} period={period} returnLabel={returnLabel} honey={rankings?.honey[trader.id] ?? 0} mine={myTrader === trader.id} subscribers={rankings ? (rankings.subscribers[trader.id] ?? 0) : null} onFavorite={page > 1 ? () => setPage(1) : undefined} />
               ))}
             </ul>
           </div>
@@ -272,7 +277,7 @@ function MarketplaceList() {
   );
 }
 
-function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { trader: Trader; period: Period; returnLabel: string; honey: number; /** 내가 올린 전략 */ mine: boolean; /** 지금 구독 중인 사람 수 (아직 못 받았으면 null) */ subscribers: number | null }) {
+function TraderRow({ trader, period, returnLabel, honey, mine, subscribers, onFavorite }: { trader: Trader; period: Period; returnLabel: string; honey: number; /** 내가 올린 전략 */ mine: boolean; /** 지금 구독 중인 사람 수 (아직 못 받았으면 null) */ subscribers: number | null; onFavorite?: () => void }) {
   const showReturn = !oneStock(trader, period);
   const curve = trader.curves?.[period];
   // 이름을 누르면 프로필 (2026-11-22), 줄의 나머지를 누르면 트레이더 화면
@@ -280,7 +285,7 @@ function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { 
   return (
     <li className="mk-trader-row">
       {profile && <ProfilePopup trader={trader} onClose={() => setProfile(false)} />}
-      <FavButton id={trader.id} name={trader.name} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} onIcon={<Image src="/marketplace/favorite-star-on.svg" alt="" width={20} height={20} />} />
+      <FavButton id={trader.id} name={trader.name} onFavorite={onFavorite} outlineIcon={<Image src="/marketplace/favorite-star.svg" alt="" width={20} height={20} />} onIcon={<Image src="/marketplace/favorite-star-on.svg" alt="" width={20} height={20} />} />
       <Link className="mk-trader-row-link" href={`/marketplace/${trader.id}`}>
         <div className="mk-trader-who">
           <div className="mk-trader-name-line">
