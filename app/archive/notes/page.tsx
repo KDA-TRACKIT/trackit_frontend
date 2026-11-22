@@ -16,6 +16,7 @@ import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
 import SellPanel from "./SellPanel";
 import { useBusiness } from "../../mypage/business/state";
+import { useMyTrader } from "../../../lib/my-trader";
 import { currentUserIdSync } from "../../../lib/supabase-browser";
 import MonthSelect from "./MonthSelect";
 import ReviewView from "./ReviewView";
@@ -126,7 +127,9 @@ export default function MemosPage() {
   // 비즈니스 계정이면 내 노트에서 바로 전략 판매 (2026-11-22)
   const [userId] = useState(() => currentUserIdSync() ?? "");
   const business = useBusiness(userId);
-  const seller = !!business && business.status !== "pending";
+  // 이 브라우저에 저장된 전환 상태 + 서버가 아는 판매자(전략 마켓 트레이더 본인) — 다른 기기에서도 버튼이 보이게
+  const marketTrader = useMyTrader();
+  const seller = (!!business && business.status !== "pending") || !!marketTrader;
   const [selling, setSelling] = useState(false);
   const returns = useMemo(() => realizedReturns(positions), [positions]);
   const stocks = useMemo(() => {

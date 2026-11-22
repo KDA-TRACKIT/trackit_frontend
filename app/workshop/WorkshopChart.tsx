@@ -2419,14 +2419,14 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
               setOpenGroup(null);
               setNoteMenuOpen(!noteMenuOpen);
             }}
-            title="차트 노트 · 텍스트 · 말풍선 · 핀 등 글 도구"
+            title="Note · 텍스트 · 말풍선 · 핀 등 글 도구"
             aria-expanded={noteMenuOpen}
           >
-            ✎ {activeTool?.group === "text" ? activeTool.label : "차트 노트"} ▾
+            ✎ {activeTool?.group === "text" ? activeTool.label : "Note"} ▾
           </button>
           {noteMenuOpen && (
             <div className="ws-flyout ws-note-flyout" role="menu">
-              <p>차트 노트 · 글</p>
+              <p>Note · 글</p>
               <button
                 className={`ws-tool-item${noteMode ? " active" : ""}`}
                 role="menuitem"
@@ -2437,13 +2437,13 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
                 }}
               >
                 <ToolGlyph id="note" />
-                <span>차트 노트</span>
+                <span>Note</span>
                 <i
                   className="ws-tool-help"
-                  aria-label="차트 노트 설명"
+                  aria-label="Note 설명"
                   onMouseEnter={(e) => {
                     const r = e.currentTarget.getBoundingClientRect();
-                    setToolTip({ text: "차트를 클릭한 지점에 노트를 남깁니다. 저장을 누르면 이 노트와 그린 드로잉 전체가 AI 차트 노트로 정리돼요.", x: r.right + 8, y: r.top + r.height / 2 });
+                    setToolTip({ text: "차트를 클릭한 지점에 노트를 남깁니다. 저장을 누르면 이 노트와 그린 드로잉이 함께 저장돼요.", x: r.right + 8, y: r.top + r.height / 2 });
                   }}
                   onMouseLeave={() => setToolTip(null)}
                 >
@@ -3188,7 +3188,7 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
             </button>
           ))}
         </div>
-        <span>KRW · {intervalLabel(interval).footer}</span>
+        <span>{market === "지수" ? "pt" : currency} · {intervalLabel(interval).footer}</span>
       </div>
       {fullscreen && fullscreenSide}
     </section>

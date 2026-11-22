@@ -104,7 +104,7 @@ export function WorkshopPreview() {
           <b>매매하기</b>
         </div>
         <Image className={styles.workspaceChart} src={assetDir + "workspace-chart.svg"} alt="" width={546} height={261} />
-        <div className={styles.workspaceNote}><strong>차트 노트</strong><p>지지선 반등과 거래량 증가를<br />확인한 뒤 분할 매수</p></div>
+        <div className={styles.workspaceNote}><strong>Note</strong><p>지지선 반등과 거래량 증가를<br />확인한 뒤 분할 매수</p></div>
       </div>
     </Preview>
   );

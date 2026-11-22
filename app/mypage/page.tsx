@@ -31,7 +31,7 @@ export default function MyPage() {
 
   return (
     <>
-      <PageHead title="마이페이지" desc="나의 활동과 전략 판매 현황을 한눈에 확인하세요." />
+      <PageHead title="마이페이지" desc="나의 활동과 구독 현황을 한눈에 확인하세요." />
       <Card>
         <div className="mp-profile">
           <ProfileAvatar size={76} />

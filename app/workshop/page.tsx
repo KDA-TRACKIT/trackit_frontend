@@ -561,8 +561,8 @@ export default function WorkshopPage() {
     // 확정하면 차트 노트를 처음 상태로 (빈 Memo · AI 분석 후 저장). 저장한 내용은 아래 종목 전략에 정리본으로 (2026-11-19)
     resetNote();
     setSaveMessage("저장됨");
-    setSaveDetail("종목 전략에 저장했어요");
-    if (failed.length) window.alert(`노트는 저장됐지만 고친 종목 전략 ${failed.length}개를 저장하지 못했어요. 아래 종목 전략에서 다시 고쳐 주세요.`);
+    setSaveDetail("저장했어요");
+    if (failed.length) window.alert(`노트는 저장됐지만 고친 노트 ${failed.length}개를 저장하지 못했어요. 내 노트에서 다시 확인해 주세요.`);
   }
 
   /** 차트 노트를 처음 상태로 (빈 Memo, 분석 · 계획 · 고른 매매 비움) */

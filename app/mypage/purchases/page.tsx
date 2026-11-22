@@ -115,7 +115,7 @@ export default function PurchasesPage() {
           <Empty text="불러오는 중…" />
         ) : (
           !list.length && (
-            <Empty text={rows.length ? "조건에 맞는 구매가 없어요" : "아직 구매한 전략이 없어요"}>
+            <Empty text={rows.length ? "조건에 맞는 구매가 없어요" : "아직 구독한 전략이 없어요"}>
               {!rows.length && (
                 <Link className="mp-btn primary" style={{ width: 142 }} href="/marketplace">
                   전략 마켓 가기

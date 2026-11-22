@@ -1,18 +1,32 @@
 "use client";
 // 판매 내역 (시안 2026-11-18): 합계 · 전략별 판매 현황 · 최근 판매 내역 (GET /market/royalties). 구매자는 익명
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../../../../lib/api/client";
 import { Card, Empty, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
 import { SALE_STATUS, day, dayTime, useSeller } from "../data";
 import StrategiesModal from "../StrategiesModal";
 
 const krw = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
+/** 내 구독 현황 (GET /me/subscribers) · 판매자 몫 (기본 수수료 20% 뺀 것, 구독 관리와 같게) */
+type MySubscribers = { active: number; total: number; payments: number; revenue: number };
+const SELLER_SHARE = 0.8;
 
 export default function SalesHistoryPage() {
   const { sales, strategies, byStrategy, error, loading } = useSeller();
   const [period, setPeriod] = useState<Period>({ kind: "all" });
   const [open, setOpen] = useState(false);
-  const live = (sales ?? []).filter((s) => s.status !== "CANCELED");
   const list = (sales ?? []).filter((s) => inPeriod(s.soldAt, period));
+  // 위 상자 = 구독 현황 (2026-11-22: 구독자 수 · 전략 개수 · 정산 금액, 구독 관리 첫 화면과 같게)
+  const [subs, setSubs] = useState<MySubscribers | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    apiRequest<MySubscribers>("/me/subscribers")
+      .then((v) => alive && setSubs(v))
+      .catch(() => alive && setSubs(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   function download() {
     downloadCsv(`판매내역_${new Date().toISOString().slice(0, 10)}.csv`, [
@@ -27,16 +41,16 @@ export default function SalesHistoryPage() {
       <Card className="mp-sales-history" title="구독 내역" desc="기간별 구독 실적과 상세 결제 내역을 확인합니다.">
         <div className="mp-boxes">
           <div>
-            <span>총 판매 건수</span>
-            <strong>{loading || !live.length ? "—" : `${live.length}건`}</strong>
+            <span>구독자 수</span>
+            <strong>{subs ? `${subs.active.toLocaleString("ko-KR")}명` : "—"}</strong>
           </div>
           <div>
-            <span>총 판매액</span>
-            <strong>{loading || !live.length ? "—" : krw(live.reduce((a, s) => a + s.price, 0))}</strong>
+            <span>전략 개수</span>
+            <strong>{loading ? "—" : `${strategies?.length ?? 0}개`}</strong>
           </div>
           <div>
             <span>정산 금액</span>
-            <strong>{loading || !live.length ? "—" : krw(live.reduce((a, s) => a + s.amount, 0))}</strong>
+            <strong>{subs ? krw(subs.revenue * SELLER_SHARE) : "—"}</strong>
           </div>
         </div>
 
@@ -66,14 +80,15 @@ export default function SalesHistoryPage() {
                   <strong>{s.title}</strong>
                 </span>
                 <span>{s.sector ?? "—"}</span>
-                <span className="num">{s.periodStart ? `${day(s.periodStart)} ~ ${s.periodEnd ? day(s.periodEnd) : ""}` : day(s.createdAt)}</span>
+                {/* 끝은 다음 날 0시로 저장돼 있어 마지막 날로 보여 줌 (11.01 ~ 11.21 → 11.01 ~ 11.20) */}
+                <span className="num">{s.periodStart ? `${day(s.periodStart)} ~ ${s.periodEnd ? day(new Date(new Date(s.periodEnd).getTime() - 1).toISOString()) : ""}` : day(s.createdAt)}</span>
               </div>
             );
           })}
         </div>
         {!loading && !strategies?.length && <Empty text="등록한 전략이 없습니다." />}
 
-        <h3 className="mp-sub-title">최근 판매 내역</h3>
+        <h3 className="mp-sub-title">최근 구독 결제</h3>
         <div className="mp-toolbar">
           <PeriodTabs value={period} onChange={setPeriod} />
           <button type="button" className="mp-btn ghost-line" onClick={download} disabled={!list.length}>

@@ -225,11 +225,8 @@ export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: str
   if (my === trader.id) {
     return (
       <div className="mk-passbox">
-        <p className="mk-mine-note">
-          <span className="mk-mine">내 전략</span> 내가 올린 전략이에요. 구독 없이 모두 볼 수 있어요.
-        </p>
         <Link href="/mypage/sales" className="mk-ghost">
-          판매 관리 ›
+          구독 관리 ›
         </Link>
       </div>
     );

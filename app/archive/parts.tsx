@@ -104,7 +104,7 @@ export function PurchasedCards({ items, picked, onPick, cta }: { items: Item[]; 
         <Link href="/archive/ai" className="ar-cta">
           <Sparkles size={20} />
           <strong>AI로 새 전략 만들기</strong>
-          <p>구매한 전략과 내 기록을 골라 합치면 나만의 전략으로 정리해요.</p>
+          <p>구독한 전략과 내 기록을 골라 합치면 나만의 전략으로 정리해요.</p>
           <span>만들러 가기 ›</span>
         </Link>
       ) : (

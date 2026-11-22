@@ -166,7 +166,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
             })}
           </>
         ) : (
-          <p className="mm-rv-muted">아직 복기할 매매가 없어요. 종목 전략에 매수 · 손절 · 목표 가격을 적고 매매하면 여기서 비교해요.</p>
+          <p className="mm-rv-muted">아직 복기할 매매가 없어요. Note에 매수 · 손절 · 목표 가격을 적고 매매하면 여기서 비교해요.</p>
         )}
       </section>
 
@@ -185,7 +185,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
 
       {!!changes.length && (
         <section className="mm-card mm-rv-changes">
-          <h2>종목 전략이 바뀐 흐름</h2>
+          <h2>계획이 바뀐 흐름</h2>
           <ul>
             {changes.slice(0, 20).map((c) => (
               <li key={`${c.symbol}:${c.at}:${c.field}`} className={c.bad ? "bad" : ""}>

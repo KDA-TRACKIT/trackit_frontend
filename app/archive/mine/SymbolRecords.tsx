@@ -35,7 +35,7 @@ export default function SymbolRecords() {
         </div>
       </div>
       {symbols.length === 0 ? (
-        <p className="ar-symbol-empty">아직 종목 기록이 없어요. 트레이딩 로그 차트 노트에서 저장하면 종목마다 쌓여요.</p>
+        <p className="ar-symbol-empty">아직 종목 기록이 없어요. 트레이딩 로그 Note에서 저장하면 종목마다 쌓여요.</p>
       ) : (
         <ul className="ar-symbol-list">
           {symbols.map((s) => (

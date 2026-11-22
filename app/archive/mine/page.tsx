@@ -101,7 +101,7 @@ export default function MyStrategiesPage() {
             <small>판매 중</small>
             <strong>{list === null ? "—" : `${selling}개`}</strong>
             <span>
-              <Link href="/mypage/sales/strategies">판매 관리 ›</Link>
+              <Link href="/mypage/sales">구독 관리 ›</Link>
             </span>
           </div>
           <div className="mk-card">

@@ -20,7 +20,8 @@ export default function SalesPage() {
   const { user } = useMypage();
   // 판매자가 아니면 비즈니스 전환부터, 판매자면 달마다 잠긴 기록(전략보관함)에서 전략으로
   const business = useBusiness(user.id);
-  const registerHref = business && business.status !== "pending" ? "/archive/mine" : "/mypage/business";
+  // 전략 등록 = 내 노트의 전략 판매 창 (2026-11-22). 판매자가 아니면 비즈니스 전환부터
+  const registerHref = business && business.status !== "pending" ? "/archive/notes" : "/mypage/business";
   const [subs, setSubs] = useState<MySubscribers | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
