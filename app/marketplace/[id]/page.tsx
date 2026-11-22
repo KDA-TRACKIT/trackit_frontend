@@ -238,7 +238,10 @@ function TradeHistory({ id }: { id: string }) {
   return (
     <section className="mk-card ar-pt-trades sd-trades mk-history">
       <div className="sd-trades-head">
-        <h2 title="최근 7영업일 안의 거래와 아직 보유 중인 거래는 빼고 보여 줘요">거래 내역</h2>
+        <div className="sd-trades-title">
+          <h2 title="최근 7영업일 안의 거래와 아직 보유 중인 거래는 빼고 보여 줘요">최근 10회 거래 내역</h2>
+          <small>전략 구매 시 모든 거래 내역을 확인할 수 있음.</small>
+        </div>
       </div>
       <div className="ar-pt-table sd-table">
         <div className="th">

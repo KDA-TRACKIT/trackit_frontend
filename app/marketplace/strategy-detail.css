@@ -31,6 +31,8 @@
 /* 4. 거래 내역: 제목 옆 달 칩 · 계획 열 */
 .sd-trades-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 12px; margin:0 0 10px 8px; }
 .sd-trades-head h2 { margin:0; }
+.sd-trades-title { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; }
+.sd-trades-title small { color:var(--c-sub); font-size:11px; font-weight:500; opacity:.72; }
 .sd-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .sd-chips button { height:30px; padding:0 14px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
 .sd-chips button:hover { background:var(--c-subtle); }
