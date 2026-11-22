@@ -68,7 +68,6 @@ export default function ProfilePage() {
                     기본 이미지
                   </button>
                 </div>
-                <small className="mp-hint">JPG, PNG 이미지 · 권장 1:1 비율</small>
               </div>
               <input ref={fileRef} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => void pick(e)} />
             </div>
@@ -82,7 +81,6 @@ export default function ProfilePage() {
             <label className="mp-field">
               <span>표시 아이디</span>
               <input value={`@${handle}`} readOnly />
-              <small>아이디 변경은 계정 설정에서 관리합니다.</small>
             </label>
           </div>
           <label className="mp-field">

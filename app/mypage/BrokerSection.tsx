@@ -60,7 +60,6 @@ export default function BrokerSection() {
           </button>
         )}
       </div>
-      <p className="mypage-muted">연결한 계좌로 매매 창에서 주문할 수 있어요. 처음엔 모의투자 계좌로 시험해 보세요.</p>
 
       {list === null && !error && <BeeLoader size="sm" />}
       {list && list.length === 0 && !adding && <p className="mypage-muted">연결한 계좌가 없어요.</p>}
