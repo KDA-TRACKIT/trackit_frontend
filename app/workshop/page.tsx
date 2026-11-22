@@ -21,13 +21,13 @@ import UsTradePanel from "./UsTradePanel";
 import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
-import { addRecord, kstNow, linkPending, useRecords } from "../../lib/records";
+import { addRecord, kstNow, linkPending, useRecords, type TradeRecord } from "../../lib/records";
+import CalendarMemos from "./CalendarMemos";
 import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
 import type { RoleTag } from "./WorkshopChart";
 import { autoFillPlan } from "../../lib/strategyText";
 import { buildLadder, noteLines, roleKey, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
-import { currentRecords, symbolRecords as recordsOfSymbol } from "../../lib/strategy";
 import { suggestLink, type Execution } from "../../lib/ai-link";
 import { useAvgPrice } from "../../hooks/useAvgPrice";
 import { futuresDailyTickTime, isFuturesCode, isSpecialCode, specialOf } from "../../lib/special-symbols";
@@ -59,6 +59,8 @@ const hhmm = (time: string) => time.slice(0, 5);
 /** 저장본이 없을 때 차트에 넣는 빈 드로잉 목록 (항상 같은 배열이어야 자동 저장이 헛돌지 않음) */
 const NO_DRAWINGS: Drawing[] = [];
 const symbolLabel = (s: SymbolInfo) => `${s.code}  ${s.name}`;
+/** 증시 캘린더 노트 → Memo 에 덧붙일 글 (같은 노트는 같은 글이라 이미 넣었는지 알아봄) */
+const calendarText = (m: TradeRecord) => `[캘린더 노트${m.topic ? ` · ${m.topic}` : ""} · ${m.date.slice(5).replace("-", ".")}] ${m.text}`;
 /** 마지막으로 본 종목 (사용자별, 이 브라우저) → 트레이딩 로그에 다시 들어오면 그 차트로 (2026-11-22) */
 const LAST_SYMBOL = "trackit:workshop:last-symbol";
 /** 처음 들어온 사람의 기본 차트: 투자 스타일의 주요 시장이 미국 쪽이면 나스닥100 선물(CME+OKX), 아니면 코스피 지수(KRX) */
@@ -421,8 +423,6 @@ export default function WorkshopPage() {
   const scenarioLine = scenario
     ? `[고른 시나리오] ${scenario.name}${scenario.base ? ` (기준: ${scenario.base})` : ""} · ${scenario.summary} · 5영업일 뒤 예상 ${money(scenario.candles[scenario.candles.length - 1]?.close ?? 0)}`
     : "";
-  /** 지금 이 종목에 보이는 종목 전략 (오래된 것부터) */
-  const strategyRecords = currentRecords(recordsOfSymbol(allRecords, symbol.code)).sort((a, b) => `${a.date} ${a.noteTime}`.localeCompare(`${b.date} ${b.noteTime}`));
   /** 매매 계획: 그은 선에서 고른 매매 + Memo 문장, 빈 칸(손절 · 목표 · 매도)은 정한 가격 기준으로 그은 선에서 채움 */
   const fullPlan = () => {
     const { rungs, groups } = buildLadder(drawings, bars[bars.length - 1]?.time, bars);
@@ -584,16 +584,9 @@ export default function WorkshopPage() {
     if (await saveToRecord()) openReview();
   }
 
-  /** 그은 선 정리: 선마다 이름 · 지지/저항 · 가격 (· 고른 매매) */
-  const drawingSummary = () => {
-    const last = bars[bars.length - 1];
-    const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
-    if (!lines.length) return "";
-    const at = (l: NoteLine) => (l.price !== undefined ? money(l.price) : `${money(l.low ?? 0)}~${money(l.high ?? 0)}`);
-    return ["[드로잉]", ...lines.map((l) => `· ${l.label} ${at(l)}`)].join("\n");
-  };
   /** 저장될 글 (2026-11-22): 투자자가 쓴 Memo + 그은 선 + 고른 시나리오 (AI 분석은 뺌). 예전 전략 합치기 · 매매 계획 칸 줄은 안 넣음 */
-  const savedText = () => [noteText.trim(), drawingSummary(), scenarioLine].filter(Boolean).join("\n\n");
+  //   (2026-11-22) 본문은 Note 에 쓴 글 그대로 (+ 고른 시나리오). 그은 선은 차트 그림 · 선 기록(lines)으로 남음
+  const savedText = () => [noteText.trim(), scenarioLine].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview(range?: { from: number; to: number }) {
@@ -851,7 +844,7 @@ ${t}` : t))}
             <>
             <section className="ws-panel ws-note-panel">
               <h2>
-                차트 노트 <span className="ws-tag">저장 전 검증</span>
+                Note <span className="ws-tag">저장 전 검증</span>
               </h2>
               {/* 자동완성 제안·체결 연결 칸은 뺌 (체결 연결은 확정할 때 AI 추천대로 뒤에서 처리) */}
               {notes.length > 0 && (
@@ -875,12 +868,19 @@ ${t}` : t))}
               {/* 판단 근거: 아래로 (투자자가 더 적은 건 AI 가 분석해 반영) */}
               <div className="ws-memo">
                 <div className="ws-memo-head">
-                  {/* 판단 근거 칸 = Memo (적은 내용을 AI 가 같이 분석) */}
-                  <strong className="ws-memo-title">Memo</strong>
-                  <small>
+                  {/* 판단 근거 칸 (2026-11-22): 왼쪽 종목명, 오른쪽 노트 가져오기 */}
+                  <strong className="ws-memo-title">
                     {symbol.name}
-                    {noteTime && ` · ${hhmm(noteTime)}`}
-                  </small>
+                    {noteTime && <small> · {hhmm(noteTime)}</small>}
+                  </strong>
+                  {/* 증시 캘린더에서 쓴 노트를 Memo 에 덧붙이기 (2026-11-22) */}
+                  {!confirmed && (
+                    <CalendarMemos
+                      records={allRecords}
+                      onPick={(m) => setNoteText((t) => (t.trim() ? `${t.trim()}\n\n` : "") + calendarText(m))}
+                      isImported={(m) => noteText.includes(calendarText(m))}
+                    />
+                  )}
                 </div>
                 {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
                 <textarea
@@ -915,8 +915,6 @@ ${t}` : t))}
                   }}
                   onRange={changeReviewRange}
                   pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
-                  ai={null}
-                  records={strategyRecords}
                   linked={!!linkedExecution}
                   busy={confirmBusy}
                   error={confirmError}

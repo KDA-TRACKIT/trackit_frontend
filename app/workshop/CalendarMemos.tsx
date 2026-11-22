@@ -1,6 +1,6 @@
 "use client";
-// 증시 캘린더에서 쓴 메모(뉴스 · 거시경제 · 공시 · 시장 …, 종목 없는 메모)를 종목 전략으로 가져오기
-//   누르면 지금 종목의 메모로 하나 더 쌓임. 원래 메모는 그대로 남음
+// 증시 캘린더에서 쓴 노트(뉴스 · 거시경제 · 공시 · 시장 …, 종목 없는 노트)를 Memo 칸으로 가져오기 (2026-11-22)
+//   고르면 지금 Memo 끝에 덧붙음. 원래 노트는 그대로 남음
 import { useEffect, useRef, useState } from "react";
 import { classify, dateLabel, type TradeRecord } from "../../lib/records";
 
@@ -22,11 +22,10 @@ export default function CalendarMemos({ records, onPick, disabled, isImported, b
   return (
     <div className="ws-cal-memos" ref={ref}>
       <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled || busy} aria-expanded={open}>
-        {busy ? "가져오는 중…" : "캘린더 노트 가져오기"}
+        {busy ? "가져오는 중…" : "노트 가져오기"}
       </button>
       {open && (
         <div className="ws-cal-memos-list" role="listbox" aria-label="증시 캘린더 노트">
-          {memos.length > 0 && <small className="ws-cal-memos-hint">고르면 지금 종목 전략 밑에 덧붙여요 (원래 노트는 그대로)</small>}
           {memos.length === 0 ? (
             <p>증시 캘린더에서 쓴 노트가 없어요.</p>
           ) : (

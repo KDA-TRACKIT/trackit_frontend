@@ -1,13 +1,8 @@
 "use client";
-// 차트 노트 '확인하고 저장' → 같은 화면 위에 큰 창으로 저장될 내용을 한 번에 확인 (다른 화면으로 넘어가지 않음)
-//   저장될 차트 그림(그은 선에 지지 · 저항 라벨) · AI 분석(눌렀으면) · 종목 전략에 쌓일 내용
-//   종목 전략은 눌러서 바로 고칠 수 있음 (확정할 때 같이 저장: 쌓인 메모는 새 메모로 남김, 이번 저장분은 고친 글로)
-//   확정하면 DB 에 저장되고 그 버전은 고칠 수 없음 (고치면 새 버전) — 안내와 함께 취소 / 확정
-import { useEffect, useState } from "react";
-import type { ChartMemoResult } from "../../lib/api/ai";
-import { dateLabel, memoText, type TradeRecord } from "../../lib/records";
-
-const DIR: Record<string, string> = { LONG: "상승 관점", SHORT: "하락 관점", WAIT: "관망", UNKNOWN: "판단 보류" };
+// 저장 확인 창 (2026-11-22): 인스타 게시물처럼 한 장 — 종목 · 날짜 / 차트 그림(보이는 구간 고르기) / Note 에 쓴 본문
+//   본문은 Note 에 쓴 그대로 (고치려면 취소하고 Note 에서). '확인하고 저장' 하면 DB 에 저장되고 그 버전은 고칠 수 없음 (고치면 새 버전)
+import { useEffect } from "react";
+import { dateLabel } from "../../lib/records";
 
 export default function SaveReview({
   symbolName,
@@ -17,8 +12,6 @@ export default function SaveReview({
   dateAt,
   onRange,
   pending,
-  ai,
-  records,
   linked,
   busy,
   error,
@@ -36,54 +29,15 @@ export default function SaveReview({
   dateAt?: (i: number) => string;
   /** 보이는 구간 바꾸기 (다시 찍음) */
   onRange?: (from: number, to: number) => void;
-  /** 이번에 저장될 메모 (종목 전략에 합쳐서 보여 줌) */
+  /** 이번에 저장될 글 (Note 에 쓴 것) · 날짜 · 시각 */
   pending: { date: string; time: string; text: string };
-  ai: ChartMemoResult | null;
-  /** 이 종목 전략에 지금까지 쌓인 메모 */
-  records: TradeRecord[];
   /** 체결과 연결됐는지 (아니면 검증 대기로 저장) */
   linked: boolean;
   busy: boolean;
   error: string | null;
   onCancel: () => void;
-  /** 확정: 고친 이번 저장 글 · 고친 쌓인 메모(id → 글) */
   onConfirm: (edits: { pendingText: string; records: Record<string, string> }) => void;
 }) {
-  // 종목 전략 고치기: 확정 전까지는 여기에만 (취소하면 버림)
-  const [pendingText, setPendingText] = useState(pending.text);
-  const [recEdits, setRecEdits] = useState<Record<string, string>>({});
-  const [editing, setEditing] = useState<string | null>(null);
-  const PENDING = "__pending__";
-  const textOf = (id: string, original: string) => (id === PENDING ? pendingText : (recEdits[id] ?? original));
-  const setText = (id: string, original: string, t: string) =>
-    id === PENDING
-      ? setPendingText(t)
-      : setRecEdits((m) => {
-          const next = { ...m, [id]: t };
-          if (t.trim() === original.trim()) delete next[id];
-          return next;
-        });
-  const editable = (id: string, original: string) =>
-    editing === id ? (
-      <textarea
-        autoFocus
-        value={textOf(id, original)}
-        onChange={(e) => setText(id, original, e.target.value)}
-        onBlur={() => setEditing(null)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.stopPropagation();
-            setEditing(null);
-          }
-        }}
-        rows={Math.min(10, Math.max(2, textOf(id, original).split(/\n/).length + 1))}
-        aria-label="종목 전략 고치기"
-      />
-    ) : (
-      <p role="button" tabIndex={0} className="ws-review-editable" title="눌러서 고치기" onClick={() => !busy && setEditing(id)} onKeyDown={(e) => e.key === "Enter" && !busy && setEditing(id)}>
-        {textOf(id, original) || <span className="ws-review-empty">비어 있어요. 눌러서 적기</span>}
-      </p>
-    );
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && !busy && !e.defaultPrevented && onCancel();
     window.addEventListener("keydown", esc);
@@ -95,14 +49,13 @@ export default function SaveReview({
     };
   }, [busy, onCancel]);
 
-
+  const text = pending.text.trim();
   return (
     <div className="ws-review-backdrop" onMouseDown={(e) => e.target === e.currentTarget && !busy && onCancel()}>
       <div className="ws-review" role="dialog" aria-modal="true" aria-label="저장할 내용 확인">
         <header className="ws-review-head">
           <div>
             <h2>저장할 내용 확인</h2>
-            <p>{symbolName} · 확정하면 아래 내용이 그대로 저장돼요</p>
           </div>
           <button type="button" className="ws-review-x" onClick={onCancel} disabled={busy} aria-label="닫기">
             ✕
@@ -110,81 +63,50 @@ export default function SaveReview({
         </header>
 
         <div className="ws-review-body">
-          <section className="ws-review-chart">
-            <h3>차트</h3>
-            {shooting ? (
-              <p className="ws-review-empty">차트를 그리는 중…</p>
-            ) : image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt={`${symbolName} 차트 (그은 선에 지지 · 저항 표시)`} />
-            ) : (
-              <p className="ws-review-empty">차트 그림을 만들지 못했어요. 그은 선은 그대로 저장돼요.</p>
-            )}
-            {/* 보이는 구간 고르기: 기본은 드로잉 전체, 손잡이 두 개로 시작 · 끝을 옮기면 다시 찍음 */}
-            {range && onRange && range.max > 1 && (
-              <div className="ws-review-range">
-                <div className="ws-review-range-track" style={{ ["--lo" as string]: `${(range.from / range.max) * 100}%`, ["--hi" as string]: `${(range.to / range.max) * 100}%` }}>
-                  <input type="range" min={0} max={range.max} step={1} value={range.from} disabled={busy} aria-label="차트 시작" onChange={(e) => onRange(Math.min(Number(e.target.value), range.to - 1), range.to)} />
-                  <input type="range" min={0} max={range.max} step={1} value={range.to} disabled={busy} aria-label="차트 끝" onChange={(e) => onRange(range.from, Math.max(Number(e.target.value), range.from + 1))} />
+          <article className="ws-post">
+            <header className="ws-post-head">
+              <strong>{symbolName}</strong>
+              <time>
+                {dateLabel(pending.date)} {pending.time.slice(0, 5)}
+              </time>
+            </header>
+            <div className="ws-review-chart">
+              {shooting && !image ? (
+                <p className="ws-review-empty">차트를 그리는 중…</p>
+              ) : image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={image} alt={`${symbolName} 차트`} className={shooting ? "is-shooting" : undefined} />
+              ) : (
+                <p className="ws-review-empty">차트 그림을 만들지 못했어요. 그은 선은 그대로 저장돼요.</p>
+              )}
+              {/* 보이는 구간 고르기: 기본은 드로잉 전체, 손잡이 두 개로 시작 · 끝을 옮기면 다시 찍음 */}
+              {range && onRange && range.max > 1 && (
+                <div className="ws-review-range">
+                  <div className="ws-review-range-track" style={{ ["--lo" as string]: `${(range.from / range.max) * 100}%`, ["--hi" as string]: `${(range.to / range.max) * 100}%` }}>
+                    <input type="range" min={0} max={range.max} step={1} value={range.from} disabled={busy} aria-label="차트 시작" onChange={(e) => onRange(Math.min(Number(e.target.value), range.to - 1), range.to)} />
+                    <input type="range" min={0} max={range.max} step={1} value={range.to} disabled={busy} aria-label="차트 끝" onChange={(e) => onRange(range.from, Math.max(Number(e.target.value), range.from + 1))} />
+                  </div>
+                  <small>
+                    {dateAt?.(range.from)} ~ {dateAt?.(range.to)}
+                  </small>
                 </div>
-                <small>
-                  {dateAt?.(range.from)} ~ {dateAt?.(range.to)}
-                </small>
-              </div>
-            )}
-          </section>
-
-          {ai && (
-            <section>
-              <h3>AI 분석</h3>
-              {/* 차트 노트 옆 'AI 분석 보기' 를 없애고 여기서 전부 (방향 · 요약 · 구조 · 근거 · 시나리오 · 위험 · 무효화 · 질문) */}
-              <div className="ws-review-ai">
-                {ai.direction && (
-                  <p>
-                    <b>방향</b> {DIR[ai.direction] ?? ai.direction}
-                    {ai.confidence && ` · 확신 ${({ HIGH: "높음", MEDIUM: "보통", LOW: "낮음" } as const)[ai.confidence]}`}
-                  </p>
-                )}
-                {ai.summary && <p><b>요약</b> {ai.summary}</p>}
-                {ai.marketStructure && <p><b>차트 구조</b> {ai.marketStructure}</p>}
-                {ai.confluence?.length ? <p><b>겹치는 근거</b> {ai.confluence.join(" · ")}</p> : null}
-                {ai.bullishScenario && <p><b>상승 시나리오</b> {ai.bullishScenario}</p>}
-                {ai.bearishScenario && <p><b>하락 시나리오</b> {ai.bearishScenario}</p>}
-                {ai.risks?.length ? <p><b>위험</b> {ai.risks.join(" · ")}</p> : null}
-                {ai.invalidation && (Array.isArray(ai.invalidation) ? ai.invalidation.length > 0 : true) && <p><b>무효화 조건</b> {Array.isArray(ai.invalidation) ? ai.invalidation.join(" · ") : ai.invalidation}</p>}
-                {ai.questions?.[0] && <p><b>AI 질문</b> {ai.questions[0]}</p>}
-              </div>
-            </section>
-          )}
-
-          {/* 종목 전략: 지금까지 쌓인 메모 + 이번 저장분(AI 가 쌓인 전략과 합친 정리본)을 합친 모습 */}
-          <section>
-            <h3>
-              저장할 메모 <span>눌러서 고치기</span>
-            </h3>
-            <div className="ws-review-records">
-              <div className="new">
-                <time>
-                  {dateLabel(pending.date)} {pending.time.slice(0, 5)}
-                  <em>이번 저장</em>
-                </time>
-                {editable(PENDING, pending.text)}
-              </div>
+              )}
             </div>
-          </section>
+            {text && <p className="ws-post-body">{text}</p>}
+          </article>
         </div>
 
         <footer className="ws-review-foot">
           <p>
-            <b>확정하면 DB에 저장되고, 이 버전은 수정 · 삭제할 수 없어요.</b> 고칠 땐 새 버전으로 남고 예전 버전도 그대로 기록돼요.
+            <b>저장하면 이 버전은 수정 · 삭제할 수 없어요.</b> 고칠 땐 새 버전으로 남아요.
             {!linked && " 연결된 체결이 없어 검증 대기로 저장돼요."}
           </p>
-                    {error && <p className="ws-review-error">{error}</p>}
+          {error && <p className="ws-review-error">{error}</p>}
           <div>
             <button type="button" onClick={onCancel} disabled={busy}>
               취소
             </button>
-            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: pendingText.trim(), records: recEdits })} disabled={busy || !pendingText.trim()}>
+            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: text, records: {} })} disabled={busy || !text}>
               {busy ? "저장 중…" : "확인하고 저장"}
             </button>
           </div>
