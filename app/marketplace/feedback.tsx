@@ -191,7 +191,6 @@ export function Qna({ trader, fb }: { trader: Trader; fb: TraderFeedback | null;
           <h2>
             보충 노트 <span className="mk-reviews-count">{count}</span>
           </h2>
-          {canSee && <p>{fb?.owner ? "구독자가 메모마다 남긴 설명 요청이에요. 답은 그 전략의 메모에서 달 수 있어요." : "설명 요청은 전략 안의 각 메모에서 할 수 있어요. 여기서는 지금까지의 요청과 답을 모아 봐요."}</p>}
         </div>
       </div>
 
