@@ -228,7 +228,8 @@ type Props = {
   /** 산 전략 겹치기: 기울어진 선(추세선 · 채널 위아래). 봉 시각 사이를 이어 그림 (보기용, 저장 안 함) */
   overlaySegments?: { title: string; a: { time: number; price: number }; b: { time: number; price: number }; extend?: boolean }[];
   /** 저장 확인 창에 보여 줄 차트 그림: 지금 차트(드로잉 포함)를 찍고 선 가격마다 지지 · 저항 라벨을 얹어 PNG 로 */
-  registerSnapshot?: (snap: (marks: { price: number; text: string; color: string }[]) => Promise<string | null>) => void;
+  /** 저장 확인 창 차트 그림. range = 보일 봉 구간(논리 번호), 없으면 드로잉 전체가 들어가게. 쓴 구간도 같이 돌려줌 */
+  registerSnapshot?: (snap: (marks: { price: number; text: string; color: string }[], range?: { from: number; to: number }) => Promise<{ image: string; from: number; to: number } | null>) => void;
   /** 저장본에서 불러온 드로잉. key가 바뀔 때만 차트에 넣는다 (실행 취소 기록도 비움) */
   loadedDrawings?: { key: string; drawings: Drawing[] };
   notes: ChartNote[];
@@ -1992,7 +1993,7 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
   //   그은 선이 모두 들어가게 잠깐 시간 · 가격 범위를 드로잉에 맞춰 넓혀 찍고 원래대로 되돌림
   //   드로잉 층은 위 캔버스라 addTopLayer 로 같이 찍음 (십자선은 빼고), 선 가격마다 지지 · 저항 라벨을 얹음
   useEffect(() => {
-    registerSnapshot?.(async (marks) => {
+    registerSnapshot?.(async (marks, range) => {
       const chart = chartRef.current;
       const series = candleRef.current;
       const host = containerRef.current;
@@ -2003,14 +2004,27 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       const pts = drawingsRef.current.flatMap((d) => d.points);
       const prices = [...pts.map((p) => Number(p.price)), ...marks.map((m) => m.price)].filter((n) => Number.isFinite(n) && n > 0);
       const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const last = Math.max(0, (barsRef.current?.length ?? 1) - 1);
+      // 보일 구간: 고른 구간, 없으면 드로잉 전체(앞뒤 3봉) — 드로잉이 없으면 보던 화면
+      let shown = range ?? null;
+      if (!shown && layer && pts.length) {
+        const ls = pts.map((p) => layer.timeToLogical(p.time)).filter((n): n is number => n !== null && Number.isFinite(n));
+        if (ls.length) shown = { from: Math.max(0, Math.floor(Math.min(...ls)) - 3), to: Math.min(last, Math.ceil(Math.max(...ls)) + 3) };
+      }
+      if (!shown) shown = { from: Math.max(0, Math.floor(prevRange?.from ?? last - 60)), to: Math.min(last, Math.ceil(prevRange?.to ?? last)) };
+      // 찍는 동안 뒤의 차트가 확대 · 이동돼 보이지 않게 지금 모습을 그림으로 덮어 둠 (2026-11-22)
+      let freeze: HTMLImageElement | null = null;
       try {
-        if (layer && pts.length) {
-          const ls = pts.map((p) => layer.timeToLogical(p.time)).filter((n): n is number => n !== null && Number.isFinite(n));
-          const last = Math.max(0, (barsRef.current?.length ?? 1) - 1);
-          const from = Math.min(...ls, prevRange?.from ?? last);
-          const to = Math.max(...ls, prevRange?.to ?? last);
-          ts.setVisibleLogicalRange({ from: from - 3, to: to + 3 });
-        }
+        freeze = document.createElement("img");
+        freeze.src = chart.takeScreenshot(true, true).toDataURL("image/png");
+        freeze.alt = "";
+        Object.assign(freeze.style, { position: "absolute", inset: "0", width: "100%", height: "100%", zIndex: "5", pointerEvents: "none" });
+        host.parentElement?.appendChild(freeze);
+      } catch {
+        freeze = null;
+      }
+      try {
+        ts.setVisibleLogicalRange({ from: shown.from - 0.5, to: shown.to + 0.5 });
         if (prices.length) {
           const lo = Math.min(...prices);
           const hi = Math.max(...prices);
@@ -2043,13 +2057,17 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
             ctx.fillText(m.text, x + 6 * scale, y * scale);
           }
         }
-        return shot.toDataURL("image/png");
+        return { image: shot.toDataURL("image/png"), from: shown.from, to: shown.to };
       } catch {
         return null;
       } finally {
-        // 보던 화면 그대로 되돌림
+        // 보던 화면 그대로 되돌림 (되돌린 뒤 덮개를 걷음)
         series.applyOptions({ autoscaleInfoProvider: undefined });
         if (prevRange) ts.setVisibleLogicalRange(prevRange);
+        if (freeze) {
+          const cover = freeze;
+          requestAnimationFrame(() => requestAnimationFrame(() => cover.remove()));
+        }
       }
     });
   });

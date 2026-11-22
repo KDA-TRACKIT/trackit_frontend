@@ -18,7 +18,6 @@ import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDail
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
 import UsTradePanel from "./UsTradePanel";
-import RecordBoard from "./RecordBoard";
 import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
@@ -314,9 +313,10 @@ export default function WorkshopPage() {
   /** 차트가 넘겨 준 선 지우기 (차트 노트 선 목록의 ✕) */
   const removeLinesRef = useRef<((ids: string[]) => void) | null>(null);
   /** 차트가 넘겨 준 그림 찍기 (저장 확인 창) */
-  const snapshotRef = useRef<((marks: { price: number; text: string; color: string }[]) => Promise<string | null>) | null>(null);
+  const snapshotRef = useRef<((marks: { price: number; text: string; color: string }[], range?: { from: number; to: number }) => Promise<{ image: string; from: number; to: number } | null>) | null>(null);
   /** 저장 확인 창에 보여 줄 차트 그림 · 그은 선 (확인하고 저장을 누른 그 순간 기준) */
-  const [review, setReview] = useState<{ image: string | null; shooting: boolean; lines: NoteLine[] } | null>(null);
+  /** 저장 확인 창: 차트 그림 · 보이는 봉 구간(from ~ to, 봉 번호) · 그은 선 */
+  const [review, setReview] = useState<{ image: string | null; shooting: boolean; lines: NoteLine[]; from: number; to: number } | null>(null);
   /** 이 종목에서 오늘 체결된 것들 (지금은 매매하기 모의 주문) */
   const [executions, setExecutions] = useState<Execution[]>([]);
   /** AI 노트 체결 연결: auto = AI 추천 그대로, none = 연결 안 함, 그 밖엔 체결 id */
@@ -596,7 +596,7 @@ export default function WorkshopPage() {
   const savedText = () => [noteText.trim(), drawingSummary(), scenarioLine].filter(Boolean).join("\n\n");
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
-  function openReview() {
+  function openReview(range?: { from: number; to: number }) {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
     const marks = lines.flatMap((l) => {
@@ -605,11 +605,26 @@ export default function WorkshopPage() {
       const support = l.role === "SUPPORT";
       return [{ price: p, text: `${support ? "지지" : "저항"}${l.trade ? ` · ${l.trade}` : ""}`, color: support ? "#1f8a4c" : "#d64545" }];
     });
-    // 창은 바로 열고, 차트 그림(드로잉이 다 들어가게 잠깐 넓혀 찍음)은 찍히는 대로 넣음
-    setReview({ image: null, shooting: true, lines });
+    // 창은 바로 열고, 차트 그림(기본은 드로잉 전체가 들어가게, 고른 구간이 있으면 그 구간)은 찍히는 대로 넣음
+    setReview((r) => ({ image: r && range ? r.image : null, shooting: true, lines, from: range?.from ?? r?.from ?? 0, to: range?.to ?? r?.to ?? Math.max(0, bars.length - 1) }));
     setConfirmError(null);
     setConfirming(true);
-    void (snapshotRef.current?.(marks) ?? Promise.resolve(null)).then((image) => setReview((r) => (r ? { ...r, image, shooting: false } : r)));
+    void (snapshotRef.current?.(marks, range) ?? Promise.resolve(null)).then((shot) =>
+      setReview((r) => (r ? { ...r, image: shot?.image ?? null, shooting: false, ...(shot ? { from: shot.from, to: shot.to } : {}) } : r)),
+    );
+  }
+  /** 확인 창에서 보이는 구간을 바꾸면 잠깐 뒤 다시 찍음 */
+  const rangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function changeReviewRange(from: number, to: number) {
+    setReview((r) => (r ? { ...r, from, to } : r));
+    if (rangeTimer.current) clearTimeout(rangeTimer.current);
+    rangeTimer.current = setTimeout(() => openReview({ from, to }), 250);
+  }
+  /** 확인하고 저장: 차트(일지 · 드로잉)를 저장한 뒤 노트 확정 */
+  async function saveAndConfirm(edits: Parameters<typeof confirmNote>[0]) {
+    if (confirmBusy) return;
+    if (!(await saveChart())) return setConfirmError("차트를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.");
+    await confirmNote(edits);
   }
 
   /** 사후 해설: 최초 확정본은 그대로 두고, 날짜 · 시각과 함께 따로 남김 */
@@ -883,7 +898,7 @@ ${t}` : t))}
                 </button>
               ) : (
                 // 저장 (2026-11-22): AI 분석 없이 바로 저장 확인 창 (Memo + 그은 선 · 차트)
-                <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => void analyzeAndReview()}>
+                <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => openReview()}>
                   {memoBusy ? "저장 중…" : "저장"}
                 </button>
               )}
@@ -892,6 +907,13 @@ ${t}` : t))}
                   symbolName={symbol.name}
                   image={review.image}
                   shooting={review.shooting}
+                  range={{ from: review.from, to: review.to, max: Math.max(0, bars.length - 1) }}
+                  dateAt={(i) => {
+                    const b = bars[Math.max(0, Math.min(bars.length - 1, i))];
+                    const dayLike = /[dwy]$/.test(interval);
+                    return b ? new Date((b.time + 9 * 3600) * 1000).toISOString().slice(0, dayLike ? 10 : 16).replace("T", " ").replace(/-/g, ".") : "";
+                  }}
+                  onRange={changeReviewRange}
                   pending={{ date: kstNow().date, time: noteTime || nowKst(), text: savedText() }}
                   ai={null}
                   records={strategyRecords}
@@ -902,7 +924,7 @@ ${t}` : t))}
                     setConfirming(false);
                     setConfirmError(null);
                   }}
-                  onConfirm={(edits) => void confirmNote(edits)}
+                  onConfirm={(edits) => void saveAndConfirm(edits)}
                 />
               )}
             </section>
@@ -913,15 +935,13 @@ ${t}` : t))}
           </div>
         </div>
 
-        {/* 매매 중에는 기록 대신 기업 정보 (호가는 오른쪽 매매 창 안) */}
-        {tradeOpen ? (
+        {/* 매매 중에만 주문 내역 · 기업 정보 (호가는 오른쪽 매매 창 안). 종목 전략 칸은 뺌 (2026-11-22: 저장한 노트는 내 노트에서) */}
+        {tradeOpen && (
           <>
             {/* 주문 내역: 오늘 주문 · 미체결 정정/취소 (기업 정보 위) */}
             <OrderHistory symbol={symbol.code} refreshKey={avgRefresh} />
             <CompanyPanel key={symbol.code} code={symbol.code} price={today?.close ?? null} />
           </>
-        ) : (
-          <RecordBoard symbol={symbol} lastExecution={executions[executions.length - 1] ?? null} />
         )}
       </div>
       <QuickMemo base={{ kind: "stock", code: symbol.code, name: symbol.name }} />
