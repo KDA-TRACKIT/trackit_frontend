@@ -27,7 +27,7 @@ export default function InvestmentPage() {
   return (
     <>
       <PageHead title="내 투자 정보" desc="나의 매매 방식과 자주 사용하는 지표를 관리하세요." />
-      <Card className="mp-investment-editor" title="투자 스타일 설정" desc="사용하는 매매 방식과 지표를 기록하고 언제든 수정할 수 있습니다.">
+      <Card className="mp-investment-editor" title="투자 스타일 설정">
         <InvestmentFields value={value} onChange={setValue} />
         <div style={{ marginTop: 16 }}>
           <Notice text={note} />
