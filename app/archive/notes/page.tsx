@@ -7,7 +7,7 @@
 //   제목 줄은 전략보관함 다른 화면(구매한 전략 · 전략 분석)과 같은 자리 · 크기(ar-title-row), 설명 줄은 다른 화면처럼 없음
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, History, Link2, List, PenLine, Pin, Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, History, Link2, List, PenLine, Pin, Search, SquarePen, X } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
 import { initRecordSource, useRecords, useRecordsReady } from "../../../lib/records";
 import BeeLoader from "../../BeeLoader";
@@ -529,6 +529,12 @@ function MemoDetail({
           <Link className="mm-tool" href={workshopLink(m.code, m.code ? m.subject : null, m.date)} aria-label="투자작업실에서 이어 쓰기" title="투자작업실에서 이어 쓰기">
             <PenLine size={16} aria-hidden="true" />
           </Link>
+          {/* 이 노트 때의 드로잉 · 글을 차트로 불러와 고치기 → 새 노트로 남음 (종목 노트만) */}
+          {m.code && (
+            <Link className="mm-tool" href={`${workshopLink(m.code, m.subject, m.date)}&edit=${encodeURIComponent(m.id)}`} aria-label="차트에서 고치기" title="차트에서 고치기 (그때 드로잉 · 글 불러오기)">
+              <SquarePen size={16} aria-hidden="true" />
+            </Link>
+          )}
           {!nav && (
             <button type="button" className="mm-tool" aria-label="크게 보기 닫기" onClick={onClose}>
               <X size={16} aria-hidden="true" />

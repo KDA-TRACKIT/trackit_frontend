@@ -13,7 +13,7 @@ import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
 import type { Drawing } from "../../lib/drawing";
 import type { ChartMemoResult } from "../../lib/api/ai";
-import { errorMessage } from "../../lib/api/client";
+import { apiRequest, errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
@@ -22,7 +22,7 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords, type TradeRecord } from "../../lib/records";
-import { saveNoteShot } from "../../lib/api/notes";
+import { saveNoteShot, type NoteVersion } from "../../lib/api/notes";
 import CalendarMemos from "./CalendarMemos";
 import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
 import type { RoleTag } from "./WorkshopChart";
@@ -278,6 +278,7 @@ export default function WorkshopPage() {
     setExecutions([]);
     setLinkChoice("auto");
     setNotes([]);
+    setEditing(null);
     setSymbol(next);
     setDelayed(false);
     setQuery(symbolLabel(next));
@@ -323,6 +324,41 @@ export default function WorkshopPage() {
   const journalId = journal.journal?.id ?? null;
   const annotations = useChartAnnotations(journalId, journal.mode);
   const restored = useMemo(() => fromAnnotations(annotations.annotations, clientIdOf), [annotations.annotations]);
+  /**
+   * 예전 노트 고치기 (2026-11-22): 내 노트의 '차트에서 고치기'(?edit=<노트 id>)로 오면 그 노트 때의 드로잉 · 글을 차트와 Note 칸에 불러옴
+   *   저장하면 그 노트를 고치는 게 아니라 새 노트로 남고(replaces = 예전 노트) 예전 노트는 기록에 그대로
+   *   고치는 동안에는 이 종목의 지금 드로잉을 자동 저장으로 덮어쓰지 않음. 그만두면 지금 드로잉으로 돌아감
+   */
+  const [editing, setEditing] = useState<{ id: string; when: string; drawings: Drawing[] } | null>(null);
+  const editAsked = useRef<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const id = q.get("edit");
+    if (!id || editAsked.current === id || !journalId || journal.mode !== "server") return;
+    // 주소의 종목이 아직 안 열렸으면 기다림 (처음엔 마지막에 보던 종목이 먼저 뜸)
+    const want = q.get("symbol")?.trim().toUpperCase();
+    if (want && want !== symbol.code) return;
+    editAsked.current = id;
+    let live = true;
+    apiRequest<NoteVersion[]>(`/journals/${journalId}/note-versions`)
+      .then((list) => {
+        const n = list.find((x) => x.id === id);
+        // 다른 종목 노트면(주소의 종목이 안 열렸을 때) 불러오지 않음
+        if (!live || !n || n.symbol !== symbol.code) return;
+        const raw = (Array.isArray(n.drawings) ? n.drawings : []) as Parameters<typeof fromAnnotations>[0];
+        const kst = new Date(new Date(n.confirmedAt).getTime() + 9 * 3_600_000).toISOString();
+        setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
+        setNoteText(n.aiSummary?.summary ?? "");
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [journalId, journal.mode, symbol.code]);
+  function stopEditing() {
+    setEditing(null);
+    setNoteText("");
+  }
   // 저장본 노트 + 이번에 새로 단 노트
   /** 지운 차트 노트 (저장본에 있던 것도 다음 저장 때 일지에서 빠진다) */
   const [removedNoteIds, setRemovedNoteIds] = useState<ReadonlySet<string>>(new Set());
@@ -338,8 +374,8 @@ export default function WorkshopPage() {
   const loadedDrawings = useMemo(
     // 일지가 없을 때도 같은 빈 배열을 쓴다. 렌더마다 새 [] 를 만들면 "드로잉이 바뀌었다"로 보여
     // 빈 목록으로 자동 저장이 돌고(빈 일지 생성, 저장본 삭제) 만다
-    () => (loadKey ? { key: loadKey, drawings: loadKey.startsWith("none:") ? NO_DRAWINGS : restored.drawings } : undefined),
-    [loadKey, restored.drawings],
+    () => (editing ? { key: `edit:${editing.id}`, drawings: editing.drawings } : loadKey ? { key: loadKey, drawings: loadKey.startsWith("none:") ? NO_DRAWINGS : restored.drawings } : undefined),
+    [loadKey, restored.drawings, editing],
   );
 
   /** 차트가 넘겨 준 선 지우기 (차트 노트 선 목록의 ✕) */
@@ -443,7 +479,8 @@ export default function WorkshopPage() {
   /** 차트가 알려 준 드로잉. 저장본을 처음 넣은 것은 저장하지 않는다 */
   function changeDrawings(list: Drawing[]) {
     setDrawings(list);
-    if (list !== loadedDrawings?.drawings) setEditVersion((v) => v + 1);
+    // 예전 노트를 고치는 동안에는 자동 저장하지 않음 (이 종목의 지금 드로잉을 덮어쓰지 않게 — 저장을 눌렀을 때만)
+    if (list !== loadedDrawings?.drawings && !editing) setEditVersion((v) => v + 1);
   }
 
   /** 기록으로 저장: 드로잉·노트를 일지에 저장하고, AI 정리 결과를 AI 노트 메모 칸에 넣는다 (확정은 사용자가 따로) */
@@ -550,6 +587,8 @@ export default function WorkshopPage() {
       text: edits ? edits.pendingText : savedText(),
       // AI 가 쌓인 종목 전략과 합친 정리본이면, 합친 예전 메모를 가리켜 화면엔 정리본 하나만 보이게 (예전 것은 기록에 남음)
       drawings: drawings.map(drawingToAnnotation),
+      // 예전 노트를 불러와 고친 것이면 새 노트가 그 노트를 대신함 (예전 노트는 기록에 남음)
+      ...(editing ? { replaces: editing.id } : {}),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
       // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
@@ -611,6 +650,7 @@ export default function WorkshopPage() {
 
   /** 차트 노트를 처음 상태로 (빈 Memo, 분석 · 계획 · 고른 매매 비움) */
   function resetNote() {
+    setEditing(null);
     setConfirming(false);
     setConfirmed(false);
     setConfirmError(null);
@@ -921,6 +961,14 @@ ${t}` : t))}
                     />
                   )}
                 </div>
+                {editing && (
+                  <p className="ws-editing" role="status">
+                    <b>{editing.when} 노트를 고치는 중</b> 그때의 드로잉과 글을 불러왔어요. 저장하면 새 노트로 남고 예전 노트는 기록에 그대로 있어요.
+                    <button type="button" onClick={stopEditing}>
+                      그만두기
+                    </button>
+                  </p>
+                )}
                 {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
                 <textarea
                   className="ws-memo-text"
