@@ -74,3 +74,7 @@ html[data-theme="dark"] .sd-picker-menu { box-shadow:0 8px 22px rgba(0,0,0,.45);
   .sd-table { overflow-x:auto; }
   .sd-table .th, .sd-table .tb { min-width:540px; }
 }
+
+/* 노트를 누르면 그 종목 차트로 (2026-11-22) */
+.sd-memos li.sd-memo-pick { cursor:pointer; }
+.sd-memos li.sd-memo-pick:hover { border-color:var(--mk-primary, #0f2367); }

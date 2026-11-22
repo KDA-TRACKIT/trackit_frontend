@@ -189,9 +189,9 @@ export default function MarketStrategyPage() {
                   </div>
                   <ul>
                     {shownNotes.map((n) => (
-                      <li key={n.id}>
+                      <li key={n.id} className="sd-memo-pick" onClick={() => setSel(n.symbol)}>
                         <div>
-                          <em className={`sd-kind ${n.plan ? "plan" : isSpecialCode(n.symbol) ? "market" : "stock"}`}>{n.plan ? "사전 기록" : isSpecialCode(n.symbol) ? "시장 노트" : "종목 노트"}</em>
+                          <em className={`sd-kind ${n.plan ? "plan" : "stock"}`}>{n.plan ? "사전 기록" : "종목 노트"}</em>
                           {scope === "all" && <b>{n.name}</b>}
                           <time>{md(n.at)}</time>
                         </div>

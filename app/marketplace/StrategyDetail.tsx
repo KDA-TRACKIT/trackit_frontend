@@ -174,6 +174,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     for (const x of m.trades) names.set(x.code, x.name);
     for (const n of m.notes ?? []) if (n.code && n.name) names.set(n.code, n.name);
   }
+  for (const n of live?.notes ?? []) if (!names.has(n.symbol)) names.set(n.symbol, n.name);
   const curName = cur ? (names.get(cur.code) ?? cur.code) : "";
 
   // 대표 종목이 아니거나 그 달 일봉이 저장돼 있지 않으면(공개 자료 판매자, 2026-11-21) 그 달 앞뒤 일봉을 따로 받음
@@ -190,7 +191,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     // 그 달에 산 것을 다음 달에 팔 수도 있어 뒤로 넉넉히 (매수 · 매도 표시가 둘 다 들어오게)
     const to = start + 100 * 86_400;
     // 미국 종목(2026-11-22): 거래소를 찾아 미국 일봉으로 (예전엔 국내 일봉으로 불러 '차트 데이터가 없어요')
-    const load = /^\d{6}$/.test(code)
+    const load = /^\d{6}$/.test(code) || isSpecialCode(code)
       ? fetchBars(code, "1d", ac.signal, 3000)
       : searchAllSymbols(code, ac.signal).then((list) => {
           const hit = list.find((s) => s.code === code && s.exchange);
@@ -255,12 +256,12 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     const months = new Set(ms.map((m) => m.month));
     for (const n of live.notes) {
       const d = new Date(Date.parse(n.at) + 9 * 3_600_000).toISOString().slice(0, 10);
-      const market = isSpecialCode(n.symbol);
-      const key = `${d}|${market ? "-" : n.symbol}|${norm(n.text)}`;
+      const key = `${d}|-|${norm(n.text)}`;
       const key2 = `${d}|${n.symbol}|${norm(n.text)}`;
       if (!n.text || seen.has(key) || seen.has(key2)) continue;
       seen.add(key2);
-      recs.push({ d, kind: n.plan ? "plan" : market ? "market" : "stock", month: months.has(d.slice(0, 7)) ? d.slice(0, 7) : ms[ms.length - 1].month, code: n.symbol, name: n.name, text: n.text });
+      // 지수 · 선물 · 환율도 그 종목 차트에 쓴 노트라 '종목 노트' (그 종목을 골라 차트로 볼 수 있게)
+      recs.push({ d, kind: n.plan ? "plan" : "stock", month: months.has(d.slice(0, 7)) ? d.slice(0, 7) : ms[ms.length - 1].month, code: n.symbol, name: n.name, text: n.text });
     }
     recs.sort((a, b) => a.d.localeCompare(b.d) || ORDER[a.kind] - ORDER[b.kind]);
   }
@@ -333,7 +334,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     const code = hit[0];
     const has = (m: SimMonth) => m.symbol.code === code || m.trades.some((x) => x.code === code) || (m.notes ?? []).some((n) => n.code === code);
     // 고른 달에 있으면 그 달, 아니면 그 종목이 나온 가장 최근 달 (달 칩은 전체로)
-    const target = (curMonth ? ms.find((m) => m.month === curMonth && has(m)) : undefined) ?? [...ms].reverse().find(has);
+    const liveMonth = recs.filter((r) => r.code === code).at(-1)?.month;
+    const target = (curMonth ? ms.find((m) => m.month === curMonth && has(m)) : undefined) ?? [...ms].reverse().find(has) ?? ms.find((m) => m.month === liveMonth) ?? ms.at(-1);
     if (!target) return;
     if (curMonth && target.month !== curMonth) setMon(null);
     setSel({ month: target.month, code });
@@ -553,7 +555,15 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     </div>
                     <ul>
                       {shown.map((r, i) => (
-                        <li key={`${r.d}:${r.kind}:${i}`}>
+                        <li
+                          key={`${r.d}:${r.kind}:${i}`}
+                          className={r.code ? "sd-memo-pick" : undefined}
+                          onClick={(e) => {
+                            // 노트를 누르면 그 종목 차트로 (보충 노트 버튼 · 글 선택은 그대로)
+                            if (!r.code || (e.target as HTMLElement).closest("button, a, textarea, input")) return;
+                            setSel({ month: r.month, code: r.code });
+                          }}
+                        >
                           <div>
                             <em className={`sd-kind ${r.kind}`}>{KIND[r.kind]}</em>
                             {scope === "all" && r.name && <b>{r.name}</b>}
