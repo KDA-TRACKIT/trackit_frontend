@@ -146,7 +146,7 @@ export default function BusinessPage() {
 
   return (
     <>
-      <PageHead title={business ? "비즈니스 프로필 관리" : "비즈니스 프로필 전환"} desc={business ? undefined : "내 투자 전략을 판매하려면 비즈니스 프로필로 전환해 주세요."} />
+      <PageHead title={business ? "비즈니스 프로필 관리" : "비즈니스 프로필 전환"} />
       {business ? (
         <Card className="mp-business-management">
           <h2>정산 정보</h2>
@@ -178,18 +178,14 @@ export default function BusinessPage() {
           {error && <p className="mp-notice err" role="alert">{error}</p>}
           {saved && <p className="mp-notice ok">정산 계좌를 바꿨어요.</p>}
         </Card>
-      ) : <Card title="전략 판매 시작하기" desc="처음 3개월 동안의 기록으로 자동으로 판정해요. 조건을 모두 채우면 바로 전환할 수 있어요.">
+      ) : <Card title="전략 판매 시작하기">
           <div className="mp-biz-box">
             <strong>
               {!check ? "기록을 확인하고 있어요…" : check.error ? "판정 결과를 불러오지 못했어요" : check.data?.ok ? "조건을 모두 채웠어요. 지금 전환할 수 있어요." : `조건 ${check.data?.criteria.filter((c) => !c.ok).length ?? 0}개가 남았어요`}
             </strong>
-            <p>
-              {check?.error
-                ? check.error
-                : check?.data
-                  ? `첫 노트부터 3개월이 지나고 최근 30일 메모가 5개 이상이면 전환할 수 있어요.${check.data.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok ? ` ${ymd(check.data.eligibleAt)}부터 기간 충족.` : ""}`
-                  : "비즈니스 프로필에서는 내 전략을 판매하고 판매 내역과 정산 내역을 확인할 수 있어요."}
-            </p>
+            {(check?.error || (check?.data?.eligibleAt && !check.data.criteria.find((c) => c.key === "period")?.ok)) && (
+              <p>{check?.error ? check.error : `${ymd(check!.data!.eligibleAt!)}부터 기간 충족`}</p>
+            )}
           </div>
           {check?.data && (
             <ul className="mp-elig">
