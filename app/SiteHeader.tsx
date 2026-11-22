@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import AccountChip from "./AccountChip";
+import HeaderDropdown, { type HeaderDropdownItem } from "./HeaderDropdown";
 
 type Active = "home" | "fortrade" | "archive" | "marketplace" | null;
 
-type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href?: string }[] };
+type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: HeaderDropdownItem[] };
 const MENU: Menu[] = [
   { key: "home", label: "홈", href: "/" },
   {
@@ -12,8 +14,8 @@ const MENU: Menu[] = [
     href: "/workshop",
     // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
     sub: [
-      { label: "트레이딩 로그", href: "/workshop" },
-      { label: "증시 캘린더", href: "/insights" },
+      { label: "트레이딩 로그", href: "/workshop", icon: "candlestick" },
+      { label: "증시 캘린더", href: "/insights", icon: "calendar" },
     ],
   },
   { key: "marketplace", label: "전략마켓", href: "/marketplace" },
@@ -21,11 +23,11 @@ const MENU: Menu[] = [
     key: "archive",
     label: "전략보관함",
     href: "/archive/notes",
-    // 전략보관함 드롭다운: 내 노트 · 구독 목록. '전략보관함'을 누르면 첫 화면은 내 노트
+    // '전략보관함'을 누르면 첫 화면은 내 노트
     //   (예전 '내 전략'(/archive/mine, 판매 등록 · AI 초안)은 메뉴에선 빠지고 마이페이지 판매 · AI 전략 만들기에서 들어감)
     sub: [
-      { label: "내 노트", href: "/archive/notes" },
-      { label: "구독 목록", href: "/archive/purchases" },
+      { label: "내 노트", href: "/archive/notes", icon: "notebook" },
+      { label: "구독 목록", href: "/archive/purchases", icon: "bookmark" },
     ],
   },
 ];
@@ -53,22 +55,10 @@ export default function SiteHeader({ active = null, tone, right, menu = true, ti
           {MENU.map((m) =>
             m.sub ? (
               <div key={m.key} className="gnb-drop">
-                <Link className={active === m.key ? "active" : ""} href={m.href} data-label={m.label} aria-current={active === m.key ? "page" : undefined} aria-haspopup="true">
-                  {m.label}
+                <Link className={active === m.key ? "active" : ""} href={m.href} data-label={m.label}>
+                  <span className="gnb-drop-label">{m.label}<ChevronDown size={15} aria-hidden="true" /></span>
                 </Link>
-                <div className="gnb-drop-menu" role="menu" aria-label={m.label}>
-                  {m.sub.map((s) =>
-                    s.href ? (
-                      <Link key={s.label} href={s.href} role="menuitem">
-                        <b>{s.label}</b>
-                      </Link>
-                    ) : (
-                      <span key={s.label} role="menuitem" aria-disabled="true" className="soon">
-                        <b>{s.label}</b>
-                      </span>
-                    ),
-                  )}
-                </div>
+                <HeaderDropdown label={m.label} items={m.sub} />
               </div>
             ) : (
               <Link key={m.key} className={active === m.key ? "active" : ""} href={m.href} data-label={m.label} aria-current={active === m.key ? "page" : undefined}>

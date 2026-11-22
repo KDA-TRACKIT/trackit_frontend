@@ -50,11 +50,9 @@ html[data-theme="dark"] body { background:var(--c-bg); color:var(--c-ink); }
 /* 상단 바 */
 html[data-theme="dark"] .gnb { background:var(--c-surface); border-bottom-color:var(--c-line); }
 html[data-theme="dark"] .gnb-brand { color:var(--c-brand); }
-html[data-theme="dark"] .gnb-main a { color:var(--c-sub); }
-html[data-theme="dark"] .gnb-main a:hover, html[data-theme="dark"] .gnb-main a.active { color:var(--c-ink); }
-html[data-theme="dark"] .gnb-drop-menu { border-color:var(--c-line); background:var(--c-surface); box-shadow:var(--c-shadow); }
-html[data-theme="dark"] .gnb-drop-menu a:hover { background:var(--c-hover); }
-html[data-theme="dark"] .gnb-drop-menu b { color:var(--c-ink); }
+html[data-theme="dark"] .gnb-main > a, html[data-theme="dark"] .gnb-drop > a { color:var(--c-sub); }
+html[data-theme="dark"] .gnb-main > a:hover, html[data-theme="dark"] .gnb-main > a.active,
+html[data-theme="dark"] .gnb-drop > a:hover, html[data-theme="dark"] .gnb-drop > a.active { color:var(--c-ink); }
 html[data-theme="dark"] .gnb-bell, html[data-theme="dark"] button.gnb-chip.gnb-user { color:var(--c-ink); }
 html[data-theme="dark"] .gnb-bell:hover { background:var(--c-hover); }
 html[data-theme="dark"] .gnb-bell-head { border-bottom-color:var(--c-line); }
