@@ -702,14 +702,14 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .mk-new { margin-top:40px; }
 .mk-new h2 { margin:0 0 12px; font-size:20px; font-weight:600; color:var(--c-ink); }
 /* 위 트레이더 표와 같은 틀 (2026-11-22): 머리 · 줄 같은 좌우 여백(23/13)과 칸 간격, 첫 칸 빼고 가운데 정렬, 줄 사이 선은 안쪽으로 */
-.mk-new .mk-new-cols, .mk-new-row { display:grid; grid-template-columns:minmax(0,2.2fr) 1fr 1fr 1.6fr; gap:12px; align-items:center; padding-inline:23px 13px; }
+.mk-new .mk-new-cols, .mk-new-row { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,.9fr) minmax(0,1.4fr) minmax(0,1.6fr); gap:12px; align-items:center; padding-inline:23px 13px; }
 .mk-new .mk-new-cols > :first-child { font-size:16px; }
 .mk-new-rows { margin:0; padding:0; list-style:none; }
-.mk-new-row { position:relative; isolation:isolate; min-height:64px; padding-block:12px; font-size:16px; font-variant-numeric:tabular-nums; }
+.mk-new-row { position:relative; isolation:isolate; min-height:72px; padding-block:14px; font-size:18px; font-variant-numeric:tabular-nums; }
 .mk-new-row > :not(:first-child) { text-align:center; }
 .mk-new-row + .mk-new-row::before { position:absolute; inset:0 23px auto; border-top:1px solid var(--c-line); content:""; pointer-events:none; }
 .mk-new-row::after { position:absolute; z-index:-1; inset:4px 8px; border-radius:8px; content:""; pointer-events:none; }
-.mk-new-row strong { overflow:hidden; color:var(--c-ink); font-size:18px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.mk-new-row strong { overflow:hidden; color:var(--c-ink); font-size:20px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
 .mk-new-row span { overflow:hidden; color:var(--c-sub); text-overflow:ellipsis; white-space:nowrap; }
 .mk-new-row b { font-weight:700; }
 @media (max-width:800px) {
