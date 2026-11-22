@@ -35,8 +35,8 @@ export default function SalesPage() {
   const subsReady = subs !== undefined;
   return (
     <>
-      <PageHead title="구독 관리" desc="구독자와 정산 현황을 관리하세요." />
-      <Card title="구독 현황" desc="내 전략의 구독 현황입니다.">
+      <PageHead title="구독 관리" />
+      <Card title="구독 현황">
         <div className="mp-three">
           <div>
             <span>구독자 수</span>
@@ -54,7 +54,6 @@ export default function SalesPage() {
       </Card>
       <Card
         title="전략 및 구독 관리"
-        desc="구독자가 보는 전략과 구독 · 정산 기록을 관리합니다."
         action={
           <Link className="mp-btn primary small" href={registerHref}>
             전략 등록

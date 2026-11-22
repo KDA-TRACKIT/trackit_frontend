@@ -45,8 +45,8 @@ export default function SettlementsPage() {
 
   return (
     <>
-      <PageHead title="정산 내역" desc="구독 수익의 정산 금액과 지급 상태를 확인합니다." parent={["구독 관리", "/mypage/sales"]} />
-      <Card className="mp-settlement-history" title="정산 내역" desc="정산 예정 금액과 완료된 지급 내역을 확인합니다.">
+      <PageHead title="정산 내역" parent={["구독 관리", "/mypage/sales"]} />
+      <Card className="mp-settlement-history" title="정산 내역">
         <div className="mp-boxes">
           <div>
             <span>정산 예정 금액</span>

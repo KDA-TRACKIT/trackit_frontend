@@ -14,17 +14,12 @@ import { getSupabaseBrowser } from "../lib/supabase-browser";
 import "./home-bee-guide.css";
 
 type Step = { target?: string; title: string; body: string };
-// 화면 순서대로: 위 메뉴를 왼쪽 → 오른쪽으로, 그다음 홈을 위 → 아래로
+// 화면 순서대로: 위 메뉴를 왼쪽 → 오른쪽으로 (2026-11-22: 알림 · 마이페이지 · 홈 카드 3개 단계는 빼고 5단계로)
 const STEPS: Step[] = [
   { title: "안녕! 나는 트래킷 꿀벌이야 🐝", body: "트래킷은 매매 전에 계획을 남기고, 실제 매매가 그 계획대로였는지 검증하는 곳이야. 위 메뉴부터 오른쪽으로, 그다음 아래로 1분만 같이 둘러보자!" },
   { target: '.gnb-main a[href="/workshop"]', title: "투자작업실", body: "차트에 지지 · 저항선을 긋고 매수 · 손절 · 목표를 먼저 적어 둬. '저장'을 누르면 매매 전에 남긴 '사전 기록'이 돼서, 결과를 보고 끼워 맞출 수 없어. 증시 캘린더(뉴스 · 공시 · 경제 일정)도 여기 있어." },
   { target: '.gnb-main a[href="/marketplace"]', title: "전략마켓", body: "실제 체결로 검증된 트레이더를 구독하고 전략을 봐. 수익률만이 아니라 이행률 · 손실 사례까지 같이 보여." },
   { target: '.gnb-main a[href="/archive/notes"]', title: "전략보관함", body: "내 노트를 날짜 · 종목별로 모아 보고, '복기형'에서 계획 vs 실제(늦은 손절 · 이른 익절)를 확인해. '전략 분석'에선 AI 에게 내 전략과 매매를 근거로 물어볼 수 있어." },
-  { target: ".gnb-bell-box", title: "알림", body: "즐겨찾기한 트레이더가 새 전략을 올리거나, 구독한 전략과 비슷한 자리가 내 관심 종목에 나오면 여기로 알려 줘." },
-  { target: ".gnb-avatar", title: "마이페이지 · 증권사 연결", body: "마이페이지 → 지갑에서 증권사를 연결하면 체결이 자동으로 들어와서 노트와 이어져. 투자 성향 · 구독 관리도 여기서 해." },
-  { target: ".home-overview", title: "내 이행률 · 수익", body: "체결이 들어오면 내가 계획대로 사고팔았는지(이행률)와 이번 달 수익을 여기서 바로 보여 줘." },
-  { target: "#trader-board", title: "트레이더 리더보드", body: "지금 잘하고 있는 트레이더야. 마음에 드는 사람은 즐겨찾기 하면 새 전략이 올라올 때 알려 줄게." },
-  { target: ".home-weekly", title: "이번 주 기록", body: "요일마다 내 체결과 노트를 모아 보여 줘. 날짜를 누르면 그날 남긴 노트와 매매를 바로 볼 수 있어." },
   { title: "준비 끝! 첫 계획부터 남겨 볼까?", body: "관심 있는 종목 차트에 선 하나 긋고 '어디서 사고, 어디서 틀렸다고 볼지' 적어 두면 시작이야. 오른쪽 아래 꿀벌 버튼을 누르면 이 안내를 언제든 다시 볼 수 있어." },
 ];
 const doneKey = (userId: string) => `trackit:bee-guide:${userId}`;
@@ -126,10 +121,10 @@ export default function HomeBeeGuide({ userId, createdAt, seen }: { userId: stri
   const vh = view.h;
   const PAD = 8;
   // 말풍선: 비춘 곳 아래(공간이 없으면 위), 가운데 단계는 화면 가운데
-  const W = Math.min(380, vw - 32);
+  const W = Math.min(320, vw - 32);
   let bubble: React.CSSProperties;
   if (rect) {
-    const below = rect.y + rect.h + PAD + 230 < vh;
+    const below = rect.y + rect.h + PAD + 200 < vh;
     const left = Math.max(16, Math.min(vw - W - 16, rect.x + rect.w / 2 - W / 2));
     bubble = below ? { left, top: rect.y + rect.h + PAD + 14, width: W } : { left, bottom: vh - rect.y + PAD + 14, width: W };
   } else bubble = { left: vw / 2 - W / 2, top: vh / 2 - 140, width: W };
@@ -142,23 +137,25 @@ export default function HomeBeeGuide({ userId, createdAt, seen }: { userId: stri
         <div className="bee-dim" />
       )}
       <div className={`bee-bubble${rect ? "" : " center"}`} style={bubble}>
-        <Image className="bee-face" src="/images/home-bee.png" alt="" width={84} height={84} />
+        <Image className="bee-face" src="/images/home-bee.png" alt="" width={72} height={72} />
         <small className="bee-count">
           {step + 1} / {STEPS.length}
         </small>
         <h3 id="bee-guide-title">{cur.title}</h3>
         <p>{cur.body}</p>
         {last ? (
-          <div className="bee-actions">
+          <div className="bee-actions last">
             <Link className="bee-primary" href="/workshop" onClick={finish}>
               첫 계획 남기러 가기
             </Link>
-            <Link className="bee-ghost" href="/mypage/wallet" onClick={finish}>
-              증권사 연결하기
-            </Link>
-            <button type="button" className="bee-text" onClick={finish}>
-              둘러볼게요
-            </button>
+            <div className="bee-actions-sub">
+              <Link className="bee-ghost" href="/mypage/wallet" onClick={finish}>
+                증권사 연결하기
+              </Link>
+              <button type="button" className="bee-text" onClick={finish}>
+                둘러볼게요
+              </button>
+            </div>
           </div>
         ) : (
           <div className="bee-actions">
