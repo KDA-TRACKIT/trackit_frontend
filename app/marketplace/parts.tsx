@@ -236,7 +236,7 @@ export function PassBuyBox({ trader, notify }: { trader: Trader; notify: (m: str
   const active = subscribed(passes, trader.id);
   return (
     <div className="mk-passbox">
-      {active && end && <p className="mk-sub-until">{end.toLocaleDateString("ko-KR")}까지 구독 중</p>}
+      {active && end && <p className="mk-sub-until">{end.toLocaleDateString("ko-KR").replace(/\.$/, "")}까지 구독 중</p>}
       <PassBuyButton trader={trader} label={active ? "30일 연장하기" : "구독하기"} notify={notify} />
     </div>
   );

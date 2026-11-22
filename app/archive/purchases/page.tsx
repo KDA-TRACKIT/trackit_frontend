@@ -105,7 +105,7 @@ export default function PurchasesPage() {
                       </div>
                       <div className="ar-trader-stat">
                         <small>구독</small>
-                        <b className={g.paid && !g.active ? "ar-none" : undefined}>{g.active && g.end ? `${g.end.toLocaleDateString("ko-KR")}까지` : g.paid ? "끝남" : "무료 전략"}</b>
+                        <b className={g.paid && !g.active ? "ar-none" : undefined}>{g.active && g.end ? `${g.end.toLocaleDateString("ko-KR").replace(/\.$/, "")}까지` : g.paid ? "끝남" : "무료 전략"}</b>
                       </div>
                       <div className="ar-trader-stat">
                         <small>전략 이행률</small>
