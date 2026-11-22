@@ -702,21 +702,22 @@ export default function WorkshopPage() {
   //   (2026-11-22) 본문은 Note 에 쓴 글 그대로 (+ 고른 시나리오). 그은 선은 차트 그림 · 선 기록(lines)으로 남음
   const savedText = () => [noteText.trim(), scenarioLine].filter(Boolean).join("\n\n");
 
-  const drawSig = (list: Drawing[]) => JSON.stringify(list.map((d) => [d.toolId, d.points, d.text ?? "", d.style, !!d.hidden]));
-  const lineSig = (list: { price?: number; low?: number; high?: number; pts?: [number, number][] }[]) => JSON.stringify(list.map((l) => [l.price ?? null, l.low ?? null, l.high ?? null, l.pts ?? null]).sort());
-  function sameAsBefore(lines: NoteLine[]): string | null {
+  // 드로잉은 완전히 같아야 같은 것 (점 · 글 · 색 · 굵기 · 숨김 등 전부. id 만 뺌)
+  const drawSig = (list: Drawing[]) => JSON.stringify(list.map(({ id: _id, ...rest }) => (void _id, rest)));
+  function sameAsBefore(): string | null {
     if (editing) return savedText().trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings) ? "불러온 노트와 바뀐 곳이 없어요. 글이나 드로잉을 고친 뒤 저장하세요." : null;
+    // 새 노트: 예전 노트의 드로잉 원본은 화면에 없어서, 둘 다 드로잉이 없을 때만 여기서 미리 알려 줌. 드로잉이 있으면 서버가 비교해 거절함 (DUPLICATE_NOTE)
     const latest = [...currentRecords(symbolRecords)].sort((a, b) => `${b.date} ${b.noteTime}`.localeCompare(`${a.date} ${a.noteTime}`))[0];
-    if (!latest) return null;
-    return savedText().trim() === latest.text.trim() && lineSig(lines) === lineSig(latest.lines ?? []) ? "가장 최근 노트와 내용이 같아요. 바뀐 곳이 있을 때 새 노트로 남겨요." : null;
+    if (!latest || drawings.length || latest.drawings) return null;
+    return savedText().trim() === latest.text.trim() ? "가장 최근 노트와 내용이 같아요. 바뀐 곳이 있을 때 새 노트로 남겨요." : null;
   }
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview(range?: { from: number; to: number }) {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
-    // 똑같은 노트는 다시 남기지 않음: 불러와 고치는 노트는 그 노트와(글 · 드로잉), 새 노트는 이 종목의 가장 최근 노트와(글 · 그은 선) 비교
-    const same = sameAsBefore(lines);
+    // 똑같은 노트는 다시 남기지 않음: 불러와 고치는 노트는 그 노트와(글 · 드로잉) 비교. 새 노트는 서버가 바로 앞 노트와 비교
+    const same = sameAsBefore();
     setSameMsg(same);
     if (same) return;
     const marks = reviewMarks(lines);
