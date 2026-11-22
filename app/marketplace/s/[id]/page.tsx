@@ -50,7 +50,7 @@ export default function MarketStrategyPage() {
   const [error, setError] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   /** 누른 노트: 저장한 차트 그림 + 쓴 글을 큰 차트 자리에 그대로 (2026-11-22) */
-  const [picked, setPicked] = useState<{ id: string; symbol: string; at: string; text: string } | null>(null);
+  const [pickedRaw, setPicked] = useState<{ id: string; symbol: string; at: string; text: string } | null>(null);
   const [scope, setScope] = useState<"symbol" | "all">("all");
   const [dark, setDark] = useState(false);
 
@@ -89,6 +89,9 @@ export default function MarketStrategyPage() {
   const curTrades = useMemo(() => (data?.trades ?? []).filter((t) => t.symbol === cur), [data, cur]);
   const curNotes = useMemo(() => (data?.notes ?? []).filter((n) => n.symbol === cur), [data, cur]);
   const noteDays = useMemo(() => curNotes.map((n) => ymd(n.at)), [curNotes]);
+  // 큰 차트 자리: 누른 노트, 아니면 그 종목의 최신 노트 (저장한 그림 + 글 그대로)
+  const latest = curNotes.at(-1);
+  const picked = pickedRaw && pickedRaw.symbol === cur ? pickedRaw : latest ? { id: latest.id, symbol: latest.symbol, at: latest.at, text: latest.text } : null;
   const shownNotes = [...(scope === "symbol" ? curNotes : (data?.notes ?? []))].reverse();
 
   if (error) {

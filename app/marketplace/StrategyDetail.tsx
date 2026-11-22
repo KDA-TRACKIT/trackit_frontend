@@ -146,7 +146,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   const [mon, setMon] = useState<string | null>(/^\d{4}-\d{2}$/.test(strategyKey) ? strategyKey : null);
   const [sel, setSel] = useState<{ month: string; code: string } | null>(null);
   /** 누른 실제 노트 (그 노트에 저장한 차트 그림을 큰 차트 자리에 그대로) */
-  const [pickedNote, setPickedNote] = useState<{ id: string; code: string; d: string; text: string } | null>(null);
+  /** "chart" = 매매를 눌러 일봉 차트로 보기, null = 그 종목의 최신 실제 노트를 그림 + 글로 (2026-11-22) */
+  const [pickedRaw, setPickedNote] = useState<{ id: string; code: string; d: string; text: string } | "chart" | null>(null);
   const [tab, setTab] = useState<"all" | "pre">("all");
   const [scope, setScope] = useState<"symbol" | "all">("symbol");
   const [memoParam, setMemoParam] = useState<string | null>(null);
@@ -296,6 +297,16 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   // 이 종목: 고른 매매가 있는 달의 그 종목 것 (차트에 보이는 달과 같게). 전략 전체: 증시 노트 · 이어진 보유까지 날짜순
   const symbolList = cur ? byTab(recs.filter((r) => r.month === cur.month && r.code === cur.code && r.kind !== "market" && r.kind !== "carry")) : [];
   const allList = byTab(recs);
+  // 큰 차트 자리: 누른 노트, 아니면 그 종목의 최신 실제 노트(저장한 그림 + 글) — 매매를 눌렀으면 일봉 차트
+  const latestLive = cur ? [...recs].reverse().find((r) => r.id && r.code === cur.code) : undefined;
+  const pickedNote =
+    pickedRaw === "chart" || !cur
+      ? null
+      : pickedRaw && pickedRaw.code === cur.code
+        ? pickedRaw
+        : latestLive?.id && latestLive.code
+          ? { id: latestLive.id, code: latestLive.code, d: latestLive.d, text: latestLive.text }
+          : null;
   // 최신 노트가 맨 위 (2026-11-22)
   const shown = [...(scope === "all" ? allList : symbolList)].reverse();
 
@@ -490,7 +501,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     {rows.map(({ month, tr }) => {
                       const on = !!cur && cur.month === month && cur.code === tr.code;
                       return (
-                        <button key={`${month}:${tr.code}:${tr.entry.d}`} type="button" className={on ? "tr on" : "tr"} aria-pressed={on} onClick={() => (setSel({ month, code: tr.code }), setPickedNote(null))}>
+                        <button key={`${month}:${tr.code}:${tr.entry.d}`} type="button" className={on ? "tr on" : "tr"} aria-pressed={on} onClick={() => (setSel({ month, code: tr.code }), setPickedNote("chart"))}>
                           <strong>{tr.name}</strong>
                           <span>{md(tr.entry.d)}</span>
                           <span>{tr.open ? "보유 중" : mdFrom(tr.exit.d, tr.entry.d)}</span>
