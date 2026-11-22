@@ -132,3 +132,35 @@ export function habits(reviews: RoundReview[], changes: PlanChange[]): Habit[] {
   if (kept) out.push({ text: `계획대로 끝낸 매매가 ${kept}번이에요`, bad: false, count: kept });
   return out.sort((a, b) => Number(b.bad) - Number(a.bad) || b.count - a.count);
 }
+
+// ── 계획대로 했다면 (2026-11-21) ──
+//   실제로 산 가격에서, 계획한 손절 · 목표를 그대로 지켰다면 어떻게 끝났을지를 일봉으로 따라가 봄 (만들어 낸 가격 없음)
+//   · 산 다음 거래일부터 봄 — 일봉으로는 산 날 안의 순서(사기 전 저가인지)를 알 수 없어서
+//   · 그날 저가가 손절선 이하면 손절, 고가가 목표 이상이면 익절. 한 봉에 둘 다 닿으면 손절로 봄(불리한 쪽)
+//   · 갭으로 넘어서 시작한 날은 시가에 나간 것으로 (손절선보다 아래에서 시작하면 그 시가)
+//   · 실제 매수가보다 높은 손절선 · 낮은 목표는 쓰지 않음. 끝까지 안 닿으면 마지막 종가 기준 '아직 진행 중'
+export type DayBar = { d: string; open: number; high: number; low: number; close: number };
+export type WhatIf = { ret: number; exit: { d: string; px: number } | null; why: "stop" | "target" | "open"; lastD: string };
+
+export function ifFollowed(round: MyRound, plan: Plan | null, bars: DayBar[]): WhatIf | null {
+  if (!plan) return null;
+  const e = round.entry.px;
+  const stop = plan.stop !== null && plan.stop < e ? plan.stop : null;
+  const target = plan.target !== null && plan.target > e ? plan.target : null;
+  if (stop === null && target === null) return null;
+  const after = bars.filter((b) => b.d > round.entry.d);
+  if (!after.length || !bars.some((b) => b.d <= round.entry.d)) return null;
+  const ret = (px: number) => (px / e - 1) * 100;
+  for (const b of after) {
+    if (stop !== null && b.low <= stop) {
+      const px = Math.min(stop, b.open);
+      return { ret: ret(px), exit: { d: b.d, px }, why: "stop", lastD: b.d };
+    }
+    if (target !== null && b.high >= target) {
+      const px = Math.max(target, b.open);
+      return { ret: ret(px), exit: { d: b.d, px }, why: "target", lastD: b.d };
+    }
+  }
+  const last = after[after.length - 1];
+  return { ret: ret(last.close), exit: null, why: "open", lastD: last.d };
+}

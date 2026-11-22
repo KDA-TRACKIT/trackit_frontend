@@ -1,7 +1,7 @@
 "use client";
 // 전략보관함 차트용 일봉 (국내 6자리 종목만). 한 번 받은 건 화면을 옮겨도 다시 안 받음
 import { useEffect, useState } from "react";
-import { fetchBars } from "../../lib/market-data";
+import { fetchBars, searchAllSymbols } from "../../lib/market-data";
 import type { Bar } from "../../lib/interval";
 
 const cache = new Map<string, Promise<Bar[]>>();
@@ -19,6 +19,24 @@ export function loadDaily(code: string): Promise<Bar[]> {
         return [] as Bar[];
       });
     cache.set(code, p);
+  }
+  return p;
+}
+
+/** 국내 · 미국 일봉 (미국은 거래소를 찾아서). 못 받으면 빈 배열 */
+const anyCache = new Map<string, Promise<Bar[]>>();
+export function loadDailyAny(code: string): Promise<Bar[]> {
+  if (isKrCode(code)) return loadDaily(code);
+  let p = anyCache.get(code);
+  if (!p) {
+    p = searchAllSymbols(code)
+      .then((list) => list.find((s) => s.code === code && s.exchange))
+      .then((hit) => (hit?.exchange ? fetchBars(code, "1d", undefined, 3000, hit.exchange).then((r) => r.bars) : []))
+      .catch(() => {
+        anyCache.delete(code);
+        return [] as Bar[];
+      });
+    anyCache.set(code, p);
   }
   return p;
 }

@@ -3,14 +3,19 @@
 //   위: 숫자 요약(매매 · 계획을 세운 매매 · 계획 이행률 · 승률) + 자주 반복되는 습관
 //     (2026-11-22 용어 통일: 계획 있던 매매 → 계획을 세운 매매, 계획대로 끝냄 → 계획 이행률, 이긴 비율 → 승률, N번 → N건 — 홈 · 전략 마켓과 같은 말로)
 //   가운데: 매매마다 계획 가격과 실제 가격, 지킨 것 · 어긴 것 (누르면 그때 쓴 노트를 오른쪽에)
-//   아래: 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게)
+//     (2026-11-21) 매매마다 '계획대로 했다면' 결과(일봉으로 계산)와 차트(계획 선 + 실제 매수 · 매도)
+//   그 아래: 종목 전략이 바뀐 흐름 (손절선을 내린 건 빨갛게) → 계획만 세우고 안 산 종목
+//   맨 위: 복기 재생 (종목을 골라서)
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TradeRecord } from "../../../lib/records";
 import { recentTrades, type Trade } from "../../../lib/api/performance";
 import { searchAllSymbols } from "../../../lib/market-data";
 import { pairTrades } from "../../../lib/strategy-use";
-import { habits, planChanges, reviewRounds, type RoundReview } from "../../../lib/self-review";
+import { habits, ifFollowed, planChanges, reviewRounds, type RoundReview, type WhatIf } from "../../../lib/self-review";
+import type { Bar } from "../../../lib/interval";
+import { barDate, loadDailyAny } from "../bars";
+import RoundChart from "./RoundChart";
 import { shortDate } from "./model";
 import ReplayView from "./ReplayView";
 import BeeLoader from "../../BeeLoader";
@@ -69,6 +74,26 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
   }, [records, rounds, matchesStock, from, nameOf]);
   const changes = useMemo(() => planChanges(records, codes, nameOf).filter((c) => c.at.slice(0, 10) >= from), [records, codes, nameOf, from]);
   const list = useMemo(() => habits(reviews, changes), [reviews, changes]);
+  // 매매한 종목의 일봉: '계획대로 했다면' 계산 · 매매 차트에 씀
+  const barKey = [...new Set(reviews.map((r) => r.round.symbol))].sort().join(",");
+  const [barsBy, setBarsBy] = useState<Record<string, Bar[]>>({});
+  useEffect(() => {
+    let alive = true;
+    for (const c of barKey ? barKey.split(",") : []) void loadDailyAny(c).then((b) => alive && setBarsBy((m) => (m[c] === b ? m : { ...m, [c]: b })));
+    return () => {
+      alive = false;
+    };
+  }, [barKey]);
+  const keyOf = (r: RoundReview) => `${r.round.symbol}:${r.round.entry.d}`;
+  const whatIfs = useMemo(() => {
+    const m = new Map<string, WhatIf>();
+    for (const r of reviews) {
+      const bars = barsBy[r.round.symbol];
+      const w = bars?.length ? ifFollowed(r.round, r.plan, bars.map((b) => ({ d: barDate(b.time), open: b.open, high: b.high, low: b.low, close: b.close }))) : null;
+      if (w) m.set(`${r.round.symbol}:${r.round.entry.d}`, w);
+    }
+    return m;
+  }, [reviews, barsBy]);
   // 선택 기간에 노트를 남겼고 매매 이력이 없는 종목
   const traded = new Set(rounds.map((r) => r.symbol));
   const activeNoteCodes = new Set(records.filter((r) => r.date >= from).map(recordCode));
@@ -81,11 +106,19 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
   const wins = closed.filter((r) => (r.round.ret ?? 0) > 0).length;
   const rate = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 
+  // 계획대로 했다면 vs 실제 (둘 다 끝난 매매만 비교)
+  const both = closed.flatMap((r) => {
+    const w = whatIfs.get(keyOf(r));
+    return w?.exit && r.round.ret !== null ? [{ plan: w.ret, real: r.round.ret }] : [];
+  });
+  const avgPlan = both.reduce((s, b) => s + b.plan, 0) / (both.length || 1);
+  const avgReal = both.reduce((s, b) => s + b.real, 0) / (both.length || 1);
+
   const replayStocks = [...new Set([...codes, ...rounds.map((r) => r.symbol)])].filter(matchesStock).map((code) => ({ code, name: nameOf(code) }));
 
   return (
     <div className="mm-rv">
-      {!!replayStocks.length && <ReplayView key={`${stock}:${from}`} records={records} trades={trades} stocks={replayStocks} from={from} onOpenNote={onOpenNote} />}
+      {!!replayStocks.length && <ReplayView key={stock} records={records} trades={trades} stocks={replayStocks} onOpenNote={onOpenNote} />}
       {failed && <p className="mm-card mm-rv-empty">로그인하고 증권사를 연결하면 실제 체결과 비교해요. 지금은 노트만 보여요.</p>}
       <section className="mm-rv-stats" aria-label="복기 요약">
         <div>
@@ -108,14 +141,30 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
 
       <section className="mm-card mm-rv-habits">
         <h2>자주 반복되는 습관</h2>
+        {both.length > 0 && (
+          <p className="mm-rv-whatif-sum" title="끝난 매매 가운데 계획한 손절 · 목표를 그대로 지켰다면 어떻게 끝났을지 일봉으로 따라가 본 결과예요. 한 봉에 손절 · 목표가 다 닿으면 손절로 봐요.">
+            끝난 매매 {both.length}건을 계획대로 했다면 평균 <b className={avgPlan >= 0 ? "gain" : "loss"}>{pct(avgPlan)}</b>, 실제로는 평균 <b className={avgReal >= 0 ? "gain" : "loss"}>{pct(avgReal)}</b>
+            {Math.abs(avgPlan - avgReal) >= 0.05 && ` — 계획대로 한 쪽이 ${Math.abs(avgPlan - avgReal).toFixed(2)}%p ${avgPlan > avgReal ? "높았어요" : "낮았어요"}`} ⓘ
+          </p>
+        )}
         {list.length ? (
-          <ul>
-            {list.map((h) => (
-              <li key={h.text} className={h.bad ? "bad" : "good"}>
-                {h.text}
-              </li>
-            ))}
-          </ul>
+          <>
+            {[true, false].map((bad) => {
+              const part = list.filter((h) => h.bad === bad);
+              return part.length ? (
+                <div key={String(bad)} className="mm-rv-habit-group">
+                  <h3>{bad ? "고칠 점" : "잘한 점"}</h3>
+                  <ul>
+                    {part.map((h) => (
+                      <li key={h.text} className={h.bad ? "bad" : "good"}>
+                        {h.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null;
+            })}
+          </>
         ) : (
           <p className="mm-rv-muted">아직 복기할 매매가 없어요. 종목 전략에 매수 · 손절 · 목표 가격을 적고 매매하면 여기서 비교해요.</p>
         )}
@@ -128,7 +177,7 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
         ) : (
           <ul>
             {reviews.map((r) => (
-              <RoundRow key={`${r.round.symbol}:${r.round.entry.d}`} r={r} onOpenNote={onOpenNote} />
+              <RoundRow key={keyOf(r)} r={r} bars={barsBy[r.round.symbol]} whatIf={whatIfs.get(keyOf(r)) ?? null} onOpenNote={onOpenNote} />
             ))}
           </ul>
         )}
@@ -164,9 +213,10 @@ export default function ReviewView({ records, stock, from, onOpenNote }: { recor
   );
 }
 
-function RoundRow({ r, onOpenNote }: { r: RoundReview; onOpenNote: (id: string) => void }) {
+function RoundRow({ r, bars, whatIf, onOpenNote }: { r: RoundReview; bars: Bar[] | undefined; whatIf: WhatIf | null; onOpenNote: (id: string) => void }) {
   const { round, plan } = r;
   const bad = r.flags.filter((f) => f.bad).length;
+  const [open, setOpen] = useState(false);
   return (
     <li className={bad ? "bad" : round.exit ? "good" : ""}>
       <div className="mm-rv-top">
@@ -199,6 +249,30 @@ function RoundRow({ r, onOpenNote }: { r: RoundReview; onOpenNote: (id: string) 
           </li>
         ))}
       </ul>
+      {whatIf && (
+        <p className="mm-rv-whatif" title="실제로 산 가격에서 계획한 손절 · 목표를 그대로 지켰다면 어떻게 끝났을지 일봉으로 따라가 본 결과예요. 산 다음 거래일부터 보고, 한 봉에 손절 · 목표가 다 닿으면 손절로 봐요.">
+          <span>계획대로 했다면</span>
+          {whatIf.exit ? (
+            <>
+              {shortDate(whatIf.exit.d)} {whatIf.why === "target" ? "목표" : "손절"} {won(whatIf.exit.px)}에 나와 <b className={whatIf.ret >= 0 ? "gain" : "loss"}>{pct(whatIf.ret)}</b>
+            </>
+          ) : (
+            <>
+              아직 손절 · 목표에 닿지 않았어요 ({shortDate(whatIf.lastD)} 종가 기준 <b className={whatIf.ret >= 0 ? "gain" : "loss"}>{pct(whatIf.ret)}</b>)
+            </>
+          )}
+          {round.ret !== null && whatIf.exit && (
+            <em>
+              실제 {pct(round.ret)}
+              {Math.abs(round.ret - whatIf.ret) >= 0.05 && ` — 계획대로 했을 때보다 ${Math.abs(round.ret - whatIf.ret).toFixed(2)}%p ${round.ret > whatIf.ret ? "높았어요" : "낮았어요"}`}
+            </em>
+          )}
+        </p>
+      )}
+      <button type="button" className="mm-rv-chart-btn" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        {open ? "차트 접기" : "차트로 보기"}
+      </button>
+      {open && (bars ? <RoundChart r={r} bars={bars} whatIf={whatIf} /> : <div className="mm-rv-chart is-empty"><BeeLoader size="sm" /></div>)}
     </li>
   );
 }
