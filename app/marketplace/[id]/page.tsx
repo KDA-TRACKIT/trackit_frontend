@@ -1,5 +1,5 @@
 "use client";
-// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) | 거래내역(최근 10회) · 구매자 후기(익명)
+// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 거래내역(최근 10회) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명)
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,8 +30,6 @@ export default function TraderPage() {
   // 내가 올린 전략인지 (내 전략 표시 · 구독 버튼 숨김) · 지금 구독 중인 사람 수
   const own = useMyTrader() === id;
   const subscribers = useSubscriberCounts();
-  // 전략 | 거래내역 탭 (2026-11-22)
-  const [view, setView] = useState<"strategies" | "trades">("strategies");
   if (!t) {
     return (
       <main className="mk-page">
@@ -149,18 +147,9 @@ export default function TraderPage() {
 
         <MonthlyChart t={t} />
 
-        <div className="ar-pt-tabs mk-trader-tabs" role="tablist" aria-label="전략 · 거래내역">
-          <button type="button" role="tab" aria-selected={view === "strategies"} onClick={() => setView("strategies")}>
-            전략
-          </button>
-          <button type="button" role="tab" aria-selected={view === "trades"} onClick={() => setView("trades")}>
-            거래내역
-          </button>
-        </div>
+        {/* 거래내역: 월별 수익률 바로 아래 (2026-11-22) */}
+        <TradeHistory id={t.id} />
 
-        {view === "trades" ? (
-          <TradeHistory id={t.id} />
-        ) : (
         <section className="mk-section">
           <div className="mk-section-head">
             <h2>전략</h2>
@@ -208,7 +197,6 @@ export default function TraderPage() {
             </div>
           </div>
         </section>
-        )}
 
         <Reviews trader={t} fb={fb} notify={notify} />
 
@@ -242,7 +230,7 @@ function TradeHistory({ id }: { id: string }) {
   return (
     <section className="mk-card ar-pt-trades sd-trades mk-history">
       <div className="sd-trades-head">
-        <h2 title="최근 7영업일 안의 거래와 아직 보유 중인 거래는 빼고 보여 줘요">최근 거래 10회</h2>
+        <h2 title="최근 7영업일 안의 거래와 아직 보유 중인 거래는 빼고 보여 줘요">거래 내역</h2>
       </div>
       <div className="ar-pt-table sd-table">
         <div className="th">

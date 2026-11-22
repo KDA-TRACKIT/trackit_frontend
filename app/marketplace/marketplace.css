@@ -692,7 +692,6 @@ html[data-theme="dark"] .mk-trader-honey { border-color:color-mix(in srgb,var(--
 .ar-pt-memos li .mk-memo-notes div.mk-qna-answer { margin-top:8px; padding:8px 10px; }
 .ar-pt-memos li .mk-memo-notes .mk-review-form-foot small { font-size:11.5px; }
 
-/* 트레이더 상세 전략 | 거래내역 탭 (2026-11-22) */
-.mk-trader-tabs { margin:28px 0 4px; }
-.mk-history { margin-top:12px; }
+/* 트레이더 상세 거래내역 (2026-11-22): 월별 수익률 아래 */
+.mk-history { margin-top:20px; }
 .mk-history .tb { max-height:none; }
