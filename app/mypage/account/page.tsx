@@ -40,8 +40,8 @@ export default function AccountPage() {
 
   return (
     <>
-      <PageHead title="계정 설정" desc="계정 정보와 개인정보 공개 범위를 관리하세요." />
-      <Card title="기본 계정 정보" desc="회원가입에 사용한 계정 정보와 보안 설정">
+      <PageHead title="계정 설정" />
+      <Card title="기본 계정 정보">
         <div className="mp-set-list">
           <div>
             <strong>이메일</strong>
@@ -62,7 +62,7 @@ export default function AccountPage() {
           </div>
         </div>
       </Card>
-      <Card title="개인정보 및 공개 설정" desc="프로필 노출, 전략 공개, 알림 설정을 관리합니다.">
+      <Card title="개인정보 및 공개 설정">
         <div className="mp-set-list">
           <div>
             <strong>개인정보 공개 설정</strong>
