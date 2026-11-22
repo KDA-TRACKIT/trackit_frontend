@@ -145,6 +145,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   // 달 칩 (주소가 달이면 그 달로 시작) · 고른 매매(달 + 종목) · 노트 탭 · 노트 범위 · 검색
   const [mon, setMon] = useState<string | null>(/^\d{4}-\d{2}$/.test(strategyKey) ? strategyKey : null);
   const [sel, setSel] = useState<{ month: string; code: string } | null>(null);
+  /** 누른 실제 노트 (그 노트에 저장한 차트 그림을 큰 차트 자리에 그대로) */
+  const [pickedNote, setPickedNote] = useState<{ id: string; code: string; d: string; text: string } | null>(null);
   const [tab, setTab] = useState<"all" | "pre">("all");
   const [scope, setScope] = useState<"symbol" | "all">("symbol");
   const [memoParam, setMemoParam] = useState<string | null>(null);
@@ -294,7 +296,8 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   // 이 종목: 고른 매매가 있는 달의 그 종목 것 (차트에 보이는 달과 같게). 전략 전체: 증시 노트 · 이어진 보유까지 날짜순
   const symbolList = cur ? byTab(recs.filter((r) => r.month === cur.month && r.code === cur.code && r.kind !== "market" && r.kind !== "carry")) : [];
   const allList = byTab(recs);
-  const shown = scope === "all" ? allList : symbolList;
+  // 최신 노트가 맨 위 (2026-11-22)
+  const shown = [...(scope === "all" ? allList : symbolList)].reverse();
 
   // 산 전략 활용하기가 근거로 쓰는 달: 구독으로 연 달 + 예전에 연 달 + 무료 전략 (전략보관함과 같은 계산)
   const tList = t ? strategiesOf(t) : [];
@@ -356,6 +359,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     if (!target) return;
     if (curMonth && target.month !== curMonth) setMon(null);
     setSel({ month: target.month, code });
+    setPickedNote(null);
     setQuery("");
   }
 
@@ -463,11 +467,11 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                   <h2>거래 내역</h2>
                   {ms.length > 1 && (
                     <div className="sd-chips" role="group" aria-label="달 고르기">
-                      <button type="button" aria-pressed={!curMonth} onClick={() => (setMon(null), setSel(null))}>
+                      <button type="button" aria-pressed={!curMonth} onClick={() => (setMon(null), setSel(null), setPickedNote(null))}>
                         전체 {allTrades.length}건
                       </button>
                       {ms.map((m) => (
-                        <button key={m.month} type="button" aria-pressed={curMonth === m.month} onClick={() => (setMon(m.month), setSel(null))}>
+                        <button key={m.month} type="button" aria-pressed={curMonth === m.month} onClick={() => (setMon(m.month), setSel(null), setPickedNote(null))}>
                           {monthChip(m.month)} {m.trades.length}건
                         </button>
                       ))}
@@ -486,7 +490,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     {rows.map(({ month, tr }) => {
                       const on = !!cur && cur.month === month && cur.code === tr.code;
                       return (
-                        <button key={`${month}:${tr.code}:${tr.entry.d}`} type="button" className={on ? "tr on" : "tr"} aria-pressed={on} onClick={() => setSel({ month, code: tr.code })}>
+                        <button key={`${month}:${tr.code}:${tr.entry.d}`} type="button" className={on ? "tr on" : "tr"} aria-pressed={on} onClick={() => (setSel({ month, code: tr.code }), setPickedNote(null))}>
                           <strong>{tr.name}</strong>
                           <span>{md(tr.entry.d)}</span>
                           <span>{tr.open ? "보유 중" : mdFrom(tr.exit.d, tr.entry.d)}</span>
@@ -539,12 +543,30 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                     <div className="ar-pt-sym">
                       <strong>{curName}</strong> <small>{cur.code}</small>
                     </div>
-                    {last && (
+                    {pickedNote && pickedNote.code === cur.code ? (
+                      <p className="ar-pt-ohlc">
+                        <time>{pickedNote.d.replaceAll("-", ".")}</time>
+                      </p>
+                    ) : last && (
                       <p className="ar-pt-ohlc">
                         <b>일봉</b> 시 {last[1].toLocaleString("ko-KR")} 고 {last[2].toLocaleString("ko-KR")} 저 {last[3].toLocaleString("ko-KR")} 종 {last[4].toLocaleString("ko-KR")}
                       </p>
                     )}
-                    {candles.length ? (
+                    {pickedNote && pickedNote.code === cur.code ? (
+                      // 트레이딩 로그에서 저장한 그대로: 차트 그림 + 밑에 쓴 글 (그림이 없으면 일봉 차트)
+                      <>
+                        <NoteShot
+                          id={pickedNote.id}
+                          className="sd-main-shot"
+                          fallback={
+                            candles.length ? (
+                              <StrategyChart candles={candles} trades={curM.trades} notes={[...(curM.notes ?? []), ...liveChartNotes]} ind={cur.code === curM.symbol.code ? curM.ind : undefined} code={cur.code} dark={dark} currency={market === "US" ? "USD" : "KRW"} />
+                            ) : null
+                          }
+                        />
+                        {pickedNote.text && <p className="sd-main-text">{pickedNote.text}</p>}
+                      </>
+                    ) : candles.length ? (
                       <StrategyChart
                         candles={candles}
                         trades={curM.trades}
@@ -579,6 +601,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                             // 노트를 누르면 그 종목 차트로 (보충 노트 버튼 · 글 선택은 그대로)
                             if (!r.code || (e.target as HTMLElement).closest("button, a, textarea, input")) return;
                             setSel({ month: r.month, code: r.code });
+                            setPickedNote(r.id ? { id: r.id, code: r.code, d: r.d, text: r.text } : null);
                           }}
                         >
                           <div>

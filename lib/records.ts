@@ -207,7 +207,8 @@ export async function addRecord(
         consolidates: record.consolidates,
         plan,
       });
-      await refreshServerRecords();
+      // 전체 노트 다시 읽기는 기다리지 않음 (저장 창이 오래 '저장 중'에 머물던 것, 2026-11-22)
+      void refreshServerRecords().catch(() => {});
       return { ok: true, id: saved.id };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };

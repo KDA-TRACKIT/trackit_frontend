@@ -81,3 +81,7 @@ html[data-theme="dark"] .sd-picker-menu { box-shadow:0 8px 22px rgba(0,0,0,.45);
 
 /* 노트에 저장한 차트 그림 (2026-11-22) */
 .sd-memos .sd-shot { display:block; width:100%; margin-top:8px; border:1px solid var(--c-line); border-radius:8px; }
+
+/* 누른 노트에 저장한 차트 그림을 큰 차트 자리에 그대로 (2026-11-22) */
+.sd-main-shot { display:block; width:100%; height:auto; border:1px solid var(--c-line); border-radius:10px; margin-top:8px; }
+.sd-main-text { margin:14px 2px 0; font-size:16px; line-height:1.65; white-space:pre-wrap; color:var(--c-ink, inherit); }

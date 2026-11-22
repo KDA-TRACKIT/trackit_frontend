@@ -534,6 +534,8 @@ export default function WorkshopPage() {
     const auto = fullPlan();
     const row = (label: string) => edits?.plan?.find((r) => r.label === label)?.text.trim() ?? "";
     const fp = edits?.plan?.length ? { ...auto, condition: [row("매수"), row("매도")].filter(Boolean).join(" / "), stop: row("손절"), target: row("목표") } : auto;
+    // 차트 그림 JPEG 변환은 노트 저장과 동시에 (기다리는 시간 줄이기)
+    const jpegReady = review?.image ? toJpeg(review.image).catch(() => null) : Promise.resolve(null);
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
     const result = await addRecord({
       date: kstNow().date,
@@ -577,13 +579,15 @@ export default function WorkshopPage() {
     }
     // 확인 창에서 본 차트 그림(그은 선 포함)을 그 노트에 그대로 남김 (2026-11-22). 못 올려도 노트 저장은 그대로
     // 아직 찍히는 중이면 확인 창에서 고른 구간 그대로 다시 찍어서 (멋대로 기간을 정하지 않음)
-    let shotImage = review?.image ?? null;
-    if (result.id && !shotImage && review && snapshotRef.current) {
-      shotImage = (await snapshotRef.current(reviewMarks(review.lines), { from: review.from, to: review.to }).catch(() => null))?.image ?? null;
-    }
-    if (result.id && shotImage) {
-      const jpeg = await toJpeg(shotImage).catch(() => null);
-      if (jpeg) await saveNoteShot(result.id, jpeg).catch(() => {});
+    //   그림 올리기는 기다리지 않음 (창은 바로 닫힘)
+    if (result.id) {
+      const noteId = result.id;
+      let jpeg = await jpegReady;
+      if (!jpeg && review && snapshotRef.current) {
+        const shot = await snapshotRef.current(reviewMarks(review.lines), { from: review.from, to: review.to }).catch(() => null);
+        if (shot?.image) jpeg = await toJpeg(shot.image).catch(() => null);
+      }
+      if (jpeg) void saveNoteShot(noteId, jpeg).catch(() => {});
     }
     // 확인 창에서 고친 종목 전략 메모: 확정 메모는 못 고쳐서 새 메모로 남기고 예전 메모를 가리킴 (아래 종목 전략에서 고치는 것과 같음)
     const failed: string[] = [];
