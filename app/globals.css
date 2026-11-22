@@ -10,6 +10,7 @@
 @media (max-width:800px) { .login-panel { width:min(360px,calc(100% - 48px)); margin-top:65px; }.login-wordmark { margin-bottom:48px; } }
 
 /* 공통 상단 바 (SiteHeader). 어느 화면이든 같은 높이·폭·글꼴로 로고와 메뉴 위치를 고정 */
+.home { overflow:clip; }
 .gnb { position:sticky; top:0; z-index:100; display:grid; grid-template-columns:240px minmax(0,1fr) 240px; align-items:end; padding:0 40px 23px; background:#fff; font-family:Pretendard,"Noto Sans KR",Arial,sans-serif; line-height:1.2; }
 .gnb-brand { display:block; width:200px; padding-bottom:8px; border-bottom:1px solid #333; color:#344d7d; font-size:28px; font-weight:800; letter-spacing:-1px; text-align:center; }
 .gnb-main { display:flex; height:57px; align-items:flex-end; gap:48px; border-bottom:1px solid #333; }
