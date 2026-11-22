@@ -1,11 +1,37 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import IntroSnap from "./IntroSnap";
 import IntroSteps from "./IntroSteps";
 import { ArchivePreview, DashboardPreview, MarketPreview, WorkshopPreview } from "./ProductPreviews";
 import styles from "./landing.module.css";
 
 const headline = ["매매를 기록하고,", "전략을 사고팔다."];
+
+// 제목 파도타기 (2026-11-22): '매'부터 한 글자씩 위로 솟았다 내려오고, 첫 줄 '고'가 내려오면 둘째 줄 '전'이 시작.
+//   글자마다 같은 길이(WAVE_CYCLE)의 애니메이션에 시작만 늦춰서, 돌 때마다 순서가 그대로 유지됨. 띄어쓰기 · 쉼표 · 마침표는 가만히
+const WAVE_STEP = 160; // 다음 글자가 출발하는 간격 (ms)
+const WAVE_RISE = 1100; // 한 글자가 솟았다 내려오는 시간 (ms)
+const WAVE_PAUSE = 2400; // 둘째 줄이 끝나고 다시 시작하기까지 (ms)
+// ⚠ 값을 바꾸면 landing.module.css @keyframes title-wave 의 % (WAVE_RISE ÷ 한 바퀴 6520ms ≈ 16.9%)도 같이
+const WAVE_START = 500; // 처음 화면이 뜨고 출발까지 (ms)
+const isLetter = (ch: string) => /[가-힣A-Za-z0-9]/.test(ch);
+const waveLines = (() => {
+  let t = 0;
+  const lines = headline.map((line) => {
+    let n = 0;
+    const chars = [...line].map((ch) => {
+      if (!isLetter(ch)) return { ch, delay: null as number | null };
+      const delay = t + n * WAVE_STEP;
+      n += 1;
+      return { ch, delay };
+    });
+    t += (n - 1) * WAVE_STEP + WAVE_RISE; // 이 줄 마지막 글자가 내려온 때 → 다음 줄 첫 글자 출발
+    return chars;
+  });
+  return { lines, cycle: t + WAVE_PAUSE };
+})();
+const WAVE_CYCLE = waveLines.cycle;
 const orbitLabels = ["차트분석", "기록", "매매", "전략 판매", "전략 구매", "전략 공부"];
 
 const questions = [
@@ -26,8 +52,9 @@ function Brand() {
 export default function Intro() {
   return (
     <div className={styles.landing} id="intro-top">
+      <IntroSnap />
       <a className={styles.skip} href="#intro-content">본문으로 건너뛰기</a>
-      <header className={styles.header}>
+      <header className={styles.header} data-snap="start">
         <div className={styles.shell}>
           <Brand />
           <Link className={styles.button} href="/login">시작하기 <span aria-hidden="true">↗</span></Link>
@@ -38,9 +65,20 @@ export default function Intro() {
         <section className={styles.hero} aria-labelledby="intro-headline">
           <div className={styles.shell}>
             <div className={styles.heroCopy}>
-              <h1 id="intro-headline" aria-label={headline.join(" ")}>
-                <span className={styles.titleLine}>{headline[0]}</span>
-                <span className={styles.titleLine}>{headline[1]}</span>
+              <h1 id="intro-headline" aria-label={headline.join(" ")} style={{ "--wave-cycle": `${WAVE_CYCLE}ms` } as CSSProperties}>
+                {waveLines.lines.map((chars, i) => (
+                  <span key={i} className={styles.titleLine} aria-hidden="true">
+                    {chars.map(({ ch, delay }, j) =>
+                      delay === null ? (
+                        ch
+                      ) : (
+                        <span key={j} className={styles.waveChar} style={{ animationDelay: `${WAVE_START + delay}ms` }}>
+                          {ch}
+                        </span>
+                      ),
+                    )}
+                  </span>
+                ))}
               </h1>
               <p>매매의 이유를 노트에 남기고 내 전략을 판매하세요.<br />{" "}다른 트레이더의 전략도 구독해서 볼 수 있어요.</p>
               <div className={styles.actions}>
@@ -52,7 +90,7 @@ export default function Intro() {
           </div>
         </section>
 
-        <section className={styles.workflow} aria-label="투자 과정 연결">
+        <section className={styles.workflow} aria-label="투자 과정 연결" data-snap="start">
           <div className={styles.orbitLayout}>
             <h2>흩어져 있던<br />투자의 순간을,</h2>
             <div className={styles.orbit}>
@@ -73,7 +111,7 @@ export default function Intro() {
 
         <section className={styles.features} id="intro-features" aria-label="주요 기능">
           <div className={styles.shell}>
-            <article className={styles.feature}>
+            <article className={styles.feature} data-snap="start">
               <WorkshopPreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>투자작업실</p>
@@ -82,7 +120,7 @@ export default function Intro() {
               </div>
             </article>
 
-            <article className={`${styles.feature} ${styles.reverseFeature}`}>
+            <article className={`${styles.feature} ${styles.reverseFeature}`} data-snap="start">
               <ArchivePreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>전략 보관함</p>
@@ -91,7 +129,7 @@ export default function Intro() {
               </div>
             </article>
 
-            <article className={styles.feature}>
+            <article className={styles.feature} data-snap="start">
               <MarketPreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>전략 마켓</p>
@@ -111,7 +149,7 @@ export default function Intro() {
           </div>
         </section>
 
-        <section className={styles.faq} aria-labelledby="intro-faq-title">
+        <section className={styles.faq} aria-labelledby="intro-faq-title" data-snap="start">
           <div className={styles.shell}>
             <h2 id="intro-faq-title">자주 묻는 질문</h2>
             <dl>
@@ -123,7 +161,7 @@ export default function Intro() {
         </section>
       </main>
 
-      <footer className={styles.footer}>
+      <footer className={styles.footer} data-snap="end">
         <div className={styles.shell}>
           <div className={styles.footerAction}>
             <p>첫 매매 노트를 남기거나 전략 마켓을 둘러보세요.</p>

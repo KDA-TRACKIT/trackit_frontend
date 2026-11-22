@@ -67,6 +67,14 @@
 .heroCopy h1 { font-size: clamp(42px, calc(4.56 * var(--vw, 1vw)), 65px); font-weight: 800; line-height: 1.13; letter-spacing: -.045em; }
 .titleLine { display: block; }
 .titleLine + .titleLine { color: var(--navy); }
+/* 제목 파도타기 (Intro.tsx waveLines): 글자마다 한 바퀴(--wave-cycle) 중 앞 16.9%(1100ms) 동안 솟았다 내려옴 */
+.waveChar { display: inline-block; animation: title-wave var(--wave-cycle, 6520ms) infinite both; will-change: transform; }
+@keyframes title-wave {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.33, 0, .25, 1); }
+  8.4% { transform: translateY(-.15em); animation-timing-function: cubic-bezier(.55, 0, .6, 1); }
+  16.9%, 100% { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .waveChar { animation: none; } }
 .heroCopy p { color: var(--muted); margin-top: 32px; font-size: 23px; line-height: 35px; }
 .actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 44px; }
 .heroPreview {
@@ -180,6 +188,20 @@
 .footerBar { margin-top: 74px; border-top: 1px solid #354784; padding-top: 32px; }
 .footerBar .brand { color: #fff; }
 .footerBar > a:last-child { color: #d8e3ff; font-weight: 600; }
+
+/* 한 화면씩 넘김 (IntroSnap.tsx 와 같은 조건): 장마다 화면 높이를 채우고 가운데 정렬, 맨 위 · 각 장 시작 · 푸터 끝에 멈춤 */
+@media (min-width: 801px) and (min-height: 640px) {
+  .header { scroll-snap-align: start; }
+  .hero .shell { min-height: calc(100svh - 85px); }
+  .workflow { min-height: 100svh; scroll-snap-align: start; }
+  .steps { min-height: 100svh; display: grid; align-content: center; scroll-snap-align: start; }
+  .features { padding-block: 0; }
+  .feature { min-height: 100svh; align-content: center; align-items: center; scroll-snap-align: start; }
+  .feature + .feature { border-top: 0; margin-top: 0; padding-top: 0; }
+  .feature .featureCopy { padding-top: 0; }
+  .faq { min-height: 100svh; display: grid; align-content: center; scroll-snap-align: start; }
+  .footer { scroll-snap-align: end; }
+}
 
 @media (min-width: 801px) and (max-width: 1020px) {
   .featureCopy h2 { font-size: 36px; }
