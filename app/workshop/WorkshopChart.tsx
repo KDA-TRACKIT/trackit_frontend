@@ -857,7 +857,7 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderVisible: false, minimumWidth: 78 },
       // minBarSpacing: 1985년부터 1만 개 넘는 일봉도 "전체"에서 한 화면에 들어오게
-      timeScale: { borderVisible: false, rightOffset: 4, minBarSpacing: 0.02 },
+      timeScale: { borderVisible: false, rightOffset: 12, minBarSpacing: 0.02 },
       localization: {
         locale: "ko-KR",
         // 차트 시각은 KST 벽시계 값이므로 UTC 기준으로 읽으면 KST가 나온다
@@ -925,8 +925,6 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       else lines[i] = candle.createPriceLine(opts);
     });
     for (const l of lines.splice(tags.length)) candle.removePriceLine(l);
-    // 태그가 있으면 오른쪽을 조금 비워 둠 — 태그 글자가 최근 봉을 가리지 않게 (2026-11-22)
-    chartRef.current?.timeScale().applyOptions({ rightOffset: tags.length ? 12 : 4 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleSig, dataKey, lastClose === undefined]);
 
