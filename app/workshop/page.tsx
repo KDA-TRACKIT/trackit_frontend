@@ -168,21 +168,43 @@ export default function WorkshopPage() {
     };
   }, [symbol.code, symbol.exchange]);
 
-  // 검색어 → 종목 목록 (0.2초 디바운스)
+  // 검색어 → 종목 목록 (2026-11-22: 한 글자 칠 때마다 후보가 바로 바뀌게)
+  //   예전엔 0.2초 기다리고, 새로 치면 앞 요청을 끊어서 치는 동안 후보가 안 바뀌었음
+  //   지금: 받은 결과는 기억(같은 검색어는 바로), 기다리는 동안은 앞 결과에서 걸러 바로 보여 주고, 요청은 끊지 않고 가장 최근에 보낸 답부터 반영
+  const searchCache = useRef(new Map<string, SymbolInfo[]>());
+  const searchSeq = useRef({ sent: 0, shown: 0 });
+  // 서버가 처음 검색할 때 전 종목 목록을 읽느라 몇 초 걸림 → 화면을 열 때 미리 한 번 (첫 글자부터 바로 나오게)
+  useEffect(() => {
+    void searchAllSymbols("A").catch(() => {});
+  }, []);
   useEffect(() => {
     if (!searchOpen) return;
-    const ac = new AbortController();
+    const q = query.trim();
+    const hit = searchCache.current.get(q);
+    if (hit) {
+      searchSeq.current.shown = ++searchSeq.current.sent;
+      setResults(hit);
+      return;
+    }
+    if (q) {
+      const k = q.toUpperCase().replace(/\s/g, "");
+      setResults((prev) => {
+        const narrowed = prev.filter((s) => s.code.toUpperCase().includes(k) || s.name.toUpperCase().replace(/\s/g, "").includes(k));
+        return narrowed.length ? narrowed : prev;
+      });
+    }
     const timer = setTimeout(() => {
-      searchAllSymbols(query.trim(), ac.signal)
-        .then(setResults)
-        .catch(() => {
-          if (!ac.signal.aborted) setResults([]);
-        });
-    }, 200);
-    return () => {
-      clearTimeout(timer);
-      ac.abort();
-    };
+      const seq = ++searchSeq.current.sent;
+      searchAllSymbols(q)
+        .then((list) => {
+          searchCache.current.set(q, list);
+          if (seq < searchSeq.current.shown) return;
+          searchSeq.current.shown = seq;
+          setResults(list);
+        })
+        .catch(() => {});
+    }, 60);
+    return () => clearTimeout(timer);
   }, [query, searchOpen]);
 
   /** 다시 불러오는 동안 "불러오는 중"을 보이게 상태를 먼저 바꾼다 (이벤트에서 처리) */
