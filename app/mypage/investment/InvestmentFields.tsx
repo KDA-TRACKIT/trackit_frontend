@@ -114,7 +114,7 @@ export function InvestmentFields({ value, onChange, showPeriod = true, variant =
         <span className="mp-label">
           {my ? "나의 매매 원칙" : "나의 투자 원칙"}
         </span>
-        <small className="mp-field-desc">{my ? "손절·익절 기준, 진입 조건, 리스크 관리 원칙 등을 작성해 주세요." : "매매 전략이나 손절·익절 원칙을 자유롭게 적어주세요. (선택)"}</small>
+        {!my && <small className="mp-field-desc">매매 전략이나 손절·익절 원칙을 자유롭게 적어주세요. (선택)</small>}
         <textarea
           value={value.principle}
           onChange={(e) => set({ principle: e.target.value.slice(0, 500) })}
