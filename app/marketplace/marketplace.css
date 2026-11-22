@@ -569,6 +569,8 @@ html[data-theme="dark"] .mk-trader-page .mk-sortdd-btn img { filter:brightness(0
 .mk-trader-columns > :not(:first-child),.mk-trader-row-link > :not(:first-child) { text-align:center; }
 .mk-trader-columns { min-height:47px; border-bottom:1px solid var(--c-line); background:var(--c-subtle); color:var(--mk-primary); font-size:16px; font-weight:600; }
 .mk-trader-columns > :first-child { font-size:14px; }
+/* '트레이더' 머리를 별이 아니라 이름 시작에 맞춤 (줄의 .mk-trader-who 왼쪽 여백 28px과 같게, 2026-11-22). 별이 없는 '새로 올라온 전략' 표는 그대로 */
+.mk-trader-columns:not(.mk-new-cols) > :first-child { padding-left:28px; }
 .mk-trader-rows { margin:0; padding:0; list-style:none; }
 .mk-trader-row { position:relative; isolation:isolate; font-variant-numeric:tabular-nums; }
 .mk-trader-row-link { min-height:84px; color:inherit; }
