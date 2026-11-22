@@ -5,23 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import BeeLoader from "../BeeLoader";
 
 /**
- * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 경로(상위 / 지금)를 제목 위에 작게 둔다 (2026-11-22: 모든 하위 화면을 "계정 설정 / 개인정보 공개 설정" 방식으로 통일).
- * 브라우저 탭 제목도 바꾼다
+ * 화면 제목 + 한 줄 설명. 브라우저 탭 제목도 바꾼다
+ * (2026-11-22: 하위 화면 제목 위 경로 '상위 / 지금' 은 모두 뺌)
  */
-export function PageHead({ title, desc, parent }: { title: string; desc?: string; parent?: [string, string] }) {
+export function PageHead({ title, desc }: { title: string; desc?: string }) {
   useEffect(() => {
     document.title = `${title} · TRACKIT`;
   }, [title]);
-  const crumbs = parent && (
-    <nav className="mp-crumbs" aria-label="위치">
-      <Link href={parent[1]}>{parent[0]}</Link>
-      <span aria-hidden> / </span>
-      <span aria-current="page">{title}</span>
-    </nav>
-  );
   return (
     <header className="mp-head">
-      {crumbs}
       <h1>{title}</h1>
       {desc && <p>{desc}</p>}
     </header>

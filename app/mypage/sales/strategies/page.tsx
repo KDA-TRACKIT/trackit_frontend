@@ -18,7 +18,7 @@ export default function StrategiesPage() {
   );
   return (
     <>
-      <PageHead title="전략 관리" parent={["구독 관리", "/mypage/sales"]} />
+      <PageHead title="전략 관리" />
       <Card title="내 전략" meta={strategies?.length ?? undefined} action={register}>
         <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
         {error && <p className="mp-muted">{error}</p>}
