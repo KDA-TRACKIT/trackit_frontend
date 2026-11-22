@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import BeeLoader from "../BeeLoader";
 
 /**
- * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 설명 아래에 경로(상위 / 지금)를 작게 둔다 (시안: "판매 관리 / 판매 내역").
- * crumbsTop 이면 경로를 제목 위에 (시안: "계정 설정 / 개인정보 공개 설정"). 브라우저 탭 제목도 바꾼다
+ * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 경로(상위 / 지금)를 제목 위에 작게 둔다 (2026-11-22: 모든 하위 화면을 "계정 설정 / 개인정보 공개 설정" 방식으로 통일).
+ * 브라우저 탭 제목도 바꾼다
  */
-export function PageHead({ title, desc, parent, crumbsTop }: { title: string; desc?: string; parent?: [string, string]; crumbsTop?: boolean }) {
+export function PageHead({ title, desc, parent }: { title: string; desc?: string; parent?: [string, string] }) {
   useEffect(() => {
     document.title = `${title} · TRACKIT`;
   }, [title]);
@@ -21,10 +21,9 @@ export function PageHead({ title, desc, parent, crumbsTop }: { title: string; de
   );
   return (
     <header className="mp-head">
-      {crumbsTop && crumbs}
+      {crumbs}
       <h1>{title}</h1>
       {desc && <p>{desc}</p>}
-      {!crumbsTop && crumbs}
     </header>
   );
 }

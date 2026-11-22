@@ -60,7 +60,7 @@ export default function PrivacyPage() {
 
   return (
     <>
-      <PageHead title="개인정보 공개 설정" parent={["계정 설정", "/mypage/account"]} crumbsTop />
+      <PageHead title="개인정보 공개 설정" parent={["계정 설정", "/mypage/account"]} />
       {section(
         "내 프로필 항목",
         PROFILE_ITEMS,
