@@ -10,10 +10,10 @@ const headline = ["매매를 기록하고,", "전략을 사고팔다."];
 
 // 제목 파도타기 (2026-11-22): '매'부터 한 글자씩 위로 솟았다 내려오고, 첫 줄 '고'가 내려오면 둘째 줄 '전'이 시작.
 //   글자마다 같은 길이(WAVE_CYCLE)의 애니메이션에 시작만 늦춰서, 돌 때마다 순서가 그대로 유지됨. 띄어쓰기 · 쉼표 · 마침표는 가만히
-const WAVE_STEP = 160; // 다음 글자가 출발하는 간격 (ms)
-const WAVE_RISE = 1100; // 한 글자가 솟았다 내려오는 시간 (ms)
-const WAVE_PAUSE = 2400; // 둘째 줄이 끝나고 다시 시작하기까지 (ms)
-// ⚠ 값을 바꾸면 landing.module.css @keyframes title-wave 의 % (WAVE_RISE ÷ 한 바퀴 6520ms ≈ 16.9%)도 같이
+const WAVE_STEP = 128; // 다음 글자가 출발하는 간격 (ms)
+const WAVE_RISE = 880; // 한 글자가 솟았다 내려오는 시간 (ms)
+const WAVE_PAUSE = 1920; // 둘째 줄이 끝나고 다시 시작하기까지 (ms)
+// ⚠ 값을 바꾸면 landing.module.css @keyframes title-wave 의 % (WAVE_RISE ÷ 한 바퀴 5216ms ≈ 16.9%)도 같이
 const WAVE_START = 500; // 처음 화면이 뜨고 출발까지 (ms)
 const isLetter = (ch: string) => /[가-힣A-Za-z0-9]/.test(ch);
 const waveLines = (() => {

@@ -67,8 +67,8 @@
 .heroCopy h1 { font-size: clamp(42px, calc(4.56 * var(--vw, 1vw)), 65px); font-weight: 800; line-height: 1.13; letter-spacing: -.045em; }
 .titleLine { display: block; }
 .titleLine + .titleLine { color: var(--navy); }
-/* 제목 파도타기 (Intro.tsx waveLines): 글자마다 한 바퀴(--wave-cycle) 중 앞 16.9%(1100ms) 동안 솟았다 내려옴 */
-.waveChar { display: inline-block; animation: title-wave var(--wave-cycle, 6520ms) infinite both; will-change: transform; }
+/* 제목 파도타기 (Intro.tsx waveLines): 글자마다 한 바퀴(--wave-cycle) 중 앞 16.9%(880ms) 동안 솟았다 내려옴 */
+.waveChar { display: inline-block; animation: title-wave var(--wave-cycle, 5216ms) infinite both; will-change: transform; }
 @keyframes title-wave {
   0% { transform: translateY(0); animation-timing-function: cubic-bezier(.33, 0, .25, 1); }
   8.4% { transform: translateY(-.15em); animation-timing-function: cubic-bezier(.55, 0, .6, 1); }
