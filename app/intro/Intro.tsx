@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import IntroSnap from "./IntroSnap";
+import IntroScroll from "./IntroScroll";
 import IntroSteps from "./IntroSteps";
 import { ArchivePreview, DashboardPreview, MarketPreview, WorkshopPreview } from "./ProductPreviews";
 import styles from "./landing.module.css";
@@ -52,9 +52,9 @@ function Brand() {
 export default function Intro() {
   return (
     <div className={styles.landing} id="intro-top">
-      <IntroSnap />
+      <IntroScroll />
       <a className={styles.skip} href="#intro-content">본문으로 건너뛰기</a>
-      <header className={styles.header} data-snap="start">
+      <header className={styles.header}>
         <div className={styles.shell}>
           <Brand />
           <Link className={styles.button} href="/login">시작하기 <span aria-hidden="true">↗</span></Link>
@@ -90,8 +90,8 @@ export default function Intro() {
           </div>
         </section>
 
-        <section className={styles.workflow} aria-label="투자 과정 연결" data-snap="start">
-          <div className={styles.orbitLayout}>
+        <section className={styles.workflow} aria-label="투자 과정 연결">
+          <div className={styles.orbitLayout} data-reveal>
             <h2>흩어져 있던<br />투자의 순간을,</h2>
             <div className={styles.orbit}>
               <strong>TRACKIT</strong>
@@ -111,7 +111,7 @@ export default function Intro() {
 
         <section className={styles.features} id="intro-features" aria-label="주요 기능">
           <div className={styles.shell}>
-            <article className={styles.feature} data-snap="start">
+            <article className={styles.feature} data-reveal>
               <WorkshopPreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>투자작업실</p>
@@ -120,7 +120,7 @@ export default function Intro() {
               </div>
             </article>
 
-            <article className={`${styles.feature} ${styles.reverseFeature}`} data-snap="start">
+            <article className={`${styles.feature} ${styles.reverseFeature}`} data-reveal>
               <ArchivePreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>전략 보관함</p>
@@ -129,7 +129,7 @@ export default function Intro() {
               </div>
             </article>
 
-            <article className={styles.feature} data-snap="start">
+            <article className={styles.feature} data-reveal>
               <MarketPreview />
               <div className={styles.featureCopy}>
                 <p className={styles.eyebrow}>전략 마켓</p>
@@ -149,10 +149,10 @@ export default function Intro() {
           </div>
         </section>
 
-        <section className={styles.faq} aria-labelledby="intro-faq-title" data-snap="start">
+        <section className={styles.faq} aria-labelledby="intro-faq-title">
           <div className={styles.shell}>
             <h2 id="intro-faq-title">자주 묻는 질문</h2>
-            <dl>
+            <dl data-reveal>
               {questions.map(({ title, answer }) => (
                 <div key={title}><dt>{title}</dt><dd>{answer}</dd></div>
               ))}
@@ -161,9 +161,9 @@ export default function Intro() {
         </section>
       </main>
 
-      <footer className={styles.footer} data-snap="end">
+      <footer className={styles.footer}>
         <div className={styles.shell}>
-          <div className={styles.footerAction}>
+          <div className={styles.footerAction} data-reveal>
             <p>첫 매매 노트를 남기거나 전략 마켓을 둘러보세요.</p>
             <Link className={styles.goldButton} href="/login">TRACKIT 시작하기 <span aria-hidden="true">↗</span></Link>
           </div>

@@ -74,7 +74,7 @@ export default function IntroSteps() {
   }, []);
 
   return (
-    <section className={styles.steps} aria-labelledby="intro-steps-title" data-snap="start">
+    <section className={styles.steps} aria-labelledby="intro-steps-title">
       <div className={styles.shell}>
         <h2 id="intro-steps-title">차트 분석부터 전략 거래까지</h2>
         <ol ref={listRef} data-step-motion={entered ? "" : undefined}>

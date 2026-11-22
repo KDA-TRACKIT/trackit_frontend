@@ -18,7 +18,6 @@ export default function Home() {
     {!profile.hasInvestment && <HomeInvestmentPrompt key={`${profile.userId}:${profile.lastSignInAt}`} userId={profile.userId} lastSignInAt={profile.lastSignInAt} />}
   </> : <>
     <Intro />
-    {/* 소개가 한 화면씩 넘어가도(IntroSnap) 맨 아래 약관 줄까지 내려갈 수 있게 */}
-    <footer style={{ scrollSnapAlign: "end" }} data-snap="end"><HomePolicies /></footer>
+    <footer><HomePolicies /></footer>
   </>;
 }

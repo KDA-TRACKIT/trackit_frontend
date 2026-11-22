@@ -66,8 +66,8 @@
 .performance, .reportMetric, .reportPlans { background: white; border: 1px solid #e5e9f0; border-radius: calc(6 * var(--u)); }
 .performance { padding: calc(10 * var(--u)) calc(12 * var(--u)); }
 .performanceHeading { display: flex; align-items: center; justify-content: space-between; font-size: calc(8 * var(--u)); }
-.performanceHeading span, .performance > strong { color: #1f9d55; }
-.performanceHeading span { font-size: calc(7 * var(--u)); font-weight: 600; }
+.performance > strong { color: #1f9d55; }
+.performanceHeading span { color: #69778d; font-size: calc(6.5 * var(--u)); }
 .performance > strong { font-size: calc(21 * var(--u)); font-weight: 600; }
 .reportPlot { position: relative; margin-top: calc(8 * var(--u)); }
 .chartGuides { display: grid; gap: calc(6 * var(--u)); color: #69778d; font-size: calc(6 * var(--u)); }
@@ -81,50 +81,64 @@
 .reportMetric p { display: flex; gap: calc(4 * var(--u)); align-items: baseline; margin-block: calc(2 * var(--u)); white-space: nowrap; }
 .reportMetric strong { color: #0f2367; font-size: calc(16 * var(--u)); line-height: 1.1; }
 .reportMetric small, .reportPlans td:last-child { color: #69778d; font-size: calc(6 * var(--u)); }
+.reportPlans td:nth-child(2) { color: #3a465a; }
 .reportMetric i { display: block; height: calc(3 * var(--u)); border-radius: 20px; background: linear-gradient(90deg, #0f2367 83%, #eaf0fd 83%); }
 .reportMetric + .reportMetric i { background: linear-gradient(90deg, #0f2367 83%, #eaf0fd 83%); }
 .reportPlans table { width: 100%; border-collapse: collapse; margin-top: calc(3 * var(--u)); font-size: calc(7 * var(--u)); text-align: left; }
 .reportPlans :is(th, td) { padding: calc(2 * var(--u)) 0; border-top: 1px solid #eef1f5; }
 
 .workspaceBody { position: relative; height: 100%; background: #f4f4f4; }
-.workspaceToolbar { position: absolute; left: 4.27%; right: 4.27%; top: calc(23.6 * var(--u)); display: flex; align-items: center; justify-content: space-between; gap: calc(5 * var(--u)); font-size: calc(8 * var(--u)); }
-.workspaceToolbar > div { display: flex; justify-content: space-between; align-items: center; width: 20%; background: white; border: 1px solid #e1e1e1; border-radius: calc(6 * var(--u)); padding: calc(7 * var(--u)) calc(11 * var(--u)); }
-.workspaceToolbar img { width: calc(9.24 * var(--u)); height: auto; }
-.workspaceToolbar > span { margin-left: auto; font-size: calc(7 * var(--u)); }
-.workspaceToolbar > b { background: #0f2367; color: white; display: grid; place-items: center; width: calc(76 * var(--u)); height: calc(29 * var(--u)); border-radius: calc(6 * var(--u)); }
-.workspaceChart { position: absolute; left: 4.27%; top: calc(57.5 * var(--u)); width: calc(546 * var(--u)); height: auto; }
-.workspaceNote { position: absolute; left: 78.8%; width: 17.1%; top: calc(57.5 * var(--u)); bottom: 0; padding: calc(9 * var(--u)); background: white; border: 1px solid #e0e0e0; border-radius: calc(6 * var(--u)); color: #151515; }
-.workspaceNote strong { font-size: calc(11.8 * var(--u)); }
-.workspaceNote p { padding: calc(7 * var(--u)); border: 1px solid #e4ddd5; min-height: calc(250 * var(--u)); border-radius: calc(6 * var(--u)); margin-top: calc(9 * var(--u)); font-size: calc(7.2 * var(--u)); }
+/* 위 시세 줄 (Figma 2375:6851): 종목 검색 · 장 상태 · 현재가 · 등락 · 거래량, 오른쪽 끝에 붙은 매매하기 */
+.workspaceTop { position: absolute; left: calc(32 * var(--u)); width: calc(677 * var(--u)); top: calc(24 * var(--u)); height: calc(29 * var(--u)); display: flex; align-items: center; gap: calc(6 * var(--u)); padding-left: calc(7 * var(--u)); background: #fff; border: 1px solid #e1e1e1; border-radius: calc(6 * var(--u)); overflow: hidden; white-space: nowrap; }
+.workspaceSearch { display: flex; align-items: center; gap: calc(5 * var(--u)); width: calc(125 * var(--u)); height: calc(20 * var(--u)); padding-inline: calc(7 * var(--u)); border: 1px solid #e4e4e4; border-radius: calc(5 * var(--u)); font-size: calc(8 * var(--u)); }
+.workspaceSearch span { color: #191919; }
+.workspaceSearch b { font-weight: 600; }
+.workspaceSearch img { margin-left: auto; width: calc(8 * var(--u)); height: auto; }
+.feed { display: inline-flex; align-items: center; gap: calc(3 * var(--u)); color: #1f9d55; font-size: calc(5.6 * var(--u)); font-weight: 600; }
+.feed i { width: calc(4 * var(--u)); aspect-ratio: 1; border-radius: 50%; background: #1f9d55; }
+.quote { font-size: calc(9.6 * var(--u)); font-weight: 700; }
+.quoteUp { color: #1f9d55; font-size: calc(6.6 * var(--u)); font-weight: 600; }
+.volume { color: #8a93a3; font-size: calc(5.6 * var(--u)); }
+.tradeButton { margin-left: auto; align-self: stretch; display: grid; place-items: center; width: calc(76 * var(--u)); background: #344d7d; color: #fff; font-size: calc(7.5 * var(--u)); font-weight: 600; }
+.workspaceChart { position: absolute; left: calc(32 * var(--u)); top: calc(58 * var(--u)); width: calc(546 * var(--u)); height: auto; }
+/* 오른쪽 Note 패널 (Figma 2375:6835): 제목 + '저장 전 검증', 종목명 · 노트 가져오기 머리의 Memo */
+.workspaceNote { position: absolute; left: calc(583 * var(--u)); width: calc(126 * var(--u)); top: calc(58 * var(--u)); bottom: 0; padding: calc(9 * var(--u)); background: #fff; border: 1px solid #e0e0e0; border-radius: calc(6 * var(--u)); color: #151515; }
+.noteHead { display: flex; align-items: center; justify-content: center; gap: calc(4 * var(--u)); padding-bottom: calc(8 * var(--u)); border-bottom: 1px solid #ececec; }
+.noteHead strong { font-size: calc(11.8 * var(--u)); }
+.noteHead em { font-style: normal; color: #8a5a00; background: #fff3d6; border-radius: calc(3 * var(--u)); padding: calc(1 * var(--u)) calc(4 * var(--u)); font-size: calc(5.2 * var(--u)); font-weight: 600; }
+.memo { margin-top: calc(8 * var(--u)); min-height: calc(249 * var(--u)); padding: calc(7 * var(--u)); border: 1px solid #e4ddd5; border-radius: calc(6 * var(--u)); font-size: calc(6.6 * var(--u)); }
+.memoHead { display: flex; align-items: center; justify-content: space-between; gap: calc(4 * var(--u)); }
+.memoHead b { font-size: calc(7.6 * var(--u)); }
+.memoHead span { border: 1px solid #d9d9d9; border-radius: calc(3 * var(--u)); padding: calc(1.5 * var(--u)) calc(5 * var(--u)); font-size: calc(5.8 * var(--u)); }
+.memo p { margin-top: calc(7 * var(--u)); line-height: 1.6; }
 
-.archiveBody { padding: calc(8.8 * var(--u)) calc(53.8 * var(--u)) 0; }
-.tableHeading { display: block; color: #0f2367; line-height: 1.2; font-size: calc(24 * var(--u)); font-weight: 600; }
-.archiveRows { display: grid; gap: calc(12 * var(--u)); margin-top: calc(20 * var(--u)); }
-.archiveRow {
-  height: calc(68 * var(--u));
-  border: 1px solid #e0e5ee;
-  border-radius: calc(7 * var(--u));
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 calc(14 * var(--u));
-  white-space: nowrap;
-}
-.archiveName, .archiveMetrics > div { display: grid; justify-items: start; gap: calc(3 * var(--u)); }
-.archiveName > span, .marketName div > span { display: flex; align-items: center; gap: calc(6 * var(--u)); }
-.archiveName :is(small, b), .archiveMetrics small { font-weight: 600; }
-.archiveName small, .archiveMetrics small { color: #52627c; font-size: calc(8.4 * var(--u)); }
-.archiveName b, .archiveMetrics b { font-size: calc(13.7 * var(--u)); }
-.archiveMetrics { display: grid; grid-template-columns: calc(80 * var(--u)) calc(80 * var(--u)) calc(106 * var(--u)); gap: calc(16 * var(--u)); }
+.archiveBody { padding: calc(9 * var(--u)) calc(54 * var(--u)) 0; }
+.tableHeading { display: block; color: #0f2367; line-height: 1.2; font-size: calc(22 * var(--u)); font-weight: 700; }
+/* 구독 목록 카드 = 실제 .ar-trader (트레이더 1.5 : 구독 1 : 이행률 1 : 수익률 1.1) */
+.archiveRows { display: grid; gap: calc(14 * var(--u)); margin-top: calc(20 * var(--u)); }
+.archiveRow { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr); gap: calc(11 * var(--u)); align-items: center; min-height: calc(68 * var(--u)); padding: 0 calc(17 * var(--u)); border: 1px solid #e3e8ef; border-radius: calc(8 * var(--u)); white-space: nowrap; }
+.archiveName > span { display: flex; align-items: center; gap: calc(6 * var(--u)); margin-top: calc(4 * var(--u)); }
+.archiveName small, .archiveStat small { display: block; color: #6b7385; font-size: calc(8.4 * var(--u)); }
+.archiveName small { font-weight: 500; }
+.archiveName b { font-size: calc(13.9 * var(--u)); font-weight: 700; }
+.archiveStat b { display: block; margin-top: calc(4 * var(--u)); font-size: calc(12.5 * var(--u)); font-weight: 700; }
+.archive-up { color: #d64545; }
+.archive-down { color: #2f64c4; }
+.honeyPlain { display: inline-flex; align-items: center; gap: calc(2 * var(--u)); color: #b9770e; font-size: calc(8.4 * var(--u)); font-weight: 700; }
+.honeyPlain img { width: calc(7.4 * var(--u)); height: auto; }
+
 .positive { color: #c7232d; }
 .negative { color: #245caa; }
-.honey { display: inline-flex; align-items: center; gap: calc(2.6 * var(--u)); padding: 0 calc(5.2 * var(--u)); height: calc(17 * var(--u)); border-radius: 20px; background: #fff5ce; border: 1px solid #dfe5ee; color: #a56809; font-size: calc(8 * var(--u)); font-weight: 600; }
+.honey { display: inline-flex; align-items: center; gap: calc(2.6 * var(--u)); padding: 0 calc(5.2 * var(--u)); height: calc(17 * var(--u)); border-radius: 20px; border: 1px solid #fff5ce; color: #b9770e; font-size: calc(8 * var(--u)); font-weight: 600; }
+.subs { color: #6b7385; font-size: calc(6.6 * var(--u)); font-weight: 600; }
 .honey img { width: calc(7.37 * var(--u)); height: auto; }
 
 .marketBody { padding: calc(7 * var(--u)) calc(29.7 * var(--u)) 0; }
 .marketSearch { display: flex; align-items: center; justify-content: space-between; height: calc(42 * var(--u)); margin-top: calc(8 * var(--u)); padding-inline: calc(14.8 * var(--u)); border: 1px solid #e0e5ee; border-radius: calc(6 * var(--u)); color: #52627c; }
 .marketSearch b { color: #fff; background: #0f2367; font-weight: 600; border-radius: calc(8 * var(--u)); padding: calc(3 * var(--u)) calc(9 * var(--u)); }
-.results { display: block; margin-top: calc(24 * var(--u)); font-size: calc(12 * var(--u)); }
+.results { display: flex; align-items: center; justify-content: space-between; margin-top: calc(24 * var(--u)); font-size: calc(12 * var(--u)); }
+.filterPill { display: inline-flex; align-items: center; gap: calc(3 * var(--u)); padding: calc(3 * var(--u)) calc(7 * var(--u)); border: 1px solid #dfe3ea; border-radius: 999px; color: #192337; font-size: calc(8 * var(--u)); font-weight: 600; }
+.filterPill svg { width: calc(8 * var(--u)); height: calc(8 * var(--u)); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .marketFilters { display: flex; justify-content: space-between; align-items: center; gap: calc(8 * var(--u)); margin-block: calc(8 * var(--u)) calc(5 * var(--u)); }
 .marketFilters ul { display: flex; gap: calc(4 * var(--u)); list-style: none; padding: 0; }
 .marketFilters li, .marketFilters > span { border-radius: calc(7 * var(--u)); background: #f1f4fa; color: #344d7d; padding: calc(3 * var(--u)) calc(8 * var(--u)); font-size: calc(9 * var(--u)); }
@@ -133,10 +147,13 @@
 .marketRow { display: grid; grid-template-columns: 42% 15% 14% 14% 15%; align-items: center; justify-items: center; min-height: calc(54 * var(--u)); font-size: calc(14 * var(--u)); }
 .marketRow + .marketRow { border-top: 1px solid #e6ebf4; }
 .marketRow:first-child { background: #f3f6fb; min-height: calc(31 * var(--u)); margin-inline: 0; color: #0f2367; font-size: calc(10 * var(--u)); font-weight: 600; }
-.marketRow:first-child > :first-child { padding-left: calc(15 * var(--u)); justify-self: start; }
+/* '트레이더' 머리는 별이 아니라 이름 시작에 맞춤 (실제 마켓과 같게) */
+.marketRow:first-child > :first-child { padding-left: calc(32 * var(--u)); justify-self: start; }
 .marketName { display: flex; gap: calc(5 * var(--u)); align-items: flex-start; justify-self: start; white-space: nowrap; padding-left: calc(14 * var(--u)); }
 .marketName > img { width: calc(13 * var(--u)); height: auto; margin-top: calc(3 * var(--u)); }
 .marketName small { display: block; color: #52627c; font-size: calc(8 * var(--u)); }
 .trend { width: calc(90.36 * var(--u)); height: auto; }
-.marketUp { color: #2b9b41; }
-.marketDown { color: #d53336; }
+.marketUp { color: #1f9d55; }
+.marketDown { color: #e03131; }
+.reportMetric strong.positive { color: #1f9d55; }
+.marketName div > span { display: flex; align-items: center; gap: calc(6 * var(--u)); }
