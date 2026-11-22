@@ -38,15 +38,15 @@ export type Sale = {
 
 type RawSale = Omit<Sale, "price" | "rate" | "amount" | "fee"> & { price: string | number; rate: string | number; amount: string | number };
 
-/**
- * 판매자 등급 · 수수료 (신뢰할 수 있는 기록을 쌓을수록 수수료를 낮춰 계속 팔 동기를 줌)
- *   확인된 사실만 씀: 증권사 체결로 확인된 매매 수 · 체결 전에 계획을 먼저 쓴(사전 작성) 비율
- */
 /** 플랫폼 수수료 (%) — 2026-11-23 결정: 모든 판매자 10% (등급별 차등 없음) */
 export const PLATFORM_FEE_PCT = 10;
 /** 판매자 몫 비율 = 1 − 수수료 (0.9 = 결제 금액의 90%) */
 export const SELLER_SHARE = 1 - PLATFORM_FEE_PCT / 100;
 
+/**
+ * 판매자 등급 (수수료는 모든 등급 같음 — 등급은 목록 표시 · 추천 혜택만)
+ *   확인된 사실만 씀: 증권사 체결로 확인된 매매 수 · 체결 전에 계획을 먼저 쓴(사전 작성) 비율
+ */
 export const SELLER_TIERS = [
   { key: "base", name: "기본", fee: PLATFORM_FEE_PCT, need: { trades: 0, pre: 0 }, perk: "판매 가능" },
   { key: "checked", name: "확인 판매자", fee: PLATFORM_FEE_PCT, need: { trades: 30, pre: 50 }, perk: "목록에 '거래내역 확인' 표시" },
