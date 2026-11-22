@@ -1,11 +1,11 @@
 "use client";
-// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) · 구매자 후기(익명)
+// 트레이더 상세: 소개 · 구독 구매 · 성과 카드 · 월별 수익률(마우스 올리면 숫자) · 전략(시장 → 섹터별, 꿀) | 거래내역(최근 10회) · 구매자 후기(익명)
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { backToList } from "../../../lib/market-list";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SiteHeader from "../../SiteHeader";
 import { followLabel, monthLabel, pct, periodLabel, sellable, strategiesBySector, strategiesOf, tone, traderById, wa, won, type Trader } from "../data";
 import { FavButton, PassBuyBox, StrategyStatsRow, useNotice } from "../parts";
@@ -15,6 +15,8 @@ import { useFeedback } from "../../../lib/feedback";
 import { LikeButton, Qna, Reviews } from "../feedback";
 import { useMyTrader, useSubscriberCounts } from "../../../lib/my-trader";
 import "../marketplace.css";
+import "../../archive/archive.css";
+import "../strategy-detail.css";
 
 export default function TraderPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,8 @@ export default function TraderPage() {
   // 내가 올린 전략인지 (내 전략 표시 · 구독 버튼 숨김) · 지금 구독 중인 사람 수
   const own = useMyTrader() === id;
   const subscribers = useSubscriberCounts();
+  // 전략 | 거래내역 탭 (2026-11-22)
+  const [view, setView] = useState<"strategies" | "trades">("strategies");
   if (!t) {
     return (
       <main className="mk-page">
@@ -145,6 +149,18 @@ export default function TraderPage() {
 
         <MonthlyChart t={t} />
 
+        <div className="ar-pt-tabs mk-trader-tabs" role="tablist" aria-label="전략 · 거래내역">
+          <button type="button" role="tab" aria-selected={view === "strategies"} onClick={() => setView("strategies")}>
+            전략
+          </button>
+          <button type="button" role="tab" aria-selected={view === "trades"} onClick={() => setView("trades")}>
+            거래내역
+          </button>
+        </div>
+
+        {view === "trades" ? (
+          <TradeHistory id={t.id} />
+        ) : (
         <section className="mk-section">
           <div className="mk-section-head">
             <h2>전략</h2>
@@ -192,6 +208,7 @@ export default function TraderPage() {
             </div>
           </div>
         </section>
+        )}
 
         <Reviews trader={t} fb={fb} notify={notify} />
 
@@ -199,6 +216,63 @@ export default function TraderPage() {
       </div>
       {node}
     </main>
+  );
+}
+
+type HistoryTrade = { code: string; name: string; entry: string; exit: string; ret: number; followed: boolean | null };
+const md = (d: string) => `${d.slice(5, 7)}.${d.slice(8, 10)}`;
+const mdFrom = (d: string, from: string) => (d.slice(0, 4) === from.slice(0, 4) ? md(d) : `${d.slice(2, 4)}.${md(d)}`);
+
+/**
+ * 거래내역 탭 (2026-11-22): 끝난 거래 최근 10회 (최근 7영업일 안의 거래 · 보유 중인 거래는 빼고, /strategy-data/{id}/trades)
+ *   모양은 전략 상세의 거래 내역 표와 같음 (종목명 · 매수 시기 · 매도 시기 · 수익률 · 계획)
+ */
+function TradeHistory({ id }: { id: string }) {
+  const [rows, setRows] = useState<HistoryTrade[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch(`/strategy-data/${id}/trades`)
+      .then((r) => (r.ok ? r.json() : { trades: [] }))
+      .then((d: { trades?: HistoryTrade[] }) => live && setRows(d.trades ?? []))
+      .catch(() => live && setRows([]));
+    return () => {
+      live = false;
+    };
+  }, [id]);
+  return (
+    <section className="mk-card ar-pt-trades sd-trades mk-history">
+      <div className="sd-trades-head">
+        <h2 title="최근 7영업일 안의 거래와 아직 보유 중인 거래는 빼고 보여 줘요">최근 거래 10회</h2>
+      </div>
+      <div className="ar-pt-table sd-table">
+        <div className="th">
+          <span>종목명</span>
+          <span>매수 시기</span>
+          <span>매도 시기</span>
+          <span title="매수가 대비 매도가 (수수료 빼기 전)">수익률 ⓘ</span>
+          <span>계획</span>
+        </div>
+        <div className="tb">
+          {rows === null ? (
+            <p className="ar-pt-empty">불러오는 중…</p>
+          ) : rows.length ? (
+            rows.map((tr) => (
+              <div key={`${tr.code}:${tr.entry}`} className="tr">
+                <strong>{tr.name}</strong>
+                <span>{md(tr.entry)}</span>
+                <span>{mdFrom(tr.exit, tr.entry)}</span>
+                <b className={tone(tr.ret)}>{pct(tr.ret)}</b>
+                <span>
+                  <i className={tr.followed === null ? "sd-plan none" : tr.followed ? "sd-plan ok" : "sd-plan no"}>{tr.followed === null ? "계획 없음" : tr.followed ? "계획대로" : "계획과 다름"}</i>
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="ar-pt-empty">보여 줄 끝난 거래가 아직 없어요.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
