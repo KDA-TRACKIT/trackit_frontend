@@ -52,8 +52,8 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHead title="내 프로필" desc="프로필 이미지, 닉네임, 소개를 한곳에서 관리하세요." />
-      <Card className="mp-profile-editor" title="프로필 정보" desc="닉네임과 프로필 소개는 다른 사용자에게 공개될 수 있습니다.">
+      <PageHead title="내 프로필" />
+      <Card className="mp-profile-editor" title="프로필 정보">
         <div className="mp-form">
           <div className="mp-field">
             <span>프로필 이미지</span>
