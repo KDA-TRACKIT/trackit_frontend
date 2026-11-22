@@ -1,18 +1,17 @@
 "use client";
 // 구독 관리 (2026-11-22, 예전 '전략 판매 관리'): 구독 현황(구독자 수 · 전략 개수 · 정산 금액) + 전략 및 구독 관리
 //   구독자 · 결제 = GET /me/subscribers, 전략 = GET /strategies
-//   정산 금액 = 결제 금액 합계에서 기본 수수료 20% 를 뺀 판매자 몫
+//   정산 금액 = 결제 금액 합계에서 플랫폼 수수료 10% 를 뺀 판매자 몫
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, PageHead } from "../ui";
-import { useSeller, won } from "./data";
+import { SELLER_SHARE, useSeller, won } from "./data";
 import { useMypage } from "../context";
 import { useBusiness } from "../business/state";
 import StrategiesModal from "./StrategiesModal";
 import { apiRequest } from "../../../lib/api/client";
 
 type MySubscribers = { active: number; total: number; payments: number; revenue: number };
-const SELLER_SHARE = 0.8;
 
 export default function SalesPage() {
   const { strategies, byStrategy, loading } = useSeller();

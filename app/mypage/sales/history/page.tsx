@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../../../../lib/api/client";
 import { Card, Empty, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
-import { SALE_STATUS, day, dayTime, useSeller } from "../data";
+import { SALE_STATUS, SELLER_SHARE, day, dayTime, useSeller } from "../data";
 import StrategiesModal from "../StrategiesModal";
 
 const krw = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
-/** 내 구독 현황 (GET /me/subscribers) · 판매자 몫 (기본 수수료 20% 뺀 것, 구독 관리와 같게) */
+/** 내 구독 현황 (GET /me/subscribers) · 판매자 몫 (플랫폼 수수료 10% 뺀 것, 구독 관리와 같게) */
 type MySubscribers = { active: number; total: number; payments: number; revenue: number };
-const SELLER_SHARE = 0.8;
 
 export default function SalesHistoryPage() {
   const { sales, strategies, byStrategy, error, loading } = useSeller();
