@@ -521,7 +521,7 @@ html:not([data-theme="dark"]) .ar-subscriptions-page { background-color:#fff; }
 .pass-more > * { grid-area:1 / 1; }
 .pass-more-blur { width:20px; height:14px; -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); -webkit-mask:radial-gradient(closest-side, #000 55%, #0000); mask:radial-gradient(closest-side, #000 55%, #0000); }
 .pass-more svg { display:block; position:relative; }
-.ar-trader-stat b.gain { color:#d64545; } .ar-trader-stat b.loss { color:#2f64c4; }
+.ar-trader-stat b.gain { color:var(--c-up, #1f9d55); } .ar-trader-stat b.loss { color:var(--c-down, #e03131); }
 /* 열람권을 다 써서 보유 0개: 티켓 없이 다른 카드의 장수와 같은 자리(2열)에 흐리게 */
 .ar-trader-stat b.ar-none { color:var(--c-faint); }
 @media (max-width:800px) { .ar-trader { grid-template-columns:1fr 1fr; } .ar-trader-who { grid-column:1 / -1; } }

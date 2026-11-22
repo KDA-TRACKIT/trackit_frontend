@@ -1,5 +1,5 @@
 "use client";
-// 프로필 공개 범위 (시안 2026-11-18): 내 프로필 항목 · 내 투자 정보 항목을 하나씩 공개/비공개. 닉네임은 항상 공개
+// 개인정보 공개 설정 (시안 2026-11-18): 내 프로필 항목 · 내 투자 정보 항목을 하나씩 공개/비공개. 닉네임은 항상 공개
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { metaText, useMypage } from "../../context";
@@ -35,14 +35,13 @@ export default function PrivacyPage() {
     setBusy(false);
   }
 
-  const section = (title: string, desc: string, list: readonly { key: PrivacyItem; title: string; desc: string }[], head?: React.ReactNode) => {
+  const section = (title: string, list: readonly { key: PrivacyItem; title: string }[], head?: React.ReactNode) => {
     const g = group(list);
     return (
       <Card className="mp-scope">
         <div className="mp-scope-row head">
           <div>
             <h2>{title}</h2>
-            <p>{desc}</p>
           </div>
           <PublicToggle label={`${title} 전체`} value={g.all} mixed={g.mixed} onChange={(v) => setGroup(list, v)} />
         </div>
@@ -51,7 +50,6 @@ export default function PrivacyPage() {
           <div key={it.key} className="mp-scope-row">
             <div>
               <strong>{it.title}</strong>
-              <p>{it.desc}</p>
             </div>
             <PublicToggle label={it.title} value={items[it.key]} onChange={(v) => set(it.key, v)} />
           </div>
@@ -62,21 +60,19 @@ export default function PrivacyPage() {
 
   return (
     <>
-      <PageHead title="프로필 공개 범위" desc="다른 사용자에게 내 프로필과 투자 정보를 어디까지 보여줄지 항목별로 정할 수 있어요." parent={["계정 설정", "/mypage/account"]} crumbsTop />
+      <PageHead title="개인정보 공개 설정" parent={["계정 설정", "/mypage/account"]} crumbsTop />
       {section(
         "내 프로필 항목",
-        "내 프로필 화면에서 입력한 정보예요.",
         PROFILE_ITEMS,
         <div className="mp-scope-row">
           <div>
             <strong>
               닉네임 <span className="mp-chip-tag">항상 공개</span>
             </strong>
-            <p>전략과 활동 기록에 표시되는 이름이라 항상 공개돼요.</p>
           </div>
         </div>,
       )}
-      {section("내 투자 정보 항목", "내 투자 정보 화면에서 설정한 매매 스타일이에요.", INVEST_ITEMS)}
+      {section("내 투자 정보 항목", INVEST_ITEMS)}
       <Notice text={note} />
       <div className="mp-actions spread">
         <button type="button" className="mp-link" onClick={() => setPreview(true)}>

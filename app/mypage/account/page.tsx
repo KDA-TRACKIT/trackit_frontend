@@ -65,7 +65,7 @@ export default function AccountPage() {
       <Card title="개인정보 및 공개 설정" desc="프로필 노출, 전략 공개, 알림 설정을 관리합니다.">
         <div className="mp-set-list">
           <div>
-            <strong>프로필 공개 범위</strong>
+            <strong>개인정보 공개 설정</strong>
             <span>공개 정보 관리</span>
             <Link className="mp-btn secondary small" href="/mypage/account/privacy">
               변경

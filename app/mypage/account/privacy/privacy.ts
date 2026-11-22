@@ -1,6 +1,6 @@
 // 개인정보 및 공개 설정 (user_metadata.privacy)
 //   profilePublic · trustConsent · notifications: 계정 설정의 세 줄 (예전과 같은 키)
-//   items: 프로필 공개 범위 화면의 항목별 공개 여부 (닉네임은 항상 공개라 없음)
+//   items: 개인정보 공개 설정 화면의 항목별 공개 여부 (닉네임은 항상 공개라 없음)
 export const PROFILE_ITEMS = [
   { key: "image", title: "프로필 이미지", desc: "비공개로 하면 기본 이미지로 보여요." },
   { key: "handle", title: "표시 아이디", desc: "@nickname 형식의 아이디" },

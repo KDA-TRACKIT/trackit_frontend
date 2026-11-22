@@ -6,7 +6,7 @@ import BeeLoader from "../BeeLoader";
 
 /**
  * 화면 제목 + 한 줄 설명. 상위 화면이 있으면 설명 아래에 경로(상위 / 지금)를 작게 둔다 (시안: "판매 관리 / 판매 내역").
- * crumbsTop 이면 경로를 제목 위에 (시안: "계정 설정 / 프로필 공개 범위"). 브라우저 탭 제목도 바꾼다
+ * crumbsTop 이면 경로를 제목 위에 (시안: "계정 설정 / 개인정보 공개 설정"). 브라우저 탭 제목도 바꾼다
  */
 export function PageHead({ title, desc, parent, crumbsTop }: { title: string; desc?: string; parent?: [string, string]; crumbsTop?: boolean }) {
   useEffect(() => {

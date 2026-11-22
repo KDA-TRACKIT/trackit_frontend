@@ -27,7 +27,7 @@ const GROUPS: Group[] = [
     href: "/mypage/account",
     children: [
       { label: "기본 계정 정보 수정", href: "/mypage/account/basic" },
-      { label: "개인정보 및 공개 설정", href: "/mypage/account/privacy" },
+      { label: "개인정보 공개 설정", href: "/mypage/account/privacy" },
     ],
   },
 ];
