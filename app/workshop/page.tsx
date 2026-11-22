@@ -35,6 +35,7 @@ import { futuresDailyTickTime, isFuturesCode, isSpecialCode, specialOf } from ".
 import { getSupabaseBrowser, readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import SiteHeader from "../SiteHeader";
 import "./workshop.css";
+import { currentRecords } from "../../lib/strategy";
 import { uuid } from "../../lib/uuid";
 
 // 차트는 브라우저 캔버스가 필요하므로 서버 렌더링에서 뺀다
@@ -330,6 +331,24 @@ export default function WorkshopPage() {
    *   고치는 동안에는 이 종목의 지금 드로잉을 자동 저장으로 덮어쓰지 않음. 그만두면 지금 드로잉으로 돌아감
    */
   const [editing, setEditing] = useState<{ id: string; when: string; drawings: Drawing[] } | null>(null);
+  /** 노트 하나의 드로잉 · 글을 차트와 Note 칸에 불러옴 (주소의 ?edit= · '노트 가져오기'의 이 종목 이전 노트) */
+  const [editBusy, setEditBusy] = useState(false);
+  async function loadNoteForEdit(jid: string, id: string, code: string, live: { on: boolean } = { on: true }) {
+    setEditBusy(true);
+    try {
+      const n = (await apiRequest<NoteVersion[]>(`/journals/${jid}/note-versions`)).find((x) => x.id === id);
+      // 다른 종목 노트면(주소의 종목이 안 열렸을 때) 불러오지 않음
+      if (!live.on || !n || n.symbol !== code) return;
+      const raw = (Array.isArray(n.drawings) ? n.drawings : []) as Parameters<typeof fromAnnotations>[0];
+      const kst = new Date(new Date(n.confirmedAt).getTime() + 9 * 3_600_000).toISOString();
+      setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
+      setNoteText(n.aiSummary?.summary ?? "");
+    } catch {
+      // 못 불러오면 지금 화면 그대로
+    } finally {
+      setEditBusy(false);
+    }
+  }
   const editAsked = useRef<string | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -338,21 +357,15 @@ export default function WorkshopPage() {
     // 주소의 종목이 아직 안 열렸으면 기다림 (처음엔 마지막에 보던 종목이 먼저 뜸)
     const want = q.get("symbol")?.trim().toUpperCase();
     if (want && want !== symbol.code) return;
-    editAsked.current = id;
-    let live = true;
-    apiRequest<NoteVersion[]>(`/journals/${journalId}/note-versions`)
-      .then((list) => {
-        const n = list.find((x) => x.id === id);
-        // 다른 종목 노트면(주소의 종목이 안 열렸을 때) 불러오지 않음
-        if (!live || !n || n.symbol !== symbol.code) return;
-        const raw = (Array.isArray(n.drawings) ? n.drawings : []) as Parameters<typeof fromAnnotations>[0];
-        const kst = new Date(new Date(n.confirmedAt).getTime() + 9 * 3_600_000).toISOString();
-        setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
-        setNoteText(n.aiSummary?.summary ?? "");
-      })
-      .catch(() => {});
+    const live = { on: true };
+    // 불러오기는 잠깐 뒤에 (effect 안에서 바로 상태를 바꾸지 않게)
+    const timer = setTimeout(() => {
+      editAsked.current = id;
+      void loadNoteForEdit(journalId, id, symbol.code, live);
+    }, 0);
     return () => {
-      live = false;
+      clearTimeout(timer);
+      live.on = false;
     };
   }, [journalId, journal.mode, symbol.code]);
   function stopEditing() {
@@ -958,6 +971,11 @@ ${t}` : t))}
                       records={allRecords}
                       onPick={(m) => setNoteText((t) => (t.trim() ? `${t.trim()}\n\n` : "") + calendarText(m))}
                       isImported={(m) => noteText.includes(calendarText(m))}
+                      // 이 종목에 쓴 이전 노트 (고쳐서 사라진 예전 판 · 합쳐진 노트는 빼고): 고르면 그때 드로잉 · 글을 불러와 새 노트로 고쳐 씀
+                      stockNotes={journalId && journal.mode === "server" ? currentRecords(symbolRecords) : []}
+                      onPickStock={(m) => journalId && void loadNoteForEdit(journalId, m.id, symbol.code)}
+                      editingId={editing?.id}
+                      busy={editBusy}
                     />
                   )}
                 </div>
