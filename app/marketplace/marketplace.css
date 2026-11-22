@@ -723,3 +723,12 @@ button.mk-avatar { border:0; padding:0; font:inherit; }
 .mk-pp dl div { display:grid; grid-template-columns:120px 1fr; gap:10px; font-size:14px; }
 .mk-pp dt { color:var(--c-sub,#6b778c); }
 .mk-pp dd { margin:0; }
+
+/* 올린 전략 상세 (2026-11-22) */
+.mk-new-row { cursor:pointer; }
+.mk-new-row:hover { background:var(--c-subtle); }
+.ms-symbols { margin:16px 0 0; }
+.ms-chart { width:100%; height:420px; }
+.ms-trades .th, .ms-trades .tr { grid-template-columns:1.3fr 1fr .8fr 1fr .8fr; }
+.ms-trades .up { color:var(--c-up); font-weight:700; }
+.ms-trades .down { color:var(--c-down); font-weight:700; }

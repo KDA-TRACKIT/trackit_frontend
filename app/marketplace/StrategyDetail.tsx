@@ -15,6 +15,8 @@ import BeeLoader from "../BeeLoader";
 import UseStrategy from "../archive/purchases/[id]/UseStrategy";
 import { opened, subscribed, usePasses } from "../../lib/purchases";
 import { fetchStrategyMonth } from "../../lib/strategy-data";
+import { apiRequest } from "../../lib/api/client";
+import { isSpecialCode } from "../../lib/special-symbols";
 import { fetchBars, searchAllSymbols } from "../../lib/market-data";
 import { markFreeView } from "../../lib/free-views";
 import { useMyTrader } from "../../lib/my-trader";
@@ -96,6 +98,27 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
       cancelled = true;
     };
   }, [traderId, sKey, reqKey]);
+
+  // 실제 노트 (2026-11-22): 데모 파일 밖에서 그 트레이더가 DB 에 쓴 노트 — 기간 안의 그 섹터 종목 + 같은 시장 지수 · 선물 · 환율
+  //   본인 · 구독자만 서버가 줌. 데모 파일에 이미 있는 노트(같은 날 · 같은 종목 · 같은 글)는 아래에서 뺌
+  type LiveNote = { id: string; at: string; symbol: string; name: string; text: string; plan: boolean };
+  const [live, setLive] = useState<{ key: string; notes: LiveNote[] } | null>(null);
+  const liveQuery = t && s && unlocked ? `${t.id}|${s.key}|${s.start}|${s.end}|${s.sector}|${t.market}` : "";
+  useEffect(() => {
+    if (!liveQuery) return;
+    const [id, key, start, end, sector, market] = liveQuery.split("|");
+    const kst = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(0, 10);
+    const lastDay = kst(Date.parse(`${end}T00:00:00+09:00`) - 1);
+    const today = kst(Date.now());
+    const to = lastDay < today ? lastDay : today;
+    let cancelled = false;
+    apiRequest<{ access: string; notes: LiveNote[] }>(`/market/traders/${id}/notes?from=${start}&to=${to}&sector=${encodeURIComponent(sector)}&market=${encodeURIComponent(market)}`)
+      .then((d) => !cancelled && setLive({ key, notes: d.notes ?? [] }))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [liveQuery]);
 
   // 무료 전략을 열면 전략보관함에 남김 (구독 없이 본 것도)
   const freeKey = t && s?.free ? `${t.id}|${t.name}|${s.key}|${s.title}` : "";
@@ -225,6 +248,22 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
     ])
     .filter((r) => r.text)
     .sort((a, b) => a.d.localeCompare(b.d) || ORDER[a.kind] - ORDER[b.kind]);
+  // 실제 노트 붙이기: 데모 파일에 없는 것만 (같은 날 · 같은 종목 · 글 앞부분이 같으면 같은 노트)
+  if (live && s && live.key === s.key && ms.length) {
+    const norm = (x: string) => x.replace(/\s+/g, "").slice(0, 24);
+    const seen = new Set(recs.map((r) => `${r.d}|${r.code ?? "-"}|${norm(r.text)}`));
+    const months = new Set(ms.map((m) => m.month));
+    for (const n of live.notes) {
+      const d = new Date(Date.parse(n.at) + 9 * 3_600_000).toISOString().slice(0, 10);
+      const market = isSpecialCode(n.symbol);
+      const key = `${d}|${market ? "-" : n.symbol}|${norm(n.text)}`;
+      const key2 = `${d}|${n.symbol}|${norm(n.text)}`;
+      if (!n.text || seen.has(key) || seen.has(key2)) continue;
+      seen.add(key2);
+      recs.push({ d, kind: n.plan ? "plan" : market ? "market" : "stock", month: months.has(d.slice(0, 7)) ? d.slice(0, 7) : ms[ms.length - 1].month, code: n.symbol, name: n.name, text: n.text });
+    }
+    recs.sort((a, b) => a.d.localeCompare(b.d) || ORDER[a.kind] - ORDER[b.kind]);
+  }
   // 메모 열쇠: 같은 날 · 같은 종류 · 같은 종목이 여럿이면 순번을 붙임 (정렬 순서가 늘 같아 열쇠도 같음)
   const seenRefs = new Map<string, number>();
   for (const r of recs) {
