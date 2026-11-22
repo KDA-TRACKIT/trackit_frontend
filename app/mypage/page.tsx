@@ -6,7 +6,6 @@ import { useActivity } from "./data";
 import { Card, PageHead } from "./ui";
 import { ProfileAvatar } from "./profile/ProfileAvatar";
 import { useBusiness } from "./business/state";
-import { useSeller } from "./sales/data";
 
 export default function MyPage() {
   const { profile, meta, user } = useMypage();
@@ -15,7 +14,6 @@ export default function MyPage() {
   const bio = metaText(meta, "bio");
   const businessState = useBusiness(user.id);
   const business = businessState !== null && businessState.status !== "pending";
-  const { totals } = useSeller();
   const num = (n: number, unit: string, ready = true) => (
     <strong>
       {ready && n > 0 ? n.toLocaleString("ko-KR") : "—"} <small>{unit}</small>
@@ -23,15 +21,15 @@ export default function MyPage() {
   );
   // 시안(2026-11-19): 공개 전략 · 유료 구독 · 판매 내역 · 정산 내역 4칸
   const SALES = [
-    { title: "공개 전략", sub: "무료 열람", href: "/mypage/sales/strategies" },
-    { title: "월 구독", sub: "구독료 관리", href: "/mypage/sales" },
-    { title: "구독 내역", sub: totals.count ? `구독 기록 ${totals.count}건` : "구독 기록", href: "/mypage/sales/history" },
-    { title: "정산 내역", sub: "정산 기록", href: "/mypage/sales/settlements" },
+    { title: "공개 전략", href: "/mypage/sales/strategies" },
+    { title: "월 구독", href: "/mypage/sales" },
+    { title: "구독 내역", href: "/mypage/sales/history" },
+    { title: "정산 내역", href: "/mypage/sales/settlements" },
   ];
 
   return (
     <>
-      <PageHead title="마이페이지" desc="나의 활동과 구독 현황을 한눈에 확인하세요." />
+      <PageHead title="마이페이지" />
       <Card>
         <div className="mp-profile">
           <ProfileAvatar size={76} />
@@ -50,7 +48,7 @@ export default function MyPage() {
       </Card>
 
       <div className="mp-grid-2 mp-home-grid">
-        <Card title="활동 이력" desc="나의 매매 활동과 작성 기록">
+        <Card title="활동 이력">
           <div className="mp-home-stats">
             <div>
               <span>매매 횟수</span>
@@ -95,12 +93,11 @@ export default function MyPage() {
         </Card>
       </div>
 
-      <Card title="구독 관리" desc="내 전략의 월 구독과 구독 내역을 관리합니다.">
+      <Card title="구독 관리">
         <div className="mp-home-sales">
           {SALES.map((s) => (
             <div key={s.title}>
               <strong>{s.title}</strong>
-              <span>{s.sub}</span>
               <Link href={s.href}>조회하기 →</Link>
             </div>
           ))}

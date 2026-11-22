@@ -94,7 +94,7 @@ export default function WalletPage() {
   if (accounts?.length === 0 && !error)
     return (
       <>
-        <PageHead title="내 계좌" desc="연결된 증권 계좌의 자산과 투자 성과, 거래 내역을 확인하세요." />
+        <PageHead title="내 계좌" />
         <Card className="mp-wallet-none">
           <strong>연결된 계좌가 없습니다.</strong>
           <button type="button" className="mp-btn primary" onClick={() => setConnecting(true)}>
@@ -107,7 +107,7 @@ export default function WalletPage() {
 
   return (
     <>
-      <PageHead title="내 계좌" desc="연결된 증권 계좌의 자산과 투자 성과, 거래 내역을 확인하세요." />
+      <PageHead title="내 계좌" />
       {accounts === null ? <Card className="mp-wallet-empty"><Empty text="계좌를 불러오는 중…" /></Card> : accounts.length === 0 ? (
         <Card className="mp-wallet-empty">
           <Empty text={error ? "연결된 계좌를 불러오지 못했습니다." : "연결된 계좌가 없습니다."}>
