@@ -2054,27 +2054,8 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
           });
         }
         await frame();
+        // 지지 · 저항 표시는 차트의 가격축 태그(평단가처럼)가 그림에 그대로 찍힘 — 예전에 덧그리던 동그란 라벨은 겹쳐서 뺌 (2026-11-22)
         const shot = chart.takeScreenshot(true, false);
-        const ctx = shot.getContext("2d");
-        if (ctx) {
-          const scale = shot.width / Math.max(1, host.clientWidth);
-          const right = shot.width - chart.priceScale("right").width() * scale - 6 * scale;
-          ctx.font = `700 ${12 * scale}px Pretendard, sans-serif`;
-          ctx.textBaseline = "middle";
-          for (const m of marks) {
-            const y = series.priceToCoordinate(m.price);
-            if (y === null || y < 0 || y * scale > shot.height) continue;
-            const w = ctx.measureText(m.text).width + 12 * scale;
-            const h = 18 * scale;
-            const x = right - w;
-            ctx.fillStyle = m.color;
-            ctx.beginPath();
-            ctx.roundRect(x, y * scale - h / 2, w, h, 9 * scale);
-            ctx.fill();
-            ctx.fillStyle = "#fff";
-            ctx.fillText(m.text, x + 6 * scale, y * scale);
-          }
-        }
         return { image: shot.toDataURL("image/png"), from: shown.from, to: shown.to };
       } catch {
         return null;
