@@ -115,7 +115,7 @@ export function Reviews({ trader, fb, notify }: { trader: Trader; fb: TraderFeed
             aria-label="후기"
           />
           <div className="mk-review-form-foot">
-            {check && !check.ok ? <small className="mk-review-warn">{check.reason}</small> : <small>익명 구매자로 보여요</small>}
+            {check && !check.ok ? <small className="mk-review-warn">{check.reason}</small> : <span />}
             <button type="button" className="mk-primary" onClick={() => void submit()} disabled={!check?.ok || busy}>
               {busy ? "남기는 중…" : "후기 남기기"}
             </button>
