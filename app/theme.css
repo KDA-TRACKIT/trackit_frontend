@@ -55,7 +55,6 @@ html[data-theme="dark"] .gnb-main a:hover, html[data-theme="dark"] .gnb-main a.a
 html[data-theme="dark"] .gnb-drop-menu { border-color:var(--c-line); background:var(--c-surface); box-shadow:var(--c-shadow); }
 html[data-theme="dark"] .gnb-drop-menu a:hover { background:var(--c-hover); }
 html[data-theme="dark"] .gnb-drop-menu b { color:var(--c-ink); }
-html[data-theme="dark"] .gnb-drop-menu small { color:var(--c-faint); }
 html[data-theme="dark"] .gnb-bell, html[data-theme="dark"] button.gnb-chip.gnb-user { color:var(--c-ink); }
 html[data-theme="dark"] .gnb-bell:hover { background:var(--c-hover); }
 html[data-theme="dark"] .gnb-bell-head { border-bottom-color:var(--c-line); }

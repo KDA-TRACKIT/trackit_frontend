@@ -3,7 +3,7 @@ import AccountChip from "./AccountChip";
 
 type Active = "home" | "fortrade" | "archive" | "marketplace" | null;
 
-type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href?: string; desc?: string }[] };
+type Menu = { key: Exclude<Active, null>; label: string; href: string; sub?: { label: string; href?: string }[] };
 const MENU: Menu[] = [
   { key: "home", label: "홈", href: "/" },
   {
@@ -12,8 +12,8 @@ const MENU: Menu[] = [
     href: "/workshop",
     // 매매할 때 보는 화면 두 개: 트레이딩 로그(차트·기록) + 증시 캘린더(/insights, 안에서 탭)
     sub: [
-      { label: "트레이딩 로그", href: "/workshop", desc: "차트 분석 · 매매 기록" },
-      { label: "증시 캘린더", href: "/insights", desc: "시장 · 뉴스 · 거시경제 · 공시" },
+      { label: "트레이딩 로그", href: "/workshop" },
+      { label: "증시 캘린더", href: "/insights" },
     ],
   },
   { key: "marketplace", label: "전략마켓", href: "/marketplace" },
@@ -24,9 +24,9 @@ const MENU: Menu[] = [
     // 전략보관함 드롭다운: 내 노트 · 구매한 전략 · 전략 분석. '전략보관함'을 누르면 첫 화면은 내 노트
     //   (예전 '내 전략'(/archive/mine, 판매 등록 · AI 초안)은 메뉴에선 빠지고 마이페이지 판매 · AI 전략 만들기에서 들어감)
     sub: [
-      { label: "내 노트", href: "/archive/notes", desc: "작성한 노트 모아 보기" },
-      { label: "구독 목록", href: "/archive/purchases", desc: "구독한 트레이더" },
-      { label: "전략 분석", href: "/archive/analysis", desc: "AI 에게 내 전략 · 매매 묻기" },
+      { label: "내 노트", href: "/archive/notes" },
+      { label: "구독 목록", href: "/archive/purchases" },
+      { label: "전략 분석", href: "/archive/analysis" },
     ],
   },
 ];
@@ -62,12 +62,10 @@ export default function SiteHeader({ active = null, tone, right, menu = true, ti
                     s.href ? (
                       <Link key={s.label} href={s.href} role="menuitem">
                         <b>{s.label}</b>
-                        {s.desc && <small>{s.desc}</small>}
                       </Link>
                     ) : (
                       <span key={s.label} role="menuitem" aria-disabled="true" className="soon">
                         <b>{s.label}</b>
-                        {s.desc && <small>{s.desc}</small>}
                       </span>
                     ),
                   )}
