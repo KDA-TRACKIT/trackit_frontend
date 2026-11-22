@@ -150,7 +150,6 @@ export default function BusinessPage() {
       {business ? (
         <Card className="mp-business-management">
           <h2>정산 정보</h2>
-          <p className="mp-card-desc">판매 수익은 매월 20일, 전월 확정 금액이 아래 계좌로 입금됩니다.</p>
           <div className="mp-form mp-settle">
             <div className="mp-row-2">
               <label className="mp-field">

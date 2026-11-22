@@ -77,13 +77,12 @@ export default function MyPage() {
             )}
           </div>
         </Card>
-        <Card title="나의 이행률" desc="전략의 신뢰도를 확인하는 지표">
+        <Card title="나의 이행률">
           <strong className="mp-home-rate">{business ? "산출 준비 중이에요." : "비즈니스 계정 전환 시 산출됩니다."}</strong>
           <div className="mp-home-consent">
             <Link className="mp-tag-warn" href="/mypage/account">
               추가 동의 필요
             </Link>
-            <small>신뢰도 산출 및 공개에 대한 별도 동의 후 이용할 수 있습니다.</small>
           </div>
         </Card>
       </div>
