@@ -78,3 +78,6 @@ html[data-theme="dark"] .sd-picker-menu { box-shadow:0 8px 22px rgba(0,0,0,.45);
 /* 노트를 누르면 그 종목 차트로 (2026-11-22) */
 .sd-memos li.sd-memo-pick { cursor:pointer; }
 .sd-memos li.sd-memo-pick:hover { border-color:var(--mk-primary, #0f2367); }
+
+/* 노트에 저장한 차트 그림 (2026-11-22) */
+.sd-memos .sd-shot { display:block; width:100%; margin-top:8px; border:1px solid var(--c-line); border-radius:8px; }

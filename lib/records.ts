@@ -186,14 +186,14 @@ function subscribe(listener: () => void) {
  */
 export async function addRecord(
   input: Omit<TradeRecord, "id" | "drawings"> & { drawings?: unknown; plan?: Parameters<typeof saveNote>[0]["plan"] },
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; id?: string }> {
   const { drawings, plan, ...record } = input;
   const list = read();
   // 같은 노트·체결 조합은 한 번만. 고친 메모(replaces)는 같은 초에 여러 개 고쳐도 다 남김
   if (!record.replaces && list.some((r) => r.symbol === record.symbol && r.date === record.date && r.noteTime === record.noteTime && r.executionTime === record.executionTime)) return { ok: true };
   if (source === "server") {
     try {
-      await saveNote({
+      const saved = await saveNote({
         symbol: record.symbol,
         symbolName: record.symbolName,
         text: record.text,
@@ -208,7 +208,7 @@ export async function addRecord(
         plan,
       });
       await refreshServerRecords();
-      return { ok: true };
+      return { ok: true, id: saved.id };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };
     }

@@ -3,8 +3,8 @@
 //   노트 날 점 · 이어진 체결 화살표 · 노트에 그은 가격선(지지 초록 · 저항 빨강 · 나머지 보라)을 그림
 //   (Figma 시안은 분봉 + 작도 모양이지만, 기록에는 작도 모양 대신 가격선만 남아 있어 일봉 + 가격선으로 보여 줌)
 import { useEffect, useRef, useState } from "react";
-import { CandlestickSeries, ColorType, HistogramSeries, LineStyle, createChart, createSeriesMarkers, type SeriesMarker, type Time } from "lightweight-charts";
-import { barDate, isKrCode, loadDaily } from "../bars";
+import { CandlestickSeries, ColorType, HistogramSeries, LineSeries, LineStyle, createChart, createSeriesMarkers, type SeriesMarker, type Time } from "lightweight-charts";
+import { barDate, loadDailyAny } from "../bars";
 import type { Bar } from "../../../lib/interval";
 import type { NoteLine } from "../../workshop/lineLadder";
 import { fixZoomPointer } from "../../../lib/zoom-pointer";
@@ -12,14 +12,15 @@ import BeeLoader from "../../BeeLoader";
 
 export default function MemoChart({ code, date, lines, side, color }: { code: string; date: string; lines?: NoteLine[]; side: "매수" | "매도" | null; color: string }) {
   const el = useRef<HTMLDivElement>(null);
-  const supported = isKrCode(code);
+  // 국내 · 미국 · 지수 · 선물 · 환율 모두 (2026-11-22: 예전엔 국내 종목만 그려서 미국 · 선물 노트는 그림이 없었음)
+  const supported = !!code;
   const [data, setData] = useState<{ code: string; bars: Bar[] } | null>(null);
   const bars = data?.code === code ? data.bars : null;
 
   useEffect(() => {
     if (!supported) return;
     let live = true;
-    void loadDaily(code).then((b) => {
+    void loadDailyAny(code).then((b) => {
       if (live) setData({ code, bars: b });
     });
     return () => {
@@ -64,12 +65,25 @@ export default function MemoChart({ code, date, lines, side, color }: { code: st
     markers.push({ time: memoDay as Time, position: "inBar", shape: "circle", color, size: 1.3, text: "노트" });
     createSeriesMarkers(candle, markers);
 
+    const lineColor = (l: NoteLine) => (l.role === "SUPPORT" ? up : l.role === "RESISTANCE" ? down : "#6e56cf");
     for (const l of lines ?? []) {
+      // 기울어진 선(추세선 · 채널): 그은 두 점을 지나 화면 오른쪽 끝까지
+      if (l.pts && l.pts.length >= 2) {
+        const [[ta, pa], [tb, pb]] = l.pts;
+        if (tb !== ta) {
+          const at = (sec: number) => pa + ((pb - pa) * (sec - ta)) / (tb - ta);
+          const inView = view.filter((b) => b.time >= Math.min(ta, tb));
+          const pts = (inView.length ? inView : view).map((b) => ({ time: t(b), value: at(b.time) }));
+          const seg = chart.addSeries(LineSeries, { color: lineColor(l), lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, title: l.label });
+          seg.setData(pts);
+          continue;
+        }
+      }
       const price = l.price ?? (l.low !== undefined && l.high !== undefined ? (l.low + l.high) / 2 : undefined);
       if (price === undefined || !Number.isFinite(price)) continue;
       candle.createPriceLine({
         price,
-        color: l.role === "SUPPORT" ? up : l.role === "RESISTANCE" ? down : "#6e56cf",
+        color: lineColor(l),
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,

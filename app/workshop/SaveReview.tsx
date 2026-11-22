@@ -106,7 +106,7 @@ export default function SaveReview({
             <button type="button" onClick={onCancel} disabled={busy}>
               취소
             </button>
-            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: text, records: {} })} disabled={busy || !text}>
+            <button type="button" className="primary" onClick={() => onConfirm({ pendingText: text, records: {} })} disabled={busy || (!text && !image)}>
               {busy ? "저장 중…" : "확인하고 저장"}
             </button>
           </div>

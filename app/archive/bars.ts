@@ -5,6 +5,7 @@ import { fetchBars, searchAllSymbols } from "../../lib/market-data";
 import type { Bar } from "../../lib/interval";
 
 const cache = new Map<string, Promise<Bar[]>>();
+import { isSpecialCode } from "../../lib/special-symbols";
 export const isKrCode = (c: string | null | undefined): c is string => !!c && /^\d{6}$/.test(c);
 /** 일봉 time → KST 날짜 */
 export const barDate = (t: number) => new Date(t * 1000 + 9 * 3_600_000).toISOString().slice(0, 10);
@@ -28,6 +29,16 @@ const anyCache = new Map<string, Promise<Bar[]>>();
 export function loadDailyAny(code: string): Promise<Bar[]> {
   if (isKrCode(code)) return loadDaily(code);
   let p = anyCache.get(code);
+  if (!p && isSpecialCode(code)) {
+    // 지수 · 선물 · 환율 (2026-11-22): 거래소 없이 바로
+    p = fetchBars(code, "1d", undefined, 3000)
+      .then((r) => r.bars)
+      .catch(() => {
+        anyCache.delete(code);
+        return [] as Bar[];
+      });
+    anyCache.set(code, p);
+  }
   if (!p) {
     p = searchAllSymbols(code)
       .then((list) => list.find((s) => s.code === code && s.exchange))

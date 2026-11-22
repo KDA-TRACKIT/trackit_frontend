@@ -14,6 +14,7 @@ import BeeLoader from "../../BeeLoader";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
 import MemoChart from "./MemoChart";
+import NoteShot from "../../NoteShot";
 import SellPanel from "./SellPanel";
 import { useBusiness } from "../../mypage/business/state";
 import { useMyTrader } from "../../../lib/my-trader";
@@ -536,7 +537,8 @@ function MemoDetail({
         </div>
       </header>
 
-      {m.code && <MemoChart code={m.code} date={m.date} lines={m.rec.lines} side={ex ? ex.side : null} color={KIND_DOT[m.kind]} />}
+      {/* 트레이딩 로그에서 저장한 차트 그림 그대로 (2026-11-22), 없으면 그 종목 일봉 + 그은 선 */}
+      {m.code && <NoteShot id={m.rec.id} className="mm-shot" fallback={<MemoChart code={m.code} date={m.date} lines={m.rec.lines} side={ex ? ex.side : null} color={KIND_DOT[m.kind]} />} />}
 
       <p className="mm-detail-text">{m.body || "(내용 없음)"}</p>
 

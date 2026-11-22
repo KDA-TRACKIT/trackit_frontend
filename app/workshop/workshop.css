@@ -1523,6 +1523,8 @@ details.ws-ladder { padding:10px 12px; }
 .ws-post-head time { color:var(--c-sub); font-size:13px; font-variant-numeric:tabular-nums; }
 .ws-post-body { margin:0; color:var(--c-ink); font-size:15px; line-height:1.7; white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere; }
 .ws-review-chart img.is-shooting { opacity:.55; transition:opacity .15s; }
+/* 차트 그림이 창 안에 다 보이게 (스크롤로 위가 잘려 보이지 않게) */
+.ws-review-chart img { max-height:min(56vh, 520px); width:auto; max-width:100%; margin:0 auto; object-fit:contain; }
 
 /* Memo 칸의 캘린더 노트 목록: 좁은 Note 패널에서 잘리지 않게 Memo 칸 폭으로 (2026-11-22) */
 .ws-memo { position:relative; }

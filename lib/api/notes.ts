@@ -110,3 +110,14 @@ export async function listNotes(): Promise<{ journal: Journal; notes: NoteVersio
 export function hideNote(noteVersionId: string) {
   return apiRequest<{ id: string; hidden: boolean }>(`/note-versions/${encodeURIComponent(noteVersionId)}`, { method: "DELETE" });
 }
+
+/** 노트 차트 그림 올리기 (2026-11-22, 트레이딩 로그 확인 창에서 본 그대로 · 한 번만) */
+export function saveNoteShot(noteId: string, dataUrl: string) {
+  return apiRequest<{ saved: boolean }>(`/notes/${noteId}/shot`, { method: "POST", body: JSON.stringify({ dataUrl }) });
+}
+
+/** 노트 차트 그림 주소 (본인 · 구독자, 1시간). 없으면 null */
+export async function noteShotUrl(noteId: string): Promise<string | null> {
+  const d = await apiRequest<{ url: string | null }>(`/notes/${noteId}/shot`);
+  return d.url;
+}

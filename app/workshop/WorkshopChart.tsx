@@ -2045,14 +2045,27 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       }
       try {
         if (list.length) {
-          ts.setVisibleRange({ from: list[shown.from].time as Time, to: list[Math.min(last, shown.to)].time as Time });
-          // 오른쪽을 조금 비움 (가격축 옆 지지 · 저항 태그가 봉을 가리지 않게)
-          const lr = ts.getVisibleLogicalRange();
-          if (lr) ts.setVisibleLogicalRange({ from: lr.from, to: lr.to + Math.max(3, (lr.to - lr.from) * 0.1) });
+          // 고른 봉 → 차트 논리 번호로 바로 맞춤 (setVisibleRange 는 다음 프레임에 적용돼 바로 읽으면 예전 화면이 나와서, 슬라이더를 옮겨도 그림이 안 바뀌었음)
+          const a = ts.timeToIndex(list[shown.from].time as Time, true);
+          const b = ts.timeToIndex(list[Math.min(last, shown.to)].time as Time, true);
+          if (a !== null && b !== null) {
+            const from = Number(a);
+            const to = Number(b);
+            // 오른쪽을 조금 비움 (가격축 옆 지지 · 저항 태그가 봉을 가리지 않게)
+            ts.setVisibleLogicalRange({ from: from - 0.5, to: to + Math.max(3, (to - from) * 0.06) });
+          } else {
+            ts.setVisibleRange({ from: list[shown.from].time as Time, to: list[Math.min(last, shown.to)].time as Time });
+          }
         }
-        if (prices.length) {
-          const lo = Math.min(...prices);
-          const hi = Math.max(...prices);
+        // 구간을 골랐으면 그 구간 안의 드로잉 점 가격만 넣음 (구간 밖 점 때문에 아래위가 비지 않게)
+        const tFrom = list[shown.from]?.time ?? -Infinity;
+        const tTo = list[Math.min(last, shown.to)]?.time ?? Infinity;
+        const fit = range
+          ? [...pts.filter((p) => Number(p.time) >= tFrom && Number(p.time) <= tTo).map((p) => Number(p.price)), ...marks.map((m) => m.price)].filter((n) => Number.isFinite(n) && n > 0)
+          : prices;
+        if (fit.length) {
+          const lo = Math.min(...fit);
+          const hi = Math.max(...fit);
           series.applyOptions({
             autoscaleInfoProvider: (base: () => { priceRange: { minValue: number; maxValue: number } | null } | null) => {
               const r = base();

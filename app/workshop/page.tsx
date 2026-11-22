@@ -22,6 +22,7 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords, type TradeRecord } from "../../lib/records";
+import { saveNoteShot } from "../../lib/api/notes";
 import CalendarMemos from "./CalendarMemos";
 import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
 import type { RoleTag } from "./WorkshopChart";
@@ -52,6 +53,35 @@ const US_SESSION_LABEL: Record<UsSession, string> = { pre: "프리마켓", regul
 const usDailyTicks = (ticks: Tick[]) => ticks.filter((t) => t.regular).map((t) => ({ ...t, time: usDailyTickTime(t.time) }));
 
 const nowKst = () => kstNow().time;
+/** 확인 창 차트에 얹는 지지 · 저항 라벨 */
+function reviewMarks(lines: NoteLine[]) {
+  return lines.flatMap((l) => {
+    const p = l.price ?? (l.role === "RESISTANCE" ? l.high : l.low);
+    if (!p || !l.role) return [];
+    const support = l.role === "SUPPORT";
+    return [{ price: p, text: `${support ? "지지" : "저항"}${l.trade ? ` · ${l.trade}` : ""}`, color: support ? "#1f8a4c" : "#d64545" }];
+  });
+}
+/** PNG 그림 → JPEG (용량 줄이기, 가로 최대 1600px) */
+function toJpeg(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement("img");
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / img.width);
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      const ctx = c.getContext("2d");
+      if (!ctx) return reject(new Error("canvas"));
+      ctx.fillStyle = document.documentElement.dataset.theme === "dark" ? "#111418" : "#ffffff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", 0.86));
+    };
+    img.onerror = () => reject(new Error("image"));
+    img.src = dataUrl;
+  });
+}
 
 /** 화면에는 HH:MM까지만 */
 const hhmm = (time: string) => time.slice(0, 5);
@@ -545,6 +575,16 @@ export default function WorkshopPage() {
       setConfirmError(result.error ?? "저장하지 못했어요.");
       return;
     }
+    // 확인 창에서 본 차트 그림(그은 선 포함)을 그 노트에 그대로 남김 (2026-11-22). 못 올려도 노트 저장은 그대로
+    // 아직 찍히는 중이면 확인 창에서 고른 구간 그대로 다시 찍어서 (멋대로 기간을 정하지 않음)
+    let shotImage = review?.image ?? null;
+    if (result.id && !shotImage && review && snapshotRef.current) {
+      shotImage = (await snapshotRef.current(reviewMarks(review.lines), { from: review.from, to: review.to }).catch(() => null))?.image ?? null;
+    }
+    if (result.id && shotImage) {
+      const jpeg = await toJpeg(shotImage).catch(() => null);
+      if (jpeg) await saveNoteShot(result.id, jpeg).catch(() => {});
+    }
     // 확인 창에서 고친 종목 전략 메모: 확정 메모는 못 고쳐서 새 메모로 남기고 예전 메모를 가리킴 (아래 종목 전략에서 고치는 것과 같음)
     const failed: string[] = [];
     for (const [id, text] of Object.entries(edits?.records ?? {})) {
@@ -592,12 +632,7 @@ export default function WorkshopPage() {
   function openReview(range?: { from: number; to: number }) {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
-    const marks = lines.flatMap((l) => {
-      const p = l.price ?? (l.role === "RESISTANCE" ? l.high : l.low);
-      if (!p || !l.role) return [];
-      const support = l.role === "SUPPORT";
-      return [{ price: p, text: `${support ? "지지" : "저항"}${l.trade ? ` · ${l.trade}` : ""}`, color: support ? "#1f8a4c" : "#d64545" }];
-    });
+    const marks = reviewMarks(lines);
     // 창은 바로 열고, 차트 그림(기본은 드로잉 전체가 들어가게, 고른 구간이 있으면 그 구간)은 찍히는 대로 넣음
     setReview((r) => ({ image: r && range ? r.image : null, shooting: true, lines, from: range?.from ?? r?.from ?? 0, to: range?.to ?? r?.to ?? Math.max(0, bars.length - 1) }));
     setConfirmError(null);

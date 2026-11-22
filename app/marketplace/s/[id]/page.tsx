@@ -12,6 +12,7 @@ import BeeLoader from "../../../BeeLoader";
 import { apiRequest, errorMessage } from "../../../../lib/api/client";
 import { isSpecialCode } from "../../../../lib/special-symbols";
 import NotesChart from "./NotesChart";
+import NoteShot from "../../../NoteShot";
 import "../../marketplace.css";
 import "../../../archive/archive.css";
 import "../../strategy-detail.css";
@@ -196,6 +197,7 @@ export default function MarketStrategyPage() {
                           <time>{md(n.at)}</time>
                         </div>
                         <p>{n.text}</p>
+                        <NoteShot id={n.id} className="sd-shot" />
                       </li>
                     ))}
                     {!shownNotes.length && <li className="empty">노트가 없어요.</li>}

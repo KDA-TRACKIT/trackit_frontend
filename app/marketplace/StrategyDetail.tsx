@@ -24,8 +24,9 @@ import { followLabel, pct, periodLabel, strategiesOf, strategyOf, tone, traderBy
 import { StrategyButton, useNotice } from "./parts";
 import { MemoNotes } from "./feedback";
 import { useFeedback } from "../../lib/feedback";
-import StrategyChart, { type SimCandle } from "./StrategyChart";
+import StrategyChart, { type SimCandle, type SimLine, type SimNote } from "./StrategyChart";
 import { useDark, type SimDetail, type SimMonth } from "./GuessFirst";
+import NoteShot from "../NoteShot";
 import "./marketplace.css";
 import "../archive/archive.css";
 import "./strategy-detail.css";
@@ -35,6 +36,8 @@ export type StrategyEntry = "market" | "archive";
 /** 노트 한 줄: 매매의 매수 근거(사전 기록) · 매도 이유 + 기록(종목 노트 · 복기 · 증시 노트 · 이어진 보유) */
 type Kind = "plan" | "exit" | "stock" | "review" | "market" | "carry";
 type Rec = {
+  /** 실제 노트(DB) id — 저장한 차트 그림을 붙일 때 */
+  id?: string;
   d: string;
   kind: Kind;
   month: string;
@@ -101,7 +104,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
 
   // 실제 노트 (2026-11-22): 데모 파일 밖에서 그 트레이더가 DB 에 쓴 노트 — 기간 안의 그 섹터 종목 + 같은 시장 지수 · 선물 · 환율
   //   본인 · 구독자만 서버가 줌. 데모 파일에 이미 있는 노트(같은 날 · 같은 종목 · 같은 글)는 아래에서 뺌
-  type LiveNote = { id: string; at: string; symbol: string; name: string; text: string; plan: boolean };
+  type LiveNote = { id: string; at: string; symbol: string; name: string; text: string; plan: boolean; lines?: { price?: number; low?: number; high?: number; pts?: [number, number][]; label?: string }[] };
   const [live, setLive] = useState<{ key: string; notes: LiveNote[] } | null>(null);
   const liveQuery = t && s && unlocked ? `${t.id}|${s.key}|${s.start}|${s.end}|${s.sector}|${t.market}` : "";
   useEffect(() => {
@@ -176,6 +179,20 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   }
   for (const n of live?.notes ?? []) if (!names.has(n.symbol)) names.set(n.symbol, n.name);
   const curName = cur ? (names.get(cur.code) ?? cur.code) : "";
+  // 실제 노트에 그은 선 → 차트 선 (2026-11-22): 기울어진 선은 두 점을 지나는 반직선, 가격 하나면 수평선
+  const kstDay = (sec: number) => new Date(sec * 1000 + 9 * 3_600_000).toISOString().slice(0, 10);
+  const liveChartNotes: SimNote[] = (live?.notes ?? [])
+    .filter((n) => cur && n.symbol === cur.code && n.lines?.length)
+    .map((n) => {
+      const d = kstDay(Date.parse(n.at) / 1000);
+      const lines: SimLine[] = (n.lines ?? []).flatMap((l): SimLine[] => {
+        const label = l.label ?? "";
+        if (l.pts && l.pts.length >= 2) return [{ kind: "ray", label, a: [kstDay(l.pts[0][0]), l.pts[0][1]], b: [kstDay(l.pts[1][0]), l.pts[1][1]] }];
+        const ps = l.price !== undefined ? [l.price] : [l.low, l.high].filter((x): x is number => x !== undefined);
+        return ps.map((p) => ({ kind: "hline" as const, label, a: [d, p] as [string, number], b: [d, p] as [string, number] }));
+      });
+      return { type: "stock" as const, d, code: n.symbol, name: n.name, text: n.text, lines };
+    });
 
   // 대표 종목이 아니거나 그 달 일봉이 저장돼 있지 않으면(공개 자료 판매자, 2026-11-21) 그 달 앞뒤 일봉을 따로 받음
   //   (curKey = "YYYY-MM:종목코드", repCode = 그 달 대표 종목)
@@ -261,7 +278,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
       if (!n.text || seen.has(key) || seen.has(key2)) continue;
       seen.add(key2);
       // 지수 · 선물 · 환율도 그 종목 차트에 쓴 노트라 '종목 노트' (그 종목을 골라 차트로 볼 수 있게)
-      recs.push({ d, kind: n.plan ? "plan" : "stock", month: months.has(d.slice(0, 7)) ? d.slice(0, 7) : ms[ms.length - 1].month, code: n.symbol, name: n.name, text: n.text });
+      recs.push({ id: n.id, d, kind: n.plan ? "plan" : "stock", month: months.has(d.slice(0, 7)) ? d.slice(0, 7) : ms[ms.length - 1].month, code: n.symbol, name: n.name, text: n.text });
     }
     recs.sort((a, b) => a.d.localeCompare(b.d) || ORDER[a.kind] - ORDER[b.kind]);
   }
@@ -531,7 +548,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                       <StrategyChart
                         candles={candles}
                         trades={curM.trades}
-                        notes={curM.notes}
+                        notes={[...(curM.notes ?? []), ...liveChartNotes]}
                         ind={cur.code === curM.symbol.code ? curM.ind : undefined}
                         code={cur.code}
                         dark={dark}
@@ -570,6 +587,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                             <time>{md(r.d)}</time>
                           </div>
                           <p>{r.text}</p>
+                          {r.id && <NoteShot id={r.id} className="sd-shot" />}
                           {/* 보충 노트: 이 메모에 대한 설명 요청 · 판매자 답 (구독자와 판매자만) */}
                           {r.ref && r.kind !== "carry" && <MemoNotes trader={t} strategyKey={s.key} memoRef={r.ref} fb={fb} notify={notify} openAtStart={r.ref === memoParam} />}
                         </li>
