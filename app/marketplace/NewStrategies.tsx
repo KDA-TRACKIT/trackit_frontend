@@ -8,6 +8,7 @@ type Item = {
   id: string;
   title: string;
   sector: string | null;
+  market?: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   seller: { name: string };
@@ -42,7 +43,7 @@ export default function NewStrategies() {
             <li key={s.id} className="mk-new-row">
               <strong title={s.title}>{s.title}</strong>
               <span>{s.seller.name}</span>
-              <span>{s.sector ?? "—"}</span>
+              <span>{[s.market, s.sector].filter(Boolean).join(" · ") || "—"}</span>
               <span>{s.periodStart ? `${day(s.periodStart)} ~ ${day(s.periodEnd)}` : "—"}</span>
             </li>
           ))}

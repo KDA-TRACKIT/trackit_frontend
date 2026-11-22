@@ -2,6 +2,7 @@
 // 트레이더 프로필 (2026-11-22): 전략 마켓 목록 · 트레이더 화면에서 프로필 사진이나 이름을 누르면 뜸
 //   마이페이지 '내 프로필 미리보기'와 같은 모양: 사진 · 이름 / 소개 / 주요 투자 시장 · 기간 · 매매 방식 · 참고 지표 · 매매 원칙
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { Trader } from "./data";
 
 export default function ProfilePopup({ trader, onClose }: { trader: Trader; onClose: () => void }) {
@@ -20,7 +21,9 @@ export default function ProfilePopup({ trader, onClose }: { trader: Trader; onCl
     ] as [string, string][]
   ).filter(([, v]) => !!v?.trim());
   const intro = trader.intro || trader.bio.join(" ");
-  return (
+  // 목록 줄 안에서 그리면 아래 줄이 팝업 위로 비쳐 보여서 페이지 맨 위(body)에 그림 (2026-11-22)
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
       className="mk-pp-backdrop"
       onMouseDown={(e) => {
@@ -53,6 +56,7 @@ export default function ProfilePopup({ trader, onClose }: { trader: Trader; onCl
           </dl>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

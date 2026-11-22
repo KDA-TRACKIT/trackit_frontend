@@ -325,7 +325,7 @@ function TraderRow({ trader, period, returnLabel, honey, mine, subscribers }: { 
           {period === "all" && trader.monthly.length > 0 && <small className="mk-trader-span">{spanOf(trader)}</small>}
         </div>
         <div className="mk-trader-metric"><span className="mk-trader-metric-label">이행률</span><b>{followLabel(trader.follow)}</b></div>
-        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b>{mine && <small className="mk-trader-span">내가 판매 중</small>}</div>
+        <div className="mk-trader-metric mk-trader-price"><span className="mk-trader-metric-label">월 구독료</span><b>{sellable(trader) ? won(trader.price) : "—"}</b></div>
       </Link>
     </li>
   );

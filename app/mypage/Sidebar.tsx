@@ -62,7 +62,7 @@ export default function Sidebar() {
       </nav>
       <div className="mp-side-foot">
         <strong>TRAKIT</strong>
-        <small>트레이더를 위한 투자 기록 플랫폼</small>
+        <small style={{ wordBreak: "keep-all" }}>트레이더를 위한 투자 기록 플랫폼</small>
       </div>
     </aside>
   );
