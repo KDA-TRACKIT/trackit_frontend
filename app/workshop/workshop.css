@@ -1533,3 +1533,6 @@ details.ws-ladder { padding:10px 12px; }
 
 /* Memo 칸 머리: 왼쪽 종목명 (· 시각), 오른쪽 노트 가져오기 (2026-11-22) */
 .ws-memo-head .ws-memo-title small { color:var(--c-sub); font-size:12px; font-weight:500; }
+
+/* 매매하기 버튼이 없는 종목(지수 · 선물 · 환율)일 때 저장 문구가 테두리에 붙지 않게 (2026-11-22) */
+.ws-topbar-right:not(:has(.ws-trade)) { padding-right:16px; }
