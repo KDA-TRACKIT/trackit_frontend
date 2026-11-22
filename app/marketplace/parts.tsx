@@ -109,7 +109,7 @@ export function useNotice() {
 }
 
 /** ☆ 즐겨찾기 (이 브라우저에 저장, 새 전략을 올리면 상단 종으로 알림). 그림은 Figma '즐겨찾기 별'(미선택 outlineIcon / 선택 onIcon) */
-export function FavButton({ id, name, label = false, outlineIcon, onIcon }: { id: string; name: string; label?: boolean; outlineIcon?: ReactNode; onIcon?: ReactNode }) {
+export function FavButton({ id, name, label = false, outlineIcon, onIcon, onFavorite }: { id: string; name: string; label?: boolean; outlineIcon?: ReactNode; onIcon?: ReactNode; onFavorite?: () => void }) {
   const favs = useFavorites();
   const on = isFavorite(favs, id);
   return (
@@ -124,6 +124,7 @@ export function FavButton({ id, name, label = false, outlineIcon, onIcon }: { id
         e.preventDefault();
         e.stopPropagation();
         toggleFavorite(id, name);
+        if (!on) onFavorite?.();
       }}
     >
       {on ? onIcon ?? "★" : outlineIcon ?? "☆"}
