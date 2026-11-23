@@ -7,9 +7,8 @@ import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "./api/client";
 import { useFavorites, type Favorite } from "./favorites";
 import { periodLabel, strategiesOf, traderById } from "../app/marketplace/data";
-import { readHits, type AlertHit } from "./strategy-use";
 
-export type AppNotification = { id: string; kind: "sale" | "favorite" | "match" | "alert" | "note"; at: string; title: string; body: string; href: string };
+export type AppNotification = { id: string; kind: "sale" | "favorite" | "alert" | "note"; at: string; title: string; body: string; href: string };
 
 const SEEN = "trackit:noti-seen";
 const DAYS = 30;
@@ -36,14 +35,6 @@ export function useNotifications(loggedIn: boolean) {
   const owners = favs.map((f) => f.id).filter((id) => UUID.test(id)).join(",");
 
   useEffect(() => setSeen(localStorage.getItem(SEEN) ?? ""), []);
-  // 산 전략 '같은 상황 알림'으로 찾은 자리 (이 브라우저에 저장)
-  const [hits, setHits] = useState<AlertHit[]>([]);
-  useEffect(() => {
-    const sync = () => setHits(readHits());
-    sync();
-    window.addEventListener("trackit:strategy-alerts", sync);
-    return () => window.removeEventListener("trackit:strategy-alerts", sync);
-  }, []);
   useEffect(() => {
     if (!loggedIn) return setServer([]);
     let alive = true;
@@ -59,15 +50,7 @@ export function useNotifications(loggedIn: boolean) {
     };
   }, [loggedIn, owners]);
 
-  const matches: AppNotification[] = hits.map((h) => ({
-    id: `match:${h.id}`,
-    kind: "match",
-    at: h.at,
-    title: `${h.name}: ${h.traderName}님이 산 자리와 비슷해요`,
-    body: `${h.caseName} ${h.caseDate.slice(5).replace("-", ".")} 매수 때와 상황이 비슷해요`,
-    href: `/workshop?symbol=${encodeURIComponent(h.code)}&name=${encodeURIComponent(h.name)}${h.market ? `&market=${encodeURIComponent(h.market)}` : ""}${h.exchange ? `&exchange=${h.exchange}` : ""}`,
-  }));
-  const items = [...server, ...sampleFavorites(favs), ...matches].sort((a, b) => b.at.localeCompare(a.at));
+  const items = [...server, ...sampleFavorites(favs)].sort((a, b) => b.at.localeCompare(a.at));
   const unread = items.filter((n) => !seen || n.at > seen).length;
   const markSeen = useCallback(() => {
     const now = new Date().toISOString();

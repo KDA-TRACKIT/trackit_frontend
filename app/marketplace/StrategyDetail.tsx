@@ -3,7 +3,7 @@
 //   전략 마켓(/marketplace/{id}/strategies/{전략 번호})과 전략보관함(/archive/purchases/{id}/{전략 번호})이 이 화면 하나를 씀
 //   경로마다 다른 건 상단 메뉴 활성 상태와 뒤로 가기 글자뿐
 //   순서: 전략 머리(트레이더 · 기간 · 다른 전략) → 지표 5개 → 매매 규칙 → 거래 내역(달 칩 · 계획 열)
-//        → 노트 탭 · 종목 검색 → 차트 + 차트 노트(이 종목 / 전략 전체) → 산 전략 활용하기
+//        → 노트 탭 · 종목 검색 → 차트 + 차트 노트(이 종목 / 전략 전체)
 //   차트와 노트는 전략보관함 모양 (차트 한 장 + 옆 노트). 예전 전략 마켓의 '월별 대표 차트'는 달 칩, '이 전략의 기록'은 차트 노트 '전략 전체'로
 //   내용은 /strategy-data/{id}/{전략 번호} (서버가 구독을 확인하고 그 전략 기간의 달 기록을 보냄). 구독 전이면 잠금 + 구독 버튼
 //   주소 끝이 달(YYYY-MM)이면 그 달이 들어 있는 전략을 열고 그 달 칩을 고른 채로 시작 (예전 달 단위 링크)
@@ -12,7 +12,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import SiteHeader from "../SiteHeader";
 import BeeLoader from "../BeeLoader";
-import UseStrategy from "../archive/purchases/[id]/UseStrategy";
 import { opened, subscribed, usePasses } from "../../lib/purchases";
 import { fetchStrategyMonth } from "../../lib/strategy-data";
 import { apiRequest } from "../../lib/api/client";
@@ -310,19 +309,7 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
   // 최신 노트가 맨 위 (2026-11-22)
   const shown = [...(scope === "all" ? allList : symbolList)].reverse();
 
-  // 산 전략 활용하기가 근거로 쓰는 달: 구독으로 연 달 + 예전에 연 달 + 무료 전략 (전략보관함과 같은 계산)
   const tList = t ? strategiesOf(t) : [];
-  const openMonths = t
-    ? [
-        ...new Set([
-          ...(subscribed(passes, t.id) ? tList.flatMap((x) => x.months) : []),
-          ...passes.filter((p) => p.traderId === t.id && p.used).map((p) => p.used!.month),
-          ...tList.filter((x) => x.free).flatMap((x) => x.months),
-        ]),
-      ]
-        .sort()
-        .reverse()
-    : [];
 
   const back =
     entry === "market"
@@ -632,8 +619,6 @@ export default function StrategyDetail({ entry, traderId, strategyKey }: { entry
                 </section>
               )}
 
-              {/* 7. 산 전략 활용하기 (구매자용, 내 전략에선 숨김) */}
-              {!own && openMonths.length > 0 && <UseStrategy traderId={t.id} traderName={t.name} months={openMonths} current={curMonth ?? ms.at(-1)!.month} />}
             </>
           )}
         </div>

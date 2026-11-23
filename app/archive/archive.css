@@ -548,58 +548,6 @@ html[data-theme="dark"] .ar-pt-table .tr.on, html[data-theme="dark"] .ar-pt-tabl
 /* 거래 내역이 빈 달 (전략 상세 · StrategyDetail) */
 .ar-pt-table .ar-pt-empty { margin:0; padding:22px 12px; color:var(--c-sub); font-size:14px; text-align:center; }
 
-/* 산 전략 활용하기 (내 차트에 겹치기 · 같은 상황 알림 · 내 매매와 비교 · 이 트레이더라면?) */
-.su-wrap { margin-top:30px; padding:20px 22px; }
-.su-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-.su-head h2 { margin:0; font-size:20px; font-weight:800; }
-.su-head small { color:var(--c-faint); font-size:13px; }
-.su-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 6px; }
-.su-tabs button { padding:7px 14px; border:1px solid var(--c-line); border-radius:999px; background:var(--c-surface); color:var(--c-sub); font-size:13px; font-weight:700; cursor:pointer; }
-.su-tabs button[aria-selected="true"] { border-color:var(--c-ink); background:var(--c-ink); color:var(--c-surface); }
-.su-desc { margin:4px 0 14px; color:var(--c-sub); font-size:13px; }
-.su-empty { margin:10px 0; color:var(--c-faint); font-size:13px; }
-.su-msg { margin:8px 0; color:var(--c-sub); font-size:13px; }
-.su-note { margin:16px 0 0; color:var(--c-faint); font-size:12px; }
-.su-levels { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; margin:0; padding:0; list-style:none; }
-.su-levels li { display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--c-line); border-radius:10px; }
-.su-levels b { min-width:58px; font-size:14px; font-weight:800; color:var(--c-ink); }
-.su-levels b.up { color:var(--c-up); }
-.su-levels b.down { color:var(--c-down, #d4380d); }
-.su-levels span { display:flex; flex-direction:column; font-size:13px; font-weight:700; }
-.su-levels small { color:var(--c-faint); font-size:12px; font-weight:500; }
-.su-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
-.su-actions .mk-primary { width:auto; padding:0 16px; text-decoration:none; }
-.su-actions small { color:var(--c-faint); font-size:12px; flex:1; min-width:240px; }
-.su-alert-bar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-.su-switch { display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; cursor:pointer; }
-.su-min { display:flex; align-items:center; gap:6px; color:var(--c-sub); font-size:13px; }
-.su-min select { padding:4px 6px; border:1px solid var(--c-line); border-radius:6px; background:var(--c-surface); color:var(--c-ink); }
-.su-alert-bar .mk-soft { width:auto; padding:0 14px; margin-left:auto; }
-.su-rows { margin:12px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
-.su-rows li { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--c-line); border-radius:10px; }
-.su-rows li.hit { border-color:var(--c-up); background:var(--c-accent-soft); }
-.su-rows li > div { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
-.su-rows small { color:var(--c-sub); font-size:12px; }
-.su-rows .mk-soft { width:auto; padding:0 12px; text-decoration:none; }
-.su-score { display:inline-block; padding:1px 7px; border-radius:999px; background:var(--c-subtle); color:var(--c-ink); font-size:12px; font-weight:800; }
-.su-hits { margin-top:14px; }
-.su-hits h3 { margin:0 0 6px; font-size:14px; font-weight:800; }
-.su-hits ul { margin:0; padding-left:18px; color:var(--c-sub); font-size:13px; line-height:1.7; }
-.su-table { width:100%; max-width:560px; border-collapse:collapse; font-size:14px; }
-.su-table th, .su-table td { padding:8px 10px; border-bottom:1px solid var(--c-line); text-align:right; }
-.su-table th:first-child { text-align:left; color:var(--c-sub); font-weight:600; }
-.su-table thead th { color:var(--c-faint); font-size:12px; font-weight:700; }
-.su-table td { font-weight:800; color:var(--c-ink); }
-.su-tips { margin:14px 0 0; padding-left:18px; color:var(--c-ink); font-size:14px; line-height:1.7; }
-.su-ask { display:flex; gap:8px; flex-wrap:wrap; }
-.su-ask input { flex:1; min-width:220px; height:40px; padding:0 12px; border:1px solid var(--c-line); border-radius:8px; background:var(--c-surface); color:var(--c-ink); font-size:14px; }
-.su-ask .mk-primary { width:auto; padding:0 16px; }
-.su-answer { margin-top:14px; font-size:14px; line-height:1.6; }
-.su-answer p { margin:0 0 8px; }
-.su-answer ol { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; }
-.su-answer q { display:block; margin:2px 0; color:var(--c-ink); }
-.su-answer small { color:var(--c-sub); font-size:12px; }
-
 /* 구매한 전략 화면 다크 테마: 남색(#0f2367) 글씨 · 연파랑 칩이 어두운 배경에서 안 보이던 것 */
 html[data-theme="dark"] .ar-pt-etc b { color:#9db4ff; }
 html[data-theme="dark"] .ar-pt-tabs button[aria-selected="true"],
