@@ -777,7 +777,6 @@
 .ws-editing b { color:var(--c-ink); font-weight:700; }
 .ws-editing button { flex:none; padding:0; border:0; background:none; color:#6e56cf; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; }
 .ws-note-panel .ws-memo textarea.ws-memo-text.is-editing { border-color:var(--c-accent); background:var(--c-surface); }
-.ws-same-msg { margin:8px 0; padding:7px 10px; border-radius:6px; background:var(--c-subtle); color:var(--c-ink); font-size:12px; line-height:1.5; }
 .ws-note-panel .ws-memo textarea.ws-memo-text:hover:not(:read-only) { border-color:var(--ws-line); }
 .ws-note-panel .ws-memo textarea.ws-memo-text:focus { border-color:var(--c-accent); background:var(--c-surface); }
 .ws-note-panel .ws-memo textarea.ws-memo-text:read-only { cursor:default; color:var(--c-sub); }

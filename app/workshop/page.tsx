@@ -331,8 +331,6 @@ export default function WorkshopPage() {
    *   고치는 동안에는 이 종목의 지금 드로잉을 자동 저장으로 덮어쓰지 않음. 그만두면 지금 드로잉으로 돌아감
    */
   const [editing, setEditing] = useState<{ id: string; when: string; text: string; drawings: Drawing[] } | null>(null);
-  /** 저장하려는 내용이 예전 노트와 똑같을 때의 안내 (같은 노트를 또 남기지 않음, 2026-11-22) */
-  const [sameMsg, setSameMsg] = useState<string | null>(null);
   /** 노트 하나의 드로잉 · 글을 차트와 Note 칸에 불러옴 (주소의 ?edit= · '노트 가져오기'의 이 종목 이전 노트) */
   const [editBusy, setEditBusy] = useState(false);
   async function loadNoteForEdit(jid: string, id: string, code: string, live: { on: boolean } = { on: true }) {
@@ -346,7 +344,6 @@ export default function WorkshopPage() {
       const text = n.aiSummary?.summary ?? "";
       setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, text, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
       setNoteText(text);
-      setSameMsg(null);
     } catch {
       // 못 불러오면 지금 화면 그대로
     } finally {
@@ -375,7 +372,6 @@ export default function WorkshopPage() {
   function stopEditing() {
     setEditing(null);
     setNoteText("");
-    setSameMsg(null);
   }
   // 저장본 노트 + 이번에 새로 단 노트
   /** 지운 차트 노트 (저장본에 있던 것도 다음 저장 때 일지에서 빠진다) */
@@ -722,9 +718,8 @@ export default function WorkshopPage() {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
     // 똑같은 노트는 다시 남기지 않음: 새 노트만 바로 앞 노트와 비교 (불러온 노트는 그대로 저장해도 됨)
-    const same = sameAsBefore();
-    setSameMsg(same);
-    if (same) return;
+    // 같으면 안내 없이 반영하지 않고 끝냄 (2026-11-23)
+    if (sameAsBefore()) return resetNote();
     const marks = reviewMarks(lines);
     // 창은 바로 열고, 차트 그림(기본은 드로잉 전체가 들어가게, 고른 구간이 있으면 그 구간)은 찍히는 대로 넣음
     setReview((r) => ({ image: r && range ? r.image : null, shooting: true, lines, from: range?.from ?? r?.from ?? 0, to: range?.to ?? r?.to ?? Math.max(0, bars.length - 1) }));
@@ -1031,7 +1026,7 @@ ${t}` : t))}
                 <textarea
                   className={`ws-memo-text${editing ? " is-editing" : ""}`}
                   value={noteText}
-                  onChange={(e) => (setNoteText(e.target.value), sameMsg && setSameMsg(null))}
+                  onChange={(e) => setNoteText(e.target.value)}
                   readOnly={confirmed}
                   placeholder="판단 근거, 조건, 분할 매수 · 분할 매도 계획"
                   aria-label="차트 노트"
@@ -1044,7 +1039,6 @@ ${t}` : t))}
               ) : (
                 // 저장 (2026-11-22): AI 분석 없이 바로 저장 확인 창 (Memo + 그은 선 · 차트)
                 <>
-                {sameMsg && <p className="ws-same-msg" role="status">{sameMsg}</p>}
                 <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => openReview()}>
                   {memoBusy ? "저장 중…" : "저장"}
                 </button>

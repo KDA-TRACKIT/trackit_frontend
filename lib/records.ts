@@ -2,7 +2,7 @@
 // 로그인했으면 백엔드(→ Supabase DB)의 확정 노트로 저장·조회, 로그인 전이면 이 브라우저 localStorage
 // 확정된 기록은 고치거나 지우지 않는다 (서버에서는 내용 해시로 잠김)
 import { useSyncExternalStore } from "react";
-import { accessToken } from "./api/client";
+import { ApiError, accessToken } from "./api/client";
 import { MARKET_SYMBOL, listNotes, saveNote, hideNote } from "./api/notes";
 import { uuid } from "./uuid";
 import type { NoteLine } from "../app/workshop/lineLadder";
@@ -186,7 +186,7 @@ function subscribe(listener: () => void) {
  */
 export async function addRecord(
   input: Omit<TradeRecord, "id" | "drawings"> & { drawings?: unknown; plan?: Parameters<typeof saveNote>[0]["plan"] },
-): Promise<{ ok: boolean; error?: string; id?: string }> {
+): Promise<{ ok: boolean; error?: string; id?: string; /** 바로 앞 노트와 같아 새로 남기지 않음 (2026-11-23: 오류가 아니라 그냥 반영 안 함) */ duplicate?: boolean }> {
   const { drawings, plan, ...record } = input;
   const list = read();
   // 같은 노트·체결 조합은 한 번만. 고친 메모(replaces)는 같은 초에 여러 개 고쳐도 다 남김
@@ -211,6 +211,7 @@ export async function addRecord(
       void refreshServerRecords().catch(() => {});
       return { ok: true, id: saved.id };
     } catch (error) {
+      if (error instanceof ApiError && error.code === "DUPLICATE_NOTE") return { ok: true, duplicate: true };
       return { ok: false, error: error instanceof Error ? error.message : "기록을 저장하지 못했어요." };
     }
   }
