@@ -99,7 +99,36 @@ export function consolidateStrategy(previous: string[], memo: string): { text: s
 /** 문장에서 가격 (243,000 · 243000 · 243,000원). 50% 같은 비율은 빼고 1,000 이상만 */
 export function priceIn(t: string): number | null {
   const m = t.match(/(\d{1,3}(?:,\d{3})+|\d{4,})(?:\.\d+)?/);
-  return m ? Number(m[0].replace(/,/g, "")) : null;
+  if (m) return Number(m[0].replace(/,/g, ""));
+  // 미국 주식 가격은 세 자리 이하가 많음 ("$208.27"): 달러 표시가 붙은 숫자 (2026-11-23)
+  const usd = t.match(/\$\s?(\d+(?:\.\d+)?)/);
+  return usd && Number(usd[1]) > 0 ? Number(usd[1]) : null;
+}
+
+/**
+ * 계획 문장들에서 매수 · 손절 · 목표 가격 (2026-11-23, 서버 계획 이행률에 숫자로 넘길 값)
+ *   한 문장에 여러 조건을 쉼표로 이어 쓴 것("7만에 매수, 손절 67,000, 목표 78,000")은 마디마다 따로 읽음
+ *   그은 선에서 자동으로 채운 줄('(자동 · 그은 선 기준)')은 투자자가 적은 계획이 아니라 뺌. 칸마다 처음 나온 가격
+ */
+export function planPrices(texts: string[]): { buy: number | null; stop: number | null; target: number | null } {
+  const out = { buy: null as number | null, stop: null as number | null, target: null as number | null };
+  let sell = null as number | null;
+  for (const text of texts) {
+    for (const clause of text.split(/\s\/\s|[,，;]\s+|\n+/)) {
+      const t = clause.trim();
+      if (!t || t.includes("(자동")) continue;
+      const v = priceIn(t);
+      if (v === null) continue;
+      const k = strategyKind(t);
+      if (k === "buy") out.buy ??= v;
+      else if (k === "stop") out.stop ??= v;
+      else if (k === "target") out.target ??= v;
+      else if (k === "sell") sell ??= v;
+    }
+  }
+  // '얼마에 매도'만 적었으면 그 가격을 목표로
+  out.target ??= sell;
+  return out;
 }
 
 const AUTO = "(자동 · 그은 선 기준)";

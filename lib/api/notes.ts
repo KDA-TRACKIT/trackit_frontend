@@ -69,7 +69,7 @@ export async function saveNote(input: {
    * 노트 완성도 점검: plan = 종류별 필수를 다 채움, observe = 관찰 메모 (이행률의 '계획 있음'에 안 들어감)
    * kind: trade 매매 계획 · hold 보유 관리 · view 분석·전망 · review 회고. 나머지는 종류별 항목 (빈 값은 빠짐)
    */
-  plan?: { status: "plan" | "observe"; kind?: string } & Partial<Record<"direction" | "entry" | "stop" | "target" | "until" | "weight" | "decision" | "reason" | "viewDir" | "level" | "diff" | "cause" | "next", string>>;
+  plan?: { status: "plan" | "observe"; kind?: string } & Partial<Record<"direction" | "entry" | "stop" | "target" | "entryText" | "stopText" | "targetText" | "until" | "weight" | "decision" | "reason" | "viewDir" | "level" | "diff" | "cause" | "next", string>>;
 }): Promise<NoteVersion> {
   const isMarket = !input.symbol;
   const journal = await journalFor(isMarket ? MARKET_SYMBOL : input.symbol!, isMarket ? "시장 전반" : (input.symbolName ?? input.symbol!), isMarket ? "ETC" : "KRX");

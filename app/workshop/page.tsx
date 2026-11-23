@@ -26,7 +26,7 @@ import { saveNoteShot, type NoteVersion } from "../../lib/api/notes";
 import CalendarMemos from "./CalendarMemos";
 import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
 import type { RoleTag } from "./WorkshopChart";
-import { autoFillPlan } from "../../lib/strategyText";
+import { autoFillPlan, planPrices } from "../../lib/strategyText";
 import { buildLadder, noteLines, roleKey, type NoteLine } from "./lineLadder";
 import SaveReview from "./SaveReview";
 import { suggestLink, type Execution } from "../../lib/ai-link";
@@ -600,6 +600,15 @@ export default function WorkshopPage() {
     const auto = fullPlan();
     const row = (label: string) => edits?.plan?.find((r) => r.label === label)?.text.trim() ?? "";
     const fp = edits?.plan?.length ? { ...auto, condition: [row("매수"), row("매도")].filter(Boolean).join(" / "), stop: row("손절"), target: row("목표") } : auto;
+    /**
+     * 계획 가격 (2026-11-23): 글 · 계획 칸의 문장에서 매수 · 손절 · 목표 가격을 숫자로 뽑아 같이 저장 → 서버 계획 이행률이 이 노트를 계획으로 봄
+     *   전에는 문장째로 보내 서버가 숫자로 못 읽었고, 체결과 연결 안 된 노트는 모두 '관찰'로 저장돼 이행률에서 빠졌음 (계획은 원래 사기 전에 씀)
+     *   그은 선에서 자동으로 채운 손절 · 목표('(자동 · 그은 선 기준)')는 투자자가 적은 계획이 아니라 숫자로 넣지 않음
+     */
+    const px = planPrices([fp.condition, fp.stop, fp.target]);
+    const [entryPx, stopPx, targetPx] = [px.buy, px.stop, px.target].map((v) => (v ? String(v) : ""));
+    const linesNow = noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars);
+    const hasPlan = !!(entryPx || stopPx || targetPx || linesNow.some((l) => l.trade));
     // 차트 그림 JPEG 변환은 노트 저장과 동시에 (기다리는 시간 줄이기)
     const jpegReady = review?.image ? toJpeg(review.image).catch(() => null) : Promise.resolve(null);
     // 같은 노트·체결 조합은 한 번만 (이미 있으면 그대로)
@@ -619,16 +628,20 @@ export default function WorkshopPage() {
       // 예전 노트를 불러와 고친 것이면 새 노트가 그 노트를 대신함 (예전 노트는 기록에 남음)
       ...(editing ? { replaces: editing.id } : {}),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
-      lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
+      lines: linesNow,
       // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
       plan: {
-        // 체결과 연결 안 된 노트는 매매 계획이 아니라 관찰 노트로
-        status: linkedExecution ? "plan" : "observe",
+        // 가격 조건(매수 · 손절 · 목표)이 있거나 체결과 연결된 노트가 계획, 그 밖은 관찰 노트
+        status: linkedExecution || hasPlan ? "plan" : "observe",
         kind: fp.kind,
         direction: fp.direction,
-        entry: fp.condition,
-        stop: fp.stop,
-        target: fp.target,
+        // 숫자를 뽑았으면 숫자를 (서버가 계획 가격으로 씀), 원래 문장은 ~Text 칸에. 못 뽑았으면 문장째로 (서버가 ~Text 로 옮김)
+        entry: entryPx || fp.condition,
+        stop: stopPx || fp.stop,
+        target: targetPx || fp.target,
+        entryText: entryPx ? fp.condition : "",
+        stopText: stopPx ? fp.stop : "",
+        targetText: targetPx ? fp.target : "",
         until: fp.until,
         weight: fp.weight,
         decision: fp.decision,
