@@ -925,6 +925,8 @@ export default function WorkshopChart({ quoteCode, bars, interval, onIntervalCha
       else lines[i] = candle.createPriceLine(opts);
     });
     for (const l of lines.splice(tags.length)) candle.removePriceLine(l);
+    // 태그 칸이 뜨는 수평선은 드로잉의 파란 가격 칸을 숨김 (태그 칸 하나만)
+    layerRef.current?.setTaggedPrices(tags.map((t) => t.price));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleSig, dataKey, lastClose === undefined]);
 

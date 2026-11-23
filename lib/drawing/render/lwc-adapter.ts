@@ -40,6 +40,13 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
    * 현재가·평단가 칸과 크기·모양이 똑같다 (플러그인 축 칸은 라이브러리가 위아래 여백을 더 줘서 커 보임)
    */
   private axisLines = new Map<string, { line: IPriceLine; key: string }>();
+  /** 지지 · 저항 같은 태그 칸이 따로 뜨는 가격 → 그 수평선의 파란 가격 칸은 숨김 (같은 가격이 두 번 뜨지 않게, 2026-11-23) */
+  private taggedPrices: number[] = [];
+
+  setTaggedPrices(prices: number[]) {
+    this.taggedPrices = prices;
+    this.syncAxisLines();
+  }
 
   attached(param: SeriesAttachedParameter<Time>) {
     this.param = param;
@@ -59,7 +66,11 @@ export class DrawingLayer implements ISeriesPrimitive<Time> {
     const series = this.param?.series;
     if (!series) return;
     const wanted = new Map<string, Drawing>();
-    for (const d of this.items()) if (AXIS_LABEL_TOOLS.has(d.toolId) && Number(d.points[0]?.price) > 0) wanted.set(d.id, d);
+    const tagged = (price: number) => this.taggedPrices.some((p) => Math.abs(p - price) <= Math.abs(price) * 1e-9);
+    for (const d of this.items()) {
+      const price = Number(d.points[0]?.price);
+      if (AXIS_LABEL_TOOLS.has(d.toolId) && price > 0 && !tagged(price)) wanted.set(d.id, d);
+    }
     for (const [id, it] of this.axisLines) {
       if (wanted.has(id)) continue;
       series.removePriceLine(it.line);
