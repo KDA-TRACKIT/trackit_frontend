@@ -3,19 +3,19 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../../../../lib/api/client";
 import { Card, Empty, PageHead, PeriodTabs, downloadCsv, inPeriod, type Period } from "../../ui";
-import { SALE_STATUS, day, dayTime, useSeller } from "../data";
+import { day, dayTime, useSeller } from "../data";
 import StrategiesModal from "../StrategiesModal";
 
 const krw = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
 /** 내 구독 현황 (GET /me/subscribers) · 판매자 몫 (기본 수수료 20% 뺀 것, 구독 관리와 같게) */
-type MySubscribers = { active: number; total: number; payments: number; revenue: number };
+type SubPayment = { id: string; paidAt: string; startsAt: string; endsAt: string; amount: number; active: boolean };
+type MySubscribers = { active: number; total: number; payments: number; revenue: number; recent?: SubPayment[] };
 const SELLER_SHARE = 0.8;
 
 export default function SalesHistoryPage() {
-  const { sales, strategies, byStrategy, error, loading } = useSeller();
+  const { strategies, byStrategy, error, loading } = useSeller();
   const [period, setPeriod] = useState<Period>({ kind: "all" });
   const [open, setOpen] = useState(false);
-  const list = (sales ?? []).filter((s) => inPeriod(s.soldAt, period));
   // 위 상자 = 구독 현황 (2026-11-22: 구독자 수 · 전략 개수 · 정산 금액, 구독 관리 첫 화면과 같게)
   const [subs, setSubs] = useState<MySubscribers | null | undefined>(undefined);
   useEffect(() => {
@@ -27,11 +27,14 @@ export default function SalesHistoryPage() {
       alive = false;
     };
   }, []);
+  // 최근 구독 결제 = 구독 결제 기록 (2026-11-23: 예전 전략 판매 내역 대신)
+  const list = (subs?.recent ?? []).filter((s) => inPeriod(s.paidAt, period));
+  const term = (s: SubPayment) => `${day(s.startsAt)} ~ ${day(s.endsAt)}`;
 
   function download() {
     downloadCsv(`판매내역_${new Date().toISOString().slice(0, 10)}.csv`, [
-      ["거래 일시", "판매 전략", "구매자", "결제 금액", "상태"],
-      ...list.map((s) => [dayTime(s.soldAt), s.strategy.title, "익명", s.price, SALE_STATUS[s.status] ?? s.status]),
+      ["거래 일시", "구독 기간", "구매자", "결제 금액", "상태"],
+      ...list.map((s) => [dayTime(s.paidAt), term(s), "익명", s.amount, s.active ? "구독 중" : "종료"]),
     ]);
   }
 
@@ -101,28 +104,26 @@ export default function SalesHistoryPage() {
         <div className="mp-grid-table plain" style={{ ["--cols" as string]: "1.2fr 2.2fr 1fr 1fr 0.9fr" }}>
           <div className="th">
             <span>거래 일시</span>
-            <span>판매 전략</span>
+            <span>구독 기간</span>
             <span>구매자</span>
             <span>결제 금액</span>
             <span>상태</span>
           </div>
           {list.map((s) => (
             <div key={s.id} className="tr">
-              <span className="num">{dayTime(s.soldAt)}</span>
-              <span className="clip" title={s.strategy.title}>
-                <strong>{s.strategy.title}</strong>
-              </span>
+              <span className="num">{dayTime(s.paidAt)}</span>
+              <span className="num">{term(s)}</span>
               <span>익명</span>
               <span className="num">
-                <strong>{krw(s.price)}</strong>
+                <strong>{krw(s.amount)}</strong>
               </span>
               <span>
-                <em className={`mp-status${s.status === "CANCELED" ? " off" : ""}`}>{s.status === "CANCELED" ? "취소" : "결제 완료"}</em>
+                <em className={`mp-status${s.active ? "" : " off"}`}>{s.active ? "구독 중" : "종료"}</em>
               </span>
             </div>
           ))}
         </div>
-        {loading ? <Empty text="불러오는 중…" /> : !list.length && <div className="mp-empty-2"><strong>구독 내역이 없습니다.</strong><p>구독이 생기면 이곳에서 확인할 수 있습니다.</p></div>}
+        {subs === undefined ? <Empty text="불러오는 중…" /> : !list.length && <div className="mp-empty-2"><strong>구독 내역이 없습니다.</strong><p>구독이 생기면 이곳에서 확인할 수 있습니다.</p></div>}
       </Card>
       {open && <StrategiesModal strategies={strategies} views={byStrategy} onClose={() => setOpen(false)} />}
     </>
