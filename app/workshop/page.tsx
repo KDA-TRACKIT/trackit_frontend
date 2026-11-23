@@ -13,7 +13,7 @@ import { useJournal } from "../../hooks/useJournal";
 import { drawingToAnnotation, fromAnnotations, noteToAnnotation } from "../../lib/drawing/annotation";
 import type { Drawing } from "../../lib/drawing";
 import type { ChartMemoResult } from "../../lib/api/ai";
-import { errorMessage } from "../../lib/api/client";
+import { apiRequest, errorMessage } from "../../lib/api/client";
 import { applyTicks, fetchBars, isUsSymbol, openStream, searchAllSymbols, usDailyTickTime, type SymbolInfo, type Tick, type UsExchange, type UsSession } from "../../lib/market-data";
 import { STOCK, makeBars, type Bar, type ChartNote, type Interval } from "../../lib/mock/workshop";
 import TradePanel, { type MockOrder } from "./TradePanel";
@@ -22,7 +22,7 @@ import QuickMemo from "../QuickMemo";
 import CompanyPanel from "./CompanyPanel";
 import OrderHistory from "./OrderHistory";
 import { addRecord, kstNow, linkPending, useRecords, type TradeRecord } from "../../lib/records";
-import { saveNoteShot } from "../../lib/api/notes";
+import { saveNoteShot, type NoteVersion } from "../../lib/api/notes";
 import CalendarMemos from "./CalendarMemos";
 import { EMPTY_PLAN, applyTrade, withMemo, type Plan } from "./PlanConfirm";
 import type { RoleTag } from "./WorkshopChart";
@@ -35,6 +35,7 @@ import { futuresDailyTickTime, isFuturesCode, isSpecialCode, specialOf } from ".
 import { getSupabaseBrowser, readUserStorage, userStorageKey } from "../../lib/supabase-browser";
 import SiteHeader from "../SiteHeader";
 import "./workshop.css";
+import { currentRecords } from "../../lib/strategy";
 import { uuid } from "../../lib/uuid";
 
 // 차트는 브라우저 캔버스가 필요하므로 서버 렌더링에서 뺀다
@@ -278,6 +279,7 @@ export default function WorkshopPage() {
     setExecutions([]);
     setLinkChoice("auto");
     setNotes([]);
+    setEditing(null);
     setSymbol(next);
     setDelayed(false);
     setQuery(symbolLabel(next));
@@ -323,6 +325,58 @@ export default function WorkshopPage() {
   const journalId = journal.journal?.id ?? null;
   const annotations = useChartAnnotations(journalId, journal.mode);
   const restored = useMemo(() => fromAnnotations(annotations.annotations, clientIdOf), [annotations.annotations]);
+  /**
+   * 예전 노트 고치기 (2026-11-22): 내 노트의 '차트에서 고치기'(?edit=<노트 id>)로 오면 그 노트 때의 드로잉 · 글을 차트와 Note 칸에 불러옴
+   *   저장하면 그 노트를 고치는 게 아니라 새 노트로 남고(replaces = 예전 노트) 예전 노트는 기록에 그대로
+   *   고치는 동안에는 이 종목의 지금 드로잉을 자동 저장으로 덮어쓰지 않음. 그만두면 지금 드로잉으로 돌아감
+   */
+  const [editing, setEditing] = useState<{ id: string; when: string; text: string; drawings: Drawing[] } | null>(null);
+  /** 저장하려는 내용이 예전 노트와 똑같을 때의 안내 (같은 노트를 또 남기지 않음, 2026-11-22) */
+  const [sameMsg, setSameMsg] = useState<string | null>(null);
+  /** 노트 하나의 드로잉 · 글을 차트와 Note 칸에 불러옴 (주소의 ?edit= · '노트 가져오기'의 이 종목 이전 노트) */
+  const [editBusy, setEditBusy] = useState(false);
+  async function loadNoteForEdit(jid: string, id: string, code: string, live: { on: boolean } = { on: true }) {
+    setEditBusy(true);
+    try {
+      const n = (await apiRequest<NoteVersion[]>(`/journals/${jid}/note-versions`)).find((x) => x.id === id);
+      // 다른 종목 노트면(주소의 종목이 안 열렸을 때) 불러오지 않음
+      if (!live.on || !n || n.symbol !== code) return;
+      const raw = (Array.isArray(n.drawings) ? n.drawings : []) as Parameters<typeof fromAnnotations>[0];
+      const kst = new Date(new Date(n.confirmedAt).getTime() + 9 * 3_600_000).toISOString();
+      const text = n.aiSummary?.summary ?? "";
+      setEditing({ id, when: `${Number(kst.slice(5, 7))}월 ${Number(kst.slice(8, 10))}일 ${kst.slice(11, 16)}`, text, drawings: fromAnnotations(raw, (a) => String(a.id ?? uuid())).drawings });
+      setNoteText(text);
+      setSameMsg(null);
+    } catch {
+      // 못 불러오면 지금 화면 그대로
+    } finally {
+      setEditBusy(false);
+    }
+  }
+  const editAsked = useRef<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const id = q.get("edit");
+    if (!id || editAsked.current === id || !journalId || journal.mode !== "server") return;
+    // 주소의 종목이 아직 안 열렸으면 기다림 (처음엔 마지막에 보던 종목이 먼저 뜸)
+    const want = q.get("symbol")?.trim().toUpperCase();
+    if (want && want !== symbol.code) return;
+    const live = { on: true };
+    // 불러오기는 잠깐 뒤에 (effect 안에서 바로 상태를 바꾸지 않게)
+    const timer = setTimeout(() => {
+      editAsked.current = id;
+      void loadNoteForEdit(journalId, id, symbol.code, live);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      live.on = false;
+    };
+  }, [journalId, journal.mode, symbol.code]);
+  function stopEditing() {
+    setEditing(null);
+    setNoteText("");
+    setSameMsg(null);
+  }
   // 저장본 노트 + 이번에 새로 단 노트
   /** 지운 차트 노트 (저장본에 있던 것도 다음 저장 때 일지에서 빠진다) */
   const [removedNoteIds, setRemovedNoteIds] = useState<ReadonlySet<string>>(new Set());
@@ -338,8 +392,8 @@ export default function WorkshopPage() {
   const loadedDrawings = useMemo(
     // 일지가 없을 때도 같은 빈 배열을 쓴다. 렌더마다 새 [] 를 만들면 "드로잉이 바뀌었다"로 보여
     // 빈 목록으로 자동 저장이 돌고(빈 일지 생성, 저장본 삭제) 만다
-    () => (loadKey ? { key: loadKey, drawings: loadKey.startsWith("none:") ? NO_DRAWINGS : restored.drawings } : undefined),
-    [loadKey, restored.drawings],
+    () => (editing ? { key: `edit:${editing.id}`, drawings: editing.drawings } : loadKey ? { key: loadKey, drawings: loadKey.startsWith("none:") ? NO_DRAWINGS : restored.drawings } : undefined),
+    [loadKey, restored.drawings, editing],
   );
 
   /** 차트가 넘겨 준 선 지우기 (차트 노트 선 목록의 ✕) */
@@ -393,6 +447,17 @@ export default function WorkshopPage() {
     const code = q.get("symbol")?.trim().toUpperCase();
     const exchange = q.get("exchange")?.trim().toUpperCase() as UsExchange | undefined;
     const usCode = !!exchange && ["ND", "NY", "NA"].includes(exchange) && !!code && /^[A-Z][A-Z0-9.]{0,9}$/.test(code);
+    // 미국 티커인데 거래소가 주소에 없으면(내 노트 · 복기형 등에서 온 링크) 종목 검색으로 거래소를 찾아서 연다 (2026-11-22)
+    if (code && !exchange && !isSpecialCode(code) && /^[A-Z][A-Z.]{0,9}$/.test(code)) {
+      let live = true;
+      searchAllSymbols(code)
+        .then((list) => list.find((x) => x.code === code && x.exchange))
+        .then((hit) => live && hit && pickSymbol({ code, name: q.get("name")?.trim() || hit.name, market: hit.market, exchange: hit.exchange }))
+        .catch(() => {});
+      return () => {
+        live = false;
+      };
+    }
     if (!code || (!usCode && !isSpecialCode(code) && !/^[0-9A-Z]{6}$/.test(code))) {
       // 주소로 종목을 안 정했으면: 마지막에 본 종목, 처음이면 주요 시장에 따라 기본 차트
       let live = true;
@@ -443,7 +508,8 @@ export default function WorkshopPage() {
   /** 차트가 알려 준 드로잉. 저장본을 처음 넣은 것은 저장하지 않는다 */
   function changeDrawings(list: Drawing[]) {
     setDrawings(list);
-    if (list !== loadedDrawings?.drawings) setEditVersion((v) => v + 1);
+    // 예전 노트를 고치는 동안에는 자동 저장하지 않음 (이 종목의 지금 드로잉을 덮어쓰지 않게 — 저장을 눌렀을 때만)
+    if (list !== loadedDrawings?.drawings && !editing) setEditVersion((v) => v + 1);
   }
 
   /** 기록으로 저장: 드로잉·노트를 일지에 저장하고, AI 정리 결과를 AI 노트 메모 칸에 넣는다 (확정은 사용자가 따로) */
@@ -550,6 +616,8 @@ export default function WorkshopPage() {
       text: edits ? edits.pendingText : savedText(),
       // AI 가 쌓인 종목 전략과 합친 정리본이면, 합친 예전 메모를 가리켜 화면엔 정리본 하나만 보이게 (예전 것은 기록에 남음)
       drawings: drawings.map(drawingToAnnotation),
+      // 예전 노트를 불러와 고친 것이면 새 노트가 그 노트를 대신함 (예전 노트는 기록에 남음)
+      ...(editing ? { replaces: editing.id } : {}),
       // 그은 선: 알고리즘 지지 · 저항 분류 + 투자자가 고른 매매 · 미분류 선의 역할 (종목 전략에 누적, 미분류는 이행률에서 빠짐)
       lines: noteLines(drawings, bars[bars.length - 1]?.time, today?.close, lineMeaning, bars[bars.length - 1], bars),
       // 노트 종류 · 종류별 항목 (빈 값은 저장할 때 빠짐). entry 는 서버 판정에서 '진입 가격'으로 쓰던 자리라 진입 조건을 넣고, 진입 근거는 basis 로
@@ -593,7 +661,8 @@ export default function WorkshopPage() {
     const failed: string[] = [];
     for (const [id, text] of Object.entries(edits?.records ?? {})) {
       const r = allRecords.find((x) => x.id === id);
-      if (!r || !text.trim()) continue;
+      // 글이 그대로면 새 노트를 남기지 않음
+      if (!r || !text.trim() || text.trim() === r.text.trim()) continue;
       const now = kstNow();
       const { id: _id, drawings: _drawings, ...rest } = r;
       void _id;
@@ -611,6 +680,7 @@ export default function WorkshopPage() {
 
   /** 차트 노트를 처음 상태로 (빈 Memo, 분석 · 계획 · 고른 매매 비움) */
   function resetNote() {
+    setEditing(null);
     setConfirming(false);
     setConfirmed(false);
     setConfirmError(null);
@@ -632,10 +702,24 @@ export default function WorkshopPage() {
   //   (2026-11-22) 본문은 Note 에 쓴 글 그대로 (+ 고른 시나리오). 그은 선은 차트 그림 · 선 기록(lines)으로 남음
   const savedText = () => [noteText.trim(), scenarioLine].filter(Boolean).join("\n\n");
 
+  // 드로잉은 종류 · 점(위치) · 적은 글이 같으면 같은 것. 색 · 굵기 · 숨김처럼 모양만 바꾼 건 같은 노트 (서버 noteSignature 와 같은 기준)
+  const drawSig = (list: Drawing[]) => JSON.stringify(list.map((d) => [d.toolId, d.points, d.text ?? ""]));
+  function sameAsBefore(): string | null {
+    if (editing) return savedText().trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings) ? "불러온 노트와 바뀐 곳이 없어요. 글이나 드로잉을 고친 뒤 저장하세요." : null;
+    // 새 노트: 예전 노트의 드로잉 원본은 화면에 없어서, 둘 다 드로잉이 없을 때만 여기서 미리 알려 줌. 드로잉이 있으면 서버가 비교해 거절함 (DUPLICATE_NOTE)
+    const latest = [...currentRecords(symbolRecords)].sort((a, b) => `${b.date} ${b.noteTime}`.localeCompare(`${a.date} ${a.noteTime}`))[0];
+    if (!latest || drawings.length || latest.drawings) return null;
+    return savedText().trim() === latest.text.trim() ? "가장 최근 노트와 내용이 같아요. 바뀐 곳이 있을 때 새 노트로 남겨요." : null;
+  }
+
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview(range?: { from: number; to: number }) {
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
+    // 똑같은 노트는 다시 남기지 않음: 불러와 고치는 노트는 그 노트와(글 · 드로잉) 비교. 새 노트는 서버가 바로 앞 노트와 비교
+    const same = sameAsBefore();
+    setSameMsg(same);
+    if (same) return;
     const marks = reviewMarks(lines);
     // 창은 바로 열고, 차트 그림(기본은 드로잉 전체가 들어가게, 고른 구간이 있으면 그 구간)은 찍히는 대로 넣음
     setReview((r) => ({ image: r && range ? r.image : null, shooting: true, lines, from: range?.from ?? r?.from ?? 0, to: range?.to ?? r?.to ?? Math.max(0, bars.length - 1) }));
@@ -918,14 +1002,29 @@ ${t}` : t))}
                       records={allRecords}
                       onPick={(m) => setNoteText((t) => (t.trim() ? `${t.trim()}\n\n` : "") + calendarText(m))}
                       isImported={(m) => noteText.includes(calendarText(m))}
+                      // 이 종목에 쓴 이전 노트 (고쳐서 사라진 예전 판 · 합쳐진 노트는 빼고): 고르면 그때 드로잉 · 글을 불러와 새 노트로 고쳐 씀
+                      stockNotes={journalId && journal.mode === "server" ? currentRecords(symbolRecords) : []}
+                      onPickStock={(m) => journalId && void loadNoteForEdit(journalId, m.id, symbol.code)}
+                      editingId={editing?.id}
+                      busy={editBusy}
                     />
                   )}
                 </div>
+                {editing && (
+                  <p className="ws-editing" role="status">
+                    <span>
+                      ⓘ <b>{editing.when} 노트를 불러왔어요.</b> 아래 글과 차트의 드로잉을 고친 뒤 저장하면 새 노트로 남아요. 예전 노트는 기록에 그대로 있어요.
+                    </span>
+                    <button type="button" onClick={stopEditing}>
+                      그만두기
+                    </button>
+                  </p>
+                )}
                 {/* 메모 칸을 누르면 바로 고칠 수 있다 (수정 버튼 없음). 확정 뒤엔 읽기 전용 */}
                 <textarea
-                  className="ws-memo-text"
+                  className={`ws-memo-text${editing ? " is-editing" : ""}`}
                   value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
+                  onChange={(e) => (setNoteText(e.target.value), sameMsg && setSameMsg(null))}
                   readOnly={confirmed}
                   placeholder="판단 근거, 조건, 분할 매수 · 분할 매도 계획"
                   aria-label="차트 노트"
@@ -937,9 +1036,12 @@ ${t}` : t))}
                 </button>
               ) : (
                 // 저장 (2026-11-22): AI 분석 없이 바로 저장 확인 창 (Memo + 그은 선 · 차트)
+                <>
+                {sameMsg && <p className="ws-same-msg" role="status">{sameMsg}</p>}
                 <button className="ws-save" disabled={memoBusy || (!noteText.trim() && !drawings.length)} onClick={() => openReview()}>
                   {memoBusy ? "저장 중…" : "저장"}
                 </button>
+                </>
               )}
               {confirming && review && (
                 <SaveReview
