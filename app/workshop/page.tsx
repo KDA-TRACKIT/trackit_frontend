@@ -1012,8 +1012,10 @@ ${t}` : t))}
                 </div>
                 {editing && (
                   <p className="ws-editing" role="status">
-                    <span>
-                      ⓘ <b>{editing.when} 노트를 불러왔어요.</b> 아래 글과 차트의 드로잉을 고친 뒤 저장하면 새 노트로 남아요. 예전 노트는 기록에 그대로 있어요.
+                    {/* 자세한 안내는 마우스를 올리거나 눌러서 초점을 줬을 때만 (2026-11-23) */}
+                    <span className="ws-editing-what" tabIndex={0}>
+                      ⓘ <b>{editing.when} 노트를 불러왔어요.</b>
+                      <i role="tooltip">아래 글과 차트의 드로잉을 고친 뒤 저장하면 새 노트로 남아요. 예전 노트는 기록에 그대로 있어요.</i>
                     </span>
                     <button type="button" onClick={stopEditing}>
                       그만두기
