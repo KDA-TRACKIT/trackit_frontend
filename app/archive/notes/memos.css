@@ -12,6 +12,8 @@ html[data-theme="dark"] .mm-page { --ret-zero:var(--c-subtle); --ret-up:#246a4b;
 .mm-dot.k-chart { background:#6e56cf; } .mm-dot.k-market { background:#66768c; } .mm-dot.k-news { background:#1f8fd6; } .mm-dot.k-economy { background:#c08a00; } .mm-dot.k-disclosure { background:#8c5a2e; }
 .mm-badge, .mm-kind-chip { display:inline-flex; align-items:center; gap:4px; flex:none; height:19px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:500; white-space:nowrap; }
 .mm-kind-chip { height:21px; padding:0 7px 0 6px; font-size:12px; }
+.mm-badge.mm-edited { background:#fff3d6; color:#8a5a00; font-weight:700; }
+html[data-theme="dark"] .mm-badge.mm-edited { background:rgba(242,180,60,.16); color:#f2b43c; }
 :is(.mm-badge, .mm-kind-chip).k-chart { background:#e8e7fe; color:#4b4280; }
 :is(.mm-badge, .mm-kind-chip).k-market { background:#e8ecf1; color:#3d4a5c; } /* 점(#66768c 회청색)과 같은 색 계열 — 예전 파랑은 뉴스와 헷갈렸음 */
 :is(.mm-badge, .mm-kind-chip).k-news { background:#d9edfd; color:#04527f; }

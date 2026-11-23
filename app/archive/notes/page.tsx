@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarDays, ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, History, Link2, List, PenLine, Pin, Search, SquarePen, X } from "lucide-react";
 import SiteHeader from "../../SiteHeader";
 import { initRecordSource, useRecords, useRecordsReady } from "../../../lib/records";
+import { currentRecords } from "../../../lib/strategy";
 import BeeLoader from "../../BeeLoader";
 import { getPositions, type Position } from "../../../lib/api/performance";
 import { workshopLink } from "../../HomeWeeklyRecords";
@@ -124,7 +125,8 @@ export default function MemosPage() {
     };
   }, []);
 
-  const memos = useMemo(() => records.map(toMemo), [records]);
+  // 고쳐서 새 노트로 바뀐 예전 노트 · 정리본에 합쳐진 노트는 목록에서 빼고 최신본만 (예전 노트는 기록에 남아 있고 복기형 재생에서는 보임, 2026-11-23)
+  const memos = useMemo(() => currentRecords(records).map(toMemo), [records]);
   // 비즈니스 계정이면 내 노트에서 바로 전략 판매 (2026-11-22)
   const [userId] = useState(() => currentUserIdSync() ?? "");
   const business = useBusiness(userId);
@@ -375,6 +377,7 @@ function MemoRow({ m, pinned, on, onSelect, mode = "time" }: { m: Memo; pinned: 
       <div className="mm-row-top">
         <span className="mm-row-who">
           <KindBadge kind={m.kind} />
+          {m.rec.replaces && <span className="mm-badge mm-edited" title="예전 노트를 고친 수정본이에요. 예전 노트는 기록에 남아 있어요.">수정본</span>}
           {mode === "time" && <b>{m.subject}</b>}
           {ex && <em className="mm-linked">{ex.side} 체결 연결</em>}
         </span>
@@ -515,6 +518,7 @@ function MemoDetail({
         <div>
           <div className="mm-detail-meta">
             <KindBadge kind={m.kind} />
+            {m.rec.replaces && <span className="mm-badge mm-edited" title="예전 노트를 고친 수정본이에요. 예전 노트는 기록에 남아 있어요.">수정본</span>}
             <span>
               {longDate(m.date)} · {m.time} 작성
             </span>
