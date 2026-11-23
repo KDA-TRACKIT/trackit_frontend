@@ -704,8 +704,11 @@ export default function WorkshopPage() {
 
   // 드로잉은 종류 · 점(위치) · 적은 글이 같으면 같은 것. 색 · 굵기 · 숨김처럼 모양만 바꾼 건 같은 노트 (서버 noteSignature 와 같은 기준)
   const drawSig = (list: Drawing[]) => JSON.stringify(list.map((d) => [d.toolId, d.points, d.text ?? ""]));
+  /** 불러온 노트에서 글 · 드로잉을 하나도 안 고쳤는지 */
+  const sameAsEditing = (text: string) => !!editing && text.trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings);
   function sameAsBefore(): string | null {
-    if (editing) return savedText().trim() === editing.text.trim() && drawSig(drawings) === drawSig(editing.drawings) ? "불러온 노트와 바뀐 곳이 없어요. 글이나 드로잉을 고친 뒤 저장하세요." : null;
+    // 불러온 노트를 안 고쳤으면 저장 버튼이 기존 노트 그대로 두고 끝냄 (openReview). 고쳤으면 그대로 저장
+    if (editing) return null;
     // 새 노트: 예전 노트의 드로잉 원본은 화면에 없어서, 둘 다 드로잉이 없을 때만 여기서 미리 알려 줌. 드로잉이 있으면 서버가 비교해 거절함 (DUPLICATE_NOTE)
     const latest = [...currentRecords(symbolRecords)].sort((a, b) => `${b.date} ${b.noteTime}`.localeCompare(`${a.date} ${a.noteTime}`))[0];
     if (!latest || drawings.length || latest.drawings) return null;
@@ -714,9 +717,11 @@ export default function WorkshopPage() {
 
   /** 확인하고 저장 → 저장될 내용을 큰 창으로 (그 순간 그은 선의 지지 · 저항 + 라벨 얹은 차트 그림) */
   function openReview(range?: { from: number; to: number }) {
+    // 불러와서 글 · 드로잉을 하나도 안 고쳤으면 새로 남기지 않고 기존 노트 그대로 (2026-11-23): 불러오기만 끝냄
+    if (!range && sameAsEditing(savedText())) return resetNote();
     const last = bars[bars.length - 1];
     const lines = noteLines(drawings, last?.time, today?.close, lineMeaning, last, bars);
-    // 똑같은 노트는 다시 남기지 않음: 불러와 고치는 노트는 그 노트와(글 · 드로잉) 비교. 새 노트는 서버가 바로 앞 노트와 비교
+    // 똑같은 노트는 다시 남기지 않음: 새 노트만 바로 앞 노트와 비교 (불러온 노트는 그대로 저장해도 됨)
     const same = sameAsBefore();
     setSameMsg(same);
     if (same) return;
