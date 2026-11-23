@@ -4,8 +4,6 @@
 //     만드는 법: scripts/market-sim (fetch_candles.mjs → sim.py). 전략 내용(매매 · 그은 선 · 차트)은 data/market-sim/{id}.json (공개 안 함, /strategy-data 가 구독 확인 뒤 그 전략 것만)
 //   전략(2026-11-21 기획) = 판매자가 섹터 안에서 끊은 기간 하나 (기간 · 메모 개수는 판매자가 정함). 달 단위로 팔지 않음
 import SIM from "./sim.json";
-// 등급제는 없앰 (2026-11-20 기획): grades.ts · lib/grade 는 나중을 위해 남기고 마켓에서는 호출하지 않음
-import type { GradeResult } from "../../lib/grade";
 
 type SimTrader = {
   /** 작도(채널 · 피보나치 · 엘리어트)로 매매하는 트레이더면 소개를 규칙에 맞게 바꿈 */
@@ -130,8 +128,6 @@ export type Trader = {
   asOf?: string;
   /** 확인된 사실 */
   facts?: Facts;
-  /** 판매자 등급 · 구독 가격 · 수수료 (lib/grade, 2026-11-17 회의 공식). F · 일반이면 신규 판매 안 함 */
-  grade?: GradeResult;
   /** 기간마다 매매한 종목 수 (0 · 1 종목이면 수익률 · 추이를 "-" 로) */
   stocks?: Record<Period, number>;
 };
