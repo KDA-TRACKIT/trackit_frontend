@@ -83,7 +83,6 @@ export default function CalendarMemos({
                 >
                   <b>
                     {dateLabel(r.date)} {r.noteTime.slice(0, 5)}
-                    {r.id === editingId ? " · 고치는 중" : ""}
                   </b>
                   <span>{r.text || "(내용 없음)"}</span>
                 </button>
